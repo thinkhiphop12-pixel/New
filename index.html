@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>7-0-0 — Build the Perfect World Cup XI</title>
+<meta name="description" content="Spin for players across 7 World Cups, draft your XI, and chase a perfect 7-0-0 run. A free squad-building game.">
+<meta property="og:title" content="7-0-0 — Build the Perfect World Cup XI">
+<meta property="og:description" content="Spin, draft, and build a World Cup squad chasing the perfect 7-0-0 run.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">7-0-0</span>
+      <span class="brand-sub">World Cup Squad Builder</span>
+    </div>
+    <div class="round-pill" id="roundPill"></div>
+    <button class="icon-btn" id="resetBtn" title="Start over">↺</button>
+  </header>
+
+  <!-- ===================== SETUP ===================== -->
+  <section id="setupScreen" class="screen">
+    <div class="setup-inner">
+      <h1 class="setup-title">Pick a squad. Chase a perfect run.</h1>
+      <p class="setup-sub">Choose how you play, pick your shape, then spin across seven World Cups for your XI.</p>
+
+      <div class="step">
+        <div class="step-label">1 — Game mode</div>
+        <div class="mode-grid">
+          <button class="mode-card" data-mode="classic">
+            <span class="m-title">Classic</span>
+            <span class="m-desc">Ratings visible. Draft by the numbers.</span>
+          </button>
+          <button class="mode-card" data-mode="expert">
+            <span class="m-title">Expert</span>
+            <span class="m-desc">Ratings hidden. Draft on reputation alone.</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-label">2 — Formation</div>
+        <div class="formation-grid" id="formationGrid"></div>
+      </div>
+
+      <button class="btn-primary" id="setupStart" disabled>Start drafting →</button>
+    </div>
+  </section>
+
+  <!-- ===================== GAME ===================== -->
+  <section id="gameScreen" class="screen hidden">
+    <div class="game-grid">
+
+      <div class="left-col">
+
+        <div class="card spin-pane" id="spinPane">
+          <div class="reels">
+            <div class="reel">
+              <div class="reel-value" id="reelCountry">—</div>
+              <div class="reel-label">Country</div>
+            </div>
+            <div class="reel">
+              <div class="reel-value" id="reelYear">—</div>
+              <div class="reel-label">Tournament</div>
+            </div>
+          </div>
+          <button class="btn-primary spin-btn" id="spinBtn">SPIN</button>
+          <p class="spin-hint">Weighted by squad strength · ~11% chance of an Icon offer each spin</p>
+        </div>
+
+        <div class="card icon-offer hidden" id="iconOffer">
+          <div class="icon-card-head">⭐ ICON OFFER</div>
+          <div class="icon-card-body">
+            <div class="icon-jersey" id="iconCardJersey"></div>
+            <div class="icon-card-info">
+              <div class="icon-card-name" id="iconCardName"></div>
+              <div class="icon-card-meta" id="iconCardMeta"></div>
+            </div>
+            <div class="icon-card-ovr" id="iconCardOvr"></div>
+          </div>
+          <div class="icon-stats" id="iconStats"></div>
+          <div class="icon-actions">
+            <button class="btn-ghost" id="iconSkipBtn">Skip</button>
+            <button class="btn-primary" id="iconTakeBtn">Take Icon</button>
+          </div>
+        </div>
+
+        <div class="card draft-pane hidden" id="draftPane">
+          <div class="draft-head">
+            <div>
+              <div class="draft-team" id="draftTeamName"></div>
+              <div class="draft-year" id="draftYear"></div>
+            </div>
+          </div>
+          <input class="draft-search" id="draftSearch" type="text" placeholder="Search this squad…">
+          <div class="draft-instruct" id="draftInstruct"></div>
+          <div class="player-list" id="playerList"></div>
+        </div>
+
+      </div>
+
+      <div class="pitch-col">
+        <div class="pitch-wrap">
+          <div class="pitch" id="pitch">
+            <div class="pitch-lines">
+              <div class="pl-box pl-box-top"></div>
+              <div class="pl-box pl-box-bottom"></div>
+              <div class="pl-circle"></div>
+              <div class="pl-halfway"></div>
+            </div>
+          </div>
+        </div>
+        <div class="formation-tag" id="formationTag"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===================== RESULTS ===================== -->
+  <section id="resultsScreen" class="screen hidden">
+    <div class="results-inner">
+      <div class="brand-mark results-brand">7-0-0</div>
+      <h2 class="results-q" id="resultsQ"></h2>
+
+      <div class="record-block">
+        <div class="record-label">PROJECTED WORLD CUP RECORD</div>
+        <div class="record-line">
+          <span id="recW"></span>-<span id="recD"></span>-<span id="recL"></span>
+        </div>
+        <div class="record-key" id="recordKey"></div>
+        <div class="tier-badge" id="tierBadge"></div>
+        <div class="tier-sub" id="tierSub"></div>
+      </div>
+
+      <div class="results-actions">
+        <button class="btn-ghost" id="shareBtn">Share result</button>
+        <button class="btn-primary" id="againBtn">Build another</button>
+      </div>
+
+      <button class="btn-link" id="showMoreBtn">Show full tournament breakdown ▾</button>
+
+      <div class="breakdown hidden" id="breakdown">
+        <div class="bd-grid">
+          <div class="bd-card">
+            <div class="bd-label">Group Stage</div>
+            <div class="bd-value" id="bdGroup"></div>
+          </div>
+          <div class="bd-card">
+            <div class="bd-label">Tournament Run</div>
+            <div class="bd-value" id="bdRun"></div>
+          </div>
+          <div class="bd-card">
+            <div class="bd-label">Star Man</div>
+            <div class="bd-value" id="bdTopPlayer"></div>
+            <div class="bd-subvalue" id="bdTopPlayerSub"></div>
+          </div>
+          <div class="bd-card">
+            <div class="bd-label">Top Scorer</div>
+            <div class="bd-value" id="bdTopScorer"></div>
+            <div class="bd-subvalue" id="bdTopScorerSub"></div>
+          </div>
+        </div>
+        <div class="bd-players-label">Your XI</div>
+        <div class="xi-list" id="xiList"></div>
+      </div>
+
+      <p class="attribution">Squad-list basis: Fjelstul World Cup Database (CC-BY-SA 4.0).</p>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <p class="footer-disclaimer">7-0-0 is an unofficial fan-made game, not affiliated with FIFA or any federation. Player ratings are stylized approximations for gameplay.</p>
+  </footer>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>
