@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>HeatMap — Name the Player from Their Stats | Ball Knowledge</title>
+<meta name="description" content="A mystery footballer's six core attributes are shown as a colour-coded heatmap. Read the stats, position and era, and name the player from four options.">
+<meta property="og:title" content="HeatMap — Name the Player from Their Stats">
+<meta property="og:description" content="Read a mystery player's stat heatmap and pick the right name. A free football knowledge game.">
+<meta property="og:type" content="website">
+<style>
+:root{
+  --bg:#0a1f14; --bg-alt:#0f2b1c; --panel:#123322; --panel-2:#16402a;
+  --line:#1f5536; --gold:#e3b23c; --gold-soft:#f0d28a; --ink:#eef6ef; --ink-dim:#a9c4b3;
+  --radius:14px;
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+body{
+  min-height:100vh; background:var(--bg); color:var(--ink);
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+.hidden{ display:none !important; }
+a{ color:var(--gold); }
+button{ font-family:inherit; cursor:pointer; border:none; }
+#app{ max-width:720px; margin:0 auto; padding:0 16px 40px; }
+
+nav.game-nav{ display:flex; gap:0; border-bottom:1px solid var(--line); margin-bottom:6px; }
+nav.game-nav a{ padding:12px 16px; color:var(--ink-dim); text-decoration:none; font-size:13px; font-weight:700; border-bottom:2px solid transparent; }
+nav.game-nav a.active, nav.game-nav a:hover{ color:var(--gold); border-bottom-color:var(--gold); }
+
+.topbar{ display:flex; align-items:center; justify-content:space-between; padding:18px 0 8px; }
+.brand-mark{ font-weight:900; font-size:20px; letter-spacing:.5px; color:var(--gold); }
+.brand-sub{ display:block; font-size:10px; letter-spacing:2px; color:var(--ink-dim); margin-top:2px; }
+.round-pill{ background:var(--panel-2); border:1px solid var(--line); border-radius:999px; padding:6px 14px; font-size:13px; font-weight:700; }
+
+.statbar{ display:flex; gap:10px; justify-content:center; margin:6px 0 14px; flex-wrap:wrap; }
+.stat-chip{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:8px 14px; font-size:14px; font-weight:700; display:flex; gap:6px; align-items:center; }
+.stat-chip .lbl{ color:var(--ink-dim); font-size:11px; text-transform:uppercase; letter-spacing:.5px; }
+.lives{ color:#ff6b6b; }
+
+.ad-slot{ margin:14px 0; min-height:90px; display:flex; align-items:center; justify-content:center;
+  background:var(--panel); border:1px dashed var(--line); border-radius:var(--radius); overflow:hidden; }
+.ad-slot-label{ font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--ink-dim); }
+.ad-slot.is-filled .ad-slot-label{ display:none; }
+.ad-slot ins.adsbygoogle{ width:100%; }
+
+.card{ background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:22px; }
+
+.clue-head{ text-align:center; margin-bottom:16px; }
+.clue-head .who{ font-size:13px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:1px; }
+.clue-meta{ display:flex; gap:10px; justify-content:center; margin-top:10px; flex-wrap:wrap; }
+.meta-chip{ border-radius:999px; padding:7px 16px; font-size:14px; font-weight:800; }
+.meta-pos{ background:var(--gold); color:#1a1206; }
+.meta-nation{ color:#fff; border:1px solid rgba(255,255,255,.25); }
+.meta-era{ background:var(--panel-2); color:var(--ink); border:1px solid var(--line); }
+
+.heat{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:18px 0 4px; }
+@media (max-width:460px){ .heat{ grid-template-columns:repeat(2,1fr); } }
+.heat-cell{ border-radius:12px; padding:14px 8px; text-align:center; color:#10210f; }
+.heat-cell .hc-lbl{ font-size:12px; font-weight:800; letter-spacing:1px; opacity:.8; }
+.heat-cell .hc-val{ font-size:30px; font-weight:900; line-height:1.1; }
+
+.options{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:18px; }
+@media (max-width:460px){ .options{ grid-template-columns:1fr; } }
+.opt-btn{ background:var(--panel-2); border:1px solid var(--line); color:var(--ink);
+  border-radius:12px; padding:15px 14px; font-size:15px; font-weight:700; text-align:left; transition:all .12s; }
+.opt-btn:hover{ border-color:var(--gold); }
+.opt-btn.correct{ background:#1f6b3a; border-color:#2ecc71; color:#fff; }
+.opt-btn.wrong{ background:#6b1f1f; border-color:#ff6b6b; color:#fff; }
+.opt-btn:disabled{ cursor:default; }
+
+.next-row{ text-align:center; margin-top:16px; min-height:48px; }
+.reveal-note{ font-size:14px; color:var(--ink-dim); margin-bottom:10px; }
+.btn-primary{ background:linear-gradient(180deg, var(--gold-soft), var(--gold)); color:#1a1206; font-weight:800; border-radius:999px; padding:13px 30px; font-size:15px; }
+.btn-ghost{ background:var(--panel); border:1px solid var(--line); color:var(--ink); border-radius:999px; padding:12px 22px; font-size:14px; }
+
+.modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.85); display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+.modal{ background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:30px; max-width:420px; width:100%; text-align:center; }
+.modal h2{ font-size:26px; margin-bottom:10px; }
+.modal p{ color:var(--ink-dim); margin-bottom:18px; }
+.modal-stats{ display:flex; gap:12px; justify-content:center; margin-bottom:20px; }
+.ms-box{ background:var(--bg); border-radius:10px; padding:14px 18px; }
+.ms-box .v{ font-size:26px; font-weight:900; color:var(--gold); }
+.ms-box .l{ font-size:11px; text-transform:uppercase; color:var(--ink-dim); }
+
+.site-footer{ padding:24px 0; text-align:center; }
+.site-footer > a{ color:var(--gold); text-decoration:none; font-weight:600; font-size:13px; }
+.footer-disclaimer{ font-size:11px; color:var(--ink-dim); max-width:520px; margin:8px auto 0; }
+.footer-disclaimer a{ color:var(--ink-dim); }
+.btn-link{ background:none; color:var(--gold-soft); font-size:13px; text-decoration:underline; margin:8px auto 0; display:block; }
+.consent-banner{ position:fixed; left:0; right:0; bottom:0; z-index:60; background:var(--panel-2);
+  border-top:1px solid var(--line); padding:16px 18px; box-shadow:0 -4px 16px rgba(0,0,0,.3);
+  display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:14px; }
+.consent-text{ font-size:12px; color:var(--ink-dim); max-width:520px; margin:0; flex:1 1 260px; }
+.consent-actions{ display:flex; gap:10px; }
+.consent-actions .btn-ghost, .consent-actions .btn-primary{ padding:10px 18px; font-size:13px; }
+.loading{ text-align:center; padding:50px 0; color:var(--ink-dim); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <nav class="game-nav">
+    <a href="../">&#8592; Ball Knowledge</a>
+    <a href="../700/">7-0-0</a>
+    <a href="index.html" class="active">HeatMap</a>
+  </nav>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">HEATMAP</span>
+      <span class="brand-sub">NAME THE PLAYER</span>
+    </div>
+    <div class="round-pill" id="roundPill">Round 1 / 10</div>
+  </header>
+
+  <div class="statbar">
+    <div class="stat-chip"><span class="lbl">Score</span><span id="scoreVal">0</span></div>
+    <div class="stat-chip"><span class="lbl">Streak</span><span id="streakVal">0</span></div>
+    <div class="stat-chip"><span class="lbl">Lives</span><span class="lives" id="livesVal">❤❤❤</span></div>
+  </div>
+
+  <div class="ad-slot" id="adTop" data-ad-slot=""><span class="ad-slot-label">Advertisement</span></div>
+
+  <div id="loading" class="loading">Loading players…</div>
+
+  <div id="gameCard" class="card hidden">
+    <div class="clue-head">
+      <div class="who">Who is this player?</div>
+      <div class="clue-meta">
+        <span class="meta-chip meta-pos" id="metaPos">—</span>
+        <span class="meta-chip meta-nation" id="metaNation">—</span>
+        <span class="meta-chip meta-era" id="metaEra">—</span>
+      </div>
+    </div>
+    <div class="heat" id="heat"></div>
+    <div class="options" id="options"></div>
+    <div class="next-row" id="nextRow"></div>
+  </div>
+
+  <div class="ad-slot" id="adBottom" data-ad-slot=""><span class="ad-slot-label">Advertisement</span></div>
+
+  <div id="modalContainer"></div>
+
+  <footer class="site-footer">
+    <a href="../">Home</a> · <a href="../700/">7-0-0</a> · <a href="../lineup/">Lineup</a> · <a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a>
+    <p class="footer-disclaimer">HeatMap is an unofficial fan-made game, not affiliated with FIFA or any federation. Player ratings are stylized approximations for gameplay. For enquiries, contact <a href="mailto:thinkhiphop12@gmail.com">thinkhiphop12@gmail.com</a>.</p>
+    <button class="btn-link" id="cookieSettingsBtn">Cookie settings</button>
+  </footer>
+
+  <div class="consent-banner hidden" id="consentBanner">
+    <p class="consent-text">We use cookies for basic analytics and to show ads. Choose what you're OK with — you can change this anytime in Cookie settings.</p>
+    <div class="consent-actions">
+      <button class="btn-ghost" id="consentEssentialBtn">Essential only</button>
+      <button class="btn-primary" id="consentAcceptBtn">Accept all</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="../shared/consent.js"></script>
+<script>
+const TOTAL_ROUNDS = 10;
+let POOL = [], BYGROUP = { GK:[], DEF:[], MID:[], ATT:[] };
+let round = 0, score = 0, streak = 0, lives = 3, answered = false, current = null;
+
+function posGroup(p){
+  const pos = String(p.sp || (p.p && p.p[0]) || '').toUpperCase();
+  if (pos === 'GK') return 'GK';
+  if (/CB|RB|LB|RWB|LWB|SW|WB|DF/.test(pos)) return 'DEF';
+  if (/CDM|CAM|CM|DM|AM|LM|RM|MF/.test(pos)) return 'MID';
+  return 'ATT';
+}
+function strHash(s){ let h=0; for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))|0; } return Math.abs(h); }
+const NATION_PALETTE = ['#c0392b','#2980b9','#27ae60','#8e44ad','#d35400','#16a085','#2c3e50','#c39bd3','#1f6b3a','#b9770e'];
+function nationColor(c){ return NATION_PALETTE[strHash(c) % NATION_PALETTE.length]; }
+function heatColor(v){
+  if (v >= 85) return '#2ecc71';
+  if (v >= 75) return '#7bc043';
+  if (v >= 65) return '#d4ca3a';
+  if (v >= 55) return '#e8a13a';
+  if (v >= 45) return '#e07b39';
+  return '#d04b3a';
+}
+function eraLabel(year){
+  if (year === 'ICON') return 'Icon';
+  return String(year);
+}
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+async function init(){
+  try{
+    const res = await fetch('../700/data.json');
+    const data = await res.json();
+    const all = [...(data.players||[]), ...(data.icons||[])];
+    POOL = all.filter(p => p && (p.icon || p.o >= 80) && p.n && typeof p.pac === 'number');
+    POOL.forEach(p => BYGROUP[posGroup(p)].push(p));
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('gameCard').classList.remove('hidden');
+    nextRound();
+  }catch(e){
+    document.getElementById('loading').textContent = 'Could not load player data. Please refresh.';
+  }
+}
+
+function pickRound(){
+  const answer = POOL[Math.floor(Math.random()*POOL.length)];
+  const grp = posGroup(answer);
+  const sameGroup = BYGROUP[grp].filter(p =>
+    p.n !== answer.n && Math.abs((p.o||70) - (answer.o||70)) <= 8);
+  const decoyPool = sameGroup.length >= 3 ? sameGroup : POOL.filter(p => p.n !== answer.n);
+  const decoys = shuffle(decoyPool.slice()).slice(0,3);
+  // ensure unique names
+  const seen = new Set([answer.n]); const finalDecoys = [];
+  for (const d of shuffle(decoyPool.slice())){
+    if (finalDecoys.length === 3) break;
+    if (!seen.has(d.n)){ seen.add(d.n); finalDecoys.push(d); }
+  }
+  return { answer, options: shuffle([answer, ...finalDecoys]) };
+}
+
+function nextRound(){
+  if (round >= TOTAL_ROUNDS || lives <= 0){ return endGame(); }
+  round++;
+  answered = false;
+  current = pickRound();
+  const a = current.answer;
+  document.getElementById('roundPill').textContent = `Round ${round} / ${TOTAL_ROUNDS}`;
+  document.getElementById('metaPos').textContent = a.sp || (a.p && a.p[0]) || '?';
+  const nat = document.getElementById('metaNation');
+  nat.textContent = a.country || '?';
+  nat.style.background = nationColor(a.country || '?');
+  document.getElementById('metaEra').textContent = eraLabel(a.year);
+
+  const stats = [['PAC',a.pac],['SHO',a.sho],['PAS',a.pas],['DRI',a.dri],['DEF',a.def],['PHY',a.phy]];
+  document.getElementById('heat').innerHTML = stats.map(([lbl,v]) =>
+    `<div class="heat-cell" style="background:${heatColor(v)}"><div class="hc-lbl">${lbl}</div><div class="hc-val">${v}</div></div>`).join('');
+
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  current.options.forEach(o => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.textContent = o.n;
+    btn.onclick = () => choose(btn, o);
+    opts.appendChild(btn);
+  });
+  document.getElementById('nextRow').innerHTML = '';
+}
+
+function choose(btn, opt){
+  if (answered) return;
+  answered = true;
+  const a = current.answer;
+  const buttons = document.querySelectorAll('.opt-btn');
+  buttons.forEach(b => {
+    b.disabled = true;
+    if (b.textContent === a.n) b.classList.add('correct');
+  });
+  let note;
+  if (opt.n === a.n){
+    streak++;
+    let pts = 100 + (streak >= 3 ? 50 : 0);
+    score += pts;
+    note = `Correct! <strong>${a.n}</strong> — ${a.country}, ${eraLabel(a.year)} (OVR ${a.o}). +${pts}`;
+    try{ track('heatmap_correct', { streak }); }catch(e){}
+  } else {
+    btn.classList.add('wrong');
+    streak = 0;
+    lives--;
+    note = `It was <strong>${a.n}</strong> — ${a.country}, ${eraLabel(a.year)} (OVR ${a.o}).`;
+    try{ track('heatmap_wrong', {}); }catch(e){}
+  }
+  updateStats();
+  const last = round >= TOTAL_ROUNDS || lives <= 0;
+  document.getElementById('nextRow').innerHTML =
+    `<div class="reveal-note">${note}</div><button class="btn-primary" id="nextBtn">${last ? 'See results' : 'Next player →'}</button>`;
+  document.getElementById('nextBtn').onclick = nextRound;
+}
+
+function updateStats(){
+  document.getElementById('scoreVal').textContent = score;
+  document.getElementById('streakVal').textContent = streak;
+  document.getElementById('livesVal').textContent = '❤'.repeat(Math.max(0,lives)) + '♡'.repeat(Math.max(0,3-lives));
+}
+
+function endGame(){
+  const correct = Math.round(score >= 0 ? score / 100 : 0);
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal">
+      <h2>${lives <= 0 ? '💀 Out of lives' : '🏁 Round complete'}</h2>
+      <p>You scored <strong>${score}</strong> points across ${round} player${round===1?'':'s'}.</p>
+      <div class="modal-stats">
+        <div class="ms-box"><div class="v">${score}</div><div class="l">Score</div></div>
+        <div class="ms-box"><div class="v">${round}</div><div class="l">Rounds</div></div>
+      </div>
+      <button class="btn-primary" id="againBtn">Play again</button>
+      <div style="margin-top:14px;"><a href="../700/" style="font-size:13px;">Try 7-0-0</a> · <a href="../lineup/" style="font-size:13px;">Try Lineup</a></div>
+    </div>`;
+  document.getElementById('modalContainer').appendChild(modal);
+  document.getElementById('againBtn').onclick = () => {
+    document.getElementById('modalContainer').innerHTML = '';
+    round = 0; score = 0; streak = 0; lives = 3;
+    updateStats();
+    nextRound();
+  };
+  try{ track('heatmap_complete', { score, rounds: round }); }catch(e){}
+}
+
+updateStats();
+init();
+</script>
+</body>
+</html>
