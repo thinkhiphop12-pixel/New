@@ -670,16 +670,106 @@ function shareText(){
   return `I went ${r.W}-${r.D}-${r.L} in 7-0-0, the World Cup squad builder. Build yours at 7-0-0.com #7oh0`;
 }
 
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+function buildShareCanvas(){
+  const r = lastRecord;
+  const tier = tierFor(r);
+  const W = 1080, H = 1350;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.textAlign = 'center';
+
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0a1f14'); bg.addColorStop(1, '#0f2b1c');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = '#e3b23c';
+  ctx.font = '800 70px -apple-system, sans-serif';
+  ctx.fillText('7-0-0', W/2, 120);
+  ctx.fillStyle = '#a9c4b3';
+  ctx.font = '600 24px -apple-system, sans-serif';
+  ctx.fillText('WORLD CUP SQUAD BUILDER', W/2, 160);
+
+  ctx.fillStyle = '#f0d28a';
+  ctx.font = '800 170px -apple-system, sans-serif';
+  ctx.fillText(`${r.W}-${r.D}-${r.L}`, W/2, 340);
+
+  ctx.fillStyle = '#a9c4b3';
+  ctx.font = '500 28px -apple-system, sans-serif';
+  ctx.fillText(`${GAMES} GAMES · ${r.pts} PTS · SQUAD AVG ${r.S}`, W/2, 390);
+
+  ctx.font = '800 34px -apple-system, sans-serif';
+  const tierText = tier.name.toUpperCase();
+  const tw = ctx.measureText(tierText).width + 70;
+  roundRect(ctx, W/2 - tw/2, 425, tw, 68, 34);
+  ctx.fillStyle = '#e3b23c'; ctx.fill();
+  ctx.fillStyle = '#1a1206';
+  ctx.fillText(tierText, W/2, 470);
+
+  const pitchX = 110, pitchY = 560, pitchW = W - 220, pitchH = 640;
+  const pg = ctx.createLinearGradient(0, pitchY, 0, pitchY + pitchH);
+  pg.addColorStop(0, '#1d6b3e'); pg.addColorStop(1, '#19602f');
+  roundRect(ctx, pitchX, pitchY, pitchW, pitchH, 18);
+  ctx.fillStyle = pg; ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 3;
+  ctx.strokeRect(pitchX + 10, pitchY + 10, pitchW - 20, pitchH - 20);
+
+  r.rows.forEach(row => {
+    const slot = row.slot;
+    const cx = pitchX + (slot.x / 100) * pitchW;
+    const cy = pitchY + (slot.y / 100) * pitchH;
+    const [shirt] = colorFor(row.pick.country);
+    roundRect(ctx, cx - 28, cy - 28, 56, 56, 12);
+    ctx.fillStyle = shirt; ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = '800 22px -apple-system, sans-serif';
+    ctx.fillText(initials(row.pick.player.n), cx, cy + 8);
+    ctx.font = '600 17px -apple-system, sans-serif';
+    ctx.fillText(row.pick.player.n.split(' ').pop(), cx, cy + 48);
+  });
+
+  ctx.fillStyle = '#a9c4b3';
+  ctx.font = '500 24px -apple-system, sans-serif';
+  ctx.fillText('build your own at 7-0-0.com', W/2, H - 50);
+
+  return canvas;
+}
+
 async function shareResult(){
   const text = shareText();
-  if (navigator.share) {
-    try { await navigator.share({ text }); return; } catch(e){}
-  }
   try {
-    await navigator.clipboard.writeText(text);
-    toast('Result copied to clipboard');
+    const canvas = buildShareCanvas();
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    if (!blob) throw new Error('canvas toBlob failed');
+    const file = new File([blob], '7-0-0-result.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ text, files: [file] });
+      return;
+    }
+    if (navigator.share) {
+      await navigator.share({ text });
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = '7-0-0-result.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    try { await navigator.clipboard.writeText(text); toast('Image downloaded + result copied'); }
+    catch(e){ toast('Image downloaded'); }
   } catch(e){
-    toast(text);
+    try { await navigator.clipboard.writeText(text); toast('Result copied to clipboard'); }
+    catch(e2){ toast(text); }
   }
 }
 
