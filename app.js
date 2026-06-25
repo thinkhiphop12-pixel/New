@@ -3,7 +3,11 @@
 /* ============================================================
    7-0-0 — World Cup squad builder
    Engine ported from 38-0-0 (club edition), adapted for:
-   - 11-round draft, player-chosen formation (4 slot families: GK/DF/MF/FW)
+   - 11-round draft, player-chosen formation. Each player/icon has a broad
+     family (GK/DF/MF/FW, from the data) plus an inferred specific position
+     (sp/sp2: GK, LB, RB, CB, LM, RM, CM, LW, RW, ST) derived from their
+     stat profile — versatile profiles near the central/wide boundary get
+     2 eligible positions, specialists get 1, matching real squad mixes.
    - Weighted Country|Year spin (squad_weights) instead of club+season
    - Icon take-or-skip offers (capped)
    - 7-game World Cup record (3 group + R16 + QF + SF + Final) as the
@@ -25,7 +29,7 @@ let ICON_PROB = 0.11;
 let MAX_ICON_HITS = 2;
 let OPP_BASELINE = 72;
 
-/* ---------------- Formations (4 generic families: GK/DF/MF/FW) ---------------- */
+/* ---------------- Formations (slot labels = specific positions: GK/LB/RB/CB/CM/RM/LM/ST/RW/LW) ---------------- */
 const FORMATIONS = {
   '4-3-3': { slots: [
     { id:'gk',  label:'GK',  fam:'GK', x:50, y:92 },
@@ -303,7 +307,7 @@ function buildPitch(){
 }
 
 function slotById(id){ return SLOTS.find(s => s.id === id); }
-function openSlotsFor(fam){ return SLOTS.filter(s => !state.picks[s.id] && s.fam === fam); }
+function openSlotsForPlayer(player){ return SLOTS.filter(s => !state.picks[s.id] && player.sp2.includes(s.label)); }
 function openSlots(){ return SLOTS.filter(s => !state.picks[s.id]); }
 
 function refreshPitch(){
@@ -331,7 +335,7 @@ function onSlotClick(slotId){
   if (!state.activeDraft) return;
   const slot = slotById(slotId);
   if (state.picks[slot.id]) return;
-  if (slot.fam !== state.activeDraft.player.p[0]) { toast(`Doesn't fit ${slot.label}`); return; }
+  if (!state.activeDraft.player.sp2.includes(slot.label)) { toast(`Doesn't fit ${slot.label}`); return; }
   confirmPick(slot.id, state.activeDraft.player, state.activeDraft.country, state.activeDraft.year);
 }
 
@@ -370,8 +374,8 @@ function weightedCombo(){
 }
 
 function eligibleIcons(){
-  const fams = new Set(openSlots().map(s => s.fam));
-  return DATA.icons.filter(ic => fams.has(ic.p[0]));
+  const openLabels = new Set(openSlots().map(s => s.label));
+  return DATA.icons.filter(ic => ic.sp2.some(label => openLabels.has(label)));
 }
 
 function spin(){
@@ -422,10 +426,9 @@ function openIconOffer(icon){
   state.pendingIcon = icon;
   $('spinPane').classList.add('hidden');
   $('iconOffer').classList.remove('hidden');
-  const fams = new Set(openSlotsFor(icon.p[0]).map(s => s.fam));
   const [shirt] = colorFor(icon.country);
   $('iconCardName').textContent = icon.n;
-  $('iconCardMeta').textContent = `${icon.country} · ${icon.p[0]}`;
+  $('iconCardMeta').textContent = `${icon.country} · ${icon.sp2.join('/')}`;
   $('iconCardJersey').style.background = shirt;
   $('iconCardJersey').textContent = initials(icon.n);
   $('iconCardOvr').textContent = icon.o;
@@ -435,7 +438,7 @@ function openIconOffer(icon){
 
 function takeIcon(){
   const icon = state.pendingIcon;
-  const slots = openSlotsFor(icon.p[0]);
+  const slots = openSlotsForPlayer(icon);
   if (slots.length === 0) { toast('No open slot for this icon'); return; }
   state.iconHitsThisGame++;
   $('iconOffer').classList.add('hidden');
@@ -473,7 +476,7 @@ function openDraft(country, year){
   updateInstruct();
   renderPlayerList('');
 
-  const anyPlayable = squad.some(p => openSlotsFor(p.p[0]).length > 0);
+  const anyPlayable = squad.some(p => openSlotsForPlayer(p).length > 0);
   if (!anyPlayable) {
     toast('No room for this squad — re-spinning');
     setTimeout(() => spin(), 500);
@@ -501,7 +504,7 @@ function renderPlayerList(filter){
   wrap.innerHTML = '';
   list.forEach(p => {
     const used = isUsedPlayer(p);
-    const fits = openSlotsFor(p.p[0]).length > 0;
+    const fits = openSlotsForPlayer(p).length > 0;
     const ineligible = used || !fits;
     const row = document.createElement('div');
     row.className = 'player-row' + (ineligible ? ' ineligible' : '');
@@ -513,7 +516,7 @@ function renderPlayerList(filter){
       <div class="p-jersey" style="background:${shirt}">${initials(p.n)}</div>
       <div class="p-info">
         <div class="p-name">${p.n}</div>
-        <div class="p-meta">${p.p[0]}${used ? ' · used' : ''}</div>
+        <div class="p-meta">${p.sp2.join('/')}${used ? ' · used' : ''}</div>
       </div>
       ${statRow}`;
     if (!ineligible) row.addEventListener('click', () => draftPick(p));
@@ -522,7 +525,7 @@ function renderPlayerList(filter){
 }
 
 function draftPick(player){
-  const slots = openSlotsFor(player.p[0]);
+  const slots = openSlotsForPlayer(player);
   if (slots.length === 0) return;
   if (slots.length === 1) {
     confirmPick(slots[0].id, player, player.country, player.year);
@@ -531,7 +534,7 @@ function draftPick(player){
     $('draftInstruct').textContent = 'Tap a highlighted slot to place this player';
     document.querySelectorAll(`.slot`).forEach(n => {
       const s = slotById(n.dataset.slotId);
-      if (!state.picks[s.id] && s.fam === player.p[0]) n.classList.add('armed');
+      if (!state.picks[s.id] && player.sp2.includes(s.label)) n.classList.add('armed');
     });
     toast('Tap a slot on the pitch to confirm');
   }
