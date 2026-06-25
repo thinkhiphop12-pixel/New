@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /footygames/
 
 Sitemap: https://thinkhiphop12-pixel.github.io/New/sitemap.xml
