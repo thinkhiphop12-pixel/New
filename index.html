@@ -8,7 +8,12 @@
 <meta property="og:title" content="7-0-0 — Build the Perfect World Cup XI">
 <meta property="og:description" content="Spin, draft, and build a World Cup squad chasing the perfect 7-0-0 run.">
 <meta property="og:type" content="website">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="assets/og-image.png">
+<link rel="icon" type="image/svg+xml" href="assets/logo-mark.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+<link rel="apple-touch-icon" href="assets/favicon-192.png">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -16,8 +21,11 @@
 
   <header class="topbar">
     <div class="brand">
-      <span class="brand-mark">7-0-0</span>
-      <span class="brand-sub">World Cup Squad Builder</span>
+      <img class="brand-logo" src="assets/logo-mark.svg" alt="7-0-0" width="32" height="32">
+      <div class="brand-text">
+        <span class="brand-mark">7-0-0</span>
+        <span class="brand-sub">World Cup Squad Builder</span>
+      </div>
     </div>
     <div class="round-pill" id="roundPill"></div>
     <button class="icon-btn" id="resetBtn" title="Start over">↺</button>
@@ -49,6 +57,10 @@
       </div>
 
       <button class="btn-primary" id="setupStart" disabled>Start drafting →</button>
+
+      <div class="ad-slot" id="adSlotSetup" data-ad-slot="">
+        <span class="ad-slot-label">Advertisement</span>
+      </div>
     </div>
   </section>
 
@@ -170,6 +182,10 @@
         </div>
         <div class="bd-players-label">Your XI</div>
         <div class="xi-list" id="xiList"></div>
+      </div>
+
+      <div class="ad-slot" id="adSlotResults" data-ad-slot="">
+        <span class="ad-slot-label">Advertisement</span>
       </div>
 
       <p class="attribution">Squad-list basis: Fjelstul World Cup Database (CC-BY-SA 4.0).</p>

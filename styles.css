@@ -31,7 +31,9 @@ input{ font-family:inherit; }
   background: linear-gradient(180deg, var(--bg-alt), var(--bg));
   border-bottom: 1px solid var(--line);
 }
-.brand{ display:flex; flex-direction:column; flex:1; }
+.brand{ display:flex; flex-direction:row; align-items:center; gap:9px; flex:1; }
+.brand-logo{ display:block; border-radius:50%; flex-shrink:0; }
+.brand-text{ display:flex; flex-direction:column; }
 .brand-mark{
   font-weight:800; font-size:22px; letter-spacing:1px; color:var(--gold);
   font-variant-numeric: tabular-nums;
@@ -219,6 +221,19 @@ input{ font-family:inherit; }
 .xi-list{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
 
 .attribution{ font-size:10px; color:var(--ink-dim); margin-top:24px; }
+
+/* ---------------- ad slots ---------------- */
+.ad-slot{
+  margin-top:20px; min-height:90px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--panel); border:1px dashed var(--line); border-radius:var(--radius);
+  position:relative; overflow:hidden;
+}
+.ad-slot-label{
+  font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--ink-dim);
+}
+.ad-slot.is-filled .ad-slot-label{ display:none; }
+.ad-slot ins.adsbygoogle{ width:100%; }
 
 /* ---------------- footer / misc ---------------- */
 .site-footer{ padding: 24px 18px; text-align:center; }

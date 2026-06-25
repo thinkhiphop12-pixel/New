@@ -214,18 +214,41 @@ function loadAdSense(){
   s.async = true;
   s.crossOrigin = 'anonymous';
   s.dataset.adsense = '1';
+  s.onload = fillAllAdSlots;
   document.head.appendChild(s);
+}
+
+/* Fills any visible .ad-slot with an AdSense unit, once consent + a real
+   client/slot ID exist. Call again whenever a screen holding an ad-slot
+   becomes visible (display:none slots are skipped — AdSense needs a
+   sized, visible container). Safe no-op until IDs are filled in above. */
+function fillAllAdSlots(){
+  if (!ADSENSE_CLIENT_ID || getConsent() !== 'all') return;
+  document.querySelectorAll('.ad-slot').forEach(slot => {
+    const adSlotId = slot.dataset.adSlot;
+    if (!adSlotId || slot.classList.contains('is-filled') || slot.offsetParent === null) return;
+    const ins = document.createElement('ins');
+    ins.className = 'adsbygoogle';
+    ins.style.display = 'block';
+    ins.dataset.adClient = ADSENSE_CLIENT_ID;
+    ins.dataset.adSlot = adSlotId;
+    ins.dataset.adFormat = 'auto';
+    ins.dataset.fullWidthResponsive = 'true';
+    slot.appendChild(ins);
+    slot.classList.add('is-filled');
+    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e){}
+  });
 }
 
 function applyConsent(choice){
   setConsent(choice);
   $('consentBanner').classList.add('hidden');
-  if (choice === 'all') { loadPostHog(); loadAdSense(); }
+  if (choice === 'all') { loadPostHog(); loadAdSense(); fillAllAdSlots(); }
 }
 
 function initConsent(){
   const existing = getConsent();
-  if (existing) { if (existing === 'all') { loadPostHog(); loadAdSense(); } return; }
+  if (existing) { if (existing === 'all') { loadPostHog(); loadAdSense(); fillAllAdSlots(); } return; }
   $('consentBanner').classList.remove('hidden');
 }
 
@@ -715,6 +738,7 @@ function showResults(){
 
   $('gameScreen').classList.add('hidden');
   $('resultsScreen').classList.remove('hidden');
+  fillAllAdSlots();
 
   $('recW').textContent = r.W;
   $('recD').textContent = r.D;
