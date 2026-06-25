@@ -280,7 +280,7 @@ function startGame(mode, formationKey){
     formation: formationKey,
     pendingIcon: null,
     spinning: false,
-    sortByRating: true,
+    sortByRating: false,
   };
   $('setupScreen').classList.add('hidden');
   $('resultsScreen').classList.add('hidden');
