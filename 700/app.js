@@ -177,86 +177,10 @@ function toast(msg){
   setTimeout(() => { t.classList.remove('show'); setTimeout(()=>t.remove(), 300); }, 2200);
 }
 
-/* ---------------- analytics (stub-safe) ---------------- */
-function track(event, props){
-  try { if (window.posthog) window.posthog.capture(event, props || {}); } catch(e){}
-}
-
-/* ---------------- consent / PostHog / AdSense scaffolding ----------------
-   Fill in real IDs below before going live; until then both stay no-ops. */
-const POSTHOG_KEY = ''; // e.g. 'phc_xxxxxxxx'
-const POSTHOG_HOST = 'https://us.i.posthog.com';
-const ADSENSE_CLIENT_ID = ''; // e.g. 'ca-pub-xxxxxxxxxxxxxxxx'
-
-const CONSENT_KEY = '700_consent'; // 'all' | 'essential'
-
-function getConsent(){
-  try { return localStorage.getItem(CONSENT_KEY); } catch(e){ return null; }
-}
-function setConsent(choice){
-  try { localStorage.setItem(CONSENT_KEY, choice); } catch(e){}
-}
-
-function loadPostHog(){
-  if (!POSTHOG_KEY || window.posthog) return;
-  const s = document.createElement('script');
-  s.src = 'https://us-assets.i.posthog.com/static/array.js';
-  s.onload = () => {
-    window.posthog && window.posthog.init(POSTHOG_KEY, { api_host: POSTHOG_HOST, capture_pageview: true });
-  };
-  document.head.appendChild(s);
-}
-
-function loadAdSense(){
-  if (!ADSENSE_CLIENT_ID || document.querySelector('script[data-adsense]')) return;
-  const s = document.createElement('script');
-  s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`;
-  s.async = true;
-  s.crossOrigin = 'anonymous';
-  s.dataset.adsense = '1';
-  s.onload = fillAllAdSlots;
-  document.head.appendChild(s);
-}
-
-/* Fills any visible .ad-slot with an AdSense unit, once consent + a real
-   client/slot ID exist. Call again whenever a screen holding an ad-slot
-   becomes visible (display:none slots are skipped — AdSense needs a
-   sized, visible container). Safe no-op until IDs are filled in above. */
-function fillAllAdSlots(){
-  if (!ADSENSE_CLIENT_ID || getConsent() !== 'all') return;
-  document.querySelectorAll('.ad-slot').forEach(slot => {
-    const adSlotId = slot.dataset.adSlot;
-    if (!adSlotId || slot.classList.contains('is-filled') || slot.offsetParent === null) return;
-    const ins = document.createElement('ins');
-    ins.className = 'adsbygoogle';
-    ins.style.display = 'block';
-    ins.dataset.adClient = ADSENSE_CLIENT_ID;
-    ins.dataset.adSlot = adSlotId;
-    ins.dataset.adFormat = 'auto';
-    ins.dataset.fullWidthResponsive = 'true';
-    slot.appendChild(ins);
-    slot.classList.add('is-filled');
-    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e){}
-  });
-}
-
-function applyConsent(choice){
-  setConsent(choice);
-  $('consentBanner').classList.add('hidden');
-  if (choice === 'all') { loadPostHog(); loadAdSense(); fillAllAdSlots(); }
-}
-
-function initConsent(){
-  const existing = getConsent();
-  if (existing) { if (existing === 'all') { loadPostHog(); loadAdSense(); fillAllAdSlots(); } return; }
-  $('consentBanner').classList.remove('hidden');
-}
-
-$('consentAcceptBtn').addEventListener('click', () => applyConsent('all'));
-$('consentEssentialBtn').addEventListener('click', () => applyConsent('essential'));
-$('cookieSettingsBtn').addEventListener('click', () => $('consentBanner').classList.remove('hidden'));
-
-initConsent();
+/* ---------------- analytics / consent / AdSense ----------------
+   Shared across all Ball Knowledge pages — see ../shared/consent.js for
+   track/getConsent/fillAllAdSlots/initConsent etc. That script wires the
+   consent banner buttons and calls initConsent() itself on load. */
 
 /* ---------------- state ---------------- */
 let state = null;
@@ -559,10 +483,30 @@ function skipIcon(){
 }
 
 /* ---------------- draft ---------------- */
+const DRAFT_OFFER_SIZE = 7;
+function shuffled(arr){
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function randomOffer(squad){
+  // Offer a random slice of the squad rather than the whole roster — stops
+  // every spin turning into "cherry-pick the squad's single best player."
+  // Still guarantee at least a couple of slot-eligible names so the offer
+  // is never a dead end.
+  const eligible = squad.filter(p => openSlotsForPlayer(p).length > 0);
+  const guaranteed = shuffled(eligible).slice(0, Math.min(2, eligible.length));
+  const pool = shuffled([...squad].filter(p => !guaranteed.includes(p)));
+  return shuffled([...guaranteed, ...pool.slice(0, Math.max(0, DRAFT_OFFER_SIZE - guaranteed.length))]);
+}
+
 function openDraft(country, year){
   const key = `${country}|${year}`;
   const squad = SQUADS[key] || [];
-  state.activeSquad = squad;
+  state.activeSquad = randomOffer(squad);
   $('spinPane').classList.add('hidden');
   $('draftPane').classList.remove('hidden');
   $('draftTeamName').innerHTML = `${flagEmoji(country)} ${country}`;
@@ -571,7 +515,7 @@ function openDraft(country, year){
   updateInstruct();
   renderPlayerList('');
 
-  const anyPlayable = squad.some(p => openSlotsForPlayer(p).length > 0);
+  const anyPlayable = state.activeSquad.some(p => openSlotsForPlayer(p).length > 0);
   if (!anyPlayable) {
     toast('No room for this squad — re-spinning');
     setTimeout(() => spin(), 500);
