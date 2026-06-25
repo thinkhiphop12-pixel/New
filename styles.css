@@ -223,8 +223,20 @@ input{ font-family:inherit; }
 /* ---------------- footer / misc ---------------- */
 .site-footer{ padding: 24px 18px; text-align:center; }
 .footer-disclaimer{ font-size:11px; color:var(--ink-dim); max-width:520px; margin:0 auto; }
+.cookie-settings-link{ margin: 8px auto 0; }
 
 .loadError{ padding:40px; text-align:center; color:var(--red); }
+
+/* ---------------- consent banner ---------------- */
+.consent-banner{
+  position:fixed; left:0; right:0; bottom:0; z-index:60;
+  background:var(--panel-2); border-top:1px solid var(--line);
+  padding:16px 18px; box-shadow: 0 -4px 16px rgba(0,0,0,.3);
+  display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:14px;
+}
+.consent-text{ font-size:12px; color:var(--ink-dim); max-width:520px; margin:0; flex:1 1 260px; }
+.consent-actions{ display:flex; gap:10px; flex:0 0 auto; }
+.consent-actions .btn-ghost, .consent-actions .btn-primary{ padding:10px 18px; font-size:13px; }
 
 .toast{
   position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);

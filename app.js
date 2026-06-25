@@ -182,6 +182,59 @@ function track(event, props){
   try { if (window.posthog) window.posthog.capture(event, props || {}); } catch(e){}
 }
 
+/* ---------------- consent / PostHog / AdSense scaffolding ----------------
+   Fill in real IDs below before going live; until then both stay no-ops. */
+const POSTHOG_KEY = ''; // e.g. 'phc_xxxxxxxx'
+const POSTHOG_HOST = 'https://us.i.posthog.com';
+const ADSENSE_CLIENT_ID = ''; // e.g. 'ca-pub-xxxxxxxxxxxxxxxx'
+
+const CONSENT_KEY = '700_consent'; // 'all' | 'essential'
+
+function getConsent(){
+  try { return localStorage.getItem(CONSENT_KEY); } catch(e){ return null; }
+}
+function setConsent(choice){
+  try { localStorage.setItem(CONSENT_KEY, choice); } catch(e){}
+}
+
+function loadPostHog(){
+  if (!POSTHOG_KEY || window.posthog) return;
+  const s = document.createElement('script');
+  s.src = 'https://us-assets.i.posthog.com/static/array.js';
+  s.onload = () => {
+    window.posthog && window.posthog.init(POSTHOG_KEY, { api_host: POSTHOG_HOST, capture_pageview: true });
+  };
+  document.head.appendChild(s);
+}
+
+function loadAdSense(){
+  if (!ADSENSE_CLIENT_ID || document.querySelector('script[data-adsense]')) return;
+  const s = document.createElement('script');
+  s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`;
+  s.async = true;
+  s.crossOrigin = 'anonymous';
+  s.dataset.adsense = '1';
+  document.head.appendChild(s);
+}
+
+function applyConsent(choice){
+  setConsent(choice);
+  $('consentBanner').classList.add('hidden');
+  if (choice === 'all') { loadPostHog(); loadAdSense(); }
+}
+
+function initConsent(){
+  const existing = getConsent();
+  if (existing) { if (existing === 'all') { loadPostHog(); loadAdSense(); } return; }
+  $('consentBanner').classList.remove('hidden');
+}
+
+$('consentAcceptBtn').addEventListener('click', () => applyConsent('all'));
+$('consentEssentialBtn').addEventListener('click', () => applyConsent('essential'));
+$('cookieSettingsBtn').addEventListener('click', () => $('consentBanner').classList.remove('hidden'));
+
+initConsent();
+
 /* ---------------- state ---------------- */
 let state = null;
 let setupMode = null;
