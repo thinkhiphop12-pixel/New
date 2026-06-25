@@ -2,12 +2,104 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ball Knowledge — Football Games</title>
-<meta http-equiv="refresh" content="0; url=700/">
-<link rel="canonical" href="700/">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Ball Knowledge — Free Football Knowledge Games</title>
+<meta name="description" content="Ball Knowledge is a free hub of football knowledge games — build a World Cup XI in 7-0-0, or test your squad recall in Lineup.">
+<meta property="og:title" content="Ball Knowledge — Free Football Knowledge Games">
+<meta property="og:description" content="Build a World Cup XI in 7-0-0, or test your squad recall in Lineup. Free, no account needed.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<p>Redirecting to <a href="700/">7-0-0</a>… also check out <a href="lineup/">Lineup</a>.</p>
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">BALL KNOWLEDGE</span>
+      <span class="brand-sub">FOOTBALL KNOWLEDGE GAMES</span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Pick a game. Test your football knowledge.</h1>
+    <p>Free, no sign-up, no app — just pick a game below and start playing.</p>
+  </section>
+
+  <div class="game-grid">
+    <a class="game-card" href="700/">
+      <span class="gc-title">7-0-0</span>
+      <span class="gc-desc">Spin for players across 7 World Cups, draft your XI, and chase a perfect 7-0-0 run.</span>
+      <span class="gc-cta">Play 7-0-0 →</span>
+    </a>
+    <a class="game-card" href="lineup/">
+      <span class="gc-title">Lineup</span>
+      <span class="gc-desc">Recall real starting XIs from iconic matches and World Cups, position by position.</span>
+      <span class="gc-cta">Play Lineup →</span>
+    </a>
+  </div>
+
+  <div class="ad-slot" id="adSlotHome" data-ad-slot="">
+    <span class="ad-slot-label">Advertisement</span>
+  </div>
+
+  <!-- About / FAQ — real page content (SEO + ad-network review) -->
+  <section class="about" id="about">
+    <div class="about-inner">
+      <h2>About Ball Knowledge</h2>
+      <p><strong>Ball Knowledge</strong> is a small hub of free, browser-based football knowledge games.
+        No accounts, no downloads — pick a game and start playing straight away.</p>
+
+      <h3>Our games</h3>
+      <ul>
+        <li><strong><a href="700/">7-0-0</a></strong> — spin for real World Cup squads from 2002 onward,
+          draft a player into your XI each round, and find out whether your dream team could go a whole
+          tournament unbeaten: 7 games, 7 wins, zero draws, zero losses.</li>
+        <li><strong><a href="lineup/">Lineup</a></strong> — given a real match or tournament, place every
+          starting player in their correct position from memory before the clock runs out.</li>
+      </ul>
+
+      <h3>Frequently asked questions</h3>
+      <div class="faq">
+        <div class="faq-q">Is Ball Knowledge free to play?</div>
+        <div class="faq-a">Yes — every game here is completely free and runs in your browser. There's nothing to download.</div>
+        <div class="faq-q">Do I need to make an account?</div>
+        <div class="faq-a">No. No sign-up, no app — just open a game and play.</div>
+        <div class="faq-q">Where does the player and squad data come from?</div>
+        <div class="faq-a">Real World Cup squads and results, based on public football datasets including the Fjelstul World Cup Database. Ratings used in-game are stylized approximations for gameplay, not official figures.</div>
+        <div class="faq-q">Is this an official FIFA or football federation product?</div>
+        <div class="faq-a">No — Ball Knowledge is an independent, unofficial fan project, not affiliated with FIFA, the Premier League, or any club or federation.</div>
+      </div>
+    </div>
+  </section>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type":"Question","name":"Is Ball Knowledge free to play?","acceptedAnswer":{"@type":"Answer","text":"Yes — every game here is completely free and runs in your browser. There's nothing to download."}},
+      {"@type":"Question","name":"Do I need to make an account?","acceptedAnswer":{"@type":"Answer","text":"No. No sign-up, no app — just open a game and play."}},
+      {"@type":"Question","name":"Where does the player and squad data come from?","acceptedAnswer":{"@type":"Answer","text":"Real World Cup squads and results, based on public football datasets including the Fjelstul World Cup Database. Ratings used in-game are stylized approximations for gameplay, not official figures."}},
+      {"@type":"Question","name":"Is this an official FIFA or football federation product?","acceptedAnswer":{"@type":"Answer","text":"No — Ball Knowledge is an independent, unofficial fan project, not affiliated with FIFA, the Premier League, or any club or federation."}}
+    ]
+  }
+  </script>
+
+  <footer class="site-footer">
+    <a href="700/">7-0-0</a> · <a href="lineup/">Lineup</a>
+    <p class="footer-disclaimer">Ball Knowledge is an unofficial fan-made project, not affiliated with FIFA, the Premier League, or any club or federation. For enquiries, contact <a href="mailto:thinkhiphop12@gmail.com">thinkhiphop12@gmail.com</a>.</p>
+    <button class="btn-link cookie-settings-link" id="cookieSettingsBtn">Cookie settings</button>
+  </footer>
+
+  <div class="consent-banner hidden" id="consentBanner">
+    <p class="consent-text">We use cookies for basic analytics and to show ads. Choose what you're OK with — you can change this anytime in Cookie settings.</p>
+    <div class="consent-actions">
+      <button class="btn-ghost" id="consentEssentialBtn">Essential only</button>
+      <button class="btn-primary" id="consentAcceptBtn">Accept all</button>
+    </div>
+  </div>
+
+</div>
+<script src="shared/consent.js"></script>
 </body>
 </html>
