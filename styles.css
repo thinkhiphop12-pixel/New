@@ -64,6 +64,14 @@ button{ font-family:inherit; cursor:pointer; border:none; }
 .ad-slot ins.adsbygoogle{ width:100%; }
 .ad-slot-leaderboard{ min-height:60px; margin:0 0 18px; }
 
+.ad-rail{
+  position:fixed; top:140px; width:160px; min-height:580px;
+  flex-direction:column;
+}
+.ad-rail-left{ left:calc(50% - 550px - 180px); }
+.ad-rail-right{ right:calc(50% - 550px - 180px); }
+@media (max-width:1460px){ .ad-rail{ display:none; } }
+
 /* ---------------- about / FAQ ---------------- */
 .about{ max-width:760px; margin:0 auto; padding:8px 0 20px; }
 .about-inner{
