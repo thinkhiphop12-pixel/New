@@ -33,17 +33,24 @@ button{ font-family:inherit; cursor:pointer; border:none; }
 .hero p{ color:var(--ink-dim); font-size:15px; max-width:520px; margin:0 auto; line-height:1.55; }
 
 .game-grid{
-  display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:10px 0 28px;
+  display:grid; grid-template-columns:1fr 1fr; gap:18px; margin:10px 0 28px;
 }
 @media (max-width:620px){ .game-grid{ grid-template-columns:1fr; } }
 .game-card{
-  display:block; text-decoration:none; color:var(--ink);
+  display:flex; flex-direction:column; text-decoration:none; color:var(--ink);
   background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
-  padding:24px 22px; transition:border-color .15s;
+  overflow:hidden; transition:border-color .15s, transform .15s;
 }
-.game-card:hover{ border-color:var(--gold); }
-.gc-title{ display:block; font-size:19px; font-weight:800; color:var(--gold); margin-bottom:6px; }
-.gc-desc{ display:block; font-size:13.5px; color:var(--ink-dim); line-height:1.5; }
+.game-card:hover{ border-color:var(--gold); transform:translateY(-2px); }
+.gc-thumb{
+  display:flex; align-items:center; justify-content:center;
+  height:120px; font-size:34px; font-weight:900; letter-spacing:1px; color:#1a1206;
+}
+.gc-thumb.gc-thumb-700{ background:linear-gradient(135deg, var(--gold), #c98a1f); }
+.gc-thumb.gc-thumb-lineup{ background:linear-gradient(135deg, #2e8b57, #11512f); color:#eef6ef; }
+.gc-body{ padding:18px 20px 22px; display:flex; flex-direction:column; flex:1; }
+.gc-title{ display:block; font-size:18px; font-weight:900; text-transform:uppercase; letter-spacing:.5px; color:var(--gold); margin-bottom:6px; }
+.gc-desc{ display:block; font-size:13.5px; color:var(--ink-dim); line-height:1.5; flex:1; }
 .gc-cta{ display:inline-block; margin-top:14px; font-size:13px; font-weight:700; color:var(--gold-soft); }
 
 .ad-slot{
@@ -55,6 +62,7 @@ button{ font-family:inherit; cursor:pointer; border:none; }
 .ad-slot-label{ font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--ink-dim); }
 .ad-slot.is-filled .ad-slot-label{ display:none; }
 .ad-slot ins.adsbygoogle{ width:100%; }
+.ad-slot-leaderboard{ min-height:60px; margin:0 0 18px; }
 
 /* ---------------- about / FAQ ---------------- */
 .about{ max-width:760px; margin:0 auto; padding:8px 0 20px; }
