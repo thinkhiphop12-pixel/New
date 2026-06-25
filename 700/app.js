@@ -309,6 +309,7 @@ function startGame(mode, formationKey){
   $('draftPane').classList.add('hidden');
   $('spinPane').classList.remove('hidden');
   $('iconOffer').classList.add('hidden');
+  fillAllAdSlots();
 }
 
 function countPicks(){ return Object.keys(state.picks).length; }
