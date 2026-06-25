@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a1f2e">
+<meta name="description" content="BRACKET — simulate the FIFA World Cup 2026. A real Dixon-Coles statistical match engine fitted on international results: run the full 48-team tournament or Monte Carlo thousands of runs for win probabilities.">
+<meta property="og:title" content="BRACKET — World Cup 2026 Simulator">
+<meta property="og:description" content="Simulate the full 48-team World Cup with a real statistical match engine. Single-run bracket or Monte Carlo win probabilities.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BRACKET — World Cup 2026 Simulator">
+<meta name="twitter:description" content="Simulate the full 48-team World Cup with a real statistical match engine.">
+<title>BRACKET — World Cup 2026 Simulator</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg-dark: #07131c;
+  --bg-panel: #0e1f2d;
+  --bg-panel-2: #122838;
+  --line: #1c3a4d;
+  --accent: #2fb7c4;
+  --accent-soft: #9fe3ea;
+  --gold: #e3b23c;
+  --text-primary: #eef6f8;
+  --text-secondary: #93acb8;
+  --danger: #ff6b6b;
+  --radius: 14px;
+}
+body {
+  min-height: 100vh; background: var(--bg-dark); color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+a { color: var(--accent); }
+button { font-family: inherit; cursor: pointer; border: none; }
+.hidden { display: none !important; }
+
+.game-nav {
+  display: flex; gap: 16px; padding: 14px 18px;
+  font-size: 13px; font-weight: 700;
+}
+.game-nav a { text-decoration: none; color: var(--text-secondary); }
+.game-nav a.active { color: var(--accent); }
+
+.game-container { max-width: 760px; margin: 0 auto; padding: 0 16px 40px; }
+
+.bk-hero { text-align: center; padding: 10px 0 18px; }
+.bk-hero h1 {
+  font-size: clamp(30px, 7vw, 46px); font-weight: 900; letter-spacing: -1px;
+  color: var(--accent-soft); text-transform: uppercase; margin-bottom: 6px;
+}
+.bk-hero p { color: var(--text-secondary); font-size: 14px; max-width: 480px; margin: 0 auto; line-height: 1.5; }
+.bk-hero .bk-badge {
+  display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--gold); border: 1px solid var(--gold);
+  border-radius: 999px; padding: 4px 12px; margin-bottom: 10px;
+}
+
+.ad-placeholder.ad-slot {
+  margin: 16px 0; min-height: 70px; display: flex; align-items: center; justify-content: center;
+  background: var(--bg-panel); border: 1px dashed var(--line); border-radius: var(--radius);
+}
+.ad-placeholder small { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-secondary); }
+
+/* ---- Setup view ---- */
+.setup-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; margin: 14px 0 22px; }
+.btn { border-radius: 999px; padding: 13px 22px; font-size: 14px; font-weight: 800; }
+.btn-primary { background: linear-gradient(180deg, var(--accent-soft), var(--accent)); color: #052227; }
+.btn-ghost { background: var(--bg-panel); border: 1px solid var(--line); color: var(--text-primary); }
+.mc-select {
+  background: var(--bg-panel); border: 1px solid var(--line); color: var(--text-primary);
+  border-radius: 999px; padding: 12px 16px; font-size: 14px; font-weight: 700;
+}
+
+.group-block { margin-bottom: 16px; }
+.group-title { font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--accent-soft); margin-bottom: 8px; }
+.group-team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.team-mini-card {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 8px 10px;
+}
+.tmc-icon { font-size: 18px; line-height: 1; }
+.tmc-name { font-size: 12.5px; font-weight: 700; flex: 1; }
+.tmc-rank { font-size: 10.5px; color: var(--text-secondary); font-weight: 700; }
+
+/* ---- Result views (shared) ---- */
+.result-section { margin: 22px 0; }
+.result-section h3 { font-size: 14px; font-weight: 800; color: var(--accent-soft); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+
+.champion-banner {
+  background: linear-gradient(135deg, #133544, #0c2330); border: 1px solid var(--accent);
+  border-radius: 18px; padding: 26px 18px; text-align: center; margin: 14px 0 6px;
+}
+.cb-label { font-size: 11px; letter-spacing: 2px; color: var(--gold); font-weight: 800; }
+.cb-team { font-size: 28px; font-weight: 900; margin: 6px 0; }
+.cb-runnerup { font-size: 13px; color: var(--text-secondary); }
+
+.group-table-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 600px) { .group-table-grid { grid-template-columns: 1fr; } }
+.group-table-box { background: var(--bg-panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.gtb-title { font-size: 11px; font-weight: 800; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; }
+.gtb-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+.gtb-table th { text-align: left; color: var(--text-secondary); font-weight: 700; padding: 3px 4px; }
+.gtb-table td { padding: 4px 4px; }
+.gtb-table tr.qualified td { color: var(--text-primary); font-weight: 700; }
+.gtb-table tr:not(.qualified) td { color: var(--text-secondary); }
+
+.ko-match-list { display: flex; flex-direction: column; gap: 6px; }
+.ko-match-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 14px; font-size: 13px;
+}
+.ko-team { flex: 1; color: var(--text-secondary); }
+.ko-team.ko-winner { color: var(--text-primary); font-weight: 800; }
+.ko-team:last-child { text-align: right; }
+.ko-score { font-weight: 900; font-size: 14px; color: var(--accent-soft); white-space: nowrap; }
+.ko-score .tc-sub { font-size: 10px; color: var(--text-secondary); font-weight: 600; display: block; }
+.ko-big { padding: 16px; border-color: var(--gold); }
+.ko-big .ko-score { font-size: 18px; }
+.ko-scorers { flex-basis: 100%; font-size: 11px; color: var(--text-secondary); margin-top: 4px; text-align: center; }
+
+.mc-note { background: var(--bg-panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 13px; margin: 14px 0; color: var(--text-secondary); }
+.mc-note strong { color: var(--text-primary); }
+.mc-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
+.mc-table th { text-align: right; color: var(--text-secondary); font-weight: 700; padding: 6px 6px; border-bottom: 1px solid var(--line); }
+.mc-table th:nth-child(2) { text-align: left; }
+.mc-table td { text-align: right; padding: 7px 6px; border-bottom: 1px solid var(--line); }
+.mc-table td.mc-team { text-align: left; font-weight: 700; }
+.mc-table td.mc-win { color: var(--accent-soft); font-weight: 800; }
+.mc-table tr.mc-top td { background: rgba(47,183,196,0.07); }
+
+.back-row { display: flex; justify-content: center; gap: 10px; margin: 22px 0 6px; }
+
+.site-footer { padding: 20px 0; text-align: center; }
+.site-footer > a { color: var(--accent); text-decoration: none; font-weight: 600; font-size: 13px; }
+.site-footer > a:hover { text-decoration: underline; }
+.footer-disclaimer { font-size: 11px; color: var(--text-secondary); max-width: 520px; margin: 8px auto 0; }
+.footer-disclaimer a { color: var(--text-secondary); text-decoration: underline; }
+.btn-link { background: none; color: var(--accent-soft); font-size: 13px; text-decoration: underline; margin: 8px auto 0; display: block; }
+
+.consent-banner {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+  background: var(--bg-panel-2); border-top: 1px solid var(--line);
+  padding: 16px 18px; box-shadow: 0 -4px 16px rgba(0,0,0,.3);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px;
+}
+.consent-text { font-size: 12px; color: var(--text-secondary); max-width: 520px; margin: 0; flex: 1 1 260px; }
+.consent-actions { display: flex; gap: 10px; flex: 0 0 auto; }
+.consent-actions .btn-ghost, .consent-actions .btn-primary { padding: 10px 18px; font-size: 13px; }
+
+.confetti-container { position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
+.confetti { position: absolute; top: -10px; width: 8px; height: 8px; animation: confetti-fall linear forwards; }
+@keyframes confetti-fall {
+  to { transform: translateY(110vh) rotate(360deg); opacity: .3; }
+}
+</style>
+</head>
+<body>
+
+<nav class="game-nav" role="navigation" aria-label="Game navigation">
+  <a href="../">&#8592; Ball Knowledge</a>
+  <a href="index.html" class="active">&#127942; Bracket</a>
+</nav>
+
+<div class="game-container">
+
+  <div class="bk-hero">
+    <span class="bk-badge">Dixon-Coles match engine</span>
+    <h1>Bracket</h1>
+    <p>Simulate the FIFA World Cup 2026 with a real statistical model — 48 teams, 12 groups, a full knockout bracket. Run it once for a single tournament, or thousands of times for win probabilities.</p>
+  </div>
+
+  <div class="ad-placeholder ad-slot" id="ad-banner-top" data-ad-slot="">
+    <small>Advertisement</small>
+  </div>
+
+  <!-- Setup view -->
+  <div id="setupView">
+    <div class="setup-actions">
+      <button class="btn btn-primary" id="btnSimulateOnce">Simulate tournament</button>
+      <select class="mc-select" id="mcCount">
+        <option value="100">100 runs</option>
+        <option value="500">500 runs</option>
+        <option value="1000" selected>1,000 runs</option>
+        <option value="5000">5,000 runs</option>
+      </select>
+      <button class="btn btn-ghost" id="btnRunMc">Run Monte Carlo</button>
+    </div>
+    <div id="setupGroups"></div>
+  </div>
+
+  <!-- Single-run result view -->
+  <div id="singleView" class="hidden">
+    <div id="singleResult"></div>
+    <div class="back-row">
+      <button class="btn btn-primary" id="btnSimulateAgain">Simulate again</button>
+      <button class="btn btn-ghost" id="btnBackFromSingle">Back to setup</button>
+    </div>
+  </div>
+
+  <!-- Monte Carlo result view -->
+  <div id="mcView" class="hidden">
+    <div id="mcResult"></div>
+    <div class="back-row">
+      <button class="btn btn-ghost" id="btnBackFromMc">Back to setup</button>
+    </div>
+  </div>
+
+  <div class="ad-placeholder ad-slot" id="ad-banner-bottom" data-ad-slot="">
+    <small>Advertisement</small>
+  </div>
+
+  <footer class="site-footer">
+    <a href="../">Home</a> · <a href="../700/">7-0-0</a> · <a href="../lineup/">Lineup</a> · <a href="../scout/">Scout</a> · <a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a>
+    <p class="footer-disclaimer">BRACKET is an unofficial fan-made simulator built on a statistical model, not an official FIFA forecast or affiliated with FIFA or any federation. For enquiries, contact <a href="mailto:thinkhiphop12@gmail.com">thinkhiphop12@gmail.com</a>.</p>
+    <button class="btn-link cookie-settings-link" id="cookieSettingsBtn">Cookie settings</button>
+  </footer>
+</div>
+
+<div class="consent-banner hidden" id="consentBanner">
+  <p class="consent-text">We use cookies for basic analytics and to show ads. Choose what you're OK with — you can change this anytime in Cookie settings.</p>
+  <div class="consent-actions">
+    <button class="btn btn-ghost" id="consentEssentialBtn">Essential only</button>
+    <button class="btn btn-primary" id="consentAcceptBtn">Accept all</button>
+  </div>
+</div>
+
+<div class="confetti-container" id="confetti"></div>
+
+<script src="app.js"></script>
+<script src="../shared/consent.js"></script>
+</body>
+</html>
