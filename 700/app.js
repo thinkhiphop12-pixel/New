@@ -163,7 +163,36 @@ function flagEmoji(country){
 }
 function strHash(s){ let h=0; for (let i=0;i<s.length;i++){ h=(h*31 + s.charCodeAt(i))|0; } return Math.abs(h); }
 const PALETTE = ['#1b5e3a','#0b3d91','#b22222','#d4a017','#2e2e6e','#7a1f3d','#1c6e5c','#8c5a1f'];
+// Each nation's real home-kit shirt color, [background, text], so the jersey badge on the
+// pitch/draft list matches the actual kit rather than an arbitrary hash-picked color.
+const KIT_COLORS = {
+  Algeria:['#006233','#fff'], Argentina:['#6cace4','#142a52'], Australia:['#efcb00','#1a1a1a'],
+  Austria:['#ed2939','#fff'], Belgium:['#da121a','#fff'], Bosnia:['#0f3d7c','#fcdd09'],
+  'Bosnia and Herzegovina':['#0f3d7c','#fcdd09'], Brazil:['#ffcc29','#0a5c36'], Bulgaria:['#f5f5f5','#1a1a1a'],
+  Cameroon:['#00853f','#fcd116'], Canada:['#ff0000','#fff'], 'Cape Verde':['#0033a0','#fff'],
+  Chile:['#d52b1e','#fff'], Colombia:['#fcd116','#003893'], 'Costa Rica':['#ce1126','#fff'],
+  Croatia:['#ff0000','#fff'], Curacao:['#00247d','#fff'], 'Czech Republic':['#d7141a','#fff'],
+  "Côte d'Ivoire":['#ff8200','#fff'], 'DR Congo':['#00a3e0','#ffd100'], Denmark:['#c8102e','#fff'],
+  Ecuador:['#ffd100','#002868'], Egypt:['#ce1126','#fff'], England:['#ffffff','#1b1b3a'],
+  Finland:['#ffffff','#002f6c'], France:['#0055a4','#fff'], Germany:['#ffffff','#000000'],
+  Ghana:['#ffffff','#000000'], Greece:['#0d5eaf','#fff'], Haiti:['#00209f','#fff'],
+  Honduras:['#0073cf','#fff'], Iceland:['#02529c','#fff'], Iran:['#ffffff','#239f40'],
+  Iraq:['#ffffff','#ce1126'], Italy:['#0066cc','#fff'], 'Ivory Coast':['#ff8200','#fff'],
+  Japan:['#0033a0','#fff'], Jordan:['#ffffff','#000000'], Mexico:['#006847','#fff'],
+  Morocco:['#c1272d','#006233'], Netherlands:['#ff6f00','#142a52'], 'New Zealand':['#ffffff','#000000'],
+  Nigeria:['#008751','#fff'], 'Northern Ireland':['#006428','#fff'], Norway:['#ba0c2f','#fff'],
+  Panama:['#d21034','#fff'], Paraguay:['#da121a','#fff'], Peru:['#ffffff','#d91023'],
+  Poland:['#ffffff','#dc143c'], Portugal:['#cc0000','#fff'], Qatar:['#8a1538','#fff'],
+  'Republic of Ireland':['#169b62','#fff'], Romania:['#fcd116','#002b7f'], Russia:['#da291c','#fff'],
+  'Saudi Arabia':['#ffffff','#006c35'], Scotland:['#0065bd','#fff'], Senegal:['#ffffff','#00853f'],
+  Serbia:['#c6363c','#fff'], Slovakia:['#0b4ea2','#fff'], 'South Africa':['#ffb81c','#007a4d'],
+  'South Korea':['#c60c30','#fff'], Spain:['#aa151b','#f1bf00'], Sweden:['#ffcd00','#006aa7'],
+  Switzerland:['#da291c','#fff'], Tunisia:['#e70013','#fff'], Turkey:['#e30a17','#fff'],
+  USA:['#ffffff','#002868'], Ukraine:['#ffd500','#005bbb'], Uruguay:['#75aadb','#0038a8'],
+  Uzbekistan:['#0099cc','#fff'], Wales:['#d2122e','#fff'],
+};
 function colorFor(country){
+  if (KIT_COLORS[country]) return KIT_COLORS[country];
   const h = strHash(country);
   return [PALETTE[h % PALETTE.length], '#f4efe0'];
 }
