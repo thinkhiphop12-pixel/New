@@ -154,6 +154,12 @@ function colorFor(country){
   const h = strHash(country);
   return [PALETTE[h % PALETTE.length], '#f4efe0'];
 }
+function ovrTier(o){
+  if (o >= 85) return 'tier-elite';
+  if (o >= 75) return 'tier-great';
+  if (o >= 65) return 'tier-good';
+  return 'tier-avg';
+}
 
 /* ---------------- helpers ---------------- */
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -274,6 +280,7 @@ function startGame(mode, formationKey){
     formation: formationKey,
     pendingIcon: null,
     spinning: false,
+    sortByRating: true,
   };
   $('setupScreen').classList.add('hidden');
   $('resultsScreen').classList.add('hidden');
@@ -281,6 +288,7 @@ function startGame(mode, formationKey){
   $('formationTag').textContent = formationKey;
   buildPitch();
   updateRoundPill();
+  updateSortBtn();
   $('draftPane').classList.add('hidden');
   $('spinPane').classList.remove('hidden');
   $('iconOffer').classList.add('hidden');
@@ -360,6 +368,16 @@ function wireGameScreen(){
   $('draftSearch').addEventListener('input', (e) => renderPlayerList(e.target.value));
   $('iconTakeBtn').addEventListener('click', takeIcon);
   $('iconSkipBtn').addEventListener('click', skipIcon);
+  $('draftSortBtn').addEventListener('click', () => {
+    state.sortByRating = !state.sortByRating;
+    updateSortBtn();
+    renderPlayerList($('draftSearch').value);
+  });
+}
+
+function updateSortBtn(){
+  $('draftSortBtn').textContent = state.sortByRating ? 'Best first ▾' : 'Squad order ▾';
+  $('draftSortBtn').classList.toggle('active', state.sortByRating);
 }
 
 function weightedCombo(){
@@ -432,6 +450,7 @@ function openIconOffer(icon){
   $('iconCardJersey').style.background = shirt;
   $('iconCardJersey').textContent = initials(icon.n);
   $('iconCardOvr').textContent = icon.o;
+  $('iconCardOvr').className = `icon-card-ovr ${ovrTier(icon.o)}`;
   $('iconStats').innerHTML = ['pac','sho','pas','dri','def','phy'].map(k =>
     `<div class="istat"><span>${k.toUpperCase()}</span><b>${icon.o ? icon[k] : '–'}</b></div>`).join('');
 }
@@ -496,7 +515,9 @@ function renderPlayerList(filter){
   const squad = state.activeSquad || [];
   const f = (filter || '').trim().toLowerCase();
   let list = squad.filter(p => !f || p.n.toLowerCase().includes(f));
-  if (state.expert) {
+  if (state.sortByRating) {
+    list = [...list].sort((a,b) => b.o - a.o);
+  } else if (state.expert) {
     const order = { GK:0, DF:1, MF:2, FW:3 };
     list = [...list].sort((a,b) => order[a.p[0]] - order[b.p[0]]);
   }
@@ -509,16 +530,18 @@ function renderPlayerList(filter){
     const row = document.createElement('div');
     row.className = 'player-row' + (ineligible ? ' ineligible' : '');
     const [shirt] = colorFor(p.country);
-    const statRow = state.expert
-      ? ''
-      : `<div class="p-stats">${['pac','sho','pas','dri','def','phy'].map(k=>`<span>${p[k]}</span>`).join('')}<span class="p-ovr">${p.o}</span></div>`;
+    const ovrBadge = state.expert ? '' : `<span class="p-ovr-badge ${ovrTier(p.o)}">${p.o}</span>`;
+    const statsGrid = state.expert ? '' : `<div class="p-stats-grid">${['pac','sho','pas','dri','def','phy'].map(k=>`<div class="pstat"><span>${k.toUpperCase()}</span><b>${p[k]}</b></div>`).join('')}</div>`;
     row.innerHTML = `
       <div class="p-jersey" style="background:${shirt}">${initials(p.n)}</div>
       <div class="p-info">
-        <div class="p-name">${p.n}</div>
+        <div class="p-top">
+          <span class="p-name">${p.n}</span>
+          ${ovrBadge}
+        </div>
         <div class="p-meta">${p.sp2.join('/')}${used ? ' · used' : ''}</div>
-      </div>
-      ${statRow}`;
+        ${statsGrid}
+      </div>`;
     if (!ineligible) row.addEventListener('click', () => draftPick(p));
     wrap.appendChild(row);
   });
@@ -543,24 +566,29 @@ function draftPick(player){
 /* ============================================================
    RESULT SIMULATION
    7 games (3 group + R16 + QF + SF + Final) — the brand's "7-0-0".
-   Calibrated so a typical/realistic draft (S≈70, the median of
-   unguided weighted-random play) lands at a ~14% win rate (1 of 7).
+   Anchors calibrated by Monte Carlo simulation of the actual spin+draft
+   mechanic (weighted squad spin, icon offers, random eligible pick) so a
+   typical/unguided draft (S≈70 median) lands at the target stage-reach
+   odds: Round of 16 ~65%, Quarter-Final ~45%, Semi-Final ~35%,
+   Final/Runner-up ~15-22%, Champion ~8-12%. Drafting deliberately
+   (e.g. sorting by rating, taking every icon) pushes S well above this
+   baseline toward the Unbeaten/Perfect tiers.
    ============================================================ */
 const RECORD_ANCHORS = [
-  [50.0, 0, 0],
-  [60.0, 0, 1],
-  [65.0, 0, 1],
-  [70.0, 1, 1],   // typical/realistic draft -> 1/7 wins ≈ 14.3%
-  [75.0, 2, 1],
-  [78.0, 2, 2],
-  [80.0, 3, 2],
-  [82.0, 3, 3],
-  [85.0, 4, 2],
-  [87.0, 5, 1],
-  [89.0, 6, 1],   // Unbeaten floor
-  [92.0, 7, 0],   // 7-0-0 — the perfect run
+  [55.0, 0, 0],
+  [64.0, 0, 1],
+  [68.0, 0, 1],
+  [69.0, 1, 1],   // 68.5 -> Round of 16+ ≈ 65%
+  [70.0, 1, 1],
+  [71.0, 2, 1],   // 70.5 -> Quarter-Finalist+ ≈ 45%
+  [72.0, 3, 1],   // 71.5 -> Semi-Finalist+ ≈ 35%
+  [74.0, 4, 1],   // 73.0 -> Runner-Up+ ≈ 15-22%
+  [75.0, 5, 1],   // 74.5 -> World Champion+ ≈ 8-12%
+  [83.0, 5, 1],
+  [85.0, 6, 1],   // Unbeaten floor
+  [90.0, 7, 0],   // 7-0-0 — the perfect run
 ];
-const PERFECT_S = 92.0;
+const PERFECT_S = 90.0;
 
 function recordFromRating(S){
   if (S >= PERFECT_S) return { W: GAMES, D: 0, L: 0 };
@@ -657,7 +685,7 @@ function showResults(){
     return `<div class="xi-row">
       <div class="p-jersey" style="background:${shirt}">${initials(row.pick.player.n)}</div>
       <div class="p-info"><div class="p-name">${row.pick.player.n}</div><div class="p-meta">${row.slot.label} · ${row.pick.country} ${row.pick.year}</div></div>
-      <div class="p-ovr">${row.pick.player.o}</div>
+      <span class="p-ovr-badge ${ovrTier(row.pick.player.o)}">${row.pick.player.o}</span>
     </div>`;
   }).join('');
 

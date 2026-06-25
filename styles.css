@@ -105,7 +105,11 @@ input{ font-family:inherit; }
 .icon-card-info{ flex:1; }
 .icon-card-name{ font-weight:700; }
 .icon-card-meta{ font-size:12px; color:var(--ink-dim); }
-.icon-card-ovr{ font-size:20px; font-weight:800; color:var(--gold-soft); }
+.icon-card-ovr{ font-size:18px; font-weight:800; border-radius:8px; padding:4px 10px; background:var(--panel-2); color:var(--ink); }
+.icon-card-ovr.tier-elite{ background:var(--gold); color:#1a1206; }
+.icon-card-ovr.tier-great{ background:#3fae6a; color:#06210f; }
+.icon-card-ovr.tier-good{ background:#3a6e8f; color:#eaf4fb; }
+.icon-card-ovr.tier-avg{ background:var(--panel-2); color:var(--ink-dim); }
 .icon-stats{ display:grid; grid-template-columns: repeat(6,1fr); gap:6px; }
 .istat{ background:var(--bg-alt); border-radius:8px; padding:6px 2px; text-align:center; font-size:11px; }
 .istat span{ display:block; color:var(--ink-dim); }
@@ -117,27 +121,45 @@ input{ font-family:inherit; }
 .draft-head{ display:flex; justify-content:space-between; align-items:baseline; }
 .draft-team{ font-weight:800; font-size:16px; }
 .draft-year{ font-size:12px; color:var(--ink-dim); }
+.draft-toolbar{ display:flex; gap:8px; }
 .draft-search{
-  background:var(--bg-alt); border:1px solid var(--line); border-radius:8px; padding:9px 12px; color:var(--ink);
+  flex:1; background:var(--bg-alt); border:1px solid var(--line); border-radius:8px; padding:9px 12px; color:var(--ink); min-width:0;
 }
+.sort-btn{
+  background:var(--bg-alt); border:1px solid var(--line); color:var(--ink-dim);
+  border-radius:8px; padding:9px 12px; font-size:12px; font-weight:700; white-space:nowrap; flex-shrink:0;
+}
+.sort-btn.active{ color:var(--gold-soft); border-color:var(--gold); }
 .draft-instruct{ font-size:12px; color:var(--gold-soft); }
 .player-list{ overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
 
 .player-row, .xi-row{
-  display:flex; align-items:center; gap:10px; padding:8px; border-radius:10px; background:var(--bg-alt);
+  display:flex; align-items:center; gap:10px; padding:9px; border-radius:10px; background:var(--bg-alt);
 }
 .player-row{ cursor:pointer; }
 .player-row.ineligible{ opacity:.35; cursor:default; }
 .p-jersey{
-  width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+  width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center;
   font-weight:800; font-size:12px; color:#fff; flex-shrink:0;
 }
-.p-info{ flex:1; min-width:0; }
-.p-name{ font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.p-meta{ font-size:11px; color:var(--ink-dim); }
-.p-stats{ display:flex; gap:6px; font-size:11px; color:var(--ink-dim); }
-.p-stats .p-ovr{ color:var(--gold-soft); font-weight:800; }
-.p-ovr{ color:var(--gold-soft); font-weight:800; font-size:13px; }
+.p-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.p-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.p-name{ font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.p-meta{ font-size:11px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.3px; }
+
+.p-ovr-badge{
+  flex-shrink:0; font-weight:800; font-size:12px; border-radius:6px; padding:2px 7px;
+  background:var(--panel-2); color:var(--ink);
+}
+.p-ovr-badge.tier-elite{ background:var(--gold); color:#1a1206; }
+.p-ovr-badge.tier-great{ background:#3fae6a; color:#06210f; }
+.p-ovr-badge.tier-good{ background:#3a6e8f; color:#eaf4fb; }
+.p-ovr-badge.tier-avg{ background:var(--panel-2); color:var(--ink-dim); }
+
+.p-stats-grid{ display:grid; grid-template-columns: repeat(6,1fr); gap:4px; margin-top:2px; }
+.pstat{ background:var(--panel); border-radius:6px; padding:3px 2px; text-align:center; }
+.pstat span{ display:block; font-size:9px; color:var(--ink-dim); letter-spacing:.3px; }
+.pstat b{ font-size:12px; color:var(--ink); }
 
 /* ---------------- pitch ---------------- */
 .pitch-col{ display:flex; flex-direction:column; align-items:center; gap:10px; }
