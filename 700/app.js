@@ -510,7 +510,7 @@ function openDraft(country, year){
   $('spinPane').classList.add('hidden');
   $('draftPane').classList.remove('hidden');
   $('draftTeamName').innerHTML = `${flagEmoji(country)} ${country}`;
-  $('draftYear').textContent = `${year} squad`;
+  $('draftYear').textContent = `${year} squad — ${state.activeSquad.length} of ${squad.length} shown`;
   $('draftSearch').value = '';
   updateInstruct();
   renderPlayerList('');
