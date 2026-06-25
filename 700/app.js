@@ -435,9 +435,11 @@ function eligibleIconsForNation(nation){
   const openLabels = new Set(openSlots().map(s => s.label));
   return DATA.icons.filter(ic => ic.country === nation && expandPositions(ic.sp2).some(label => openLabels.has(label)));
 }
-function eligibleIconNations(){
+function eligibleIconNationEntries(){
   const nations = [...new Set(DATA.icons.map(ic => ic.country))];
-  return nations.filter(n => eligibleIconsForNation(n).length > 0);
+  return nations
+    .map(n => ({ k: n, w: eligibleIconsForNation(n).length }))
+    .filter(e => e.w > 0);
 }
 
 function spin(){
@@ -474,12 +476,14 @@ function settleSpin(planEntry){
   state.spinning = false;
   $('spinBtn').disabled = false;
   if (planEntry === 'icon') {
-    const nations = eligibleIconNations();
-    if (nations.length === 0) {
+    const nationEntries = eligibleIconNationEntries();
+    if (nationEntries.length === 0) {
       settleSpin('good'); // no Icon fits the remaining open slots — fall back to a squad round
       return;
     }
-    const nation = nations[Math.floor(Math.random() * nations.length)];
+    // Weighted by eligible-Icon count, so a nation with 10 Icons (e.g. Brazil) comes up far
+    // more often than a one-Icon nation (e.g. Japan) — keeps "pick which Icon" a real choice.
+    const nation = weightedPick(nationEntries);
     $('reelCountry').textContent = '⭐ ICON';
     $('reelYear').textContent = nation;
     track('icon_offer', { nation });
