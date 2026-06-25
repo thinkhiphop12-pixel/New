@@ -24,10 +24,23 @@ let WEIGHTS = [];         // parallel weights array
 
 const TOTAL_ROUNDS = 11;  // draft picks = XI size, fixed by formation
 const GAMES = 7;          // simulated World Cup record length (the "7" in 7-0-0)
+const SQUAD_CAP = 23;     // every squad offer is trimmed/standardized to 23 players
 
-let ICON_PROB = 0.11;
-let MAX_ICON_HITS = 2;
 let OPP_BASELINE = 72;
+let TIER_COMBOS = { shit: [], okay: [], good: [] }; // [{k,w}] buckets by squad_weights percentile
+
+// Wide/wing-back positions are treated as interchangeable with the touchline mid/winger slot.
+const POS_EQUIV = {
+  RM: ['RW'], RW: ['RM'],
+  LM: ['LW'], LW: ['LM'],
+  LB: ['LWB'], LWB: ['LB'],
+  RB: ['RWB'], RWB: ['RB'],
+};
+function expandPositions(sp2){
+  const set = new Set(sp2);
+  for (const label of sp2) (POS_EQUIV[label] || []).forEach(l => set.add(l));
+  return [...set];
+}
 
 /* ---------------- Formations (slot labels = specific positions: GK/LB/RB/CB/CM/RM/LM/ST/RW/LW) ---------------- */
 const FORMATIONS = {
@@ -197,8 +210,6 @@ async function boot(){
     return;
   }
 
-  ICON_PROB = DATA.meta.icon_prob ?? ICON_PROB;
-  MAX_ICON_HITS = DATA.meta.max_icon_hits ?? MAX_ICON_HITS;
   OPP_BASELINE = DATA.meta.opp_baseline ?? OPP_BASELINE;
 
   SQUADS = {};
@@ -206,8 +217,14 @@ async function boot(){
     const key = `${p.country}|${p.year}`;
     (SQUADS[key] ||= []).push(p);
   }
+  for (const key in SQUADS) {
+    if (SQUADS[key].length > SQUAD_CAP) {
+      SQUADS[key] = [...SQUADS[key]].sort((a, b) => b.o - a.o).slice(0, SQUAD_CAP);
+    }
+  }
   COMBOS = Object.keys(DATA.squad_weights);
   WEIGHTS = COMBOS.map(k => DATA.squad_weights[k]);
+  buildTiers();
 
   buildFormationGrid();
   wireSetup();
@@ -274,11 +291,11 @@ function startGame(mode, formationKey){
   state = {
     round: 1,
     picks: {},
-    iconHitsThisGame: 0,
     mode,
     expert: mode === 'expert',
     formation: formationKey,
-    pendingIcon: null,
+    roundPlan: buildRoundPlan(),
+    pendingIconNation: null,
     spinning: false,
     sortByRating: false,
   };
@@ -315,7 +332,10 @@ function buildPitch(){
 }
 
 function slotById(id){ return SLOTS.find(s => s.id === id); }
-function openSlotsForPlayer(player){ return SLOTS.filter(s => !state.picks[s.id] && player.sp2.includes(s.label)); }
+function openSlotsForPlayer(player){
+  const positions = expandPositions(player.sp2);
+  return SLOTS.filter(s => !state.picks[s.id] && positions.includes(s.label));
+}
 function openSlots(){ return SLOTS.filter(s => !state.picks[s.id]); }
 
 function refreshPitch(){
@@ -343,7 +363,7 @@ function onSlotClick(slotId){
   if (!state.activeDraft) return;
   const slot = slotById(slotId);
   if (state.picks[slot.id]) return;
-  if (!state.activeDraft.player.sp2.includes(slot.label)) { toast(`Doesn't fit ${slot.label}`); return; }
+  if (!expandPositions(state.activeDraft.player.sp2).includes(slot.label)) { toast(`Doesn't fit ${slot.label}`); return; }
   confirmPick(slot.id, state.activeDraft.player, state.activeDraft.country, state.activeDraft.year);
 }
 
@@ -366,7 +386,6 @@ function confirmPick(slotId, player, country, year){
 function wireGameScreen(){
   $('spinBtn').addEventListener('click', () => spin());
   $('draftSearch').addEventListener('input', (e) => renderPlayerList(e.target.value));
-  $('iconTakeBtn').addEventListener('click', takeIcon);
   $('iconSkipBtn').addEventListener('click', skipIcon);
   $('draftSortBtn').addEventListener('click', () => {
     state.sortByRating = !state.sortByRating;
@@ -380,20 +399,44 @@ function updateSortBtn(){
   $('draftSortBtn').classList.toggle('active', state.sortByRating);
 }
 
-function weightedCombo(){
-  let total = 0;
-  for (const w of WEIGHTS) total += w;
-  let r = Math.random() * total;
-  for (let i = 0; i < COMBOS.length; i++) {
-    r -= WEIGHTS[i];
-    if (r <= 0) return COMBOS[i];
-  }
-  return COMBOS[COMBOS.length - 1];
+// Tiering by squad_weights percentile: bottom 25% = shit, top 25% = good, middle 50% = okay.
+function buildTiers(){
+  const entries = COMBOS.map((k, i) => ({ k, w: WEIGHTS[i] })).sort((a, b) => a.w - b.w);
+  const n = entries.length;
+  const lo = Math.floor(n * 0.25);
+  const hi = Math.ceil(n * 0.75);
+  TIER_COMBOS = { shit: [], okay: [], good: [] };
+  entries.forEach((entry, i) => {
+    const tier = i < lo ? 'shit' : (i >= hi ? 'good' : 'okay');
+    TIER_COMBOS[tier].push(entry);
+  });
 }
 
-function eligibleIcons(){
+// Fixed 11-round plan: 2 shit + 3 okay + 5 good squads, plus exactly 1 icon round.
+function buildRoundPlan(){
+  return shuffled(['shit', 'shit', 'okay', 'okay', 'okay', 'good', 'good', 'good', 'good', 'good', 'icon']);
+}
+
+function weightedPick(entries){
+  let total = 0;
+  for (const e of entries) total += e.w;
+  let r = Math.random() * total;
+  for (const e of entries) {
+    r -= e.w;
+    if (r <= 0) return e.k;
+  }
+  return entries[entries.length - 1].k;
+}
+
+function allCombos(){ return COMBOS.map((k, i) => ({ k, w: WEIGHTS[i] })); }
+
+function eligibleIconsForNation(nation){
   const openLabels = new Set(openSlots().map(s => s.label));
-  return DATA.icons.filter(ic => ic.sp2.some(label => openLabels.has(label)));
+  return DATA.icons.filter(ic => ic.country === nation && expandPositions(ic.sp2).some(label => openLabels.has(label)));
+}
+function eligibleIconNations(){
+  const nations = [...new Set(DATA.icons.map(ic => ic.country))];
+  return nations.filter(n => eligibleIconsForNation(n).length > 0);
 }
 
 function spin(){
@@ -401,65 +444,92 @@ function spin(){
   state.spinning = true;
   $('spinBtn').disabled = true;
 
-  const tryIcon = Math.random() < ICON_PROB && state.iconHitsThisGame < MAX_ICON_HITS;
-  const pool = tryIcon ? eligibleIcons() : [];
-  const isIconOffer = tryIcon && pool.length > 0;
+  const planEntry = state.roundPlan[state.round - 1];
+  const isIconRound = planEntry === 'icon';
+  const tierPool = isIconRound ? null : (TIER_COMBOS[planEntry].length ? TIER_COMBOS[planEntry] : allCombos());
+  const iconNations = isIconRound ? DATA.icons.map(ic => ic.country) : null;
 
   let ticks = 0;
   const maxTicks = 22 + Math.floor(Math.random()*8);
   const reelA = $('reelCountry'), reelB = $('reelYear');
   const tickInterval = setInterval(() => {
     ticks++;
-    const combo = weightedCombo().split('|');
-    reelA.textContent = isIconOffer ? '⭐ ICON' : combo[0];
-    reelB.textContent = isIconOffer ? 'OFFER' : combo[1];
+    if (isIconRound) {
+      reelA.textContent = '⭐ ICON';
+      reelB.textContent = iconNations[Math.floor(Math.random() * iconNations.length)];
+    } else {
+      const combo = weightedPick(tierPool).split('|');
+      reelA.textContent = combo[0];
+      reelB.textContent = combo[1];
+    }
     if (ticks >= maxTicks) {
       clearInterval(tickInterval);
-      settleSpin(isIconOffer, pool);
+      settleSpin(planEntry);
     }
   }, 55);
 }
 
-function settleSpin(isIconOffer, iconPool){
+function settleSpin(planEntry){
   state.spinning = false;
   $('spinBtn').disabled = false;
-  if (isIconOffer) {
-    const icon = iconPool[Math.floor(Math.random()*iconPool.length)];
+  if (planEntry === 'icon') {
+    const nations = eligibleIconNations();
+    if (nations.length === 0) {
+      settleSpin('good'); // no Icon fits the remaining open slots — fall back to a squad round
+      return;
+    }
+    const nation = nations[Math.floor(Math.random() * nations.length)];
     $('reelCountry').textContent = '⭐ ICON';
-    $('reelYear').textContent = 'OFFER';
-    track('icon_offer', { name: icon.n });
-    openIconOffer(icon);
+    $('reelYear').textContent = nation;
+    track('icon_offer', { nation });
+    openIconOffer(nation);
   } else {
-    const comboKey = weightedCombo();
+    const pool = TIER_COMBOS[planEntry].length ? TIER_COMBOS[planEntry] : allCombos();
+    const comboKey = weightedPick(pool);
     const [country, year] = comboKey.split('|');
     $('reelCountry').textContent = country;
     $('reelYear').textContent = year;
-    track('spin', { country, year });
+    track('spin', { country, year, tier: planEntry });
     openDraft(country, year);
   }
 }
 
 /* ---------------- icon offer ---------------- */
-function openIconOffer(icon){
-  state.pendingIcon = icon;
+function openIconOffer(nation){
+  state.pendingIconNation = nation;
   $('spinPane').classList.add('hidden');
   $('iconOffer').classList.remove('hidden');
-  const [shirt] = colorFor(icon.country);
-  $('iconCardName').textContent = icon.n;
-  $('iconCardMeta').textContent = `${icon.country} · ${icon.sp2.join('/')}`;
-  $('iconCardJersey').style.background = shirt;
-  $('iconCardJersey').textContent = initials(icon.n);
-  $('iconCardOvr').textContent = icon.o;
-  $('iconCardOvr').className = `icon-card-ovr ${ovrTier(icon.o)}`;
-  $('iconStats').innerHTML = ['pac','sho','pas','dri','def','phy'].map(k =>
-    `<div class="istat"><span>${k.toUpperCase()}</span><b>${icon.o ? icon[k] : '–'}</b></div>`).join('');
+  $('iconOfferNation').textContent = nation;
+
+  const icons = eligibleIconsForNation(nation);
+  const wrap = $('iconOfferList');
+  wrap.innerHTML = '';
+  icons.forEach(icon => {
+    const used = isUsedPlayer(icon);
+    const row = document.createElement('div');
+    row.className = 'player-row' + (used ? ' ineligible' : '');
+    const [shirt] = colorFor(icon.country);
+    const ovrBadge = `<span class="p-ovr-badge ${ovrTier(icon.o)}">${icon.o}</span>`;
+    const statsGrid = `<div class="p-stats-grid">${['pac','sho','pas','dri','def','phy'].map(k =>
+      `<div class="pstat"><span>${k.toUpperCase()}</span><b>${icon[k]}</b></div>`).join('')}</div>`;
+    row.innerHTML = `
+      <div class="p-jersey" style="background:${shirt}">${initials(icon.n)}</div>
+      <div class="p-info">
+        <div class="p-top">
+          <span class="p-name">${icon.n}</span>
+          ${ovrBadge}
+        </div>
+        <div class="p-meta">${icon.sp2.join('/')}${used ? ' · used' : ''}</div>
+        ${statsGrid}
+      </div>`;
+    if (!used) row.addEventListener('click', () => takeIcon(icon));
+    wrap.appendChild(row);
+  });
 }
 
-function takeIcon(){
-  const icon = state.pendingIcon;
+function takeIcon(icon){
   const slots = openSlotsForPlayer(icon);
   if (slots.length === 0) { toast('No open slot for this icon'); return; }
-  state.iconHitsThisGame++;
   $('iconOffer').classList.add('hidden');
   if (slots.length === 1) {
     confirmPick(slots[0].id, icon, icon.country, 'ICON');
@@ -476,14 +546,13 @@ function takeIcon(){
 }
 
 function skipIcon(){
-  track('icon_skip', { name: state.pendingIcon?.n });
-  state.pendingIcon = null;
+  track('icon_skip', { nation: state.pendingIconNation });
+  state.pendingIconNation = null;
   $('iconOffer').classList.add('hidden');
   $('spinPane').classList.remove('hidden');
 }
 
 /* ---------------- draft ---------------- */
-const DRAFT_OFFER_SIZE = 7;
 function shuffled(arr){
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -492,30 +561,20 @@ function shuffled(arr){
   }
   return a;
 }
-function randomOffer(squad){
-  // Offer a random slice of the squad rather than the whole roster — stops
-  // every spin turning into "cherry-pick the squad's single best player."
-  // Still guarantee at least a couple of slot-eligible names so the offer
-  // is never a dead end.
-  const eligible = squad.filter(p => openSlotsForPlayer(p).length > 0);
-  const guaranteed = shuffled(eligible).slice(0, Math.min(2, eligible.length));
-  const pool = shuffled([...squad].filter(p => !guaranteed.includes(p)));
-  return shuffled([...guaranteed, ...pool.slice(0, Math.max(0, DRAFT_OFFER_SIZE - guaranteed.length))]);
-}
 
 function openDraft(country, year){
   const key = `${country}|${year}`;
   const squad = SQUADS[key] || [];
-  state.activeSquad = randomOffer(squad);
+  state.activeSquad = squad;
   $('spinPane').classList.add('hidden');
   $('draftPane').classList.remove('hidden');
   $('draftTeamName').innerHTML = `${flagEmoji(country)} ${country}`;
-  $('draftYear').textContent = `${year} squad — ${state.activeSquad.length} of ${squad.length} shown`;
+  $('draftYear').textContent = `${year} squad`;
   $('draftSearch').value = '';
   updateInstruct();
   renderPlayerList('');
 
-  const anyPlayable = state.activeSquad.some(p => openSlotsForPlayer(p).length > 0);
+  const anyPlayable = squad.some(p => openSlotsForPlayer(p).length > 0);
   if (!anyPlayable) {
     toast('No room for this squad — re-spinning');
     setTimeout(() => spin(), 500);

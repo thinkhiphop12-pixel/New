@@ -82,23 +82,15 @@
             </div>
           </div>
           <button class="btn-primary spin-btn" id="spinBtn">SPIN</button>
-          <p class="spin-hint">Weighted by squad strength · ~11% chance of an Icon offer each spin</p>
+          <p class="spin-hint">Every draft mixes weak, mid and strong squads — plus one Icon round</p>
         </div>
 
         <div class="card icon-offer hidden" id="iconOffer">
-          <div class="icon-card-head">⭐ ICON OFFER</div>
-          <div class="icon-card-body">
-            <div class="icon-jersey" id="iconCardJersey"></div>
-            <div class="icon-card-info">
-              <div class="icon-card-name" id="iconCardName"></div>
-              <div class="icon-card-meta" id="iconCardMeta"></div>
-            </div>
-            <div class="icon-card-ovr" id="iconCardOvr"></div>
-          </div>
-          <div class="icon-stats" id="iconStats"></div>
+          <div class="icon-card-head">⭐ ICON OFFER — <span id="iconOfferNation"></span></div>
+          <p class="icon-offer-sub">Pick one Icon to draft straight into an open slot.</p>
+          <div class="player-list icon-offer-list" id="iconOfferList"></div>
           <div class="icon-actions">
             <button class="btn-ghost" id="iconSkipBtn">Skip</button>
-            <button class="btn-primary" id="iconTakeBtn">Take Icon</button>
           </div>
         </div>
 
@@ -110,7 +102,7 @@
             </div>
           </div>
           <div class="draft-toolbar">
-            <input class="draft-search" id="draftSearch" type="text" placeholder="Search this offer…">
+            <input class="draft-search" id="draftSearch" type="text" placeholder="Search this squad…">
             <button class="sort-btn" id="draftSortBtn" title="Sort players">Best first ▾</button>
           </div>
           <div class="draft-instruct" id="draftInstruct"></div>

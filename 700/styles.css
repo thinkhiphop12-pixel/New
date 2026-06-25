@@ -100,24 +100,12 @@ input{ font-family:inherit; }
 .spin-btn{ width:100%; font-size:18px; letter-spacing:2px; }
 .spin-hint{ font-size:11px; color:var(--ink-dim); }
 
-.icon-offer{ display:flex; flex-direction:column; gap:14px; }
+.icon-offer{ display:flex; flex-direction:column; gap:10px; }
 .icon-card-head{ color:var(--gold); font-weight:800; letter-spacing:1px; font-size:13px; }
-.icon-card-body{ display:flex; align-items:center; gap:12px; }
-.icon-jersey{ width:48px; height:48px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; }
-.icon-card-info{ flex:1; }
-.icon-card-name{ font-weight:700; }
-.icon-card-meta{ font-size:12px; color:var(--ink-dim); }
-.icon-card-ovr{ font-size:18px; font-weight:800; border-radius:8px; padding:4px 10px; background:var(--panel-2); color:var(--ink); }
-.icon-card-ovr.tier-elite{ background:var(--gold); color:#1a1206; }
-.icon-card-ovr.tier-great{ background:#3fae6a; color:#06210f; }
-.icon-card-ovr.tier-good{ background:#3a6e8f; color:#eaf4fb; }
-.icon-card-ovr.tier-avg{ background:var(--panel-2); color:var(--ink-dim); }
-.icon-stats{ display:grid; grid-template-columns: repeat(6,1fr); gap:6px; }
-.istat{ background:var(--bg-alt); border-radius:8px; padding:6px 2px; text-align:center; font-size:11px; }
-.istat span{ display:block; color:var(--ink-dim); }
-.istat b{ font-size:13px; }
+.icon-offer-sub{ font-size:12px; color:var(--ink-dim); margin:-4px 0 0; }
+.icon-offer-list{ max-height:320px; }
 .icon-actions{ display:flex; gap:10px; }
-.icon-actions .btn-ghost, .icon-actions .btn-primary{ flex:1; }
+.icon-actions .btn-ghost{ flex:1; }
 
 .draft-pane{ display:flex; flex-direction:column; gap:10px; max-height: 520px; }
 .draft-head{ display:flex; justify-content:space-between; align-items:baseline; }
