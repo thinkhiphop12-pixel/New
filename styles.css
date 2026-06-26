@@ -117,7 +117,7 @@ button{ font-family:inherit; cursor:pointer; border:none; }
 .gc-thumb.gc-thumb-lineup{ background:linear-gradient(135deg, #2e8b57, #11512f); color:#eef6ef; }
 .gc-thumb.gc-thumb-scout{ background:linear-gradient(135deg, #9b6bff, #5a35b0); color:#f3eeff; }
 .gc-thumb.gc-thumb-bracket{ background:linear-gradient(135deg, #2fb7c4, #0e5b66); color:#eef9fa; }
-.gc-thumb.gc-thumb-dynasty{ background:linear-gradient(135deg, #00ff88, #0a4f33); color:#06140d; }
+.gc-thumb.gc-thumb-boardroom{ background:linear-gradient(135deg, #00ff88, #0a4f33); color:#06140d; }
 .gc-body{ padding:18px 20px 20px; display:flex; flex-direction:column; flex:1; }
 .gc-title{ display:block; font-size:18px; font-weight:900; text-transform:uppercase; letter-spacing:.7px; color:var(--ink); margin-bottom:7px; }
 .gc-desc{ display:block; font-size:13.5px; color:var(--ink-dim); line-height:1.55; flex:1; }

@@ -70,7 +70,7 @@ function saveGame() {
     
     const a = document.createElement('a');
     a.href = url;
-    a.download = `dynasty-save-s${gameState.season}r${gameState.round}.json`;
+    a.download = `boardroom-save-s${gameState.season}r${gameState.round}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
