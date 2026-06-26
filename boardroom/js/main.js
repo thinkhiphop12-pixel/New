@@ -290,13 +290,13 @@ function setupEventListeners() {
     // Start game button
     document.getElementById('startGame')?.addEventListener('click', startGame);
     
-    // Navigation tabs
-    document.querySelectorAll('.nav-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    // Navigation buttons (sidebar)
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-            tab.classList.add('active');
-            document.getElementById(`panel-${tab.dataset.panel}`)?.classList.add('active');
+            btn.classList.add('active');
+            document.getElementById(`panel-${btn.dataset.panel}`)?.classList.add('active');
         });
     });
     
