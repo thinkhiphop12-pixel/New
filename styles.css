@@ -1,19 +1,18 @@
+/* Color variables defined in theme.css; remapped here for backwards compat during transition */
 :root{
-  --bg: #07120f;
-  --bg-alt: #0b1c18;
-  --panel: rgba(17, 35, 31, .86);
-  --panel-2: rgba(23, 48, 42, .9);
-  --line: rgba(114, 255, 177, .18);
-  --line-strong: rgba(114, 255, 177, .42);
-  --gold: #f2c94c;
-  --gold-soft: #ffe18a;
-  --lime: #6dff8f;
-  --cyan: #33d6ff;
-  --violet: #a481ff;
-  --ink: #f3fff8;
-  --ink-dim: #a9bdb3;
-  --shadow: 0 20px 60px rgba(0,0,0,.36);
-  --radius: 18px;
+  --bg: var(--color-bg-primary);
+  --bg-alt: var(--color-bg-secondary);
+  --panel: var(--color-bg-tertiary);
+  --line: var(--color-border);
+  --line-strong: var(--color-border-strong);
+  --gold: var(--color-gold);
+  --gold-soft: var(--color-gold-soft);
+  --lime: var(--color-accent);
+  --cyan: var(--color-accent-alt);
+  --violet: var(--color-accent-alt-2);
+  --ink: var(--color-text-primary);
+  --ink-dim: var(--color-text-secondary);
+  --shadow: var(--shadow-elevation);
 }
 *{ box-sizing:border-box; margin:0; padding:0; }
 html{ scroll-behavior:smooth; }

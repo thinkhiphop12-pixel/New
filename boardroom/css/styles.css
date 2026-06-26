@@ -10,16 +10,29 @@
 
 /* ==================== CSS VARIABLES ==================== */
 :root {
-    --bg-dark: #0a0e14;
-    --bg-panel: #141a24;
-    --bg-card: #1c2433;
-    --accent-green: #00ff88;
-    --accent-gold: #ffd700;
-    --accent-red: #ff4444;
-    --accent-blue: #4488ff;
-    --text-primary: #e8e8e8;
-    --text-secondary: #8892a0;
-    --border-color: #2a3444;
+    /* Semantic color system */
+    --color-bg-primary: #0a0e14;
+    --color-bg-secondary: #141a24;
+    --color-bg-tertiary: #1c2433;
+    --color-accent: #00ff88;
+    --color-gold: #ffd700;
+    --color-danger: #ff4444;
+    --color-accent-alt: #4488ff;
+    --color-text-primary: #e8e8e8;
+    --color-text-secondary: #8892a0;
+    --color-border: #2a3444;
+
+    /* Backwards compat mapping */
+    --bg-dark: var(--color-bg-primary);
+    --bg-panel: var(--color-bg-secondary);
+    --bg-card: var(--color-bg-tertiary);
+    --accent-green: var(--color-accent);
+    --accent-gold: var(--color-gold);
+    --accent-red: var(--color-danger);
+    --accent-blue: var(--color-accent-alt);
+    --text-primary: var(--color-text-primary);
+    --text-secondary: var(--color-text-secondary);
+    --border-color: var(--color-border);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

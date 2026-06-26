@@ -16,20 +16,33 @@
 <link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon-192.png">
 <link rel="apple-touch-icon" href="../assets/favicon-192.png">
+<link rel="stylesheet" href="../theme.css">
 <title>BRACKET — World Cup 2026 Simulator</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
-  --bg-dark: #07131c;
-  --bg-panel: #0e1f2d;
-  --bg-panel-2: #122838;
-  --line: #1c3a4d;
-  --accent: #2fb7c4;
-  --accent-soft: #9fe3ea;
-  --gold: #e3b23c;
-  --text-primary: #eef6f8;
-  --text-secondary: #93acb8;
-  --danger: #ff6b6b;
+  /* Game-specific color overrides */
+  --color-bg-primary: #07131c;
+  --color-bg-secondary: #0e1f2d;
+  --color-bg-tertiary: #122838;
+  --color-border: #1c3a4d;
+  --color-accent: #2fb7c4;
+  --color-accent-soft: #9fe3ea;
+  --color-gold: #e3b23c;
+  --color-text-primary: #eef6f8;
+  --color-text-secondary: #93acb8;
+  --color-danger: #ff6b6b;
+  /* Backwards compat */
+  --bg-dark: var(--color-bg-primary);
+  --bg-panel: var(--color-bg-secondary);
+  --bg-panel-2: var(--color-bg-tertiary);
+  --line: var(--color-border);
+  --accent: var(--color-accent);
+  --accent-soft: var(--color-accent-soft);
+  --gold: var(--color-gold);
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --danger: var(--color-danger);
   --radius: 14px;
 }
 body {

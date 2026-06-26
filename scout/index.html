@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1f14">
+<link rel="stylesheet" href="../theme.css">
 <title>Scout — Daily World Cup Player Guessing Game | Ball Knowledge</title>
 <meta name="description" content="Guess the mystery World Cup player in 6 tries. Every guess reveals how close you are on nation, position, era, rating and pace — a free daily football puzzle.">
 <meta property="og:title" content="Scout — Daily World Cup Player Guessing Game">
@@ -17,10 +18,17 @@
 <link rel="apple-touch-icon" href="../assets/favicon-192.png">
 <style>
 :root{
-  --bg:#0a1f14; --bg-alt:#0f2b1c; --panel:#123322; --panel-2:#16402a;
-  --line:#1f5536; --ink:#eef6ef; --ink-dim:#a9c4b3;
-  --accent:#9b6bff; --accent-soft:#c9aeff; --accent-dark:#5b2fd6;
-  --green:#2ecc71; --yellow:#e3b23c; --grey:#3a5a48; --red:#e0563a;
+  /* Game-specific color overrides */
+  --color-bg-primary:#0a1f14; --color-bg-secondary:#0f2b1c; --color-bg-tertiary:#123322; --color-bg-quaternary:#16402a;
+  --color-border:#1f5536; --color-text-primary:#eef6ef; --color-text-secondary:#a9c4b3;
+  --color-accent:#9b6bff; --color-accent-soft:#c9aeff; --color-accent-dark:#5b2fd6;
+  --color-accent-success:#2ecc71; --color-gold:#e3b23c; --color-accent-grey:#3a5a48; --color-danger:#e0563a;
+
+  /* Backwards compat */
+  --bg:var(--color-bg-primary); --bg-alt:var(--color-bg-secondary); --panel:var(--color-bg-tertiary); --panel-2:var(--color-bg-quaternary);
+  --line:var(--color-border); --ink:var(--color-text-primary); --ink-dim:var(--color-text-secondary);
+  --accent:var(--color-accent); --accent-soft:var(--color-accent-soft); --accent-dark:var(--color-accent-dark);
+  --green:var(--color-accent-success); --yellow:var(--color-gold); --grey:var(--color-accent-grey); --red:var(--color-danger);
   --radius:14px;
 }
 *{ box-sizing:border-box; margin:0; padding:0; }

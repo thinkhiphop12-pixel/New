@@ -18,25 +18,41 @@
 <link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon-192.png">
 <link rel="apple-touch-icon" href="../assets/favicon-192.png">
+<link rel="stylesheet" href="../theme.css">
 <title>LINEUP - World Cup Edition</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
+  /* Game-specific overrides */
+  --color-bg-primary: #0a0e1a;
+  --color-bg-secondary: #141b2d;
+  --color-bg-hover: #1e2841;
+  --color-text-primary: #e8ecf1;
+  --color-text-secondary: #8b9bb4;
+  --color-accent: #00d4aa;
+  --color-accent-hover: #00b894;
+  --color-danger: #ff4757;
+  --color-warning: #ffa502;
+  --color-success: #2ed573;
+
+  /* Game-specific pitch colors */
   --pitch-green: #1a5c3a;
   --pitch-light: #2d7a4f;
   --pitch-line: rgba(255,255,255,0.8);
-  --bg-dark: #0a0e1a;
-  --bg-panel: #141b2d;
-  --bg-panel-hover: #1e2841;
-  --text-primary: #e8ecf1;
-  --text-secondary: #8b9bb4;
-  --accent: #00d4aa;
-  --accent-hover: #00b894;
-  --danger: #ff4757;
-  --warning: #ffa502;
-  --success: #2ed573;
   --team-a-color: #3498db;
   --team-b-color: #e74c3c;
+
+  /* Backwards compat */
+  --bg-dark: var(--color-bg-primary);
+  --bg-panel: var(--color-bg-secondary);
+  --bg-panel-hover: var(--color-bg-hover);
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --accent: var(--color-accent);
+  --accent-hover: var(--color-accent-hover);
+  --danger: var(--color-danger);
+  --warning: var(--color-warning);
+  --success: var(--color-success);
 }
 
 body {

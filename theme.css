@@ -1,0 +1,73 @@
+/* Global CSS Theming System — Light/Dark with semantic naming */
+
+:root {
+  /* Primary background surfaces */
+  --color-bg-primary: #07120f;
+  --color-bg-secondary: #0b1c18;
+  --color-bg-tertiary: rgba(17, 35, 31, 0.86);
+
+  /* Text colors */
+  --color-text-primary: #f3fff8;
+  --color-text-secondary: #a9bdb3;
+
+  /* Borders and dividers */
+  --color-border: rgba(114, 255, 177, 0.18);
+  --color-border-strong: rgba(114, 255, 177, 0.42);
+
+  /* Accent colors */
+  --color-accent: #6dff8f;
+  --color-accent-alt: #33d6ff;
+  --color-accent-alt-2: #a481ff;
+
+  /* Status colors */
+  --color-gold: #f2c94c;
+  --color-gold-soft: #ffe18a;
+  --color-danger: #ff5050;
+  --color-warning: #ffa502;
+  --color-success: #2ed573;
+
+  /* Shadows and spacing */
+  --shadow-elevation: 0 20px 60px rgba(0, 0, 0, 0.36);
+  --radius: 18px;
+}
+
+/* Dark theme (default) */
+.theme-dark {
+  --color-bg-primary: #07120f;
+  --color-bg-secondary: #0f211a;
+  --color-bg-tertiary: rgba(17, 35, 31, 0.86);
+  --color-text-primary: #eaf4ee;
+  --color-text-secondary: #9fbbab;
+  --color-border: rgba(114, 255, 177, 0.16);
+  --color-border-strong: rgba(114, 255, 177, 0.42);
+  --color-accent: #26d07c;
+  --color-accent-soft: #6dff8f;
+}
+
+/* Light theme */
+.theme-light {
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f5f5f5;
+  --color-bg-tertiary: #eeeeee;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #666666;
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-border-strong: rgba(0, 0, 0, 0.2);
+  --color-accent: #1976d2;
+  --color-accent-soft: #42a5f5;
+}
+
+/* Automatic dark mode preference (no JS required for initial load) */
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f5f5f5;
+    --color-bg-tertiary: #eeeeee;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #666666;
+    --color-border: rgba(0, 0, 0, 0.1);
+    --color-border-strong: rgba(0, 0, 0, 0.2);
+    --color-accent: #1976d2;
+    --color-accent-soft: #42a5f5;
+  }
+}

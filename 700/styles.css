@@ -1,16 +1,30 @@
 :root{
-  --bg: #0a1f14;
-  --bg-alt: #0f2b1c;
-  --panel: #123322;
-  --panel-2: #16402a;
-  --line: #1f5536;
-  --gold: #e3b23c;
-  --gold-soft: #f0d28a;
-  --ink: #eef6ef;
-  --ink-dim: #a9c4b3;
-  --red: #c0392b;
+  /* Game-specific overrides for 7-0-0 football theme */
+  --color-bg-primary: #0a1f14;
+  --color-bg-secondary: #0f2b1c;
+  --color-bg-tertiary: #123322;
+  --color-border: #1f5536;
+  --color-text-primary: #eef6ef;
+  --color-text-secondary: #a9c4b3;
+  --color-gold: #e3b23c;
+  --color-gold-soft: #f0d28a;
+  --color-danger: #c0392b;
+
+  /* Game-specific pitch colors */
   --green-pitch: #1d6b3e;
   --green-pitch-2: #19602f;
+
+  /* Backwards compat mapping */
+  --bg: var(--color-bg-primary);
+  --bg-alt: var(--color-bg-secondary);
+  --panel: var(--color-bg-tertiary);
+  --line: var(--color-border);
+  --gold: var(--color-gold);
+  --gold-soft: var(--color-gold-soft);
+  --ink: var(--color-text-primary);
+  --ink-dim: var(--color-text-secondary);
+  --red: var(--color-danger);
+
   --radius: 14px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
