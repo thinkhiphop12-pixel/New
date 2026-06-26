@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a1f14">
+<title>Dynasty — Build & Play Your World Cup</title>
+<meta name="description" content="Draft your squad, manage the bench, and play live World Cup matches. Build your dynasty one game at a time.">
+<meta property="og:title" content="Dynasty — Build & Play Your World Cup">
+<meta property="og:description" content="Draft, manage, and play. Build your World Cup dynasty.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="../assets/og-image.png">
+<meta name="twitter:card" content="content">
+<meta name="twitter:image" content="../assets/og-image.png">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon-192.png">
+<link rel="apple-touch-icon" href="../assets/favicon-192.png">
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-logo" src="../assets/logo-mark.svg" alt="Dynasty" width="32" height="32">
+      <div class="brand-text">
+        <span class="brand-mark">Dynasty</span>
+        <span class="brand-sub">World Cup Manager</span>
+      </div>
+    </div>
+    <div class="tournament-info hidden" id="tournamentInfo"></div>
+    <button class="icon-btn" id="resetBtn" title="Start over">↺</button>
+  </header>
+
+  <!-- ===================== SETUP ===================== -->
+  <section id="setupScreen" class="screen">
+    <div class="setup-inner">
+      <h1 class="setup-title">Build your dynasty</h1>
+      <p class="setup-sub">Draft your XI plus bench, manage injuries and fatigue, and play through the World Cup tournament.</p>
+
+      <div class="step">
+        <div class="step-label">1 — Formation</div>
+        <div class="formation-grid" id="formationGrid"></div>
+      </div>
+
+      <div class="step">
+        <div class="step-label">2 — Draft your squad</div>
+        <p class="step-desc">Pick 11 starters + 3-5 bench players. Tap a slot or bench position to draft.</p>
+        <div class="draft-preview" id="draftPreview">
+          <div class="field-preview">
+            <svg viewBox="0 0 100 100" class="pitch">
+              <rect width="100" height="100" fill="var(--color-bg-primary)" stroke="var(--color-border)" stroke-width="0.5"/>
+              <line x1="50" y1="0" x2="50" y2="100" stroke="var(--color-border)" stroke-width="0.3"/>
+              <circle cx="50" cy="50" r="15" fill="none" stroke="var(--color-border)" stroke-width="0.3"/>
+              <circle cx="50" cy="50" r="0.5" fill="var(--color-border)"/>
+              <rect x="35" y="80" width="30" height="15" fill="none" stroke="var(--color-border)" stroke-width="0.3"/>
+              <rect x="35" y="5" width="30" height="15" fill="none" stroke="var(--color-border)" stroke-width="0.3"/>
+            </svg>
+            <div class="positions" id="draftPositions"></div>
+          </div>
+          <div class="bench-section">
+            <div class="bench-label">Bench</div>
+            <div class="bench-slots" id="benchSlots"></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="setupStart" disabled>Start tournament →</button>
+    </div>
+  </section>
+
+  <!-- ===================== DRAFT SCREEN ===================== -->
+  <section id="draftScreen" class="screen hidden">
+    <div class="draft-grid">
+      <div class="draft-left">
+        <div class="draft-squad">
+          <div class="squad-xi">
+            <div class="squad-title">Starting XI</div>
+            <div class="squad-slots" id="squadSlots"></div>
+          </div>
+          <div class="squad-bench">
+            <div class="squad-title">Bench</div>
+            <div class="bench-list" id="benchList"></div>
+          </div>
+        </div>
+      </div>
+      <div class="draft-right">
+        <div class="draft-spinner">
+          <div class="spinner-header">
+            <div class="spinner-label">Pick from:</div>
+            <button class="btn-secondary" id="changeSquad">Change Squad ↻</button>
+          </div>
+          <div class="current-squad" id="currentSquad">Select a nation...</div>
+          <div class="player-list" id="playerList"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TOURNAMENT ===================== -->
+  <section id="tournamentScreen" class="screen hidden">
+    <div class="tournament-container">
+      <div class="tournament-header">
+        <h2>World Cup 2026</h2>
+        <div class="squad-status" id="squadStatus"></div>
+      </div>
+
+      <div class="matches-grid" id="matchesGrid"></div>
+
+      <div class="tournament-stage" id="tournamentStage"></div>
+    </div>
+  </section>
+
+  <!-- ===================== MATCH ===================== -->
+  <section id="matchScreen" class="screen hidden">
+    <div class="match-container">
+      <div class="match-header">
+        <div class="team your-team">
+          <div class="team-name" id="yourTeam"></div>
+          <div class="team-score" id="yourScore">0</div>
+        </div>
+        <div class="match-info">
+          <div class="match-stage" id="matchStage"></div>
+          <button class="btn-secondary" id="playMatch">Play Match ▶</button>
+        </div>
+        <div class="team opp-team">
+          <div class="team-name" id="oppTeam"></div>
+          <div class="team-score" id="oppScore">0</div>
+        </div>
+      </div>
+
+      <div class="match-field">
+        <svg viewBox="0 0 100 100" class="pitch full-pitch" id="matchPitch">
+          <defs>
+            <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="0" dy="0.5" stdDeviation="0.3" flood-opacity="0.3"/>
+            </filter>
+          </defs>
+          <rect width="100" height="100" fill="var(--color-bg-secondary)"/>
+          <line x1="50" y1="0" x2="50" y2="100" stroke="var(--color-border)" stroke-width="0.5"/>
+          <circle cx="50" cy="50" r="15" fill="none" stroke="var(--color-border)" stroke-width="0.5"/>
+          <circle cx="50" cy="50" r="0.8" fill="var(--color-border)"/>
+          <rect x="30" y="80" width="40" height="15" fill="none" stroke="var(--color-border)" stroke-width="0.5"/>
+          <rect x="30" y="5" width="40" height="15" fill="none" stroke="var(--color-border)" stroke-width="0.5"/>
+          <rect x="42" y="85" width="16" height="10" fill="none" stroke="var(--color-border)" stroke-width="0.3"/>
+          <rect x="42" y="5" width="16" height="10" fill="none" stroke="var(--color-border)" stroke-width="0.3"/>
+        </svg>
+        <div class="players-container" id="playersContainer"></div>
+      </div>
+
+      <div class="match-controls">
+        <div class="match-stats" id="matchStats"></div>
+        <button class="btn-secondary" id="continueBtn">Continue →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTS ===================== -->
+  <section id="resultsScreen" class="screen hidden">
+    <div class="results-container">
+      <div class="results-header" id="resultsHeader"></div>
+      <div class="results-body" id="resultsBody"></div>
+      <button class="btn-primary" id="newGameBtn">New Dynasty →</button>
+    </div>
+  </section>
+
+</div>
+
+<script src="app.js" defer></script>
+</body>
+</html>

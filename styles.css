@@ -120,6 +120,7 @@ button{ font-family:inherit; cursor:pointer; border:none; }
 .gc-thumb > *{ position:relative; z-index:1; }
 .gc-thumb.gc-thumb-700{ background:linear-gradient(135deg, var(--gold), #c98a1f); }
 .gc-thumb.gc-thumb-700:before{ background-image:url(assets/thumb-700.svg); }
+.gc-thumb.gc-thumb-dynasty{ background:linear-gradient(135deg, #2b764b, #0a3d1f); color:#c8e6d8; }
 .gc-thumb.gc-thumb-lineup{ background:linear-gradient(135deg, #2e8b57, #11512f); color:#eef6ef; }
 .gc-thumb.gc-thumb-lineup:before{ background-image:url(assets/thumb-lineup.svg); }
 .gc-thumb.gc-thumb-scout{ background:linear-gradient(135deg, #9b6bff, #5a35b0); color:#f3eeff; }
