@@ -13,14 +13,14 @@
     /* Semantic color system */
     --color-bg-primary: #0a0e14;
     --color-bg-secondary: #141a24;
-    --color-bg-tertiary: #1c2433;
+    --color-bg-tertiary: #5a6a82;
     --color-accent: #00ff88;
     --color-gold: #ffd700;
     --color-danger: #ff4444;
     --color-accent-alt: #4488ff;
     --color-text-primary: #e8e8e8;
     --color-text-secondary: #8892a0;
-    --color-border: #2a3444;
+    --color-border: #5a7a94;
 
     /* Backwards compat mapping */
     --bg-dark: var(--color-bg-primary);
