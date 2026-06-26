@@ -31,6 +31,8 @@ function createInitialState() {
         selectedLineup: [],
         trainingQueue: [],
         selectedTrainingType: null,
+        restQueue: [],
+        selectedRestType: null,
         messageLog: [], // New: stores all notifications
         usedPlayerNames: [] // Real player names already assigned this game
     };

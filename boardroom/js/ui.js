@@ -156,7 +156,7 @@ function updateSquadTable() {
     const columns = [
         { key: 'index', label: '#', getValue: (p, i) => i },
         { key: 'name', label: 'NAME', getValue: p => p.name },
-        { key: 'position', label: 'POS', getValue: p => p.position },
+        { key: 'position', label: 'POS', getValue: p => ({ GK: 0, DEF: 1, MID: 2, FWD: 3 }[p.position] ?? 99) },
         { key: 'age', label: 'AGE', getValue: p => p.age },
         { key: 'energy', label: 'ENERGY', getValue: p => p.energy },
         { key: 'condition', label: 'COND', getValue: p => p.condition },
@@ -186,7 +186,7 @@ function updateSquadTable() {
     let html = '';
     sorted.forEach((player, i) => {
         const inLineup = gameState.selectedLineup.includes(player.id);
-        const status = player.inTraining ? '🏃 Training' : (inLineup ? '⚽ Starting' : '🪑 Bench');
+        const status = player.inRest ? '💤 Resting' : (player.inTraining ? '🏃 Training' : (inLineup ? '⚽ Starting' : '🪑 Bench'));
         const youthBadge = player.isYouth ? '<span style="color: var(--accent-gold); margin-left: 4px;">⭐</span>' : '';
         
         html += `<tr style="${inLineup ? 'background: rgba(0, 255, 136, 0.08);' : ''}">
@@ -242,10 +242,10 @@ function updateLineupPanel() {
         
         html += `<tr style="${inLineup ? 'background: rgba(0, 255, 136, 0.1);' : ''}">
             <td>
-                <input type="checkbox" ${inLineup ? 'checked' : ''} ${player.inTraining ? 'disabled' : ''} 
+                <input type="checkbox" ${inLineup ? 'checked' : ''} ${player.inTraining || player.inRest ? 'disabled' : ''}
                     onchange="toggleLineup('${player.id}'); updateAllUI();" style="width: 18px; height: 18px; cursor: pointer;">
             </td>
-            <td>${player.name}</td>
+            <td>${player.name}${player.inRest ? ' <span title="In recovery">💤</span>' : ''}</td>
             <td>${player.position}</td>
             <td style="color: ${energyColor}">${player.energy}%</td>
             <td>${player.condition}%</td>
@@ -307,23 +307,59 @@ function updateTrainingPanel() {
     
     team.players.forEach(player => {
         const inQueue = gameState.trainingQueue.includes(player.id);
+        const locked = player.inTraining || player.inRest;
+        const note = player.inTraining ? '🏃 Scheduled' : (player.inRest ? '💤 Resting' : 'Available');
         html += `<tr>
             <td>
-                <input type="checkbox" ${inQueue ? 'checked' : ''} ${player.inTraining ? 'disabled' : ''} 
+                <input type="checkbox" ${inQueue ? 'checked' : ''} ${locked ? 'disabled' : ''}
                     onchange="togglePlayerTraining('${player.id}'); updateAllUI();" style="width: 18px; height: 18px; cursor: pointer;">
             </td>
             <td>${player.name}</td>
             <td>${player.position}</td>
             <td>${player.strength}</td>
             <td>${player.energy}%</td>
-            <td>${player.inTraining ? '🏃 Scheduled' : 'Available'}</td>
+            <td>${note}</td>
         </tr>`;
     });
-    
+
     html += '</tbody></table>';
     container.innerHTML = html;
-    
+
     updateTrainingCostDisplay();
+}
+
+// Update recovery panel
+function updateRecoveryPanel() {
+    const team = getPlayerTeam();
+    const container = document.getElementById('restPlayerList');
+    if (!container) return;
+
+    let html = '<table class="data-table"><thead><tr><th>✓</th><th>NAME</th><th>POS</th><th>ENERGY</th><th>COND</th><th>STATUS</th></tr></thead><tbody>';
+
+    // Tired players first so they're easy to find
+    const sorted = [...team.players].sort((a, b) => a.energy - b.energy);
+    sorted.forEach(player => {
+        const inQueue = gameState.restQueue.includes(player.id);
+        const locked = player.inRest || player.inTraining;
+        const note = player.inRest ? '💤 Resting' : (player.inTraining ? '🏃 Training' : (gameState.selectedLineup.includes(player.id) ? '⚽ Starting' : 'Available'));
+        const energyColor = player.energy < 50 ? 'var(--accent-red)' : (player.energy < 70 ? 'var(--accent-gold)' : 'var(--accent-green)');
+        html += `<tr>
+            <td>
+                <input type="checkbox" ${inQueue ? 'checked' : ''} ${locked ? 'disabled' : ''}
+                    onchange="togglePlayerRest('${player.id}'); updateAllUI();" style="width: 18px; height: 18px; cursor: pointer;">
+            </td>
+            <td>${player.name}</td>
+            <td>${player.position}</td>
+            <td style="color: ${energyColor}">${player.energy}%</td>
+            <td>${player.condition}%</td>
+            <td>${note}</td>
+        </tr>`;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+
+    updateRestCostDisplay();
 }
 
 // Update sponsors panel
@@ -538,6 +574,7 @@ function updateAllUI() {
     updateLineupPanel();
     updateTransferMarket();
     updateTrainingPanel();
+    updateRecoveryPanel();
     updateSponsorsPanel();
     updateStadiumProjections();
     updateLeagueTable();
@@ -549,7 +586,7 @@ function updateAllUI() {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         showNotification, updateHeaderStats, updateSquadTable, updateLineupPanel,
-        updateTransferMarket, updateTrainingPanel, updateSponsorsPanel,
+        updateTransferMarket, updateTrainingPanel, updateRecoveryPanel, updateSponsorsPanel,
         updateLeagueTable, updateFixturesPanel, updateAllUI
     };
 }

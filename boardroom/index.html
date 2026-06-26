@@ -88,6 +88,7 @@
             <button class="nav-tab" data-panel="tactics">LINEUP</button>
             <button class="nav-tab" data-panel="transfers">TRANSFERS</button>
             <button class="nav-tab" data-panel="training">TRAINING</button>
+            <button class="nav-tab" data-panel="recovery">RECOVERY</button>
             <button class="nav-tab" data-panel="sponsors">SPONSORS</button>
             <button class="nav-tab" data-panel="stadium">STADIUM</button>
             <button class="nav-tab" data-panel="league">LEAGUE</button>
@@ -198,21 +199,22 @@
         <!-- Training Panel -->
         <div class="panel" id="panel-training">
             <h2 class="panel-title">TRAINING CAMP</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 20px;">Training improves strength but costs energy. Effects apply after the round.</p>
+            <p style="color: var(--text-secondary); margin-bottom: 8px;">Training improves strength but costs energy. Effects apply after the round.</p>
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">⚠️ Gains diminish for high-rated and older players — a top pro won't improve as fast as a young prospect, so you can't grind a whole squad to 99.</p>
             <div class="training-options" id="trainingOptions">
                 <div class="training-option" data-type="basic">
                     <h4 style="color: var(--accent-green);">BASIC TRAINING</h4>
-                    <p style="color: var(--text-secondary);">+3 Strength, -10 Energy</p>
+                    <p style="color: var(--text-secondary);">up to +3 Strength, -10 Energy</p>
                     <p class="training-cost">€20,000 / player</p>
                 </div>
                 <div class="training-option" data-type="intensive">
                     <h4 style="color: var(--accent-gold);">INTENSIVE CAMP</h4>
-                    <p style="color: var(--text-secondary);">+6 Strength, -20 Energy</p>
+                    <p style="color: var(--text-secondary);">up to +6 Strength, -20 Energy</p>
                     <p class="training-cost">€60,000 / player</p>
                 </div>
                 <div class="training-option" data-type="elite">
                     <h4 style="color: var(--accent-blue);">ELITE ACADEMY</h4>
-                    <p style="color: var(--text-secondary);">+10 Strength, -25 Energy</p>
+                    <p style="color: var(--text-secondary);">up to +10 Strength, -25 Energy</p>
                     <p class="training-cost">€150,000 / player</p>
                 </div>
             </div>
@@ -221,6 +223,36 @@
             <div class="btn-group">
                 <button class="btn gold" id="sendToTraining" disabled>SEND TO TRAINING</button>
                 <span style="color: var(--text-secondary); margin-left: 16px;">Cost: €<span id="trainingCost">0</span></span>
+            </div>
+        </div>
+
+        <!-- Recovery Panel -->
+        <div class="panel" id="panel-recovery">
+            <h2 class="panel-title">RECOVERY CENTRE</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 8px;">Send tired players to a recovery programme to restore energy and condition fast. Effects apply after the round.</p>
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">💤 A resting player sits out the next match (and is removed from your lineup), so rotate wisely. Benched players still recover slowly for free.</p>
+            <div class="training-options" id="restOptions">
+                <div class="training-option" data-type="physio">
+                    <h4 style="color: var(--accent-green);">PHYSIO SESSION</h4>
+                    <p style="color: var(--text-secondary);">+40 Energy, +20 Condition</p>
+                    <p class="training-cost">€20,000 / player</p>
+                </div>
+                <div class="training-option" data-type="spa">
+                    <h4 style="color: var(--accent-gold);">SPA &amp; RECOVERY</h4>
+                    <p style="color: var(--text-secondary);">+55 Energy, +30 Condition</p>
+                    <p class="training-cost">€45,000 / player</p>
+                </div>
+                <div class="training-option" data-type="retreat">
+                    <h4 style="color: var(--accent-blue);">WARM-WEATHER RETREAT</h4>
+                    <p style="color: var(--text-secondary);">+70 Energy, +45 Condition</p>
+                    <p class="training-cost">€80,000 / player</p>
+                </div>
+            </div>
+            <h3 style="color: var(--accent-gold); margin: 30px 0 16px;">Select Players to Rest <span style="color: var(--text-secondary); font-size: 14px; font-weight: normal;">(most tired first)</span></h3>
+            <div id="restPlayerList"></div>
+            <div class="btn-group">
+                <button class="btn gold" id="sendToRest" disabled>SEND TO RECOVERY</button>
+                <span style="color: var(--text-secondary); margin-left: 16px;">Cost: €<span id="restCost">0</span></span>
             </div>
         </div>
 
@@ -378,6 +410,7 @@
     <script src="js/sponsors.js"></script>
     <script src="js/transfers.js"></script>
     <script src="js/training.js"></script>
+    <script src="js/recovery.js"></script>
     <script src="js/lineup.js"></script>
     <script src="js/stadium.js"></script>
     <script src="js/match.js"></script>

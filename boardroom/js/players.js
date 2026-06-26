@@ -187,6 +187,8 @@ function refreshAllPlayers() {
             player.inTraining = false;
             player.trainingBonus = 0;
             player.trainingEnergyCost = 0;
+            player.inRest = false;
+            player.restType = null;
         });
     });
 }

@@ -190,7 +190,7 @@ function processPlayerTeamRound(playerMatch) {
     
     // Process training effects
     processTrainingEffects();
-    
+
     // Update player stats with BALANCED energy drain
     team.players.forEach(player => {
         if (gameState.selectedLineup.includes(player.id)) {
@@ -216,12 +216,13 @@ function processPlayerTeamRound(playerMatch) {
                 player.condition = Math.max(20, player.condition - injurySeverity);
                 showNotification(`${player.name} picked up an injury!`, true);
             }
-        } else {
-            // REST RECOVERY - generous recovery for benched players
+        } else if (!player.inRest) {
+            // Passive bench recovery for benched players. Resting players are
+            // skipped here — they get their (larger) recovery boost below.
             player.energy = Math.min(100, player.energy + 25);
             player.condition = Math.min(100, player.condition + 10);
         }
-        
+
         // Age-based natural condition recovery
         if (player.age < 25) {
             player.condition = Math.min(100, player.condition + 3);
@@ -230,10 +231,14 @@ function processPlayerTeamRound(playerMatch) {
         } else {
             player.condition = Math.min(100, player.condition + 2);
         }
-        
+
         // Update player value
         player.value = calculatePlayerValue(player);
     });
+
+    // Apply recovery programmes (clears inRest flags). Done after the loop so the
+    // passive-recovery skip above sees the flags first.
+    processRestEffects();
     
     // Occasionally generate new sponsor offers
     if (Math.random() < 0.15) {

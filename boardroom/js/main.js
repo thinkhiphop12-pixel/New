@@ -68,8 +68,9 @@ function endRound() {
     }
     
     // Validate lineup
-    if (!isLineupValid()) {
-        showNotification('You need 11 players in the lineup!', true);
+    const lineupError = getLineupError();
+    if (lineupError) {
+        showNotification(lineupError, true);
         return;
     }
     
@@ -278,9 +279,9 @@ function setupEventListeners() {
     });
     
     // Training type selection
-    document.querySelectorAll('.training-option').forEach(option => {
+    document.querySelectorAll('#trainingOptions .training-option').forEach(option => {
         option.addEventListener('click', () => {
-            document.querySelectorAll('.training-option').forEach(o => o.classList.remove('selected'));
+            document.querySelectorAll('#trainingOptions .training-option').forEach(o => o.classList.remove('selected'));
             option.classList.add('selected');
             selectTrainingType(option.dataset.type);
         });
@@ -289,6 +290,21 @@ function setupEventListeners() {
     // Send to training button
     document.getElementById('sendToTraining')?.addEventListener('click', () => {
         sendToTraining();
+        updateAllUI();
+    });
+
+    // Recovery type selection
+    document.querySelectorAll('#restOptions .training-option').forEach(option => {
+        option.addEventListener('click', () => {
+            document.querySelectorAll('#restOptions .training-option').forEach(o => o.classList.remove('selected'));
+            option.classList.add('selected');
+            selectRestType(option.dataset.type);
+        });
+    });
+
+    // Send to recovery button
+    document.getElementById('sendToRest')?.addEventListener('click', () => {
+        sendToRest();
         updateAllUI();
     });
     

@@ -43,11 +43,22 @@ const SPONSOR_BASE_VALUES = {
     west: 120000
 };
 
-// Training configurations
+// Training configurations. strengthGain is the BASE gain — the actual gain is
+// scaled down by diminishing returns (higher-rated/older players improve less)
+// in processTrainingEffects(), so training can't be spammed to max out a squad.
 const TRAINING_CONFIG = {
     basic: { cost: 20000, strengthGain: 3, energyCost: 10 },
     intensive: { cost: 60000, strengthGain: 6, energyCost: 20 },
     elite: { cost: 150000, strengthGain: 10, energyCost: 25 }
+};
+
+// Recovery / rest configurations — a paid way to get tired players match-fit
+// faster than passive bench recovery (which gives +25 energy / +10 condition).
+// Resting a player sits them out of the match for that round.
+const REST_CONFIG = {
+    physio: { cost: 20000, energyGain: 40, conditionGain: 20 },
+    spa: { cost: 45000, energyGain: 55, conditionGain: 30 },
+    retreat: { cost: 80000, energyGain: 70, conditionGain: 45 }
 };
 
 // Stadium expansion options
@@ -108,7 +119,7 @@ const RANDOM_EVENTS = [
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         TEAM_NAMES, TEAM_BUDGET_TIER, PROMOTION_TEAMS, SPONSOR_NAMES,
-        SPONSOR_TYPES, SPONSOR_BASE_VALUES, TRAINING_CONFIG,
+        SPONSOR_TYPES, SPONSOR_BASE_VALUES, TRAINING_CONFIG, REST_CONFIG,
         STADIUM_EXPANSIONS, POSITION_COUNTS
     };
 }

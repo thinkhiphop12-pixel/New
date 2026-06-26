@@ -19,10 +19,14 @@ function togglePlayerTraining(playerId) {
     if (index > -1) {
         gameState.trainingQueue.splice(index, 1);
     } else {
-        // Check if player is already in training
+        // Check if player is already in training or resting
         const player = getPlayerTeam().players.find(p => p.id === playerId);
         if (player && player.inTraining) {
             showNotification('Player already scheduled for training!', true);
+            return false;
+        }
+        if (player && player.inRest) {
+            showNotification('Player is in recovery — can\'t also train!', true);
             return false;
         }
         gameState.trainingQueue.push(playerId);
@@ -92,18 +96,43 @@ function sendToTraining() {
     return true;
 }
 
+// Actual strength gained from a training session, given a base gain.
+// Diminishing returns: the higher a player's strength and the older they are,
+// the less they improve — so you can't grind an average full-back up to 90.
+function effectiveTrainingGain(player, baseGain) {
+    const s = player.strength;
+    // Headroom shrinks steeply above ~75 rated
+    let headroom;
+    if (s < 65) headroom = 1.0;
+    else if (s < 72) headroom = 0.7;
+    else if (s < 78) headroom = 0.45;
+    else if (s < 83) headroom = 0.28;
+    else if (s < 87) headroom = 0.15;
+    else headroom = 0.06;
+    // Age curve — prospects develop, veterans barely move
+    const a = player.age;
+    const ageFactor = a <= 21 ? 1.2 : a <= 26 ? 1.0 : a <= 30 ? 0.65 : a <= 33 ? 0.35 : 0.15;
+    // Cap: youth grow toward their hidden potential, seniors hit a soft 90 ceiling
+    const cap = (player.isYouth && player.potential) ? player.potential : 90;
+    const allowed = Math.max(0, cap - s);
+    const gain = baseGain * headroom * ageFactor;
+    return Math.min(Math.round(gain), allowed);
+}
+
 // Process training effects (called at end of round)
 function processTrainingEffects() {
     const team = getPlayerTeam();
-    
+
     team.players.forEach(player => {
         if (player.inTraining) {
-            // Apply strength bonus
-            player.strength = Math.min(99, player.strength + player.trainingBonus);
-            
+            // Apply diminished strength gain (base gain stored in trainingBonus)
+            const gain = effectiveTrainingGain(player, player.trainingBonus);
+            player.strength = Math.min(99, player.strength + gain);
+            player.lastTrainingGain = gain;
+
             // Deduct energy cost
             player.energy = Math.max(30, player.energy - player.trainingEnergyCost);
-            
+
             // Reset training flags
             player.inTraining = false;
             player.trainingBonus = 0;
@@ -116,6 +145,7 @@ function processTrainingEffects() {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         selectTrainingType, togglePlayerTraining, calculateTrainingCost,
-        updateTrainingCostDisplay, sendToTraining, processTrainingEffects
+        updateTrainingCostDisplay, sendToTraining, processTrainingEffects,
+        effectiveTrainingGain
     };
 }

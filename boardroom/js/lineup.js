@@ -1,20 +1,56 @@
 // ==================== LINEUP MANAGEMENT ====================
 
+// Max players per position in a starting XI. Exactly one goalkeeper is allowed
+// (and required) — this is what stops the old exploit of fielding two keepers to
+// quietly rest two outfielders. Outfield caps are loose enough for any sensible
+// shape (4-4-2, 3-5-2, 4-3-3, 5-3-2, …) but block nonsense lineups.
+const LINEUP_POSITION_LIMITS = { GK: 1, DEF: 5, MID: 5, FWD: 4 };
+
+// Count how many of each position are currently in the starting XI
+function getLineupPositionCounts() {
+    const team = getPlayerTeam();
+    const counts = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+    gameState.selectedLineup.forEach(id => {
+        const p = team.players.find(pl => pl.id === id);
+        if (p) counts[p.position] = (counts[p.position] || 0) + 1;
+    });
+    return counts;
+}
+
 // Toggle a player in/out of the starting lineup
 function toggleLineup(playerId) {
     const index = gameState.selectedLineup.indexOf(playerId);
-    
+
     if (index > -1) {
         // Remove from lineup
         gameState.selectedLineup.splice(index, 1);
-    } else if (gameState.selectedLineup.length < 11) {
-        // Add to lineup
-        gameState.selectedLineup.push(playerId);
-    } else {
+        return true;
+    }
+
+    if (gameState.selectedLineup.length >= 11) {
         showNotification('Maximum 11 players in lineup!', true);
         return false;
     }
-    
+
+    // Position-limit check (e.g. only one goalkeeper)
+    const team = getPlayerTeam();
+    const player = team.players.find(p => p.id === playerId);
+    if (player) {
+        if (player.inRest) {
+            showNotification(`${player.name} is in recovery and can't be selected this round.`, true);
+            return false;
+        }
+        const limit = LINEUP_POSITION_LIMITS[player.position];
+        const counts = getLineupPositionCounts();
+        if (limit && counts[player.position] >= limit) {
+            showNotification(player.position === 'GK'
+                ? 'You can only start one goalkeeper!'
+                : `Maximum ${limit} ${player.position} players in the lineup!`, true);
+            return false;
+        }
+    }
+
+    gameState.selectedLineup.push(playerId);
     return true;
 }
 
@@ -78,9 +114,21 @@ function autoSelectFreshXI() {
     return true;
 }
 
-// Check if lineup is valid (has 11 players)
+// Return a human-readable reason the lineup is invalid, or null if it's fine.
+function getLineupError() {
+    if (gameState.selectedLineup.length !== 11) {
+        return 'You need exactly 11 players in the lineup!';
+    }
+    const counts = getLineupPositionCounts();
+    if (counts.GK !== 1) {
+        return 'You must start exactly one goalkeeper!';
+    }
+    return null;
+}
+
+// Check if lineup is valid (11 players, exactly one keeper)
 function isLineupValid() {
-    return gameState.selectedLineup.length === 11;
+    return getLineupError() === null;
 }
 
 // Get lineup players
@@ -93,6 +141,7 @@ function getLineupPlayers() {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         toggleLineup, calculatePlayerRating, autoSelectLineup,
-        autoSelectFreshXI, isLineupValid, getLineupPlayers
+        autoSelectFreshXI, isLineupValid, getLineupError,
+        getLineupPositionCounts, getLineupPlayers
     };
 }
