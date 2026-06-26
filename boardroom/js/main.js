@@ -1,5 +1,23 @@
 // ==================== MAIN GAME CONTROLLER ====================
 
+// Lazy-load player data files (only on game start, saves 180K from initial page load)
+function loadPlayerData() {
+    return Promise.all([
+        new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'js/realplayers.js';
+            script.onload = resolve;
+            document.head.appendChild(script);
+        }),
+        new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'js/players2005.js';
+            script.onload = resolve;
+            document.head.appendChild(script);
+        })
+    ]);
+}
+
 // Initialize new game
 function initGame() {
     generateTeams();
@@ -38,6 +56,18 @@ function startGame() {
     gameState.kit.primary = document.getElementById('primaryColor').value;
     gameState.kit.secondary = document.getElementById('secondaryColor').value;
 
+    // Load player data if not already loaded (lazy-loaded on demand)
+    if (typeof REAL_PLAYERS_GK === 'undefined') {
+        loadPlayerData().then(() => {
+            continueGameStart();
+        });
+        return;
+    }
+    continueGameStart();
+}
+
+// Continue game start after player data is loaded
+function continueGameStart() {
     // Regenerate teams for the chosen era (rosters depend on gameState.era).
     // Preserve the user's chosen club by name, since generateTeams reshuffles
     // the league into new indices, and start the name pool fresh.
