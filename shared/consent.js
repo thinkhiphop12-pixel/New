@@ -66,14 +66,20 @@ function applyConsent(choice){
   setConsent(choice);
   const banner = document.getElementById('consentBanner');
   if (banner) banner.classList.add('hidden');
-  if (choice === 'all') { loadPostHog(); loadAdSense(); fillAllAdSlots(); }
+  if (choice === 'all') {
+    loadPostHog(); loadAdSense(); fillAllAdSlots();
+    if (typeof initAds === 'function') initAds();
+  }
 }
 
 function initConsent(){
   const existing = getConsent();
   const banner = document.getElementById('consentBanner');
   if (existing) {
-    if (existing === 'all') { loadPostHog(); loadAdSense(); fillAllAdSlots(); }
+    if (existing === 'all') {
+      loadPostHog(); loadAdSense(); fillAllAdSlots();
+      if (typeof initAds === 'function') initAds();
+    }
     return;
   }
   if (banner) banner.classList.remove('hidden');
