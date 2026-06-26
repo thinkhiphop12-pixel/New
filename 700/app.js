@@ -296,6 +296,15 @@ function wireSetup(){
       setupMode = card.dataset.mode;
       document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('sel'));
       card.classList.add('sel');
+      // Daily uses a fixed 4-3-3 so the challenge is identical for everyone.
+      if (setupMode === 'daily') {
+        setupFormation = '4-3-3';
+        $('formationStep').classList.add('hidden');
+        $('setupStart').textContent = 'Start today\'s challenge →';
+      } else {
+        $('formationStep').classList.remove('hidden');
+        $('setupStart').textContent = 'Start drafting →';
+      }
       maybeShowStart();
     });
   });
@@ -316,6 +325,8 @@ function showSetup(){
   setupMode = null;
   setupFormation = null;
   document.querySelectorAll('.mode-card, .formation-card').forEach(c => c.classList.remove('sel'));
+  $('formationStep').classList.remove('hidden');
+  $('setupStart').textContent = 'Start drafting →';
   $('setupStart').disabled = true;
   $('setupScreen').classList.remove('hidden');
   $('gameScreen').classList.add('hidden');
@@ -323,18 +334,26 @@ function showSetup(){
   $('worldCupScreen').classList.add('hidden');
   $('resultsScreen').classList.add('hidden');
   $('roundPill').textContent = '';
+  renderStatsStrip();
 }
 
 /* ---------------- game start ---------------- */
 function startGame(mode, formationKey){
+  // Daily Challenge: everyone gets the same date-seeded draft + a fixed shape.
+  const isDaily = mode === 'daily';
+  if (isDaily) formationKey = '4-3-3';
+  const rng = isDaily ? mulberry32(seedFromKey(dailyKey())) : Math.random;
   SLOTS = FORMATIONS[formationKey].slots;
   state = {
     round: 1,
     picks: {},
     mode,
+    daily: isDaily,
+    dailyKey: isDaily ? dailyKey() : null,
     expert: mode === 'expert',
+    rng,
     formation: formationKey,
-    roundPlan: buildRoundPlan(),
+    roundPlan: buildRoundPlan(rng),
     pendingIconNation: null,
     spinning: false,
     sortByRating: false,
@@ -455,15 +474,80 @@ function buildTiers(){
   });
 }
 
-// Fixed 11-round plan: 2 shit + 3 okay + 5 good squads, plus exactly 1 icon round.
-function buildRoundPlan(){
-  return shuffled(['shit', 'shit', 'okay', 'okay', 'okay', 'good', 'good', 'good', 'good', 'good', 'icon']);
+/* ---------------- player stats + streak (retention) ---------------- */
+const STATS_KEY = 'bk_700_stats';
+function loadStats(){
+  try { return JSON.parse(localStorage.getItem(STATS_KEY)) || {}; } catch(e){ return {}; }
+}
+function saveStats(s){ try { localStorage.setItem(STATS_KEY, JSON.stringify(s)); } catch(e){} }
+
+// Record a completed squad. Updates totals, best record, 7-0-0 count, and the
+// daily streak (consecutive UTC days with a completed Daily Challenge).
+function recordCompletion({ W, D, L, daily }){
+  const s = loadStats();
+  s.played = (s.played || 0) + 1;
+  if (W === GAMES) s.sevens = (s.sevens || 0) + 1;
+  const score = W * 3 + D;
+  if (s.bestScore === undefined || score > s.bestScore) {
+    s.bestScore = score; s.bestRecord = `${W}-${D}-${L}`;
+  }
+  if (daily) {
+    const today = dailyKey();
+    if (s.lastDaily !== today) {
+      const y = new Date(); y.setUTCDate(y.getUTCDate() - 1);
+      s.streak = (s.lastDaily === dailyKey(y)) ? (s.streak || 0) + 1 : 1;
+      s.lastDaily = today;
+      if (!s.bestStreak || s.streak > s.bestStreak) s.bestStreak = s.streak;
+    }
+  }
+  saveStats(s);
+  return s;
 }
 
-function weightedPick(entries){
+function renderStatsStrip(){
+  const el = $('statsStrip');
+  if (!el) return;
+  const s = loadStats();
+  if (!s.played) { el.classList.add('hidden'); return; }
+  const bits = [`<b>${s.played}</b> played`];
+  if (s.bestRecord) bits.push(`best <b>${s.bestRecord}</b>`);
+  if (s.sevens) bits.push(`<b>${s.sevens}</b>× 7-0-0`);
+  if (s.streak) bits.push(`🔥 <b>${s.streak}</b>-day streak`);
+  el.innerHTML = bits.join('<span class="stat-dot">·</span>');
+  el.classList.remove('hidden');
+}
+
+/* ---------------- seeded RNG (for the Daily Challenge) ---------------- */
+// mulberry32 — small, fast, deterministic. In Daily mode the whole draft is
+// driven by a date-seeded stream so everyone gets the same squads that day.
+function mulberry32(seed){
+  let a = seed >>> 0;
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function dailyKey(d = new Date()){
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+}
+function seedFromKey(key){
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++){ h ^= key.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
+// Fixed 11-round plan: 2 shit + 3 okay + 5 good squads, plus exactly 1 icon round.
+function buildRoundPlan(rnd){
+  return shuffled(['shit', 'shit', 'okay', 'okay', 'okay', 'good', 'good', 'good', 'good', 'good', 'icon'], rnd);
+}
+
+function weightedPick(entries, rnd){
+  const rand = rnd || Math.random;
   let total = 0;
   for (const e of entries) total += e.w;
-  let r = Math.random() * total;
+  let r = rand() * total;
   for (const e of entries) {
     r -= e.w;
     if (r <= 0) return e.k;
@@ -525,14 +609,14 @@ function settleSpin(planEntry){
     }
     // Weighted by eligible-Icon count, so a nation with 10 Icons (e.g. Brazil) comes up far
     // more often than a one-Icon nation (e.g. Japan) — keeps "pick which Icon" a real choice.
-    const nation = weightedPick(nationEntries);
+    const nation = weightedPick(nationEntries, state.rng);
     $('reelCountry').textContent = '⭐ ICON';
     $('reelYear').textContent = nation;
     track('icon_offer', { nation });
     openIconOffer(nation);
   } else {
     const pool = TIER_COMBOS[planEntry].length ? TIER_COMBOS[planEntry] : allCombos();
-    const comboKey = weightedPick(pool);
+    const comboKey = weightedPick(pool, state.rng);
     const [country, year] = comboKey.split('|');
     $('reelCountry').textContent = country;
     $('reelYear').textContent = year;
@@ -600,10 +684,11 @@ function skipIcon(){
 }
 
 /* ---------------- draft ---------------- */
-function shuffled(arr){
+function shuffled(arr, rnd){
+  const rand = rnd || Math.random;
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rand() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
@@ -1072,6 +1157,7 @@ function wcEnd(champion, stageKey){
   $('wcVerdictSub').textContent = sub;
   $('wcVerdict').classList.remove('hidden');
   lastWcRun = { W: wcRun.W, D: wcRun.D, L: wcRun.L, champion, stageKey, badge };
+  recordCompletion({ W: wcRun.W, D: wcRun.D, L: wcRun.L, daily: state.daily });
   track('wc_run_end', { champion, stage: stageKey, W: wcRun.W, D: wcRun.D, L: wcRun.L });
 }
 
@@ -1148,6 +1234,7 @@ function showResults(){
   $('breakdown').classList.add('hidden');
   $('showMoreBtn').textContent = 'Show full tournament breakdown ▾';
 
+  recordCompletion({ W: r.W, D: r.D, L: r.L, daily: state.daily });
   track('squad_completed', { W: r.W, D: r.D, L: r.L, S: r.S, formation: state.formation, mode: state.mode });
   if (r.W === GAMES) track('seven_oh_oh', { S: r.S });
 }

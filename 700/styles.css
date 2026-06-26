@@ -241,6 +241,13 @@ input{ font-family:inherit; }
 
 .odds-prediction{ font-size:13.5px; color:var(--ink); line-height:1.5; margin:0 0 20px; font-style:italic; }
 .briefing-odds .btn-primary{ width:100%; }
+/* ---------------- stats strip + daily mode ---------------- */
+.stats-strip{ background:var(--panel-2); border:1px solid var(--line); border-radius:999px; padding:9px 16px; font-size:13px; color:var(--ink-dim); text-align:center; margin:0 0 22px; }
+.stats-strip b{ color:var(--gold); font-weight:800; }
+.stat-dot{ margin:0 8px; opacity:.4; }
+.mode-card-daily{ border-color:var(--gold); background:linear-gradient(135deg, var(--panel-2), var(--panel)); }
+.mode-card-daily .m-title{ color:var(--gold); }
+
 .briefing-actions{ display:flex; flex-direction:column; gap:10px; }
 .briefing-actions .btn-primary, .briefing-actions .btn-ghost{ width:100%; }
 .briefing-hint{ font-size:12px; color:var(--ink-dim); margin:10px 0 0; }

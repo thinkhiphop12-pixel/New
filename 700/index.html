@@ -50,9 +50,15 @@
         </div>
       </div>
 
+      <div class="stats-strip hidden" id="statsStrip"></div>
+
       <div class="step">
         <div class="step-label">1 — Game mode</div>
         <div class="mode-grid">
+          <button class="mode-card mode-card-daily" data-mode="daily">
+            <span class="m-title">🗓️ Daily Challenge</span>
+            <span class="m-desc">Same squads for everyone today. 4-3-3. Build your streak.</span>
+          </button>
           <button class="mode-card" data-mode="classic">
             <span class="m-title">Classic</span>
             <span class="m-desc">Ratings visible. Draft by the numbers.</span>
@@ -64,7 +70,7 @@
         </div>
       </div>
 
-      <div class="step">
+      <div class="step" id="formationStep">
         <div class="step-label">2 — Formation</div>
         <div class="formation-grid" id="formationGrid"></div>
       </div>
