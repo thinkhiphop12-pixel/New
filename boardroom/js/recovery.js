@@ -101,11 +101,12 @@ function sendToRest() {
 function processRestEffects() {
     const team = getPlayerTeam();
 
+    const physioMult = typeof physioMultiplier === 'function' ? physioMultiplier() : 1;
     team.players.forEach(player => {
         if (player.inRest) {
             const config = REST_CONFIG[player.restType] || REST_CONFIG.physio;
-            player.energy = Math.min(100, player.energy + config.energyGain);
-            player.condition = Math.min(100, player.condition + config.conditionGain);
+            player.energy = Math.min(100, player.energy + Math.round(config.energyGain * physioMult));
+            player.condition = Math.min(100, player.condition + Math.round(config.conditionGain * physioMult));
             player.inRest = false;
             player.restType = null;
         }

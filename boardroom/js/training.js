@@ -115,7 +115,9 @@ function effectiveTrainingGain(player, baseGain) {
     // Cap: youth grow toward their hidden potential, seniors hit a soft 90 ceiling
     const cap = (player.isYouth && player.potential) ? player.potential : 90;
     const allowed = Math.max(0, cap - s);
-    const gain = baseGain * headroom * ageFactor;
+    // A hired Head Coach raises the gain; no coach slightly reduces it.
+    const coachMult = typeof coachingMultiplier === 'function' ? coachingMultiplier() : 1;
+    const gain = baseGain * headroom * ageFactor * coachMult;
     return Math.min(Math.round(gain), allowed);
 }
 

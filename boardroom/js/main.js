@@ -47,10 +47,11 @@ function startGame() {
     // Auto-select lineup
     autoSelectLineup();
     
-    // Generate fixtures, sponsors, market
+    // Generate fixtures, sponsors, market, staff
     generateFixtures();
     generateSponsorOffers();
     generateTransferMarket();
+    generateStaffMarket();
     
     // Show game screen
     document.getElementById('introScreen').classList.add('hidden');
@@ -124,9 +125,10 @@ function endRound() {
         // Display income summary
         let incomeHtml = '<div style="display: grid; gap: 4px;">';
         Object.entries(gameState.lastIncomeBreakdown).forEach(([key, value]) => {
+            const neg = value < 0;
             incomeHtml += `<div style="display: flex; justify-content: space-between;">
                 <span>${key}</span>
-                <span style="color: var(--accent-green);">+€${value.toLocaleString()}</span>
+                <span style="color: ${neg ? 'var(--accent-red)' : 'var(--accent-green)'};">${neg ? '-' : '+'}€${Math.abs(value).toLocaleString()}</span>
             </div>`;
         });
         incomeHtml += `<div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px;">

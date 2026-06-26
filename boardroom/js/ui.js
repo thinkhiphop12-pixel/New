@@ -362,6 +362,50 @@ function updateRecoveryPanel() {
     updateRestCostDisplay();
 }
 
+// Update staff panel (Head Coach + Physio)
+function updateStaffPanel() {
+    const container = document.getElementById('staffContent');
+    if (!container) return;
+
+    const roleMeta = {
+        coach: { label: 'Head Coach', icon: '🎯', effect: s => `Training boost ×${(0.9 + (s.quality / 100) * 0.5).toFixed(2)}` },
+        physio: { label: 'Physio', icon: '🧪', effect: s => `Recovery boost ×${(1.0 + (s.quality / 100) * 0.4).toFixed(2)}, fewer injuries` }
+    };
+
+    let html = '';
+    ['coach', 'physio'].forEach(role => {
+        const meta = roleMeta[role];
+        const hired = gameState.staff[role];
+        html += `<div class="card" style="margin-bottom: 16px;">
+            <div class="card-title">${meta.icon} ${meta.label}</div>`;
+        if (hired) {
+            html += `<p style="color: var(--accent-green); font-size: 18px;">${hired.name} <span style="color: var(--text-secondary);">— Quality ${hired.quality}</span></p>
+                <p style="color: var(--text-secondary);">${meta.effect(hired)} · €${hired.wage.toLocaleString()}/round</p>
+                <div class="btn-group"><button class="btn small danger" onclick="releaseStaff('${role}'); updateAllUI();">RELEASE</button></div>`;
+        } else {
+            html += `<p style="color: var(--text-secondary);">No ${meta.label.toLowerCase()} hired — you're missing the bonus.</p>`;
+        }
+        // Available candidates for this role
+        const candidates = gameState.staffMarket.filter(s => s.role === role).sort((a, b) => b.quality - a.quality);
+        if (candidates.length) {
+            html += `<table class="data-table" style="margin-top: 12px;"><thead><tr><th>NAME</th><th>QUALITY</th><th>EFFECT</th><th>WAGE</th><th></th></tr></thead><tbody>`;
+            candidates.forEach(s => {
+                html += `<tr>
+                    <td>${s.name}</td>
+                    <td>${s.quality}</td>
+                    <td style="color: var(--text-secondary);">${meta.effect(s)}</td>
+                    <td>€${s.wage.toLocaleString()}/rd</td>
+                    <td><button class="btn small" onclick="hireStaff('${s.id}'); updateAllUI();">HIRE</button></td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+        }
+        html += `</div>`;
+    });
+
+    container.innerHTML = html;
+}
+
 // Update sponsors panel
 function updateSponsorsPanel() {
     // Shirt sponsor section
@@ -575,6 +619,7 @@ function updateAllUI() {
     updateTransferMarket();
     updateTrainingPanel();
     updateRecoveryPanel();
+    updateStaffPanel();
     updateSponsorsPanel();
     updateStadiumProjections();
     updateLeagueTable();
@@ -586,7 +631,8 @@ function updateAllUI() {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         showNotification, updateHeaderStats, updateSquadTable, updateLineupPanel,
-        updateTransferMarket, updateTrainingPanel, updateRecoveryPanel, updateSponsorsPanel,
+        updateTransferMarket, updateTrainingPanel, updateRecoveryPanel,
+        updateStaffPanel, updateSponsorsPanel,
         updateLeagueTable, updateFixturesPanel, updateAllUI
     };
 }

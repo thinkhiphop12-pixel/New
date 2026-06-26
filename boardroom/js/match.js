@@ -184,6 +184,13 @@ function processPlayerTeamRound(playerMatch) {
         breakdown['🎫 Match Day'] = matchRevenue;
     }
     
+    // Staff wages (a recurring expense, shown as a negative line in the summary)
+    const wages = typeof totalStaffWages === 'function' ? totalStaffWages() : 0;
+    if (wages > 0) {
+        income -= wages;
+        breakdown['👔 Staff Wages'] = -wages;
+    }
+
     gameState.budget += income;
     gameState.weeklyIncome = income;
     gameState.lastIncomeBreakdown = breakdown;
@@ -210,17 +217,19 @@ function processPlayerTeamRound(playerMatch) {
                 }
             }
             
-            // Injury risk only if condition is low
-            if (player.condition < 50 && Math.random() > (player.condition / 80)) {
+            // Injury risk only if condition is low. A good physio reduces it.
+            const injuryGuard = typeof physioMultiplier === 'function' ? physioMultiplier() : 1;
+            if (player.condition < 50 && Math.random() > (player.condition / 80) * injuryGuard) {
                 const injurySeverity = 10 + Math.floor(Math.random() * 20);
                 player.condition = Math.max(20, player.condition - injurySeverity);
                 showNotification(`${player.name} picked up an injury!`, true);
             }
         } else if (!player.inRest) {
-            // Passive bench recovery for benched players. Resting players are
-            // skipped here — they get their (larger) recovery boost below.
-            player.energy = Math.min(100, player.energy + 25);
-            player.condition = Math.min(100, player.condition + 10);
+            // Passive bench recovery for benched players (boosted by a physio).
+            // Resting players are skipped here — they get their larger boost below.
+            const physioMult = typeof physioMultiplier === 'function' ? physioMultiplier() : 1;
+            player.energy = Math.min(100, player.energy + Math.round(25 * physioMult));
+            player.condition = Math.min(100, player.condition + Math.round(10 * physioMult));
         }
 
         // Age-based natural condition recovery

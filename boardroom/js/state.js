@@ -33,6 +33,8 @@ function createInitialState() {
         selectedTrainingType: null,
         restQueue: [],
         selectedRestType: null,
+        staff: { coach: null, physio: null },
+        staffMarket: [],
         messageLog: [], // New: stores all notifications
         usedPlayerNames: [] // Real player names already assigned this game
     };

@@ -118,13 +118,22 @@ function renderIncomeBreakdown() {
         <span>~€${matchRevenue.toLocaleString()}</span>
     </div>`;
     
+    // Staff wages (recurring expense)
+    const wages = typeof totalStaffWages === 'function' ? totalStaffWages() : 0;
+    if (wages > 0) {
+        html += `<div class="income-item">
+            <span>👔 Staff Wages</span>
+            <span style="color: var(--accent-red);">-€${wages.toLocaleString()}</span>
+        </div>`;
+    }
+
     // Total (estimated per round average)
     const sponsorIncome = calculateSponsorIncome();
-    const avgIncome = sponsorIncome + Math.floor(matchRevenue / 2); // Half are home games
-    
+    const avgIncome = sponsorIncome + Math.floor(matchRevenue / 2) - wages; // Half are home games
+
     html += `<div class="income-item" style="border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: 8px;">
         <strong>Avg per Round</strong>
-        <strong style="color: var(--accent-green);">€${avgIncome.toLocaleString()}</strong>
+        <strong style="color: ${avgIncome < 0 ? 'var(--accent-red)' : 'var(--accent-green)'};">${avgIncome < 0 ? '-' : ''}€${Math.abs(avgIncome).toLocaleString()}</strong>
     </div>`;
     
     container.innerHTML = html;
