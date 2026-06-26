@@ -137,6 +137,40 @@
     </div>
   </section>
 
+  <!-- ===================== MANAGER BRIEFING ===================== -->
+  <section id="managerScreen" class="screen hidden">
+    <div class="briefing-inner">
+      <div class="briefing-head">
+        <span class="briefing-tag">MANAGER'S BRIEFING</span>
+        <h2 class="briefing-title">Your XI is in. Time for the press conference.</h2>
+      </div>
+
+      <div class="briefing-sim" id="briefingSim">
+        <div class="sim-spinner"></div>
+        <div class="sim-label" id="simLabel">Simulating 10,000 World Cups…</div>
+      </div>
+
+      <div class="briefing-odds hidden" id="briefingOdds">
+        <div class="odds-headline">
+          <div class="odds-stat">
+            <span class="odds-num" id="oddsChampion"></span>
+            <span class="odds-label">Title odds</span>
+          </div>
+          <div class="odds-stat">
+            <span class="odds-num" id="oddsPerfect"></span>
+            <span class="odds-label">7-0-0 odds</span>
+          </div>
+        </div>
+
+        <div class="odds-bars" id="oddsBars"></div>
+
+        <p class="odds-prediction" id="oddsPrediction"></p>
+
+        <button class="btn-primary" id="briefingContinueBtn">Take the squad into the World Cup →</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ===================== RESULTS ===================== -->
   <section id="resultsScreen" class="screen hidden">
     <div class="results-inner">

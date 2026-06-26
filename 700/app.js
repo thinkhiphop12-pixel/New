@@ -202,6 +202,13 @@ function ovrTier(o){
   if (o >= 65) return 'tier-good';
   return 'tier-avg';
 }
+// Borrowed from rival squad-builder UI patterns: a glow tier for the rarest Icon pulls,
+// layered on top of the existing OVR badge tiers (which already cover regular players).
+function iconRarityClass(o){
+  if (o >= 95) return ' icon-mythical';
+  if (o >= 90) return ' icon-legend';
+  return '';
+}
 
 /* ---------------- helpers ---------------- */
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -258,6 +265,7 @@ async function boot(){
   buildFormationGrid();
   wireSetup();
   wireGameScreen();
+  wireManagerScreen();
   wireResultsScreen();
   showSetup();
 }
@@ -310,6 +318,7 @@ function showSetup(){
   $('setupStart').disabled = true;
   $('setupScreen').classList.remove('hidden');
   $('gameScreen').classList.add('hidden');
+  $('managerScreen').classList.add('hidden');
   $('resultsScreen').classList.add('hidden');
   $('roundPill').textContent = '';
 }
@@ -329,6 +338,7 @@ function startGame(mode, formationKey){
     sortByRating: false,
   };
   $('setupScreen').classList.add('hidden');
+  $('managerScreen').classList.add('hidden');
   $('resultsScreen').classList.add('hidden');
   $('gameScreen').classList.remove('hidden');
   $('formationTag').textContent = formationKey;
@@ -406,7 +416,7 @@ function confirmPick(slotId, player, country, year){
   $('draftPane').classList.add('hidden');
   $('spinPane').classList.remove('hidden');
   if (countPicks() >= TOTAL_ROUNDS) {
-    showResults();
+    showManagerBriefing();
   } else {
     state.round++;
   }
@@ -541,7 +551,7 @@ function openIconOffer(nation){
   icons.forEach(icon => {
     const used = isUsedPlayer(icon);
     const row = document.createElement('div');
-    row.className = 'player-row' + (used ? ' ineligible' : '');
+    row.className = 'player-row' + (used ? ' ineligible' : '') + iconRarityClass(icon.o);
     const [shirt] = colorFor(icon.country);
     const ovrBadge = `<span class="p-ovr-badge ${ovrTier(icon.o)}">${icon.o}</span>`;
     const statsGrid = `<div class="p-stats-grid">${['pac','sho','pas','dri','def','phy'].map(k =>
@@ -754,6 +764,107 @@ function topScorer(rows){
   const fws = rows.filter(r => r.pick.player.p[0] === 'FW');
   const pool = fws.length ? fws : rows;
   return pool.reduce((best, r) => (!best || r.pick.player.sho > best.pick.player.sho) ? r : best, null);
+}
+
+/* ============================================================
+   MANAGER'S BRIEFING
+   A pre-result Monte Carlo screen — runs many simulated tournaments off the
+   same squad-rating curve that drives the real (deterministic) result, so
+   the player gets title odds and round-by-round survival % before seeing
+   their actual record. Purely a presentation/manager-mode layer: it reads
+   the squad but never feeds back into computeRecord()/showResults().
+   ============================================================ */
+const KNOCKOUT_ROUNDS = ['Round of 16', 'Quarter-Final', 'Semi-Final', 'World Champion'];
+const MC_TRIALS = 10000;
+
+function simulateOdds(S){
+  const { W, D, L } = recordFromRating(S);
+  // Per-game outcome odds implied by the deterministic expected record.
+  const pWin = clamp(W / GAMES, 0, 1);
+  const pDraw = clamp(D / GAMES, 0, 1 - pWin);
+  const pLoss = 1 - pWin - pDraw;
+
+  let reach = [0, 0, 0, 0]; // R16, QF, SF, Final/Champion
+  let perfect = 0;
+
+  for (let t = 0; t < MC_TRIALS; t++) {
+    // Group stage: survive unless you lose all 3 games.
+    let groupLosses = 0, groupAllWins = true;
+    for (let g = 0; g < 3; g++) {
+      const roll = Math.random();
+      if (roll < pWin) { /* win */ }
+      else if (roll < pWin + pDraw) { groupAllWins = false; }
+      else { groupLosses++; groupAllWins = false; }
+    }
+    if (groupLosses === 3) continue; // group stage exit
+
+    let aliveAllWins = groupAllWins;
+    for (let round = 0; round < 4; round++) {
+      const roll = Math.random();
+      let survived;
+      if (roll < pWin) { survived = true; }
+      else if (roll < pWin + pDraw) { survived = Math.random() < 0.5; aliveAllWins = false; } // penalties
+      else { survived = false; aliveAllWins = false; }
+      if (!survived) break;
+      reach[round]++;
+      if (round === 3 && aliveAllWins) perfect++;
+    }
+  }
+
+  return {
+    r16: reach[0] / MC_TRIALS,
+    qf: reach[1] / MC_TRIALS,
+    sf: reach[2] / MC_TRIALS,
+    champion: reach[3] / MC_TRIALS,
+    perfect: perfect / MC_TRIALS,
+  };
+}
+
+function predictionBlurb(odds){
+  if (odds.perfect >= 0.05) return "This squad has a real shot at the legendary 7-0-0.";
+  if (odds.champion >= 0.15) return "A genuine title contender — expect a deep run.";
+  if (odds.sf >= 0.4) return "Strong enough to threaten the semi-finals.";
+  if (odds.r16 >= 0.5) return "Should get out of the group, but the knockouts will be tight.";
+  return "A tough draw to work with — group stage exit is the likeliest outcome.";
+}
+
+function pct(p){ return `${Math.round(p * 100)}%`; }
+
+let pendingOdds = null;
+function wireManagerScreen(){
+  $('briefingContinueBtn').addEventListener('click', () => {
+    $('managerScreen').classList.add('hidden');
+    showResults();
+  });
+}
+
+function showManagerBriefing(){
+  const rows = SLOTS.map(slot => ({ slot, pick: state.picks[slot.id] }));
+  const S = rows.reduce((a, r) => a + r.pick.player.o, 0) / rows.length;
+
+  $('gameScreen').classList.add('hidden');
+  $('managerScreen').classList.remove('hidden');
+  $('briefingSim').classList.remove('hidden');
+  $('briefingOdds').classList.add('hidden');
+  fillAllAdSlots();
+
+  setTimeout(() => {
+    const odds = simulateOdds(S);
+    pendingOdds = odds;
+    $('oddsChampion').textContent = pct(odds.champion);
+    $('oddsPerfect').textContent = pct(odds.perfect);
+    const oddsByRound = [odds.r16, odds.qf, odds.sf, odds.champion];
+    $('oddsBars').innerHTML = KNOCKOUT_ROUNDS.map((label, i) => ({ label, p: oddsByRound[i] })).map(row => `
+      <div class="odds-bar-row">
+        <span class="odds-bar-label">${row.label}</span>
+        <div class="odds-bar-track"><div class="odds-bar-fill" style="width:${Math.max(2, row.p*100)}%"></div></div>
+        <span class="odds-bar-pct">${pct(row.p)}</span>
+      </div>`).join('');
+    $('oddsPrediction').textContent = predictionBlurb(odds);
+    $('briefingSim').classList.add('hidden');
+    $('briefingOdds').classList.remove('hidden');
+    track('manager_briefing', { S: +S.toFixed(1), champion: odds.champion, perfect: odds.perfect });
+  }, 1400);
 }
 
 /* ---------------- results screen ---------------- */
