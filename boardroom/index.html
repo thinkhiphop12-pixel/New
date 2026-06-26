@@ -26,8 +26,22 @@
     <!-- Intro Screen -->
     <div class="intro-screen" id="introScreen">
         <h1 class="intro-title">⚽ BOARDROOM ⚽</h1>
-        <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 20px;">Select your team and kit colors, then build a dynasty over the seasons</p>
-        
+        <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 20px;">Pick an era and a team, choose your kit, then build a dynasty over the seasons</p>
+
+        <div class="era-select">
+            <div class="era-label">CHOOSE YOUR ERA</div>
+            <div class="era-options">
+                <button class="era-option selected" data-era="2010">
+                    <span class="era-year">2010</span>
+                    <span class="era-desc">Club-accurate FIFA 10 squads</span>
+                </button>
+                <button class="era-option" data-era="2005">
+                    <span class="era-year">2005</span>
+                    <span class="era-desc">Golden-era FIFA 05 player pool</span>
+                </button>
+            </div>
+        </div>
+
         <div class="team-select" id="teamSelect"></div>
         
         <div class="color-picker-group">
@@ -413,6 +427,7 @@
     <!-- Load JS Modules in correct order -->
     <script src="js/data.js"></script>
     <script src="js/realplayers.js"></script>
+    <script src="js/players2005.js"></script>
     <script src="js/state.js"></script>
     <script src="js/players.js"></script>
     <script src="js/sponsors.js"></script>

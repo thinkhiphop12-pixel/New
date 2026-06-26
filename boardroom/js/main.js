@@ -37,7 +37,18 @@ function startGame() {
     // Set kit colors from picker
     gameState.kit.primary = document.getElementById('primaryColor').value;
     gameState.kit.secondary = document.getElementById('secondaryColor').value;
-    
+
+    // Regenerate teams for the chosen era (rosters depend on gameState.era).
+    // Preserve the user's chosen club by name, since generateTeams reshuffles
+    // the league into new indices, and start the name pool fresh.
+    const selectedName = getPlayerTeam() ? getPlayerTeam().name : null;
+    gameState.usedPlayerNames = [];
+    generateTeams();
+    if (selectedName) {
+        const newIdx = gameState.teams.findIndex(t => t.name === selectedName);
+        if (newIdx >= 0) gameState.playerTeamIndex = newIdx;
+    }
+
     // Boost player team
     boostPlayerTeam();
     
@@ -267,6 +278,15 @@ function setupEventListeners() {
         if (e.target.files[0]) loadGame(e.target.files[0]);
     });
     
+    // Era selector
+    document.querySelectorAll('.era-option').forEach(option => {
+        option.addEventListener('click', () => {
+            document.querySelectorAll('.era-option').forEach(o => o.classList.remove('selected'));
+            option.classList.add('selected');
+            gameState.era = option.dataset.era;
+        });
+    });
+
     // Start game button
     document.getElementById('startGame')?.addEventListener('click', startGame);
     

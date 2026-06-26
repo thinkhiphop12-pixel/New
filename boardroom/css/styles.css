@@ -1,3 +1,13 @@
+/* ==================== ERA SELECTOR ==================== */
+.era-select { margin: 0 auto 24px; max-width: 520px; }
+.era-label { color: var(--text-secondary); font-size: 14px; letter-spacing: 0.1em; margin-bottom: 10px; }
+.era-options { display: flex; gap: 12px; justify-content: center; }
+.era-option { flex: 1; max-width: 220px; background: var(--bg-card); border: 2px solid var(--border-color); border-radius: 8px; padding: 14px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; transition: all 0.2s; font-family: inherit; }
+.era-option:hover { border-color: var(--accent-gold); }
+.era-option.selected { border-color: var(--accent-gold); box-shadow: 0 0 16px rgba(255,215,0,0.25); background: linear-gradient(135deg, var(--bg-card), var(--bg-panel)); }
+.era-year { font-size: 26px; font-weight: bold; color: var(--accent-gold); font-family: 'Press Start 2P', monospace; }
+.era-desc { font-size: 13px; color: var(--text-secondary); }
+
 /* ==================== CSS VARIABLES ==================== */
 :root {
     --bg-dark: #0a0e14;

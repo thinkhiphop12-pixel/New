@@ -38,9 +38,22 @@ function drawRealPlayer(position, clubName) {
     const bucket = POSITION_TO_POOL[position] === 'DF' ? 'DEF'
         : POSITION_TO_POOL[position] === 'MF' ? 'MID'
         : POSITION_TO_POOL[position] === 'FW' ? 'FWD' : 'GK';
+    const poolKey = POSITION_TO_POOL[position] || 'MF';
+    // 2005 era: draw from the FIFA 05 era pool (no club affiliation in that data,
+    // so we skip club rosters entirely). 2010 era: club-accurate FIFA 10 rosters.
+    if (gameState.era === '2005' && typeof REAL_PLAYERS_2005 !== 'undefined') {
+        const era2005 = REAL_PLAYERS_2005[poolKey] || [];
+        const used2005 = getUsedNames();
+        for (let attempt = 0; attempt < 10; attempt++) {
+            if (era2005.length === 0) break;
+            const cand = era2005[Math.floor(Math.random() * era2005.length)];
+            if (!used2005.includes(cand.n)) { used2005.push(cand.n); return cand; }
+        }
+        if (era2005.length) return era2005[Math.floor(Math.random() * era2005.length)];
+    }
     const clubRoster = clubName && typeof REAL_CLUB_ROSTERS !== 'undefined' ? REAL_CLUB_ROSTERS[clubName] : null;
     const clubPool = clubRoster ? clubRoster[bucket] || [] : [];
-    const flatPool = REAL_PLAYER_POOLS[POSITION_TO_POOL[position] || 'MF'] || [];
+    const flatPool = REAL_PLAYER_POOLS[poolKey] || [];
     const used = getUsedNames();
 
     for (let attempt = 0; attempt < 8; attempt++) {

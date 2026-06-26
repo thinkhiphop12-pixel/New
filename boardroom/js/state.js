@@ -4,6 +4,7 @@
 function createInitialState() {
     return {
         playerTeamIndex: 0,
+        era: '2010',
         round: 1,
         season: 1,
         budget: 5000000,
