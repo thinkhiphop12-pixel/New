@@ -16,7 +16,11 @@ const ADSTERRA_BANNER_KEY = '';     // banner zone key, used for sidebar/sticky-
 // can only be rendered into a single slot per page (in-content placement).
 const ADSTERRA_NATIVE_SRC = 'https://pl29902468.effectivecpmnetwork.com/14db44511efd6640ca8f50a10426428d/invoke.js';
 const ADSTERRA_NATIVE_CONTAINER_ID = 'container-14db44511efd6640ca8f50a10426428d';
-const ADSTERRA_POPUNDER_SRC = 'https://pl29902469.effectivecpmnetwork.com/5f/72/7f/5f727f4293263daa3c71da133b05633c.js';
+// Popunder disabled by product decision — random-click redirects to ad
+// landing pages felt too disruptive on a brand-new site. Leave src empty
+// (every popunder call below already no-ops on an empty src) so it's a
+// one-line re-enable later if wanted.
+const ADSTERRA_POPUNDER_SRC = '';
 const ADSTERRA_DIRECT_LINK = '';    // direct-link URL for "Get Hints" style placements
 
 // Affiliate tracking links — fill in once you have real Amazon Associates /
@@ -255,10 +259,10 @@ function fireDirectLinkAd(placement){
 
 function initAds(){
   if (adsRemoved() || getConsent() !== 'all') return;
+  // Capped at 2 ad surfaces per page (one in-content slot + the social
+  // bar) per product decision — sticky footer and popunder stay disabled.
   initLazyAds();
   initSocialBar();
-  initStickyFooterAd();
-  initExitIntentPopunder();
   setTimeout(detectAdblockAndPrompt, 500);
 }
 
