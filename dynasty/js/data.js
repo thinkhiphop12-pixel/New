@@ -1,29 +1,25 @@
 // ==================== GAME CONSTANTS & DATA ====================
 
+// Top-flight clubs for the 18-team league. Real club names, used the same
+// descriptive/parody way as the rest of the site's games (see terms.html) —
+// not affiliated with or endorsed by any of these clubs.
 const TEAM_NAMES = [
-    "Dynamo Thunderstrike", "FC Ironforge", "Athletic Brewmasters",
-    "Real Pizzeria", "Sporting Couch Potatoes", "Inter Naptime",
-    "Borussia Dönerburg", "AS Espresso", "Olympique Baguette",
-    "FC Schnitzelheim", "Bayern Bratwurst", "Atlético Siesta",
-    "Juventus Gelato", "Manchester Drizzle", "Liverpool Scousers",
-    "Chelsea Pensioners", "Arsenal Cannoneers", "Tottenham Bottlers"
+    "Arsenal", "Liverpool", "Manchester City", "Manchester United",
+    "Chelsea", "Tottenham Hotspur", "Real Madrid", "FC Barcelona",
+    "Bayern Munich", "Borussia Dortmund", "Juventus", "AC Milan",
+    "Inter Milan", "Paris Saint-Germain", "Ajax", "Porto", "Benfica", "Celtic"
 ];
 
-const FIRST_NAMES = [
-    "Marco", "Luca", "Stefan", "Andreas", "Michael", "Thomas", "David",
-    "Kevin", "Patrick", "Daniel", "Tobias", "Christian", "Sebastian",
-    "Alexander", "Markus", "Jan", "Felix", "Julian", "Florian", "Maximilian",
-    "Carlos", "Juan", "Pedro", "Miguel", "Roberto", "Francesco", "Giovanni",
-    "Pierre", "Jean", "Antoine", "James", "Oliver", "Harry", "George"
-];
-
-const LAST_NAMES = [
-    "Müller", "Schmidt", "Schneider", "Fischer", "Weber", "Meyer",
-    "Wagner", "Becker", "Schulz", "Hoffmann", "Koch", "Richter",
-    "García", "Rodríguez", "Martínez", "Rossi", "Russo", "Ferrari",
-    "Dupont", "Martin", "Bernard", "Smith", "Johnson", "Williams",
-    "Brown", "Jones", "Wilson", "Taylor", "Davies", "Evans"
-];
+// Relative budget multiplier reflecting real-world club prestige/spending
+// power. Anything not listed (e.g. promoted clubs) defaults to 1.
+const TEAM_BUDGET_TIER = {
+    "Manchester City": 1.6, "Real Madrid": 1.6, "Paris Saint-Germain": 1.5,
+    "FC Barcelona": 1.4, "Bayern Munich": 1.4, "Chelsea": 1.3,
+    "Manchester United": 1.3, "Liverpool": 1.3, "Arsenal": 1.2,
+    "Juventus": 1.15, "Tottenham Hotspur": 1.1, "Inter Milan": 1.1,
+    "Borussia Dortmund": 1.05, "AC Milan": 1.05,
+    "Benfica": 0.9, "Porto": 0.9, "Ajax": 0.85, "Celtic": 0.8
+};
 
 const SPONSOR_NAMES = [
     "TechCorp Industries", "Mega Burger Co.", "Flash Energy Drinks",
@@ -65,14 +61,14 @@ const STADIUM_EXPANSIONS = {
 // Position distribution for squad generation
 const POSITION_COUNTS = { GK: 2, DEF: 5, MID: 5, FWD: 4 };
 
-// Relegated teams get replaced by these
+// Relegated teams get replaced by these — also real clubs, one tier down
+// in global recognition, so a promoted side still feels like a real team.
 const PROMOTION_TEAMS = [
-    "FC Kebabistan", "Dynamo Disco", "Real Sofa Madrid", "Inter Napping",
-    "Borussia Mönchengladbach 2", "AS Grandma's Kitchen", "Olympique Croissant",
-    "FC Currywurst", "Bayern Lederhosen", "Atlético Paella", "Juventus Pasta",
-    "Manchester Raincoats", "Liverpool Dockworkers", "Chelsea Tractors",
-    "Arsenal Canaries", "Tottenham Roosters", "AC Espresso Shot",
-    "Sporting Procrastinators", "Benfica Bacalhau", "Porto Portwine"
+    "Newcastle United", "Aston Villa", "West Ham United", "Everton",
+    "Leicester City", "Wolverhampton Wanderers", "Sevilla", "Valencia",
+    "Atalanta", "Napoli", "AS Roma", "Lyon", "Marseille",
+    "Eintracht Frankfurt", "RB Leipzig", "Feyenoord", "PSV Eindhoven",
+    "Sporting CP", "Fenerbahçe", "Galatasaray"
 ];
 
 // Random events - some good, some bad, some just funny
@@ -111,7 +107,7 @@ const RANDOM_EVENTS = [
 // Export for module use
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-        TEAM_NAMES, FIRST_NAMES, LAST_NAMES, SPONSOR_NAMES,
+        TEAM_NAMES, TEAM_BUDGET_TIER, PROMOTION_TEAMS, SPONSOR_NAMES,
         SPONSOR_TYPES, SPONSOR_BASE_VALUES, TRAINING_CONFIG,
         STADIUM_EXPANSIONS, POSITION_COUNTS
     };

@@ -12,15 +12,50 @@ function calculatePlayerValue(player) {
     return Math.floor(baseValue * ageFactor);
 }
 
+// Position label (GK/DEF/MID/FWD) -> real player pool (GK/DF/MF/FW)
+const POSITION_TO_POOL = { GK: 'GK', DEF: 'DF', MID: 'MF', FWD: 'FW' };
+
+// Direct references to the pools loaded from realplayers.js. These are
+// declared with `const` there, so they're lexical globals, not window
+// properties — can't be looked up via window[`REAL_PLAYERS_${...}`].
+const REAL_PLAYER_POOLS = {
+    GK: REAL_PLAYERS_GK, DF: REAL_PLAYERS_DF, MF: REAL_PLAYERS_MF, FW: REAL_PLAYERS_FW
+};
+
+// Tracks names already handed out in the current game so two squads
+// never end up with the same real player.
+function getUsedNames() {
+    if (!gameState.usedPlayerNames) gameState.usedPlayerNames = [];
+    return gameState.usedPlayerNames;
+}
+
+// Pull a real player (name + rating) from the pool for this position,
+// preferring one not already used elsewhere in this game.
+function drawRealPlayer(position) {
+    const pool = REAL_PLAYER_POOLS[POSITION_TO_POOL[position] || 'MF'] || [];
+    if (pool.length === 0) return { n: 'Unknown Player', o: 50 };
+    const used = getUsedNames();
+    for (let attempt = 0; attempt < 8; attempt++) {
+        const candidate = pool[Math.floor(Math.random() * pool.length)];
+        if (!used.includes(candidate.n)) {
+            used.push(candidate.n);
+            return candidate;
+        }
+    }
+    // Pool exhausted (extremely unlikely) — allow a repeat rather than fail.
+    return pool[Math.floor(Math.random() * pool.length)];
+}
+
 // Generate a single player
 function generatePlayer(position) {
     const age = 18 + Math.floor(Math.random() * 17);
-    const baseStrength = 40 + Math.floor(Math.random() * 40);
+    const real = drawRealPlayer(position);
+    const baseStrength = Math.max(40, Math.min(90, real.o + Math.floor(Math.random() * 7) - 3));
     const ageFactor = age < 28 ? 1 : 1 - (age - 28) * 0.03;
-    
+
     const player = {
         id: generateId(),
-        name: `${FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)]} ${LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)]}`,
+        name: real.n,
         position: position,
         age: age,
         energy: 85 + Math.floor(Math.random() * 15), // Start with good energy
@@ -31,7 +66,7 @@ function generatePlayer(position) {
         trainingBonus: 0,
         trainingEnergyCost: 0
     };
-    
+
     player.value = calculatePlayerValue(player);
     return player;
 }
@@ -55,6 +90,7 @@ function generateTeams() {
     const shuffledNames = [...TEAM_NAMES].sort(() => Math.random() - 0.5);
     
     for (let i = 0; i < 18; i++) {
+        const tier = TEAM_BUDGET_TIER[shuffledNames[i]] || 1;
         const team = {
             name: shuffledNames[i],
             players: generateSquad(),
@@ -67,7 +103,7 @@ function generateTeams() {
                 goalsAgainst: 0,
                 points: 0
             },
-            budget: 3000000 + Math.floor(Math.random() * 7000000),
+            budget: Math.floor((3000000 + Math.floor(Math.random() * 7000000)) * tier),
             isPlayer: false
         };
         gameState.teams.push(team);
@@ -79,8 +115,10 @@ function boostPlayerTeam() {
     const playerTeam = getPlayerTeam();
     playerTeam.isPlayer = true;
     
+    // New-manager bounce — small, since squads now carry real-world-informed
+    // ratings and a big flat boost would make the real club strengths meaningless.
     playerTeam.players.forEach(p => {
-        p.strength = Math.min(99, p.strength + 10);
+        p.strength = Math.min(99, p.strength + 4);
         p.energy = 90 + Math.floor(Math.random() * 10);
         p.value = calculatePlayerValue(p);
     });
@@ -140,10 +178,11 @@ function refreshAllPlayers() {
 function generateYouthPlayer(position) {
     const age = 16 + Math.floor(Math.random() * 3); // 16-18 years old
     const baseStrength = 25 + Math.floor(Math.random() * 25); // Lower base but potential
-    
+    const real = drawRealPlayer(position);
+
     const player = {
         id: generateId(),
-        name: `${FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)]} ${LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)]}`,
+        name: real.n,
         position: position,
         age: age,
         energy: 95 + Math.floor(Math.random() * 5), // Youth = lots of energy!
