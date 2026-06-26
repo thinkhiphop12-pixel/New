@@ -86,7 +86,7 @@
     </a>
   </div>
 
-  <div class="ad-slot" id="adSlotHome" data-ad-slot="">
+  <div class="ad-slot" id="adSlotHome" data-ad-slot="" data-ad-kind="native">
     <span class="ad-slot-label">Advertisement</span>
   </div>
 
@@ -142,6 +142,20 @@
   }
   </script>
 
+  <div class="support-block" id="affiliateBlock" style="display:none;">
+    <span class="support-label">Shop:</span>
+    <a id="affiliateAmazon" href="#" target="_blank" rel="noopener sponsored">Football gear on Amazon</a>
+    <span class="support-sep">·</span>
+    <a id="affiliateFanatics" href="#" target="_blank" rel="noopener sponsored">Kits on Fanatics</a>
+  </div>
+
+  <div class="support-block">
+    <label class="remove-ads-toggle">
+      <input type="checkbox" id="removeAdsToggle">
+      Hide ads on this device (preview — no payment yet)
+    </label>
+  </div>
+
   <footer class="site-footer">
     <a href="700/">7-0-0</a> · <a href="lineup/">Lineup</a> · <a href="scout/">Scout</a> · <a href="worldcup/">Bracket</a> · <a href="dynasty/">Dynasty</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a>
     <p class="footer-disclaimer">Ball Knowledge is an unofficial fan-made project, not affiliated with FIFA, the Premier League, or any club or federation. For enquiries, contact <a href="mailto:thinkhiphop12@gmail.com">thinkhiphop12@gmail.com</a>.</p>
@@ -166,5 +180,17 @@
 </div>
 <script src="shared/consent.js"></script>
 <script src="shared/ads.js"></script>
+<script>
+  if (AFFILIATE_LINKS.amazon && AFFILIATE_LINKS.fanatics) {
+    document.getElementById('affiliateAmazon').href = AFFILIATE_LINKS.amazon;
+    document.getElementById('affiliateFanatics').href = AFFILIATE_LINKS.fanatics;
+    document.getElementById('affiliateBlock').style.display = '';
+  }
+  const removeAdsToggle = document.getElementById('removeAdsToggle');
+  removeAdsToggle.checked = adsRemoved();
+  removeAdsToggle.addEventListener('change', () => {
+    try { localStorage.setItem('bk_remove_ads', removeAdsToggle.checked ? '1' : '0'); } catch(e){}
+  });
+</script>
 </body>
 </html>

@@ -101,6 +101,50 @@ button{ font-family:inherit; cursor:pointer; border:none; }
 .ad-rail-right{ right:calc(50% - 550px - 180px); }
 @media (max-width:1460px){ .ad-rail{ display:none; } }
 
+.ad-slot.ad-load-failed{ opacity:.4; }
+
+.sticky-footer-ad{
+  position:fixed; left:0; right:0; bottom:0; z-index:500;
+  margin:0; min-height:50px; max-height:90px;
+  border-radius:0; border-width:1px 0 0;
+}
+.sticky-ad-close{
+  position:absolute; top:4px; right:6px; width:20px; height:20px;
+  border-radius:50%; background:var(--bg); color:var(--ink-dim);
+  font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center;
+}
+
+.interstitial-overlay{
+  position:fixed; inset:0; z-index:900; background:rgba(8,16,11,.88);
+  display:flex; align-items:center; justify-content:center;
+}
+.interstitial-box{
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+  padding:18px; width:min(90vw, 420px); display:flex; flex-direction:column; gap:14px;
+}
+.interstitial-ad-slot{ margin:0; min-height:200px; }
+.interstitial-skip{
+  align-self:flex-end; background:var(--panel-2); color:var(--ink);
+  border:1px solid var(--line); border-radius:8px; padding:8px 14px; font-size:13px; font-weight:700;
+}
+.interstitial-skip:disabled{ color:var(--ink-dim); cursor:not-allowed; }
+
+.soft-banner{
+  position:fixed; left:50%; bottom:16px; transform:translateX(-50%); z-index:600;
+  max-width:min(92vw, 480px); background:var(--panel-2); border:1px solid var(--line);
+  border-radius:12px; padding:12px 16px; display:flex; align-items:center; gap:12px;
+  font-size:13px; color:var(--ink); box-shadow:0 8px 24px rgba(0,0,0,.4);
+}
+.soft-banner-dismiss{
+  background:transparent; color:var(--ink-dim); font-size:18px; line-height:1; flex-shrink:0;
+}
+
+.support-block{ text-align:center; font-size:12px; color:var(--ink-dim); padding:6px 0; }
+.support-label{ margin-right:6px; }
+.support-sep{ margin:0 6px; }
+.remove-ads-toggle{ display:inline-flex; align-items:center; gap:6px; cursor:pointer; }
+.remove-ads-toggle input{ cursor:pointer; }
+
 /* ---------------- about / FAQ ---------------- */
 .about{ max-width:760px; margin:0 auto; padding:8px 0 20px; }
 .about-inner{

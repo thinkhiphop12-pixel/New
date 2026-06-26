@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /footygames/
+Disallow: /admin/
 
 Sitemap: https://ballknw.com/sitemap.xml

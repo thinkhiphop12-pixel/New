@@ -5,11 +5,27 @@
    (see shared/consent.js applyConsent('all')). */
 
 // ---- Fill these in with real Adsterra zone/script IDs ----
-const ADSTERRA_SOCIAL_BAR_SRC = ''; // e.g. '//pl00000000.highcpmrevenuegate.com/00/00/00/xxxxxxxx.js'
+// Social Bar + Popunder are self-injecting "just drop the script tag" units,
+// which is what these two are. Banner/Native units use a different snippet
+// shape (script + a matching <div id="container-...">) — still pending real
+// codes for those, so sidebar/sticky-footer/in-content/interstitial slots
+// stay inert placeholders until that's filled in.
+const ADSTERRA_SOCIAL_BAR_SRC = 'https://pl29902467.effectivecpmnetwork.com/fe/33/d2/fe33d2be9e814339b1c0fa3d089168a8.js';
 const ADSTERRA_BANNER_KEY = '';     // banner zone key, used for sidebar/sticky-footer banners
-const ADSTERRA_NATIVE_KEY = '';     // native ad zone key, used for in-content placements
-const ADSTERRA_POPUNDER_SRC = '';   // popunder loader script src
+// Native Banner unit — Adsterra ties this to one fixed container id, so it
+// can only be rendered into a single slot per page (in-content placement).
+const ADSTERRA_NATIVE_SRC = 'https://pl29902468.effectivecpmnetwork.com/14db44511efd6640ca8f50a10426428d/invoke.js';
+const ADSTERRA_NATIVE_CONTAINER_ID = 'container-14db44511efd6640ca8f50a10426428d';
+const ADSTERRA_POPUNDER_SRC = 'https://pl29902469.effectivecpmnetwork.com/5f/72/7f/5f727f4293263daa3c71da133b05633c.js';
 const ADSTERRA_DIRECT_LINK = '';    // direct-link URL for "Get Hints" style placements
+
+// Affiliate tracking links — fill in once you have real Amazon Associates /
+// Fanatics partner tags. The homepage affiliate block stays hidden until
+// both are set (see index.html footer script).
+const AFFILIATE_LINKS = {
+  amazon: '',   // e.g. 'https://www.amazon.com/s?k=football+gear&tag=yourtag-20'
+  fanatics: ''  // e.g. 'https://www.fanatics.com/...?affid=yourid'
+};
 
 const ADS_REFRESH_MS = 45000;       // refresh a viewable ad slot at most this often
 const POPUNDER_COOLDOWN_MS = 24 * 60 * 60 * 1000; // once per day per browser
@@ -89,8 +105,12 @@ function initLazyAds(){
 function fillAdSlot(slot){
   if (adsRemoved() || getConsent() !== 'all') return;
   const kind = slot.dataset.adKind || 'banner';
-  if (kind === 'native' && ADSTERRA_NATIVE_KEY) {
-    loadAdsterraScript(`//pl-native.adsterra.placeholder/${ADSTERRA_NATIVE_KEY}.js`, slot);
+  if (kind === 'native') {
+    if (document.getElementById(ADSTERRA_NATIVE_CONTAINER_ID)) return; // one native unit per page
+    const div = document.createElement('div');
+    div.id = ADSTERRA_NATIVE_CONTAINER_ID;
+    slot.appendChild(div);
+    loadAdsterraScript(ADSTERRA_NATIVE_SRC, slot);
   } else if (ADSTERRA_BANNER_KEY) {
     loadAdsterraScript(`//pl-banner.adsterra.placeholder/${ADSTERRA_BANNER_KEY}.js`, slot);
   } else {
@@ -102,6 +122,7 @@ function fillAdSlot(slot){
 
 function refreshAdSlot(slot){
   if (adsRemoved() || getConsent() !== 'all') return;
+  if (slot.dataset.adKind === 'native') return; // native unit's own script self-manages, load once
   slot.classList.remove('is-filled');
   fillAdSlot(slot);
 }
