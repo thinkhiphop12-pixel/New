@@ -1,0 +1,39 @@
+/* World Cup squad SEO pages — lightweight, mobile-first */
+:root{
+  --bg:#07120f; --panel:#0f211a; --panel2:#15302440; --line:rgba(114,255,177,.16);
+  --gold:#e3b23c; --ink:#eaf4ee; --dim:#9fbbab; --green:#26d07c;
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; line-height:1.55; }
+a{ color:var(--green); text-decoration:none; }
+a:hover{ text-decoration:underline; }
+.sq-top{ display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--line); flex-wrap:wrap; gap:8px; }
+.sq-brand{ display:flex; align-items:center; gap:9px; font-weight:800; color:var(--ink); letter-spacing:.02em; }
+.sq-nav a{ margin-left:14px; font-weight:600; font-size:14px; }
+.sq-main{ max-width:820px; margin:0 auto; padding:22px 18px 60px; }
+.sq-crumb{ font-size:13px; color:var(--dim); margin-bottom:10px; }
+h1{ font-size:30px; line-height:1.15; margin:6px 0 12px; }
+h2{ font-size:21px; margin:30px 0 12px; }
+.sq-grp{ font-size:15px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em; margin:20px 0 8px; }
+.sq-lede{ color:var(--dim); font-size:16px; }
+.sq-lede strong{ color:var(--ink); }
+.sq-xi-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; }
+.sq-xi-card{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:3px; }
+.sq-xi-ovr{ font-size:22px; font-weight:900; color:var(--gold); }
+.sq-xi-name{ font-weight:700; font-size:14px; }
+.sq-xi-pos{ font-size:12px; color:var(--dim); }
+.sq-table{ width:100%; border-collapse:collapse; margin-bottom:6px; }
+.sq-table th{ text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--dim); border-bottom:1px solid var(--line); padding:6px 8px; }
+.sq-table td{ padding:7px 8px; border-bottom:1px solid rgba(255,255,255,.05); font-size:14.5px; }
+.sq-ovr{ font-weight:800; color:var(--gold); text-align:right; }
+.sq-table td:nth-child(3){ text-align:right; }
+.sq-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+.sq-chips a{ background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:6px 13px; font-size:13.5px; font-weight:600; }
+.sq-hub-nation{ margin-bottom:18px; }
+.sq-hub-nation h2{ font-size:17px; margin:0 0 8px; }
+.sq-cta{ margin-top:36px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:24px; text-align:center; }
+.sq-cta p{ color:var(--dim); }
+.sq-btn{ display:inline-block; margin-top:8px; background:var(--gold); color:#1a1205; font-weight:800; padding:12px 22px; border-radius:10px; }
+.sq-btn:hover{ text-decoration:none; filter:brightness(1.05); }
+.sq-foot{ max-width:820px; margin:0 auto; padding:24px 18px 50px; border-top:1px solid var(--line); color:var(--dim); font-size:13px; text-align:center; }
+.sq-disc{ font-size:12px; opacity:.8; margin-top:8px; }
