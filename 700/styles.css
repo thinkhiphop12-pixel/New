@@ -343,17 +343,6 @@ input{ font-family:inherit; }
 .ad-slot.is-filled .ad-slot-label{ display:none; }
 .ad-slot ins.adsbygoogle{ width:100%; }
 
-.ad-rail{
-  display:none;
-  position:fixed; top:50%; transform:translateY(-50%);
-  width:160px; height:600px; margin-top:0;
-}
-.ad-rail-left{ left:max(12px, calc(50% - 570px - 160px - 16px)); }
-.ad-rail-right{ right:max(12px, calc(50% - 570px - 160px - 16px)); }
-@media (min-width:1480px){
-  .ad-rail{ display:flex; }
-}
-
 /* ---------------- about / FAQ ---------------- */
 .about{ max-width:760px; margin:0 auto; padding:8px 22px 50px; }
 .about-inner{

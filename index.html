@@ -51,7 +51,7 @@
 
   <div class="game-section-head" id="games">
     <span>Match Centre</span>
-    <strong>4 games ready</strong>
+    <strong>5 games ready</strong>
   </div>
 
   <div class="game-grid">
@@ -85,6 +85,14 @@
         <span class="gc-title">Boardroom</span>
         <span class="gc-desc">Take charge of a club: transfers, training, tactics, stadium and sponsors, across a multi-season retro management campaign.</span>
         <span class="gc-cta">Play Boardroom</span>
+      </span>
+    </a>
+    <a class="game-card" href="retro/">
+      <span class="gc-thumb gc-thumb-retro">RETRO</span>
+      <span class="gc-body">
+        <span class="gc-title">Retro Player</span>
+        <span class="gc-desc">A free open-source Game Boy Advance emulator that runs in your browser — load a ROM you own from your device and play instantly.</span>
+        <span class="gc-cta">Play Retro Player</span>
       </span>
     </a>
   </div>
@@ -162,7 +170,7 @@
   </div>
 
   <footer class="site-footer">
-    <a href="700/">7-0-0</a> · <a href="lineup/">Lineup</a> · <a href="worldcup/">Bracket</a> · <a href="boardroom/">Boardroom</a> · <a href="squads/">Squads</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a>
+    <a href="700/">7-0-0</a> · <a href="lineup/">Lineup</a> · <a href="worldcup/">Bracket</a> · <a href="boardroom/">Boardroom</a> · <a href="retro/">Retro Player</a> · <a href="squads/">Squads</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a>
     <p class="footer-disclaimer">Ball Knowledge is an unofficial fan-made project, not affiliated with FIFA, the Premier League, or any club or federation. For enquiries, contact <a href="mailto:thinkhiphop12@gmail.com">thinkhiphop12@gmail.com</a>.</p>
     <button class="btn-link cookie-settings-link" id="cookieSettingsBtn">Cookie settings</button>
   </footer>
@@ -176,9 +184,10 @@
   </div>
 
 </div>
-<script src="shared/consent.js"></script>
-<script src="shared/ads.js"></script>
+<script src="shared/consent.js" defer></script>
+<script src="shared/ads.js" defer></script>
 <script>
+document.addEventListener('DOMContentLoaded', () => {
   if (AFFILIATE_LINKS.amazon && AFFILIATE_LINKS.fanatics) {
     document.getElementById('affiliateAmazon').href = AFFILIATE_LINKS.amazon;
     document.getElementById('affiliateFanatics').href = AFFILIATE_LINKS.fanatics;
@@ -189,6 +198,7 @@
   removeAdsToggle.addEventListener('change', () => {
     try { localStorage.setItem('bk_remove_ads', removeAdsToggle.checked ? '1' : '0'); } catch(e){}
   });
+});
 </script>
 </body>
 </html>

@@ -99,10 +99,8 @@ body::before {
 .btn.small { padding: 6px 12px; font-size: 16px; }
 .btn-group { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
 
-.form-group { margin-bottom: 16px; }
-.form-label { display: block; color: var(--text-secondary); margin-bottom: 6px; }
-.form-input, .form-select { background: var(--bg-dark); border: 2px solid var(--border-color); color: var(--text-primary); padding: 10px 14px; font-family: 'VT323', monospace; font-size: 18px; border-radius: 4px; width: 100%; }
-.form-input:focus, .form-select:focus { outline: none; border-color: var(--accent-green); }
+.form-select { background: var(--bg-dark); border: 2px solid var(--border-color); color: var(--text-primary); padding: 10px 14px; font-family: 'VT323', monospace; font-size: 18px; border-radius: 4px; width: 100%; }
+.form-select:focus { outline: none; border-color: var(--accent-green); }
 
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 .card { background: var(--bg-card); border: 2px solid var(--border-color); border-radius: 8px; padding: 20px; }

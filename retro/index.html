@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07120f">
+<title>Retro Player — Play Your Own GBA Games in the Browser | Ball Knowledge</title>
+<meta name="description" content="Retro Player is a free, open-source Game Boy Advance emulator that runs entirely in your browser. Load a ROM file you legally own from your device — nothing is uploaded or hosted.">
+<meta property="og:title" content="Retro Player — Browser GBA Emulator">
+<meta property="og:description" content="Load your own legally-owned GBA ROM and play instantly in your browser. 100% client-side, nothing uploaded.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="../assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="../assets/og-image.png">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon-192.png">
+<link rel="apple-touch-icon" href="../assets/favicon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<nav class="game-nav" role="navigation" aria-label="Game navigation">
+  <a href="../">&#8592; Ball Knowledge</a>
+  <a href="index.html" class="active">&#127918; Retro Player</a>
+</nav>
+
+<main class="retro-wrap">
+  <header class="retro-head">
+    <h1>Retro Player</h1>
+    <p class="retro-sub">A free, open-source Game Boy Advance emulator that runs entirely in your browser. Load a ROM file from your own device to play — nothing is uploaded anywhere.</p>
+  </header>
+
+  <div class="retro-disclaimer">
+    <strong>Bring your own BIOS and ROM.</strong> Ball Knowledge does not host, link to, or distribute any BIOS or game files. You're responsible for only loading a BIOS and ROMs you legally own. Everything runs client-side — your files never leave your device.
+  </div>
+
+  <div class="retro-stage" id="retroStage">
+    <canvas id="emulator_target" width="240" height="160" aria-label="Emulator screen"></canvas>
+    <div class="retro-overlay" id="retroOverlay">
+      <p id="retroStep1">Step 1 — load a BIOS file (gba_bios.bin) from your own console backup</p>
+      <label class="retro-file-btn" for="biosInput">Choose BIOS file</label>
+      <input type="file" id="biosInput" accept=".bin,.rom" hidden>
+      <p id="retroStep2" class="retro-step-dim">Step 2 — load a .gba ROM file you own</p>
+      <label class="retro-file-btn retro-step-dim" for="romInput" id="romInputLabel">Choose ROM file</label>
+      <input type="file" id="romInput" accept=".gba" hidden disabled>
+    </div>
+    <span id="tempMessage" class="retro-temp-msg"></span>
+  </div>
+
+  <div class="retro-toolbar">
+    <button class="retro-tbtn" id="btnPause" disabled>Pause</button>
+    <button class="retro-tbtn" id="btnReset" disabled>Reset</button>
+    <button class="retro-tbtn" id="btnVolDown">Vol &minus;</button>
+    <button class="retro-tbtn" id="btnVolUp">Vol +</button>
+    <label class="retro-tbtn retro-file-btn" for="romInputSwap">Load new ROM</label>
+    <input type="file" id="romInputSwap" accept=".gba" hidden>
+  </div>
+
+  <div class="retro-pad" id="retroPad" aria-hidden="true">
+    <div class="retro-dpad">
+      <button class="retro-dbtn" data-key="up" aria-label="Up">&#9650;</button>
+      <button class="retro-dbtn" data-key="left" aria-label="Left">&#9664;</button>
+      <button class="retro-dbtn" data-key="right" aria-label="Right">&#9654;</button>
+      <button class="retro-dbtn" data-key="down" aria-label="Down">&#9660;</button>
+    </div>
+    <div class="retro-shoulders">
+      <button class="retro-sbtn" data-key="l">L</button>
+      <button class="retro-sbtn" data-key="r">R</button>
+    </div>
+    <div class="retro-abtns">
+      <button class="retro-abtn retro-bbtn" data-key="b">B</button>
+      <button class="retro-abtn retro-abtn-a" data-key="a">A</button>
+    </div>
+    <div class="retro-misc">
+      <button class="retro-mbtn" data-key="select">Select</button>
+      <button class="retro-mbtn" data-key="start">Start</button>
+    </div>
+  </div>
+
+  <section class="retro-faq">
+    <h2>How it works</h2>
+    <p>Retro Player embeds <strong>IodineGBA</strong>, an open-source (MIT-licensed) Game Boy Advance emulator written in JavaScript. When you choose a ROM file, it's read straight off your device into memory using the browser's File API — it is never sent to any server. Saves are stored locally in your browser only.</p>
+    <p>Keyboard controls: Arrow keys (D-pad), <kbd>X</kbd> (A), <kbd>Z</kbd> (B), <kbd>Enter</kbd> (Start), <kbd>Shift</kbd> (Select), <kbd>A</kbd>/<kbd>S</kbd> (L/R shoulders). On mobile, use the on-screen pad below the screen.</p>
+  </section>
+
+  <div class="ad-slot" id="adSlotRetro" data-ad-slot="" data-ad-kind="native">
+    <span class="ad-slot-label">Advertisement</span>
+  </div>
+
+  <footer class="site-footer">
+    <a href="../700/">7-0-0</a> · <a href="../lineup/">Lineup</a> · <a href="../worldcup/">Bracket</a> · <a href="../boardroom/">Boardroom</a> · <a href="../squads/">Squads</a> · <a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a>
+    <p class="footer-disclaimer">Retro Player is an independent, open-source emulator integration. Ball Knowledge does not host or provide ROM files of any kind. For enquiries, contact <a href="mailto:thinkhiphop12@gmail.com">thinkhiphop12@gmail.com</a>.</p>
+    <button class="btn-link cookie-settings-link" id="cookieSettingsBtn">Cookie settings</button>
+  </footer>
+</main>
+
+<div class="consent-banner hidden" id="consentBanner">
+  <p class="consent-text">We use cookies for basic analytics and to show ads. Choose what you're OK with — you can change this anytime in Cookie settings.</p>
+  <div class="consent-actions">
+    <button class="btn-ghost" id="consentEssentialBtn">Essential only</button>
+    <button class="btn-primary" id="consentAcceptBtn">Accept all</button>
+  </div>
+</div>
+
+<script src="engine/includes/TypedArrayShim.js" defer></script>
+<script src="engine/core/Cartridge.js" defer></script>
+<script src="engine/core/DMA.js" defer></script>
+<script src="engine/core/Graphics.js" defer></script>
+<script src="engine/core/RunLoop.js" defer></script>
+<script src="engine/core/Memory.js" defer></script>
+<script src="engine/core/IRQ.js" defer></script>
+<script src="engine/core/JoyPad.js" defer></script>
+<script src="engine/core/Serial.js" defer></script>
+<script src="engine/core/Sound.js" defer></script>
+<script src="engine/core/Timer.js" defer></script>
+<script src="engine/core/Wait.js" defer></script>
+<script src="engine/core/CPU.js" defer></script>
+<script src="engine/core/Saves.js" defer></script>
+<script src="engine/core/sound/FIFO.js" defer></script>
+<script src="engine/core/sound/Channel1.js" defer></script>
+<script src="engine/core/sound/Channel2.js" defer></script>
+<script src="engine/core/sound/Channel3.js" defer></script>
+<script src="engine/core/sound/Channel4.js" defer></script>
+<script src="engine/core/CPU/ARM.js" defer></script>
+<script src="engine/core/CPU/THUMB.js" defer></script>
+<script src="engine/core/CPU/CPSR.js" defer></script>
+<script src="engine/core/graphics/Renderer.js" defer></script>
+<script src="engine/core/graphics/RendererProxy.js" defer></script>
+<script src="engine/core/graphics/BGTEXT.js" defer></script>
+<script src="engine/core/graphics/BG2FrameBuffer.js" defer></script>
+<script src="engine/core/graphics/BGMatrix.js" defer></script>
+<script src="engine/core/graphics/AffineBG.js" defer></script>
+<script src="engine/core/graphics/ColorEffects.js" defer></script>
+<script src="engine/core/graphics/Mosaic.js" defer></script>
+<script src="engine/core/graphics/OBJ.js" defer></script>
+<script src="engine/core/graphics/OBJWindow.js" defer></script>
+<script src="engine/core/graphics/Window.js" defer></script>
+<script src="engine/core/graphics/Compositor.js" defer></script>
+<script src="engine/core/memory/DMA0.js" defer></script>
+<script src="engine/core/memory/DMA1.js" defer></script>
+<script src="engine/core/memory/DMA2.js" defer></script>
+<script src="engine/core/memory/DMA3.js" defer></script>
+<script src="engine/core/cartridge/SaveDeterminer.js" defer></script>
+<script src="engine/core/cartridge/SRAM.js" defer></script>
+<script src="engine/core/cartridge/FLASH.js" defer></script>
+<script src="engine/core/cartridge/EEPROM.js" defer></script>
+<script src="engine/core/Emulator.js" defer></script>
+<script src="engine/user_scripts/XAudioJS/resampler.js" defer></script>
+<script src="engine/user_scripts/XAudioJS/XAudioServer.js" defer></script>
+<script src="engine/user_scripts/IodineGBAROMLoadGlueCode.js" defer></script>
+<script src="engine/user_scripts/IodineGBAJoyPadGlueCode.js" defer></script>
+<script src="engine/user_scripts/IodineGBASavesGlueCode.js" defer></script>
+<script src="engine/user_scripts/IodineGBAGraphicsGlueCode.js" defer></script>
+<script src="engine/user_scripts/IodineGBAAudioGlueCode.js" defer></script>
+<script src="engine/user_scripts/base64.js" defer></script>
+<script src="app.js" defer></script>
+<script src="../shared/consent.js" defer></script>
+<script src="../shared/ads.js" defer></script>
+</body>
+</html>
