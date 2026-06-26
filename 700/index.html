@@ -166,7 +166,51 @@
 
         <p class="odds-prediction" id="oddsPrediction"></p>
 
-        <button class="btn-primary" id="briefingContinueBtn">Take the squad into the World Cup →</button>
+        <div class="briefing-actions">
+          <button class="btn-primary" id="playWorldCupBtn">▶ Play the World Cup</button>
+          <button class="btn-ghost" id="briefingContinueBtn">Skip to your record →</button>
+        </div>
+        <p class="briefing-hint">Play it out match by match, or jump straight to your 7-game record.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== WORLD CUP RUN (manager mode) ===================== -->
+  <section id="worldCupScreen" class="screen hidden">
+    <div class="wc-inner">
+      <div class="wc-head">
+        <span class="wc-tag">WORLD CUP RUN</span>
+        <h2 class="wc-title" id="wcTitle">Group Stage</h2>
+        <p class="wc-sub" id="wcSub">Win or go home. Take your XI all the way.</p>
+      </div>
+
+      <div class="wc-bracket" id="wcBracket"></div>
+
+      <div class="wc-stage" id="wcStage">
+        <div class="wc-match" id="wcMatch">
+          <div class="wc-team wc-team-you">
+            <span class="wc-team-name">Your XI</span>
+            <span class="wc-score" id="wcScoreYou">–</span>
+          </div>
+          <div class="wc-vs">vs</div>
+          <div class="wc-team wc-team-opp">
+            <span class="wc-score" id="wcScoreOpp">–</span>
+            <span class="wc-team-name" id="wcOppName">—</span>
+          </div>
+        </div>
+        <div class="wc-match-note" id="wcMatchNote"></div>
+      </div>
+
+      <button class="btn-primary" id="wcNextBtn">Kick off →</button>
+
+      <div class="wc-verdict hidden" id="wcVerdict">
+        <div class="wc-verdict-badge" id="wcVerdictBadge"></div>
+        <div class="wc-verdict-record" id="wcVerdictRecord"></div>
+        <p class="wc-verdict-sub" id="wcVerdictSub"></p>
+        <div class="wc-verdict-actions">
+          <button class="btn-primary" id="wcShareBtn">Share run</button>
+          <button class="btn-ghost" id="wcAgainBtn">New squad</button>
+        </div>
       </div>
     </div>
   </section>

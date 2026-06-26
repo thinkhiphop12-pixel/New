@@ -241,6 +241,44 @@ input{ font-family:inherit; }
 
 .odds-prediction{ font-size:13.5px; color:var(--ink); line-height:1.5; margin:0 0 20px; font-style:italic; }
 .briefing-odds .btn-primary{ width:100%; }
+.briefing-actions{ display:flex; flex-direction:column; gap:10px; }
+.briefing-actions .btn-primary, .briefing-actions .btn-ghost{ width:100%; }
+.briefing-hint{ font-size:12px; color:var(--ink-dim); margin:10px 0 0; }
+
+/* ---------------- World Cup Run (manager mode) ---------------- */
+.wc-inner{ max-width:520px; margin:0 auto; text-align:center; padding:8px 0 40px; }
+.wc-head{ margin-bottom:18px; }
+.wc-tag{ display:inline-block; font-size:11px; letter-spacing:.18em; font-weight:800; color:var(--gold); background:var(--panel-2); border:1px solid var(--line); padding:5px 12px; border-radius:999px; }
+.wc-title{ font-size:26px; margin:12px 0 4px; }
+.wc-sub{ font-size:13.5px; color:var(--ink-dim); margin:0; }
+.wc-bracket{ display:flex; gap:5px; justify-content:center; flex-wrap:wrap; margin:0 0 20px; }
+.wc-leg{ flex:1; min-width:54px; background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:7px 4px; display:flex; flex-direction:column; align-items:center; gap:3px; opacity:.6; transition:all .2s; }
+.wc-leg-name{ font-size:10px; letter-spacing:.04em; color:var(--ink-dim); text-transform:uppercase; }
+.wc-leg-mark{ font-size:13px; font-weight:800; min-height:16px; }
+.wc-leg-current{ opacity:1; border-color:var(--gold); box-shadow:0 0 12px rgba(227,178,60,.3); }
+.wc-leg-win{ opacity:1; border-color:#2ecc71; }
+.wc-leg-win .wc-leg-mark{ color:#2ecc71; }
+.wc-leg-loss, .wc-leg-out{ opacity:1; border-color:var(--red); }
+.wc-leg-loss .wc-leg-mark, .wc-leg-out .wc-leg-mark{ color:var(--red); }
+.wc-stage{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:22px 18px; margin-bottom:18px; }
+.wc-match{ display:flex; align-items:center; justify-content:center; gap:14px; }
+.wc-team{ display:flex; align-items:center; gap:10px; flex:1; }
+.wc-team-you{ justify-content:flex-end; }
+.wc-team-opp{ justify-content:flex-start; }
+.wc-team-name{ font-size:15px; font-weight:700; }
+.wc-score{ font-size:34px; font-weight:900; font-variant-numeric:tabular-nums; min-width:34px; transition:color .2s; }
+.wc-vs{ font-size:12px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.1em; }
+.wc-match.win .wc-score{ color:#2ecc71; }
+.wc-match.loss .wc-score{ color:var(--red); }
+.wc-match.draw .wc-score{ color:var(--gold); }
+.wc-match-note{ font-size:13px; color:var(--ink-dim); margin-top:12px; min-height:18px; }
+#wcNextBtn{ width:100%; }
+.wc-verdict{ margin-top:22px; background:var(--panel-2); border:1px solid var(--line); border-radius:var(--radius); padding:24px 18px; }
+.wc-verdict-badge{ font-size:22px; font-weight:900; color:var(--gold); letter-spacing:.02em; }
+.wc-verdict-record{ font-size:16px; margin-top:6px; font-variant-numeric:tabular-nums; }
+.wc-verdict-sub{ font-size:13.5px; color:var(--ink-dim); margin:8px 0 18px; line-height:1.5; }
+.wc-verdict-actions{ display:flex; gap:10px; }
+.wc-verdict-actions .btn-primary, .wc-verdict-actions .btn-ghost{ flex:1; }
 
 /* ---------------- icon rarity glow (legend/mythical icon pulls) ---------------- */
 .player-row.icon-legend{

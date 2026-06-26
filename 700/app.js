@@ -266,6 +266,7 @@ async function boot(){
   wireSetup();
   wireGameScreen();
   wireManagerScreen();
+  wireWorldCupScreen();
   wireResultsScreen();
   showSetup();
 }
@@ -319,6 +320,7 @@ function showSetup(){
   $('setupScreen').classList.remove('hidden');
   $('gameScreen').classList.add('hidden');
   $('managerScreen').classList.add('hidden');
+  $('worldCupScreen').classList.add('hidden');
   $('resultsScreen').classList.add('hidden');
   $('roundPill').textContent = '';
 }
@@ -339,6 +341,7 @@ function startGame(mode, formationKey){
   };
   $('setupScreen').classList.add('hidden');
   $('managerScreen').classList.add('hidden');
+  $('worldCupScreen').classList.add('hidden');
   $('resultsScreen').classList.add('hidden');
   $('gameScreen').classList.remove('hidden');
   $('formationTag').textContent = formationKey;
@@ -836,6 +839,7 @@ function wireManagerScreen(){
     $('managerScreen').classList.add('hidden');
     showResults();
   });
+  $('playWorldCupBtn').addEventListener('click', startWorldCupRun);
 }
 
 function showManagerBriefing(){
@@ -865,6 +869,230 @@ function showManagerBriefing(){
     $('briefingOdds').classList.remove('hidden');
     track('manager_briefing', { S: +S.toFixed(1), champion: odds.champion, perfect: odds.perfect });
   }, 1400);
+}
+
+/* ============================================================
+   WORLD CUP RUN — interactive tournament play-through (manager mode)
+   A second way to experience a drafted XI: instead of jumping straight to
+   the deterministic record, play the 7 games out one at a time, advancing
+   through the rounds until you lift the trophy or get knocked out. Borrows
+   the worldcup8-0.app stage-progression format. The classic "skip to your
+   record" path is left untouched, so original 7-0-0 is fully intact.
+   ============================================================ */
+const WC_STAGES = [
+  { key: 'g1',    label: 'Group Match 1', short: 'Group 1', ko: false },
+  { key: 'g2',    label: 'Group Match 2', short: 'Group 2', ko: false },
+  { key: 'g3',    label: 'Group Match 3', short: 'Group 3', ko: false },
+  { key: 'r16',   label: 'Round of 16',   short: 'R16',     ko: true  },
+  { key: 'qf',    label: 'Quarter-Final', short: 'QF',      ko: true  },
+  { key: 'sf',    label: 'Semi-Final',    short: 'SF',      ko: true  },
+  { key: 'final', label: 'Final',         short: 'Final',   ko: true  },
+];
+
+const WC_OPPONENTS = ['Brazil','Argentina','France','Germany','Spain','England',
+  'Italy','Netherlands','Portugal','Belgium','Croatia','Uruguay','Mexico','USA',
+  'Colombia','Japan','Morocco','Senegal','Switzerland','Denmark','Poland','Serbia',
+  'South Korea','Ghana','Nigeria','Ecuador','Australia','Canada','Saudi Arabia','Cameroon'];
+
+let wcRun = null;
+let lastWcRun = null;
+
+function wcShuffle(arr){
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+function startWorldCupRun(){
+  const rows = SLOTS.map(slot => ({ slot, pick: state.picks[slot.id] }));
+  const S = rows.reduce((a, r) => a + r.pick.player.o, 0) / rows.length;
+  const { W, D } = recordFromRating(S);
+  wcRun = {
+    S, rows,
+    pWin: clamp(W / GAMES, 0.03, 0.95),
+    pDraw: clamp(D / GAMES, 0.0, 0.45),
+    stageIdx: 0,
+    opponents: wcShuffle(WC_OPPONENTS),
+    results: [],
+    W: 0, D: 0, L: 0,
+    groupPts: 0,
+    done: false,
+    champion: false,
+  };
+  $('managerScreen').classList.add('hidden');
+  $('worldCupScreen').classList.remove('hidden');
+  $('wcVerdict').classList.add('hidden');
+  $('wcStage').classList.remove('hidden');
+  $('wcNextBtn').classList.remove('hidden');
+  $('wcNextBtn').textContent = 'Kick off →';
+  resetWcMatchCard();
+  renderWcBracket();
+  updateWcStageHeader();
+  fillAllAdSlots();
+  track('wc_run_start', { S: +S.toFixed(1) });
+}
+
+function updateWcStageHeader(){
+  const stage = WC_STAGES[wcRun.stageIdx];
+  if (!stage) return;
+  if (stage.ko) {
+    $('wcTitle').textContent = stage.label;
+    $('wcSub').textContent = 'Knockout football — win or go home.';
+  } else {
+    $('wcTitle').textContent = 'Group Stage';
+    $('wcSub').textContent = `Match ${wcRun.stageIdx + 1} of 3 · ${wcRun.groupPts} pts so far`;
+  }
+}
+
+function resetWcMatchCard(){
+  $('wcScoreYou').textContent = '–';
+  $('wcScoreOpp').textContent = '–';
+  $('wcOppName').textContent = wcRun.opponents[0];
+  $('wcMatchNote').textContent = '';
+  $('wcMatch').classList.remove('win','draw','loss');
+}
+
+function renderWcBracket(){
+  $('wcBracket').innerHTML = WC_STAGES.map((stage, i) => {
+    const res = wcRun.results[i];
+    let cls = 'wc-leg', mark = '';
+    if (res) {
+      if (res.advanced === false) { cls += ' wc-leg-out'; mark = '✕'; }
+      else if (res.outcome === 'win') { cls += ' wc-leg-win'; mark = 'W'; }
+      else if (res.outcome === 'draw') { cls += res.advanced ? ' wc-leg-win' : ' wc-leg-out'; mark = res.pens === 'won' ? 'P' : 'D'; }
+      else { cls += ' wc-leg-loss'; mark = 'L'; }
+    } else if (i === wcRun.stageIdx && !wcRun.done) {
+      cls += ' wc-leg-current';
+    }
+    return `<div class="${cls}"><span class="wc-leg-name">${stage.short}</span><span class="wc-leg-mark">${mark}</span></div>`;
+  }).join('');
+}
+
+function wcScoreline(outcome){
+  const strong = wcRun.pWin > 0.6;
+  const r = Math.random();
+  if (outcome === 'win') {
+    const margin = r < 0.45 ? 1 : r < (strong ? 0.7 : 0.82) ? 2 : 3;
+    const them = Math.random() < 0.55 ? 0 : 1;
+    return { you: them + margin, them };
+  } else if (outcome === 'loss') {
+    const margin = r < 0.5 ? 1 : r < 0.85 ? 2 : 3;
+    const you = Math.random() < 0.55 ? 0 : 1;
+    return { you, them: you + margin };
+  }
+  const n = r < 0.45 ? 0 : r < 0.8 ? 1 : 2;
+  return { you: n, them: n };
+}
+
+function renderWcMatch(stage, opp, sc, outcome, pens){
+  $('wcOppName').textContent = opp;
+  $('wcScoreYou').textContent = sc.you;
+  $('wcScoreOpp').textContent = sc.them;
+  $('wcMatch').classList.remove('win','draw','loss');
+  let note;
+  if (outcome === 'win') { $('wcMatch').classList.add('win'); note = `Win ${sc.you}–${sc.them} vs ${opp}`; }
+  else if (outcome === 'loss') { $('wcMatch').classList.add('loss'); note = `Lost ${sc.you}–${sc.them} to ${opp}`; }
+  else {
+    $('wcMatch').classList.add('draw');
+    if (pens) note = `Drew ${sc.you}–${sc.them} vs ${opp} · ${pens === 'won' ? 'won' : 'lost'} on penalties`;
+    else note = `Drew ${sc.you}–${sc.them} vs ${opp}`;
+  }
+  $('wcMatchNote').textContent = note;
+}
+
+function wcPlayNext(){
+  if (!wcRun || wcRun.done) return;
+  const stage = WC_STAGES[wcRun.stageIdx];
+  const opp = wcRun.opponents[wcRun.stageIdx % wcRun.opponents.length];
+
+  const roll = Math.random();
+  let outcome;
+  if (roll < wcRun.pWin) outcome = 'win';
+  else if (roll < wcRun.pWin + wcRun.pDraw) outcome = 'draw';
+  else outcome = 'loss';
+
+  const sc = wcScoreline(outcome);
+  let pens = null;
+  let advanced = true;
+
+  if (!stage.ko) {
+    if (outcome === 'win') { wcRun.W++; wcRun.groupPts += 3; }
+    else if (outcome === 'draw') { wcRun.D++; wcRun.groupPts += 1; }
+    else { wcRun.L++; }
+  } else {
+    if (outcome === 'win') { wcRun.W++; advanced = true; }
+    else if (outcome === 'loss') { wcRun.L++; advanced = false; }
+    else {
+      wcRun.D++;
+      const youWinPens = Math.random() < (0.5 + (wcRun.pWin - 0.5) * 0.3);
+      pens = youWinPens ? 'won' : 'lost';
+      advanced = youWinPens;
+    }
+  }
+
+  wcRun.results.push({ stage, opp, you: sc.you, them: sc.them, outcome, pens, advanced });
+  renderWcMatch(stage, opp, sc, outcome, pens);
+  renderWcBracket();
+
+  // Progression
+  if (!stage.ko) {
+    if (wcRun.stageIdx === 2) {
+      // End of group stage: out only if you lost all three (matches the odds model)
+      if (wcRun.L >= 3) { wcEnd(false, 'group'); return; }
+      wcRun.stageIdx++; // into the knockouts
+    } else {
+      wcRun.stageIdx++;
+    }
+  } else {
+    if (!advanced) { wcEnd(false, stage.key); return; }
+    if (stage.key === 'final') { wcRun.champion = true; wcEnd(true, 'final'); return; }
+    wcRun.stageIdx++;
+  }
+
+  updateWcStageHeader();
+  $('wcNextBtn').textContent = WC_STAGES[wcRun.stageIdx].ko ? `Play the ${WC_STAGES[wcRun.stageIdx].label} →` : 'Next match →';
+}
+
+function wcEnd(champion, stageKey){
+  wcRun.done = true;
+  $('wcNextBtn').classList.add('hidden');
+  const total = wcRun.W + wcRun.D + wcRun.L;
+  let badge, sub;
+  if (champion) {
+    const perfect = wcRun.W === GAMES && wcRun.D === 0 && wcRun.L === 0;
+    badge = perfect ? '7-0-0 · PERFECT' : 'WORLD CHAMPIONS';
+    sub = perfect ? 'The perfect World Cup — seven games, seven wins, nothing conceded to fate.' : 'You lifted the trophy. Champions of the world!';
+  } else {
+    const map = { group: 'Out in the Group Stage', r16: 'Out in the Round of 16', qf: 'Out in the Quarter-Final', sf: 'Out in the Semi-Final' };
+    badge = stageKey === 'final' ? 'RUNNERS-UP' : (map[stageKey] || 'Knocked Out');
+    sub = stageKey === 'final' ? 'So close — beaten in the final.' : 'The run ends here. Spin up a new squad and go again.';
+  }
+  $('wcVerdictBadge').textContent = badge;
+  $('wcVerdictRecord').textContent = `${wcRun.W}-${wcRun.D}-${wcRun.L} over ${total} game${total === 1 ? '' : 's'}`;
+  $('wcVerdictSub').textContent = sub;
+  $('wcVerdict').classList.remove('hidden');
+  lastWcRun = { W: wcRun.W, D: wcRun.D, L: wcRun.L, champion, stageKey, badge };
+  track('wc_run_end', { champion, stage: stageKey, W: wcRun.W, D: wcRun.D, L: wcRun.L });
+}
+
+function wcShareText(){
+  const r = lastWcRun;
+  if (!r) return '';
+  return `My World Cup run in 7-0-0: ${r.badge} (${r.W}-${r.D}-${r.L}). Draft your XI and go again at ballknw.com #7oh0`;
+}
+
+async function wcShare(){
+  const text = wcShareText();
+  try {
+    if (navigator.share) { await navigator.share({ text }); return; }
+    await navigator.clipboard.writeText(text);
+  } catch (e) { /* user cancelled */ }
+}
+
+function wireWorldCupScreen(){
+  $('wcNextBtn').addEventListener('click', wcPlayNext);
+  $('wcAgainBtn').addEventListener('click', showSetup);
+  $('wcShareBtn').addEventListener('click', wcShare);
 }
 
 /* ---------------- results screen ---------------- */
