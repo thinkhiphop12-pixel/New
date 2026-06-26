@@ -173,6 +173,49 @@ function initSocialBar(){
   recordAdEvent('social_bar', 'impression');
 }
 
+// ---- Left side-rail skyscraper (desktop game pages only) ----
+// A vertical banner pinned to the left gutter. Only shown on wide screens
+// (so it never overlaps the centred game content) and only inside games,
+// never the homepage. It REPLACES the social bar on desktop so the page
+// still carries at most two ad surfaces (in-content slot + side rail).
+function shouldShowSideRail(){
+  const wideEnough = window.matchMedia && window.matchMedia('(min-width: 1180px)').matches;
+  // Game pages live in a subdirectory (/700/, /boardroom/, …); the homepage is
+  // at the site root. Anything with a path segment is a game.
+  const segs = window.location.pathname.split('/').filter(s => s && s !== 'index.html');
+  const isGamePage = segs.length >= 1;
+  return wideEnough && isGamePage;
+}
+
+function injectSideRailStyles(){
+  if (document.getElementById('sideRailAdStyles')) return;
+  const style = document.createElement('style');
+  style.id = 'sideRailAdStyles';
+  style.textContent = `
+    .side-rail-ad{ position:fixed; left:12px; top:50%; transform:translateY(-50%);
+      width:160px; height:600px; z-index:40; display:flex; align-items:center;
+      justify-content:center; background:rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.10); border-radius:10px;
+      overflow:hidden; }
+    .side-rail-ad .ad-slot-label{ font-size:10px; letter-spacing:.12em;
+      text-transform:uppercase; opacity:.45; }
+    @media (max-width: 1179px){ .side-rail-ad{ display:none !important; } }`;
+  document.head.appendChild(style);
+}
+
+function initSideRailAd(){
+  if (adsRemoved() || getConsent() !== 'all') return;
+  if (document.getElementById('sideRailAd')) return;
+  injectSideRailStyles();
+  const el = document.createElement('div');
+  el.id = 'sideRailAd';
+  el.className = 'ad-slot side-rail-ad';
+  el.dataset.adKind = 'banner';
+  el.innerHTML = '<span class="ad-slot-label">Advertisement</span>';
+  document.body.appendChild(el);
+  fillAdSlot(el);
+}
+
 // ---- Sticky footer anchor (mobile only) ----
 function initStickyFooterAd(){
   if (adsRemoved() || getConsent() !== 'all') return;
@@ -259,10 +302,16 @@ function fireDirectLinkAd(placement){
 
 function initAds(){
   if (adsRemoved() || getConsent() !== 'all') return;
-  // Capped at 2 ad surfaces per page (one in-content slot + the social
-  // bar) per product decision — sticky footer and popunder stay disabled.
+  // Capped at 2 ad surfaces per page (one in-content slot + one side surface)
+  // per product decision — sticky footer and popunder stay disabled. On wide
+  // game screens the second surface is the left side-rail; everywhere else
+  // (homepage, narrow/mobile) it's the social bar.
   initLazyAds();
-  initSocialBar();
+  if (shouldShowSideRail()) {
+    initSideRailAd();
+  } else {
+    initSocialBar();
+  }
   setTimeout(detectAdblockAndPrompt, 500);
 }
 
