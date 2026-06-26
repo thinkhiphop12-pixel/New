@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0a1f14">
+<meta name="theme-color" content="#07120f">
 <title>Ball Knowledge — Free Football Knowledge Games</title>
 <meta name="description" content="Ball Knowledge is a free hub of football knowledge games — build a World Cup XI in 7-0-0, or test your squad recall in Lineup.">
 <meta property="og:title" content="Ball Knowledge — Free Football Knowledge Games">
@@ -22,22 +22,37 @@
 
   <header class="topbar">
     <div class="brand">
-      <span class="brand-mark">BALL KNOWLEDGE</span>
-      <span class="brand-sub">FOOTBALL KNOWLEDGE GAMES</span>
+      <img class="brand-logo" src="assets/logo-mark.svg" alt="" width="38" height="38">
+      <span>
+        <span class="brand-mark">BALL KNOWLEDGE</span>
+        <span class="brand-sub">FOOTBALL KNOWLEDGE GAMES</span>
+      </span>
     </div>
+    <nav class="topnav" aria-label="Primary navigation">
+      <a href="#games">Games</a>
+      <a href="#about">About</a>
+      <a href="privacy.html">Privacy</a>
+    </nav>
   </header>
 
   <section class="hero">
-    <div class="hero-shapes" aria-hidden="true">
-      <span class="hs hs1"></span><span class="hs hs2"></span>
-      <span class="hs hs3"></span><span class="hs hs4"></span>
-      <span class="hs hs5"></span>
-    </div>
+    <div class="stadium-lights" aria-hidden="true"></div>
+    <div class="pitch-map" aria-hidden="true"></div>
     <div class="hero-inner">
-      <h1>PLAY ZONE</h1>
-      <p>Free football knowledge games. No sign-up, no app — pick one below and start playing.</p>
+      <span class="eyebrow">Live football brain games</span>
+      <h1>Play smarter than the touchline.</h1>
+      <p>Draft World Cup XIs, identify mystery players, simulate brackets, and build a club dynasty in fast browser games made for football obsessives.</p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="#games">Choose a game</a>
+        <a class="btn-ghost" href="scout/">Daily Scout</a>
+      </div>
     </div>
   </section>
+
+  <div class="game-section-head" id="games">
+    <span>Match Centre</span>
+    <strong>5 games ready</strong>
+  </div>
 
   <div class="game-grid">
     <a class="game-card" href="700/">
@@ -45,7 +60,7 @@
       <span class="gc-body">
         <span class="gc-title">7-0-0</span>
         <span class="gc-desc">Spin for players across World Cups, draft your XI, and chase a perfect 7-0-0 run.</span>
-        <span class="gc-cta">Play 7-0-0 →</span>
+        <span class="gc-cta">Play 7-0-0</span>
       </span>
     </a>
     <a class="game-card" href="lineup/">
@@ -53,7 +68,15 @@
       <span class="gc-body">
         <span class="gc-title">Lineup</span>
         <span class="gc-desc">Recall real starting XIs from iconic matches and World Cups, position by position.</span>
-        <span class="gc-cta">Play Lineup →</span>
+        <span class="gc-cta">Play Lineup</span>
+      </span>
+    </a>
+    <a class="game-card" href="scout/">
+      <span class="gc-thumb gc-thumb-scout">SC</span>
+      <span class="gc-body">
+        <span class="gc-title">Scout</span>
+        <span class="gc-desc">Guess the mystery World Cup player in 6 tries. Nation, position, era, rating, pace — every guess narrows it down.</span>
+        <span class="gc-cta">Play Scout</span>
       </span>
     </a>
     <a class="game-card" href="worldcup/">
@@ -61,7 +84,7 @@
       <span class="gc-body">
         <span class="gc-title">Bracket</span>
         <span class="gc-desc">Simulate the full 48-team World Cup 2026 with a real statistical match engine. Single-run bracket or Monte Carlo win probabilities.</span>
-        <span class="gc-cta">Play Bracket →</span>
+        <span class="gc-cta">Play Bracket</span>
       </span>
     </a>
     <a class="game-card" href="dynasty/">
@@ -69,7 +92,7 @@
       <span class="gc-body">
         <span class="gc-title">Dynasty</span>
         <span class="gc-desc">Take charge of a club: transfers, training, tactics, stadium and sponsors, across a multi-season retro management campaign.</span>
-        <span class="gc-cta">Play Dynasty →</span>
+        <span class="gc-cta">Play Dynasty</span>
       </span>
     </a>
   </div>
