@@ -1,47 +1,47 @@
-/* Global CSS Theming System — Light/Dark with semantic naming */
+/* Global CSS Theming System — aligned with BRAND_GUIDELINES.md */
 
 :root {
-  /* Primary background surfaces */
-  --color-bg-primary: #07120f;
-  --color-bg-secondary: #0b1c18;
-  --color-bg-tertiary: rgba(17, 35, 31, 0.86);
+  /* Primary background surfaces — Dark Navy base */
+  --color-bg-primary: #0a0e14;
+  --color-bg-secondary: #0d1219;
+  --color-bg-tertiary: rgba(13, 18, 25, 0.92);
 
-  /* Text colors */
-  --color-text-primary: #f3fff8;
-  --color-text-secondary: #a9bdb3;
+  /* Text colors — Light Text (#e8e8e8) and Dim Text (#8892a0) */
+  --color-text-primary: #e8e8e8;
+  --color-text-secondary: #8892a0;
 
-  /* Borders and dividers */
-  --color-border: rgba(114, 255, 177, 0.18);
-  --color-border-strong: rgba(114, 255, 177, 0.42);
+  /* Borders and dividers — Border Color (#5a7a94) */
+  --color-border: rgba(90, 122, 148, 0.4);
+  --color-border-strong: rgba(90, 122, 148, 0.8);
 
-  /* Accent colors */
-  --color-accent: #6dff8f;
-  --color-accent-alt: #33d6ff;
-  --color-accent-alt-2: #a481ff;
+  /* Accent colors — Primary (Accent Green), Secondary (Gold), Tertiary (Cyan) */
+  --color-accent: #00ff88;
+  --color-accent-alt: #4488ff;
+  --color-accent-alt-2: #ffd700;
 
   /* Status colors */
-  --color-gold: #f2c94c;
+  --color-gold: #ffd700;
   --color-gold-soft: #ffe18a;
-  --color-danger: #ff5050;
-  --color-warning: #ffa502;
-  --color-success: #2ed573;
+  --color-danger: #ff4444;
+  --color-warning: #ffaa00;
+  --color-success: #00cc66;
 
   /* Shadows and spacing */
-  --shadow-elevation: 0 20px 60px rgba(0, 0, 0, 0.36);
-  --radius: 18px;
+  --shadow-elevation: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --radius: 6px;
 }
 
-/* Dark theme (default) */
+/* Dark theme (default) — Primary Ball Knowledge theme */
 .theme-dark {
-  --color-bg-primary: #07120f;
-  --color-bg-secondary: #0f211a;
-  --color-bg-tertiary: rgba(17, 35, 31, 0.86);
-  --color-text-primary: #eaf4ee;
-  --color-text-secondary: #9fbbab;
-  --color-border: rgba(114, 255, 177, 0.16);
-  --color-border-strong: rgba(114, 255, 177, 0.42);
-  --color-accent: #26d07c;
-  --color-accent-soft: #6dff8f;
+  --color-bg-primary: #0a0e14;
+  --color-bg-secondary: #0d1219;
+  --color-bg-tertiary: rgba(13, 18, 25, 0.92);
+  --color-text-primary: #e8e8e8;
+  --color-text-secondary: #8892a0;
+  --color-border: rgba(90, 122, 148, 0.4);
+  --color-border-strong: rgba(90, 122, 148, 0.8);
+  --color-accent: #00ff88;
+  --color-accent-soft: #00cc66;
 }
 
 /* Light theme */
