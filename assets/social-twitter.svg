@@ -1,0 +1,38 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Twitter profile pic: 400×400px, logo mark centered on dark background -->
+  <defs>
+    <linearGradient id="bgTw" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a1a14;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#05100b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="ballTw" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00ff88;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00cc66;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="400" fill="url(#bgTw)"/>
+
+  <!-- Centered logo mark -->
+  <g transform="translate(200, 200)">
+    <circle cx="0" cy="0" r="120" fill="url(#ballTw)" stroke="none"/>
+
+    <line x1="-120" y1="-72" x2="120" y2="-72" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
+    <line x1="-120" y1="-36" x2="120" y2="-36" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
+    <line x1="-120" y1="0" x2="120" y2="0" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
+    <line x1="-120" y1="36" x2="120" y2="36" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
+    <line x1="-120" y1="72" x2="120" y2="72" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
+
+    <line x1="-72" y1="-120" x2="-72" y2="120" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
+    <line x1="-36" y1="-120" x2="-36" y2="120" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
+    <line x1="0" y1="-120" x2="0" y2="120" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
+    <line x1="36" y1="-120" x2="36" y2="120" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
+    <line x1="72" y1="-120" x2="72" y2="120" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
+
+    <line x1="-60" y1="-84" x2="36" y2="60" stroke="#00ff88" stroke-width="7" opacity="0.35"/>
+    <line x1="60" y1="-84" x2="-36" y2="60" stroke="#00ff88" stroke-width="7" opacity="0.35"/>
+
+    <circle cx="0" cy="0" r="42" fill="none" stroke="#00ff88" stroke-width="7" opacity="0.5"/>
+    <circle cx="0" cy="0" r="27" fill="none" stroke="#00ff88" stroke-width="5" opacity="0.35"/>
+  </g>
+</svg>

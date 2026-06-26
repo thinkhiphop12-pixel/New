@@ -1,0 +1,35 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ballGradientInv" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e8e8e8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(256, 256)">
+    <!-- Main ball circle with white gradient -->
+    <circle cx="0" cy="0" r="200" fill="url(#ballGradientInv)" stroke="none"/>
+
+    <!-- Geometric grid pattern (horizontal lines) -->
+    <line x1="-200" y1="-120" x2="200" y2="-120" stroke="#0a0e14" stroke-width="8" opacity="0.25"/>
+    <line x1="-200" y1="-60" x2="200" y2="-60" stroke="#0a0e14" stroke-width="8" opacity="0.25"/>
+    <line x1="-200" y1="0" x2="200" y2="0" stroke="#0a0e14" stroke-width="8" opacity="0.25"/>
+    <line x1="-200" y1="60" x2="200" y2="60" stroke="#0a0e14" stroke-width="8" opacity="0.25"/>
+    <line x1="-200" y1="120" x2="200" y2="120" stroke="#0a0e14" stroke-width="8" opacity="0.25"/>
+
+    <!-- Geometric grid pattern (vertical lines) -->
+    <line x1="-120" y1="-200" x2="-120" y2="200" stroke="#0a0e14" stroke-width="8" opacity="0.25"/>
+    <line x1="-60" y1="-200" x2="-60" y2="200" stroke="#0a0e14" stroke-width="8" opacity="0.25"/>
+    <line x1="0" y1="-200" x2="0" y2="200" stroke="#0a0e14" stroke-width="8" opacity="0.25"/>
+    <line x1="60" y1="-200" x2="60" y2="200" stroke="#0a0e14" stroke-width="8" opacity="0.25"/>
+    <line x1="120" y1="-200" x2="120" y2="200" stroke="#0a0e14" stroke-width="8" opacity="0.25"/>
+
+    <!-- Knowledge accent lines -->
+    <line x1="-100" y1="-140" x2="60" y2="100" stroke="#0a0e14" stroke-width="12" opacity="0.3"/>
+    <line x1="100" y1="-140" x2="-60" y2="100" stroke="#0a0e14" stroke-width="12" opacity="0.3"/>
+
+    <!-- Central knowledge hub circles -->
+    <circle cx="0" cy="0" r="70" fill="none" stroke="#0a0e14" stroke-width="12" opacity="0.4"/>
+    <circle cx="0" cy="0" r="45" fill="none" stroke="#0a0e14" stroke-width="8" opacity="0.25"/>
+  </g>
+</svg>
