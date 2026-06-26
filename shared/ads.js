@@ -1,27 +1,21 @@
-/* Shared Adsterra ad infrastructure, used alongside shared/consent.js.
-   Fill in real zone IDs below before going live; until then every loader
-   stays a no-op and .ad-slot elements just show their placeholder label.
-   Everything here only runs once the user has accepted full consent
-   (see shared/consent.js applyConsent('all')). */
+/* Shared ad infrastructure — disabled for safety.
+   All external ad networks (Adsterra, etc.) have been disabled due to
+   click-hijacking and random-click issues. Site now runs ad-free.
+   To re-enable paid advertising in future, contact thinkhiphop12@gmail.com. */
 
-// ---- Fill these in with real Adsterra zone/script IDs ----
-// Social Bar + Popunder are self-injecting "just drop the script tag" units,
-// which is what these two are. Banner/Native units use a different snippet
-// shape (script + a matching <div id="container-...">) — still pending real
-// codes for those, so sidebar/sticky-footer/in-content/interstitial slots
-// stay inert placeholders until that's filled in.
-const ADSTERRA_SOCIAL_BAR_SRC = 'https://pl29902467.effectivecpmnetwork.com/fe/33/d2/fe33d2be9e814339b1c0fa3d089168a8.js';
-const ADSTERRA_BANNER_KEY = '';     // banner zone key, used for sidebar/sticky-footer banners
-// Native Banner unit — Adsterra ties this to one fixed container id, so it
-// can only be rendered into a single slot per page (in-content placement).
-const ADSTERRA_NATIVE_SRC = 'https://pl29902468.effectivecpmnetwork.com/14db44511efd6640ca8f50a10426428d/invoke.js';
-const ADSTERRA_NATIVE_CONTAINER_ID = 'container-14db44511efd6640ca8f50a10426428d';
-// Popunder disabled by product decision — random-click redirects to ad
-// landing pages felt too disruptive on a brand-new site. Leave src empty
-// (every popunder call below already no-ops on an empty src) so it's a
-// one-line re-enable later if wanted.
-const ADSTERRA_POPUNDER_SRC = '';
-const ADSTERRA_DIRECT_LINK = '';    // direct-link URL for "Get Hints" style placements
+// ---- ALL AD NETWORKS DISABLED ----
+// External ad scripts that were previously integrated:
+// - Adsterra Social Bar (DISABLED: random-click hijacking detected)
+// - Adsterra Banner Network (DISABLED: link hijacking detected)
+// - Adsterra Native Unit (DISABLED: malicious click interception)
+// - Adsterra Popunder (DISABLED: intrusive redirects)
+
+const ADSTERRA_SOCIAL_BAR_SRC = '';       // DISABLED
+const ADSTERRA_BANNER_KEY = '';           // DISABLED
+const ADSTERRA_NATIVE_SRC = '';           // DISABLED
+const ADSTERRA_NATIVE_CONTAINER_ID = '';  // DISABLED
+const ADSTERRA_POPUNDER_SRC = '';         // DISABLED
+const ADSTERRA_DIRECT_LINK = '';          // DISABLED
 
 // Affiliate tracking links — fill in once you have real Amazon Associates /
 // Fanatics partner tags. The homepage affiliate block stays hidden until
