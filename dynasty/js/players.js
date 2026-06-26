@@ -30,26 +30,43 @@ function getUsedNames() {
 }
 
 // Pull a real player (name + rating) from the pool for this position,
-// preferring one not already used elsewhere in this game.
-function drawRealPlayer(position) {
-    const pool = REAL_PLAYER_POOLS[POSITION_TO_POOL[position] || 'MF'] || [];
-    if (pool.length === 0) return { n: 'Unknown Player', o: 50 };
+// preferring one not already used elsewhere in this game. When clubName
+// is given, draw from that club's actual FIFA 10 roster first (so e.g.
+// Real Madrid fields players who were really at Real Madrid); fall back
+// to the flat cross-club pool once the club's own bucket runs short.
+function drawRealPlayer(position, clubName) {
+    const bucket = POSITION_TO_POOL[position] === 'DF' ? 'DEF'
+        : POSITION_TO_POOL[position] === 'MF' ? 'MID'
+        : POSITION_TO_POOL[position] === 'FW' ? 'FWD' : 'GK';
+    const clubRoster = clubName && typeof REAL_CLUB_ROSTERS !== 'undefined' ? REAL_CLUB_ROSTERS[clubName] : null;
+    const clubPool = clubRoster ? clubRoster[bucket] || [] : [];
+    const flatPool = REAL_PLAYER_POOLS[POSITION_TO_POOL[position] || 'MF'] || [];
     const used = getUsedNames();
+
     for (let attempt = 0; attempt < 8; attempt++) {
-        const candidate = pool[Math.floor(Math.random() * pool.length)];
+        if (clubPool.length === 0) break;
+        const candidate = clubPool[Math.floor(Math.random() * clubPool.length)];
         if (!used.includes(candidate.n)) {
             used.push(candidate.n);
             return candidate;
         }
     }
-    // Pool exhausted (extremely unlikely) — allow a repeat rather than fail.
-    return pool[Math.floor(Math.random() * pool.length)];
+    if (flatPool.length === 0) return { n: 'Unknown Player', o: 50 };
+    for (let attempt = 0; attempt < 8; attempt++) {
+        const candidate = flatPool[Math.floor(Math.random() * flatPool.length)];
+        if (!used.includes(candidate.n)) {
+            used.push(candidate.n);
+            return candidate;
+        }
+    }
+    // Both pools exhausted (extremely unlikely) — allow a repeat rather than fail.
+    return (clubPool.length ? clubPool : flatPool)[Math.floor(Math.random() * (clubPool.length || flatPool.length))];
 }
 
 // Generate a single player
-function generatePlayer(position) {
+function generatePlayer(position, clubName) {
     const age = 18 + Math.floor(Math.random() * 17);
-    const real = drawRealPlayer(position);
+    const real = drawRealPlayer(position, clubName);
     const baseStrength = Math.max(40, Math.min(90, real.o + Math.floor(Math.random() * 7) - 3));
     const ageFactor = age < 28 ? 1 : 1 - (age - 28) * 0.03;
 
@@ -72,15 +89,15 @@ function generatePlayer(position) {
 }
 
 // Generate a full squad
-function generateSquad() {
+function generateSquad(clubName) {
     const squad = [];
-    
+
     Object.entries(POSITION_COUNTS).forEach(([pos, count]) => {
         for (let i = 0; i < count; i++) {
-            squad.push(generatePlayer(pos));
+            squad.push(generatePlayer(pos, clubName));
         }
     });
-    
+
     return squad;
 }
 
@@ -88,12 +105,12 @@ function generateSquad() {
 function generateTeams() {
     gameState.teams = [];
     const shuffledNames = [...TEAM_NAMES].sort(() => Math.random() - 0.5);
-    
+
     for (let i = 0; i < 18; i++) {
         const tier = TEAM_BUDGET_TIER[shuffledNames[i]] || 1;
         const team = {
             name: shuffledNames[i],
-            players: generateSquad(),
+            players: generateSquad(shuffledNames[i]),
             stats: {
                 played: 0,
                 won: 0,

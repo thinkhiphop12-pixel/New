@@ -336,7 +336,7 @@ function processEndOfSeason() {
         const teamIndex = gameState.teams.indexOf(relegatedTeam);
         gameState.teams[teamIndex] = {
             name: newName,
-            players: generateSquad(),
+            players: generateSquad(newName),
             stats: { played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
             budget: 2000000 + Math.floor(Math.random() * 3000000),
             isPlayer: false
