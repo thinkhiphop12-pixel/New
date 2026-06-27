@@ -1,31 +1,6 @@
 <svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <!-- Favicon: 32×32px and 16×16px versions (SVG rendered) -->
-  <defs>
-    <linearGradient id="faviconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#00ff88;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#00cc66;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-
-  <g transform="translate(128, 128)">
-    <circle cx="0" cy="0" r="100" fill="url(#faviconGrad)" stroke="none"/>
-
-    <line x1="-100" y1="-60" x2="100" y2="-60" stroke="#0a0e14" stroke-width="4" opacity="0.3"/>
-    <line x1="-100" y1="-30" x2="100" y2="-30" stroke="#0a0e14" stroke-width="4" opacity="0.3"/>
-    <line x1="-100" y1="0" x2="100" y2="0" stroke="#0a0e14" stroke-width="4" opacity="0.3"/>
-    <line x1="-100" y1="30" x2="100" y2="30" stroke="#0a0e14" stroke-width="4" opacity="0.3"/>
-    <line x1="-100" y1="60" x2="100" y2="60" stroke="#0a0e14" stroke-width="4" opacity="0.3"/>
-
-    <line x1="-60" y1="-100" x2="-60" y2="100" stroke="#0a0e14" stroke-width="4" opacity="0.3"/>
-    <line x1="-30" y1="-100" x2="-30" y2="100" stroke="#0a0e14" stroke-width="4" opacity="0.3"/>
-    <line x1="0" y1="-100" x2="0" y2="100" stroke="#0a0e14" stroke-width="4" opacity="0.3"/>
-    <line x1="30" y1="-100" x2="30" y2="100" stroke="#0a0e14" stroke-width="4" opacity="0.3"/>
-    <line x1="60" y1="-100" x2="60" y2="100" stroke="#0a0e14" stroke-width="4" opacity="0.3"/>
-
-    <line x1="-50" y1="-70" x2="30" y2="50" stroke="#00ff88" stroke-width="6" opacity="0.35"/>
-    <line x1="50" y1="-70" x2="-30" y2="50" stroke="#00ff88" stroke-width="6" opacity="0.35"/>
-
-    <circle cx="0" cy="0" r="35" fill="none" stroke="#00ff88" stroke-width="6" opacity="0.5"/>
-    <circle cx="0" cy="0" r="22" fill="none" stroke="#00ff88" stroke-width="4" opacity="0.35"/>
-  </g>
+  <path fill-rule="evenodd" fill="#00ff88" d="
+    M 31.000 128.000 A 97.000 97.000 0 1 0 225.000 128.000 A 97.000 97.000 0 1 0 31.000 128.000 Z
+    M 142.226 68.685 Q 148.421 64.184 154.616 68.685 L 183.497 89.668 Q 189.692 94.169 187.325 101.452 L 176.294 135.403 Q 173.928 142.686 166.270 142.686 L 130.572 142.686 Q 122.914 142.686 120.548 135.403 L 109.517 101.452 Q 107.150 94.169 113.346 89.668 Z
+  "/>
 </svg>

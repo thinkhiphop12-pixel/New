@@ -1,39 +1,7 @@
 <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <!-- Discord server icon: 512×512px, logo mark on gradient background -->
-  <defs>
-    <linearGradient id="discordGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#00ff88;stop-opacity:0.15" />
-      <stop offset="100%" style="stop-color:#00cc66;stop-opacity:0.25" />
-    </linearGradient>
-    <linearGradient id="discordBall" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#00ff88;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#00cc66;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-
   <rect width="512" height="512" fill="#0a0e14"/>
-  <rect width="512" height="512" fill="url(#discordGrad)"/>
-
-  <!-- Centered logo mark -->
-  <g transform="translate(256, 256)">
-    <circle cx="0" cy="0" r="160" fill="url(#discordBall)" stroke="none"/>
-
-    <line x1="-160" y1="-96" x2="160" y2="-96" stroke="#0a0e14" stroke-width="7" opacity="0.3"/>
-    <line x1="-160" y1="-48" x2="160" y2="-48" stroke="#0a0e14" stroke-width="7" opacity="0.3"/>
-    <line x1="-160" y1="0" x2="160" y2="0" stroke="#0a0e14" stroke-width="7" opacity="0.3"/>
-    <line x1="-160" y1="48" x2="160" y2="48" stroke="#0a0e14" stroke-width="7" opacity="0.3"/>
-    <line x1="-160" y1="96" x2="160" y2="96" stroke="#0a0e14" stroke-width="7" opacity="0.3"/>
-
-    <line x1="-96" y1="-160" x2="-96" y2="160" stroke="#0a0e14" stroke-width="7" opacity="0.3"/>
-    <line x1="-48" y1="-160" x2="-48" y2="160" stroke="#0a0e14" stroke-width="7" opacity="0.3"/>
-    <line x1="0" y1="-160" x2="0" y2="160" stroke="#0a0e14" stroke-width="7" opacity="0.3"/>
-    <line x1="48" y1="-160" x2="48" y2="160" stroke="#0a0e14" stroke-width="7" opacity="0.3"/>
-    <line x1="96" y1="-160" x2="96" y2="160" stroke="#0a0e14" stroke-width="7" opacity="0.3"/>
-
-    <line x1="-80" y1="-112" x2="48" y2="80" stroke="#00ff88" stroke-width="10" opacity="0.35"/>
-    <line x1="80" y1="-112" x2="-48" y2="80" stroke="#00ff88" stroke-width="10" opacity="0.35"/>
-
-    <circle cx="0" cy="0" r="56" fill="none" stroke="#00ff88" stroke-width="10" opacity="0.5"/>
-    <circle cx="0" cy="0" r="36" fill="none" stroke="#00ff88" stroke-width="7" opacity="0.35"/>
-  </g>
+  <path fill-rule="evenodd" fill="#00ff88" d="
+    M 96.000 256.000 A 160.000 160.000 0 1 0 416.000 256.000 A 160.000 160.000 0 1 0 96.000 256.000 Z
+    M 279.465 158.161 Q 289.684 150.737 299.903 158.161 L 347.541 192.772 Q 357.760 200.197 353.856 212.210 L 335.661 268.211 Q 331.757 280.224 319.126 280.224 L 260.243 280.224 Q 247.611 280.224 243.708 268.211 L 225.512 212.210 Q 221.609 200.197 231.828 192.772 Z
+  "/>
 </svg>

@@ -1,28 +1,6 @@
 <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <g transform="translate(256, 256)">
-    <!-- Main ball circle in solid color -->
-    <circle cx="0" cy="0" r="200" fill="#00ff88" stroke="none"/>
-
-    <!-- Geometric grid pattern (horizontal lines) -->
-    <line x1="-200" y1="-120" x2="200" y2="-120" stroke="#0a0e14" stroke-width="8" opacity="0.3"/>
-    <line x1="-200" y1="-60" x2="200" y2="-60" stroke="#0a0e14" stroke-width="8" opacity="0.3"/>
-    <line x1="-200" y1="0" x2="200" y2="0" stroke="#0a0e14" stroke-width="8" opacity="0.3"/>
-    <line x1="-200" y1="60" x2="200" y2="60" stroke="#0a0e14" stroke-width="8" opacity="0.3"/>
-    <line x1="-200" y1="120" x2="200" y2="120" stroke="#0a0e14" stroke-width="8" opacity="0.3"/>
-
-    <!-- Geometric grid pattern (vertical lines) -->
-    <line x1="-120" y1="-200" x2="-120" y2="200" stroke="#0a0e14" stroke-width="8" opacity="0.3"/>
-    <line x1="-60" y1="-200" x2="-60" y2="200" stroke="#0a0e14" stroke-width="8" opacity="0.3"/>
-    <line x1="0" y1="-200" x2="0" y2="200" stroke="#0a0e14" stroke-width="8" opacity="0.3"/>
-    <line x1="60" y1="-200" x2="60" y2="200" stroke="#0a0e14" stroke-width="8" opacity="0.3"/>
-    <line x1="120" y1="-200" x2="120" y2="200" stroke="#0a0e14" stroke-width="8" opacity="0.3"/>
-
-    <!-- Knowledge accent lines -->
-    <line x1="-100" y1="-140" x2="60" y2="100" stroke="#00ff88" stroke-width="12" opacity="0.35"/>
-    <line x1="100" y1="-140" x2="-60" y2="100" stroke="#00ff88" stroke-width="12" opacity="0.35"/>
-
-    <!-- Central knowledge hub circles -->
-    <circle cx="0" cy="0" r="70" fill="none" stroke="#00ff88" stroke-width="12" opacity="0.5"/>
-    <circle cx="0" cy="0" r="45" fill="none" stroke="#00ff88" stroke-width="8" opacity="0.35"/>
-  </g>
+  <path fill-rule="evenodd" fill="currentColor" d="
+    M 61.000 256.000 A 195.000 195.000 0 1 0 451.000 256.000 A 195.000 195.000 0 1 0 61.000 256.000 Z
+    M 284.598 136.759 Q 297.053 127.711 309.507 136.759 L 367.565 178.941 Q 380.020 187.990 375.263 202.631 L 353.086 270.882 Q 348.329 285.523 332.934 285.523 L 261.171 285.523 Q 245.776 285.523 241.019 270.882 L 218.843 202.631 Q 214.085 187.990 226.540 178.941 Z
+  "/>
 </svg>
