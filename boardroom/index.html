@@ -11,6 +11,8 @@
     <meta property="og:description" content="Take charge of a club: transfers, training, tactics, and more across a multi-season campaign.">
     <meta property="og:type" content="website">
     <meta property="og:image" content="../assets/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="../assets/og-image.png">
     <link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon-192.png">
     <link rel="apple-touch-icon" href="../assets/favicon-192.png">
@@ -27,6 +29,7 @@
             <button class="btn-icon" onclick="saveGame()" title="Save Game">💾</button>
             <button class="btn-icon" onclick="loadGamePrompt()" title="Load Game">📂</button>
             <button class="btn-icon" onclick="resetGame()" title="New Game">🔄</button>
+            <button class="btn-icon cookie-settings-link" id="cookieSettingsBtn" title="Cookie settings">🍪</button>
         </div>
     </nav>
 
@@ -69,6 +72,9 @@
                 <button class="btn btn-primary" id="startGame" disabled>Start New Game</button>
                 <button class="btn btn-secondary" onclick="loadGamePrompt()">Load Save</button>
             </div>
+
+            <p class="footer-disclaimer">Boardroom is an unofficial fan-made game, not affiliated with FIFA or any federation. Player ratings are stylized approximations for gameplay.
+                <a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a> · <a href="../">Home</a></p>
         </div>
     </div>
 
@@ -342,6 +348,14 @@
                 <div id="leagueContent"></div>
             </div>
         </main>
+    </div>
+
+    <div class="consent-banner hidden" id="consentBanner">
+        <p class="consent-text">We use cookies for basic analytics and to show ads. Choose what you're OK with — you can change this anytime via the cookie icon above.</p>
+        <div class="consent-actions">
+            <button class="btn btn-ghost" id="consentEssentialBtn">Essential only</button>
+            <button class="btn btn-primary" id="consentAcceptBtn">Accept all</button>
+        </div>
     </div>
 </div>
 

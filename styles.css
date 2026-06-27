@@ -128,8 +128,6 @@ button{ font-family:inherit; cursor:pointer; border:none; }
 .gc-thumb.gc-thumb-bracket:before{ background-image:url(assets/thumb-bracket.svg); }
 .gc-thumb.gc-thumb-boardroom{ background:linear-gradient(135deg, #00ff88, #0a4f33); color:#06140d; }
 .gc-thumb.gc-thumb-boardroom:before{ background-image:url(assets/thumb-boardroom.svg); }
-.gc-thumb.gc-thumb-retro{ background:linear-gradient(135deg, #9b6bff, #2a1a4a); color:#f3eeff; }
-.gc-thumb.gc-thumb-retro:before{ background-image:url(assets/thumb-retro.svg); }
 .gc-body{ padding:18px 20px 20px; display:flex; flex-direction:column; flex:1; }
 .gc-title{ display:block; font-size:18px; font-weight:900; text-transform:uppercase; letter-spacing:.7px; color:var(--ink); margin-bottom:7px; }
 .gc-desc{ display:block; font-size:13.5px; color:var(--ink-dim); line-height:1.55; flex:1; }
