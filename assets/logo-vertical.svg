@@ -1,35 +1,8 @@
 <svg viewBox="0 0 512 768" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="ballGradVert" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#00ff88;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#00cc66;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-
-  <!-- Mark (top) -->
-  <g transform="translate(256, 150)">
-    <circle cx="0" cy="0" r="130" fill="url(#ballGradVert)" stroke="none"/>
-
-    <line x1="-130" y1="-78" x2="130" y2="-78" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="-130" y1="-39" x2="130" y2="-39" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="-130" y1="0" x2="130" y2="0" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="-130" y1="39" x2="130" y2="39" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="-130" y1="78" x2="130" y2="78" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-
-    <line x1="-78" y1="-130" x2="-78" y2="130" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="-39" y1="-130" x2="-39" y2="130" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="0" y1="-130" x2="0" y2="130" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="39" y1="-130" x2="39" y2="130" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="78" y1="-130" x2="78" y2="130" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-
-    <line x1="-65" y1="-91" x2="39" y2="65" stroke="#00ff88" stroke-width="8" opacity="0.35"/>
-    <line x1="65" y1="-91" x2="-39" y2="65" stroke="#00ff88" stroke-width="8" opacity="0.35"/>
-
-    <circle cx="0" cy="0" r="46" fill="none" stroke="#00ff88" stroke-width="8" opacity="0.5"/>
-    <circle cx="0" cy="0" r="29" fill="none" stroke="#00ff88" stroke-width="5" opacity="0.35"/>
-  </g>
-
-  <!-- Wordmark (bottom) -->
+  <path fill-rule="evenodd" fill="#00ff88" d="
+    M 126.000 150.000 A 130.000 130.000 0 1 0 386.000 150.000 A 130.000 130.000 0 1 0 126.000 150.000 Z
+    M 275.065 70.506 Q 283.368 64.474 291.671 70.506 L 330.377 98.627 Q 338.680 104.660 335.508 114.421 L 320.724 159.921 Q 317.553 169.682 307.290 169.682 L 259.447 169.682 Q 249.184 169.682 246.013 159.921 L 231.228 114.421 Q 228.057 104.660 236.360 98.627 Z
+  "/>
   <g transform="translate(256, 480)">
     <text x="0" y="-60" text-anchor="middle" dominant-baseline="central" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="80" letter-spacing="2" fill="#00ff88">BALL</text>
     <text x="0" y="60" text-anchor="middle" dominant-baseline="central" font-family="'Press Start 2P', cursive" font-weight="400" font-size="40" letter-spacing="1" fill="#00ff88">KNOWLEDGE</text>

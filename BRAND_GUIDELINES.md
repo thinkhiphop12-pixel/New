@@ -11,8 +11,8 @@
 ## Logo System
 
 ### Primary Mark (Logo)
-- **Symbol**: Stylized football/soccer ball with geometric grid pattern
-- **Style**: Modern, clean, minimal
+- **Symbol**: "Punched Pentagon" — a solid ball formed from a single circle with one asymmetric pentagon (the universal football panel shape) cut out using a subtractive negative-space technique. No gradients, grids, or extra strokes — one shape, one cut.
+- **Style**: Modern, clean, minimal — extreme simplicity with a single focal point
 - **Usage**: App icon, favicon, standalone brand mark, button icon
 - **Versions**:
   - `logo-mark.svg` (square 1:1, 512×512px minimum)

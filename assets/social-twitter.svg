@@ -1,38 +1,7 @@
 <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-  <!-- Twitter profile pic: 400×400px, logo mark centered on dark background -->
-  <defs>
-    <linearGradient id="bgTw" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0a1a14;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#05100b;stop-opacity:1" />
-    </linearGradient>
-    <linearGradient id="ballTw" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#00ff88;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#00cc66;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-
-  <rect width="400" height="400" fill="url(#bgTw)"/>
-
-  <!-- Centered logo mark -->
-  <g transform="translate(200, 200)">
-    <circle cx="0" cy="0" r="120" fill="url(#ballTw)" stroke="none"/>
-
-    <line x1="-120" y1="-72" x2="120" y2="-72" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="-120" y1="-36" x2="120" y2="-36" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="-120" y1="0" x2="120" y2="0" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="-120" y1="36" x2="120" y2="36" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="-120" y1="72" x2="120" y2="72" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-
-    <line x1="-72" y1="-120" x2="-72" y2="120" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="-36" y1="-120" x2="-36" y2="120" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="0" y1="-120" x2="0" y2="120" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="36" y1="-120" x2="36" y2="120" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-    <line x1="72" y1="-120" x2="72" y2="120" stroke="#0a0e14" stroke-width="5" opacity="0.3"/>
-
-    <line x1="-60" y1="-84" x2="36" y2="60" stroke="#00ff88" stroke-width="7" opacity="0.35"/>
-    <line x1="60" y1="-84" x2="-36" y2="60" stroke="#00ff88" stroke-width="7" opacity="0.35"/>
-
-    <circle cx="0" cy="0" r="42" fill="none" stroke="#00ff88" stroke-width="7" opacity="0.5"/>
-    <circle cx="0" cy="0" r="27" fill="none" stroke="#00ff88" stroke-width="5" opacity="0.35"/>
-  </g>
+  <rect width="400" height="400" fill="#0a0e14"/>
+  <path fill-rule="evenodd" fill="#00ff88" d="
+    M 80.000 200.000 A 120.000 120.000 0 1 0 320.000 200.000 A 120.000 120.000 0 1 0 80.000 200.000 Z
+    M 217.599 126.621 Q 225.263 121.053 232.928 126.621 L 268.656 152.579 Q 276.320 158.148 273.392 167.158 L 259.745 209.158 Q 256.818 218.168 247.344 218.168 L 203.182 218.168 Q 193.708 218.168 190.781 209.158 L 177.134 167.158 Q 174.206 158.148 181.871 152.579 Z
+  "/>
 </svg>
