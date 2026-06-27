@@ -132,6 +132,7 @@ function emojiGrid(){
   return guesses.map(g => score(g).map(s => s==='correct'?'🟩':s==='present'?'🟨':'⬜').join('')).join('\n');
 }
 function showEnd(){
+  try { window.BKDaily && (BKDaily.record('footle'), BKDaily.renderStrip(document.getElementById('dailySlate'),'footle')); } catch(e){}
   const st = getStats();
   const head = won ? `You got it in ${guesses.length}!` : `Today's word was ${ANSWER}`;
   openModal(`

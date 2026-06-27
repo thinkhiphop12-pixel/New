@@ -217,9 +217,185 @@ strongest teams and the ultimate XI. Free to read, updated regularly.</p>
                "Data-driven football rankings from Ball Knowledge: the best World Cup players, strongest squads and the all-time World Cup XI. Free football lists.",
                "/guides/", body))
 
+# ---------- per-tournament pages ----------
+def best_xi_from(players):
+    ranked = sorted(players, key=lambda p: -p["o"])
+    need = {"GK": 1, "DF": 4, "MF": 3, "FW": 3}
+    picks = {"GK": [], "DF": [], "MF": [], "FW": []}
+    seen = set()
+    for p in ranked:
+        g = p["p"][0]
+        if g in picks and len(picks[g]) < need[g] and p["n"] not in seen:
+            picks[g].append(p); seen.add(p["n"])
+    return picks["GK"] + picks["DF"] + picks["MF"] + picks["FW"]
+
+def xi_cards(xi):
+    return "\n".join(
+        f'<div class="xi-card"><span class="chip chip-pos pos-{p["p"][0]}">{POS_LABEL.get(p["p"][0])}</span>'
+        f'<span class="xi-name">{html.escape(p["n"])}</span>'
+        f'<span class="xi-meta">{html.escape(p["country"])}</span>'
+        f'<span class="xi-ovr">{p["o"]}</span></div>'
+        for p in xi
+    )
+
+def player_rows(players, n=25, show_year=True):
+    out = []
+    for i, p in enumerate(players[:n]):
+        yr = f'<td>{p["year"]}</td>' if show_year else ''
+        out.append(
+            f'<tr><td class="rk">{i+1}</td><td class="nm">{html.escape(p["n"])}</td>'
+            f'<td>{html.escape(p["country"])}</td>{yr}'
+            f'<td><span class="chip chip-pos pos-{p["p"][0]}">{POS_LABEL.get(p["p"][0],p["p"][0])}</span></td>'
+            f'<td class="ov">{p["o"]}</td></tr>')
+    return "\n".join(out)
+
+def build_tournaments():
+    years = sorted({p["year"] for p in PLAYERS})
+    built = []
+    for y in years:
+        pl = [p for p in PLAYERS if p["year"] == y]
+        if len(pl) < 22:
+            continue
+        ranked = sorted(pl, key=lambda p: -p["o"])
+        seen, top = set(), []
+        for p in ranked:
+            if p["n"] in seen: continue
+            seen.add(p["n"]); top.append(p)
+            if len(top) >= 25: break
+        xi = best_xi_from(pl)
+        # strongest squads that year
+        from collections import defaultdict
+        sq = defaultdict(list)
+        for p in pl: sq[p["country"]].append(p["o"])
+        squads = sorted(((c, round(sum(sorted(v, reverse=True)[:11])/11, 1))
+                         for c, v in sq.items() if len(v) >= 11), key=lambda r: -r[1])[:8]
+        sq_rows = "\n".join(
+            f'<tr><td class="rk">{i+1}</td><td class="nm">{html.escape(c)}</td><td class="ov">{r}</td></tr>'
+            for i, (c, r) in enumerate(squads))
+        body = f"""<p class="eyebrow">World Cup {y} · Guide</p>
+<h1>World Cup {y}: best players, squads &amp; the team of the tournament</h1>
+<p class="guide-lede">The standout players and strongest squads of the {y} World Cup, rated in the Ball Knowledge
+dataset. Draft any of them in <a href="../../700/">7-0-0</a>.</p>
+<h2>Team of the tournament ({y})</h2>
+<div class="xi-grid">{xi_cards(xi)}</div>
+<h2>Top 25 players · World Cup {y}</h2>
+<table class="rank-table"><thead><tr><th>#</th><th>Player</th><th>Nation</th><th>Pos</th><th>OVR</th></tr></thead>
+<tbody>{player_rows(top, 25, show_year=False)}</tbody></table>
+<h2>Strongest squads · World Cup {y}</h2>
+<table class="rank-table"><thead><tr><th>#</th><th>Nation</th><th>XI rating</th></tr></thead><tbody>{sq_rows}</tbody></table>
+<p>Browse <a href="../">all football guides</a> or the full <a href="../../squads/">World Cup squad archive</a>.</p>"""
+        schema = itemlist_schema([p["n"] for p in top], f"Best players of the {y} World Cup")
+        write(f"/guides/world-cup-{y}/",
+              page(f"World Cup {y}: Best Players, Squads & Team of the Tournament | Ball Knowledge",
+                   f"The best players and strongest squads of the {y} World Cup, with a data-rated team of the tournament. Free football guide from Ball Knowledge.",
+                   f"/guides/world-cup-{y}/", body, schema))
+        built.append(y)
+    return built
+
+import unicodedata, re
+def slugify(s):
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
+    s = s.lower().replace("'", "").replace("’", "")
+    s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")
+    return re.sub(r"-+", "-", s)
+
+def build_nations():
+    from collections import defaultdict
+    by = defaultdict(list)
+    for p in PLAYERS: by[p["country"]].append(p)
+    nations = [(c, pl) for c, pl in by.items() if len(pl) >= 60]
+    nations.sort(key=lambda r: -max(p["o"] for p in r[1]))
+    built = []
+    for c, pl in nations:
+        ranked = sorted(pl, key=lambda p: -p["o"])
+        seen, top = set(), []
+        for p in ranked:
+            if p["n"] in seen: continue
+            seen.add(p["n"]); top.append(p)
+            if len(top) >= 25: break
+        xi = best_xi_from(pl)
+        slug = slugify(c)
+        body = f"""<p class="eyebrow">{html.escape(c)} · World Cup Guide</p>
+<h1>{html.escape(c)}'s greatest World Cup players &amp; all-time XI</h1>
+<p class="guide-lede">The best {html.escape(c)} players ever to appear at a World Cup, rated and ranked, with an
+all-time {html.escape(c)} XI. Build them in <a href="../../700/">7-0-0</a>.</p>
+<h2>{html.escape(c)} all-time World Cup XI</h2>
+<div class="xi-grid">{xi_cards(xi)}</div>
+<h2>Top {html.escape(c)} World Cup players</h2>
+<table class="rank-table"><thead><tr><th>#</th><th>Player</th><th>Nation</th><th>Cup</th><th>Pos</th><th>OVR</th></tr></thead>
+<tbody>{player_rows(top, 25)}</tbody></table>
+<p>See the <a href="../best-world-cup-players/">100 best players of all time</a> or browse
+<a href="../../squads/">every World Cup squad</a>.</p>"""
+        schema = itemlist_schema([p["n"] for p in top], f"Best {c} World Cup players")
+        write(f"/guides/best-{slug}-world-cup-players/",
+              page(f"{c}'s Greatest World Cup Players & All-Time XI | Ball Knowledge",
+                   f"The best {c} World Cup players of all time, ranked by rating, with an all-time {c} XI. Free football guide from Ball Knowledge.",
+                   f"/guides/best-{slug}-world-cup-players/", body, schema))
+        built.append((c, slug))
+    return built
+
+def build_hub_full(years, nations):
+    yr_links = " · ".join(f'<a href="world-cup-{y}/">{y}</a>' for y in years)
+    nat_links = " · ".join(f'<a href="best-{s}-world-cup-players/">{html.escape(c)}</a>' for c, s in nations)
+    body = f"""<p class="eyebrow">Football Guides &amp; Rankings</p>
+<h1>Football guides, rankings &amp; lists</h1>
+<p class="guide-lede">Data-driven football rankings built from real World Cup squads — the best players, the
+strongest teams, the ultimate XIs, tournament by tournament and nation by nation. Free to read.</p>
+<div class="guide-cards">
+  <a class="guide-card" href="best-world-cup-players/"><h2>100 Best World Cup Players</h2><p>The greatest players ever to play a World Cup, ranked by rating.</p><span class="gc-go">Read →</span></a>
+  <a class="guide-card" href="strongest-world-cup-squads/"><h2>Strongest World Cup Squads</h2><p>The 50 deepest squads of all time, by best-XI rating.</p><span class="gc-go">Read →</span></a>
+  <a class="guide-card" href="all-time-world-cup-xi/"><h2>All-Time World Cup XI</h2><p>One eleven, the best of every tournament, in a 4-3-3.</p><span class="gc-go">Read →</span></a>
+  <a class="guide-card" href="../squads/"><h2>World Cup Squads Archive</h2><p>Full squads and ratings for every nation, 1930–2026.</p><span class="gc-go">Browse →</span></a>
+</div>
+<h2>By tournament</h2>
+<p class="guide-links">{yr_links}</p>
+<h2>By nation</h2>
+<p class="guide-links">{nat_links}</p>"""
+    write("/guides/",
+          page("Football Guides, Rankings & Lists | Ball Knowledge",
+               "Data-driven football rankings from Ball Knowledge: best World Cup players, strongest squads, all-time XIs, plus guides for every tournament and nation.",
+               "/guides/", body))
+
+def build_sitemap():
+    base = "https://ballknw.com"
+    urls = []
+    def add(loc, freq, pri):
+        urls.append((loc, freq, pri))
+    add("/", "daily", "1.0")
+    for g in ["footle", "connections", "strands", "letterboxed"]:
+        add(f"/{g}/", "daily", "0.9")
+    for g in ["700", "dynasty", "lineup", "worldcup", "boardroom"]:
+        add(f"/{g}/", "monthly", "0.8")
+    add("/guides/", "weekly", "0.8")
+    # all guide subpages
+    gdir = os.path.join(ROOT, "guides")
+    for name in sorted(os.listdir(gdir)):
+        p = os.path.join(gdir, name)
+        if os.path.isdir(p) and os.path.exists(os.path.join(p, "index.html")):
+            add(f"/guides/{name}/", "weekly", "0.7")
+    add("/squads/", "monthly", "0.7")
+    sdir = os.path.join(ROOT, "squads")
+    if os.path.isdir(sdir):
+        for name in sorted(os.listdir(sdir)):
+            p = os.path.join(sdir, name)
+            if os.path.isdir(p) and os.path.exists(os.path.join(p, "index.html")):
+                add(f"/squads/{name}/", "monthly", "0.6")
+    for pg in ["/privacy.html", "/terms.html"]:
+        add(pg, "yearly", "0.3")
+    body = "\n".join(
+        f"  <url>\n    <loc>{base}{loc}</loc>\n    <changefreq>{f}</changefreq>\n    <priority>{p}</priority>\n  </url>"
+        for loc, f, p in urls)
+    out = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + body + "\n</urlset>\n"
+    with open(os.path.join(ROOT, "sitemap.xml"), "w") as f:
+        f.write(out)
+    print("wrote /sitemap.xml with", len(urls), "urls")
+
 if __name__ == "__main__":
     build_best_players()
     build_strongest_squads()
     build_all_time_xi()
-    build_hub()
-    print("done")
+    years = build_tournaments()
+    nations = build_nations()
+    build_hub_full(years, nations)
+    build_sitemap()
+    print("done — tournaments:", len(years), "nations:", len(nations))

@@ -114,3 +114,18 @@
   .strands-cell { width: 11vw; height: 11vw; font-size: 5vw; }
   .lb-stage { width: 88vw; height: 88vw; }
 }
+
+/* ---------- Daily slate (cross-game engagement) ---------- */
+.daily-slate { margin: 0 auto 18px; max-width: 560px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: var(--radius-lg); padding: 12px 14px; }
+.slate-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.slate-title { font-family: var(--sans); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; font-size: .66rem; color: var(--ink-3); }
+.slate-count { font-family: var(--serif); font-weight: 700; font-size: .9rem; color: var(--claret); }
+.slate-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.slate-chip { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: var(--radius); border: 1px solid var(--rule); background: var(--paper); text-decoration: none; color: var(--ink-2); text-align: center; transition: background .12s, border-color .12s; }
+.slate-chip:hover { background: #fff; text-decoration: none; }
+.slate-chip.is-done { background: #eef6ef; border-color: var(--pitch); color: var(--pitch); }
+.slate-chip.is-current { border-color: var(--claret); border-width: 2px; }
+.sc-mark { font-weight: 800; font-size: .9rem; }
+.sc-name { font-size: .6rem; font-weight: 700; line-height: 1.1; }
+.sc-streak { font-size: .58rem; }
+@media (max-width: 420px){ .sc-name { font-size: .54rem; } }

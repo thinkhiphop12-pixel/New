@@ -119,6 +119,7 @@ function checkWin(){
   if (Object.values(found).filter(Boolean).length===total){ setTimeout(end,400); }
 }
 function end(){
+  try { window.BKDaily && (BKDaily.record('strands'), BKDaily.renderStrip(document.getElementById('dailySlate'),'strands')); } catch(e){}
   openModal(`<h2>Board cleared!</h2><p>You found every word in <b>“${THEME.clue}”</b>, spangram included. A new theme drops tomorrow.</p>
     <div class="share-row"><button class="btn btn-primary" id="shareNow">Share result</button></div>`);
   $('shareNow').addEventListener('click', share);

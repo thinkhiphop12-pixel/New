@@ -104,6 +104,7 @@ function checkWin(){
   if (usedLetters().size===12){ setTimeout(end,300); }
 }
 function end(){
+  try { window.BKDaily && (BKDaily.record('letterboxed'), BKDaily.renderStrip(document.getElementById('dailySlate'),'letterboxed')); } catch(e){}
   openModal(`<h2>All twelve letters used!</h2>
     <p>Solved in <b>${words.length}</b> word${words.length===1?'':'s'}: ${words.join(' → ')}.</p>
     <p>${words.length<=2?'A perfect two-word start. ':''}A fresh Starting XI lands tomorrow.</p>

@@ -26,5 +26,8 @@
 .guide-card p { font-size: .9rem; margin: 0; flex: 1; }
 .guide-card .gc-go { font-family: var(--sans); font-weight: 700; font-size: .82rem; color: var(--claret); }
 
+.guide-links { line-height: 2.1; font-size: .98rem; }
+.guide-links a { font-weight: 600; white-space: nowrap; }
+
 .guide-cta { margin-top: 36px; padding: 24px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: var(--radius-lg); text-align: center; }
 .guide-cta h2 { margin: 0 0 8px; }

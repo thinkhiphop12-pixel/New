@@ -133,6 +133,7 @@ function revealAll(){
   solved.sort((a,b)=>a.level-b.level); selected.clear(); render();
 }
 function end(){
+  try { window.BKDaily && (BKDaily.record('connections'), BKDaily.renderStrip(document.getElementById('dailySlate'),'connections')); } catch(e){}
   const won = mistakes<4;
   openModal(`<h2>${won?'Solved it!':'Out of guesses'}</h2>
     <p>${won?'Great grouping — share your result and return tomorrow.':'The grid is revealed above. A new Connections XI lands tomorrow.'}</p>
