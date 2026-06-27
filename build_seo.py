@@ -364,7 +364,7 @@ def build_sitemap():
     add("/", "daily", "1.0")
     for g in ["footle", "connections", "strands", "letterboxed"]:
         add(f"/{g}/", "daily", "0.9")
-    for g in ["700", "dynasty", "lineup", "worldcup", "boardroom"]:
+    for g in ["700", "dynasty", "lineup", "worldcup", "boardroom", "manager"]:
         add(f"/{g}/", "monthly", "0.8")
     add("/guides/", "weekly", "0.8")
     # all guide subpages

@@ -108,8 +108,15 @@ function handleKey(k){
   if (k==='BACK'){ current = current.slice(0,-1); renderBoard(); return; }
   if (/^[A-Z]$/.test(k) && current.length < COLS){ current += k; renderBoard(); }
 }
+function isValidWord(w){
+  // Accept the answer and any football word, plus the English dictionary.
+  if (w === ANSWER || CLEAN.includes(w)) return true;
+  try { if (window.FOOTLE_VALID) return FOOTLE_VALID.has(w.toLowerCase()); } catch(e){}
+  return true; // fail open if dictionary failed to load
+}
 function submit(){
   if (current.length !== COLS){ toast('Not enough letters'); shakeRow(); return; }
+  if (!isValidWord(current)){ toast('Not in word list'); shakeRow(); return; }
   const g = current; guesses.push(g); current='';
   const rowIdx = guesses.length-1;
   renderBoard(rowIdx); paintKeys();
