@@ -1,0 +1,30 @@
+/* Ball Knowledge — guides / rankings pages (editorial). Tokens: editorial.css */
+.guide { max-width: 800px; padding-bottom: 30px; }
+.guide h1 { font-size: clamp(2rem, 5.5vw, 3.1rem); margin: 8px 0 12px; }
+.guide h2 { font-size: 1.5rem; margin: 30px 0 10px; }
+.guide-lede { font-size: 1.1rem; color: var(--ink-2); max-width: 60ch; margin: 0 0 22px; }
+.guide p { color: var(--ink-2); }
+
+.rank-table { width: 100%; border-collapse: collapse; margin: 14px 0 8px; font-size: .94rem; }
+.rank-table th { text-align: left; font-family: var(--sans); font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); border-bottom: 2px solid var(--rule-ink); padding: 8px 10px; }
+.rank-table td { padding: 8px 10px; border-bottom: 1px solid var(--rule); }
+.rank-table tr:nth-child(even) td { background: var(--paper-3); }
+.rank-table .rk { font-family: var(--serif); font-weight: 700; color: var(--claret); width: 36px; }
+.rank-table .nm { font-weight: 700; color: var(--ink); }
+.rank-table .ov { font-family: var(--serif); font-weight: 700; text-align: right; }
+
+.xi-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); margin: 16px 0; }
+.xi-card { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--paper-2); border: 1px solid var(--rule); border-left: 4px solid var(--pitch); border-radius: var(--radius); }
+.xi-name { font-family: var(--serif); font-weight: 700; flex: 1; }
+.xi-meta { font-size: .72rem; color: var(--ink-3); }
+.xi-ovr { font-family: var(--serif); font-weight: 700; font-size: 1.2rem; color: var(--claret); }
+
+.guide-cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin: 18px 0; }
+.guide-card { display: flex; flex-direction: column; gap: 6px; padding: 18px; background: var(--paper-2); border: 1px solid var(--rule); border-top: 4px solid var(--claret); border-radius: var(--radius-lg); text-decoration: none; color: var(--ink); transition: transform .08s, box-shadow .15s; }
+.guide-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); text-decoration: none; }
+.guide-card h2 { font-size: 1.2rem; margin: 0; }
+.guide-card p { font-size: .9rem; margin: 0; flex: 1; }
+.guide-card .gc-go { font-family: var(--sans); font-weight: 700; font-size: .82rem; color: var(--claret); }
+
+.guide-cta { margin-top: 36px; padding: 24px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: var(--radius-lg); text-align: center; }
+.guide-cta h2 { margin: 0 0 8px; }
