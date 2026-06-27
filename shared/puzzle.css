@@ -1,0 +1,116 @@
+/* ============================================================
+   Ball Knowledge — shared puzzle styles (Footle, Connections,
+   Strands, Starting XI). Tokens live in editorial.css.
+   ============================================================ */
+
+.puzzle-wrap { max-width: 600px; padding-bottom: 40px; }
+.puzzle-head { text-align: center; margin: 18px 0 18px; }
+.puzzle-title { font-size: clamp(2.2rem, 8vw, 3.4rem); margin: 4px 0 8px; letter-spacing: -.02em; }
+.puzzle-sub { color: var(--ink-2); margin: 0 auto; max-width: 44ch; }
+.ink-good { color: var(--good); font-weight: 700; }
+.ink-warn { color: var(--warn); font-weight: 700; }
+
+.puzzle-actions { display: flex; gap: 10px; justify-content: center; margin: 18px 0; flex-wrap: wrap; }
+
+/* ---------- Footle board ---------- */
+.board { display: grid; grid-template-rows: repeat(6, 1fr); gap: 6px; justify-content: center; margin: 10px auto 18px; }
+.board-row { display: grid; grid-template-columns: repeat(5, 58px); gap: 6px; }
+.tile {
+  width: 58px; height: 58px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-weight: 700; font-size: 1.8rem; text-transform: uppercase;
+  border: 2px solid var(--rule); border-radius: var(--radius); background: var(--paper-2); color: var(--ink);
+  transition: transform .1s, background .2s, border-color .2s, color .2s;
+}
+.tile.filled { border-color: var(--rule-strong); }
+.tile.pop { transform: scale(1.08); }
+.tile.flip { animation: flip .5s ease forwards; }
+@keyframes flip { 0% { transform: rotateX(0); } 50% { transform: rotateX(90deg); } 100% { transform: rotateX(0); } }
+.tile.correct { background: var(--good); border-color: var(--good); color: #fff; }
+.tile.present { background: var(--warn); border-color: var(--warn); color: #fff; }
+.tile.absent  { background: #8a8175; border-color: #8a8175; color: #fff; }
+
+/* ---------- Keyboard ---------- */
+.keyboard { display: flex; flex-direction: column; gap: 6px; max-width: 500px; margin: 0 auto; }
+.kb-row { display: flex; gap: 5px; justify-content: center; }
+.key {
+  flex: 1; min-width: 28px; height: 52px; border-radius: var(--radius); border: 1px solid var(--rule-strong);
+  background: var(--paper-2); color: var(--ink); font-weight: 700; font-size: .9rem; cursor: pointer;
+  text-transform: uppercase; display: flex; align-items: center; justify-content: center; user-select: none;
+}
+.key:active { transform: translateY(1px); }
+.key.wide { flex: 1.5; font-size: .7rem; }
+.key.correct { background: var(--good); border-color: var(--good); color: #fff; }
+.key.present { background: var(--warn); border-color: var(--warn); color: #fff; }
+.key.absent  { background: #b9b1a4; border-color: #b9b1a4; color: #fff; }
+
+/* ---------- Modal ---------- */
+.modal-host { position: fixed; inset: 0; background: rgba(28,24,19,.45); display: flex; align-items: center; justify-content: center; z-index: 90; padding: 18px; }
+.modal { max-width: 420px; width: 100%; padding: 24px; position: relative; }
+.modal h2 { margin: 0 0 12px; font-size: 1.5rem; }
+.modal h3 { color: var(--claret); margin: 16px 0 6px; }
+.modal p, .modal li { color: var(--ink-2); font-size: .94rem; }
+.modal-close { position: absolute; top: 12px; right: 14px; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--ink-3); }
+.stat-row { display: flex; justify-content: space-around; text-align: center; margin: 14px 0; }
+.stat-row .sv { font-family: var(--serif); font-weight: 700; font-size: 1.8rem; }
+.stat-row .sl { font-size: .62rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); }
+.share-row { display: flex; justify-content: center; margin-top: 14px; }
+
+/* ---------- About blocks (SEO copy) ---------- */
+.puzzle-about { margin: 36px 0 10px; border-top: 1px solid var(--rule); padding-top: 22px; }
+.puzzle-about h2 { font-size: 1.5rem; margin: 0 0 10px; }
+.puzzle-about h3 { color: var(--claret); font-size: 1.1rem; margin: 18px 0 6px; }
+.puzzle-about p, .puzzle-about li { color: var(--ink-2); }
+.puzzle-about ul { padding-left: 20px; }
+
+/* ---------- Connections ---------- */
+.conn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0; }
+.conn-tile {
+  aspect-ratio: 1.5 / 1; border-radius: var(--radius); border: 1px solid var(--rule);
+  background: var(--paper-2); color: var(--ink); font-weight: 700; font-size: clamp(.62rem,2.6vw,.92rem);
+  cursor: pointer; display: flex; align-items: center; justify-content: center; text-align: center; padding: 4px;
+  text-transform: uppercase; letter-spacing: .01em; transition: transform .08s, background .12s;
+}
+.conn-tile.sel { background: var(--ink); color: var(--paper); border-color: var(--ink); transform: scale(.97); }
+.conn-tile.shake { animation: shake .4s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+.conn-solved { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: var(--radius); padding: 12px; color: #fff; margin-bottom: 8px; }
+.conn-solved .cs-cat { font-weight: 800; text-transform: uppercase; letter-spacing: .05em; font-size: .8rem; }
+.conn-solved .cs-items { font-size: .82rem; opacity: .95; }
+.lvl-0 { background: #c8a33a; } .lvl-1 { background: #5a8f4f; } .lvl-2 { background: #3f7bb0; } .lvl-3 { background: #9c5bb0; }
+.conn-controls { display: flex; gap: 10px; justify-content: center; margin: 6px 0 12px; flex-wrap: wrap; }
+.mistakes { display: flex; gap: 8px; justify-content: center; align-items: center; margin: 8px 0; font-size: .8rem; color: var(--ink-3); }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ink-3); }
+.dot.gone { background: var(--rule); }
+
+/* ---------- Strands ---------- */
+.strands-clue { text-align: center; font-weight: 700; color: var(--claret); margin: 6px 0 14px; }
+.strands-board { display: grid; gap: 4px; justify-content: center; margin: 10px auto; touch-action: none; }
+.strands-cell {
+  width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--rule); background: var(--paper-2);
+  font-family: var(--serif); font-weight: 700; font-size: 1.2rem; text-transform: uppercase; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; color: var(--ink); user-select: none;
+}
+.strands-cell.active { background: var(--gold); color: #fff; border-color: var(--gold); }
+.strands-cell.found { background: #cfe3d6; border-color: var(--pitch); color: var(--pitch); }
+.strands-cell.spangram { background: #cfe0ef; border-color: var(--sky); color: var(--sky); }
+.strands-progress { text-align: center; font-size: .82rem; color: var(--ink-3); margin: 10px 0; }
+
+/* ---------- Letter Boxed / Starting XI ---------- */
+.lb-stage { position: relative; width: 320px; height: 320px; margin: 16px auto; }
+.lb-square { position: absolute; inset: 40px; border: 2px solid var(--ink); border-radius: 6px; }
+.lb-dot { position: absolute; width: 44px; height: 44px; transform: translate(-50%,-50%); border-radius: 50%;
+  background: var(--paper-2); border: 2px solid var(--rule-strong); font-family: var(--serif); font-weight: 700;
+  font-size: 1.3rem; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--ink); }
+.lb-dot.used { background: var(--pitch); color: #fff; border-color: var(--pitch); }
+.lb-dot.active { background: var(--gold); color: #fff; border-color: var(--gold); }
+.lb-current { text-align: center; font-family: var(--serif); font-weight: 700; font-size: 1.6rem; min-height: 2rem; letter-spacing: .04em; text-transform: uppercase; }
+.lb-words { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 10px 0; }
+.lb-word { background: var(--paper-3); border: 1px solid var(--rule); border-radius: 999px; padding: 3px 12px; font-weight: 700; font-size: .82rem; text-transform: uppercase; }
+.lb-controls { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+
+@media (max-width: 480px) {
+  .board-row { grid-template-columns: repeat(5, 16vw); }
+  .tile { width: 16vw; height: 16vw; font-size: 7vw; }
+  .strands-cell { width: 11vw; height: 11vw; font-size: 5vw; }
+  .lb-stage { width: 88vw; height: 88vw; }
+}

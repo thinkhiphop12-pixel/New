@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4ecdc">
+<title>Pitch Strands — The Daily Football Word Hunt | Ball Knowledge</title>
+<meta name="description" content="Pitch Strands is a daily football word-search puzzle. Find every hidden word tied to the day's football theme, plus the spangram that spans the board. Free, new every day.">
+<link rel="canonical" href="https://ballknw.com/strands/">
+<meta property="og:title" content="Pitch Strands — The Daily Football Word Hunt">
+<meta property="og:description" content="Find every hidden football word and the themed spangram. A new Pitch Strands every day.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ballknw.com/strands/">
+<meta property="og:image" content="../assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../shared/editorial.css">
+<link rel="stylesheet" href="../shared/puzzle.css">
+</head>
+<body>
+<div id="app">
+  <header class="masthead">
+    <div class="masthead-inner">
+      <a class="mast-brand" href="/"><span class="mast-title">Ball<span class="amp">·</span>Knowledge</span><span class="mast-sub">Pitch Strands</span></a>
+      <nav class="mast-nav"><a href="/#daily">Daily</a><a href="/footle/">Footle</a><a href="/connections/">Connections</a><a href="/#games">All games</a></nav>
+    </div>
+  </header>
+
+  <main class="wrap puzzle-wrap">
+    <div class="puzzle-head">
+      <p class="eyebrow">Daily · Football Word Hunt</p>
+      <h1 class="puzzle-title">Pitch Strands</h1>
+      <p class="puzzle-sub">Today's theme:</p>
+      <p class="strands-clue" id="clue">—</p>
+    </div>
+
+    <div class="strands-board" id="board"></div>
+    <p class="lb-current" id="current"></p>
+    <div class="conn-controls">
+      <button class="btn btn-ghost" id="clearBtn">Clear</button>
+    </div>
+    <p class="strands-progress" id="progress"></p>
+
+    <div class="puzzle-actions">
+      <button class="btn btn-ghost" id="howBtn">How to play</button>
+    </div>
+
+    <article class="puzzle-about">
+      <h2>What is Pitch Strands?</h2>
+      <p><strong>Pitch Strands</strong> is a daily football word-search. Every puzzle has a theme — shown at the top —
+        and the board hides a handful of words that all fit it, plus one special <em>spangram</em>: a longer word or
+        phrase, tied to the theme, that touches two sides of the board. Find them all to finish the day's puzzle.</p>
+      <h3>How to play</h3>
+      <ul>
+        <li>Tap a letter, then tap connected letters (including diagonals) to trace a word.</li>
+        <li>Spell a theme word and it locks in <span style="color:var(--pitch);font-weight:700">green</span>; the
+          spangram locks in <span style="color:var(--sky);font-weight:700">blue</span>.</li>
+        <li>Find every theme word to complete the board. A new theme every day.</li>
+      </ul>
+      <p>Also try <a href="/footle/">Footle</a>, <a href="/connections/">Connections XI</a> and
+        <a href="/letterboxed/">Starting XI</a>, or build a squad in <a href="/700/">7-0-0</a>.</p>
+    </article>
+  </main>
+
+  <div class="modal-host hidden" id="modalHost"><div class="modal card" id="modalCard"></div></div>
+
+  <footer class="site-footer">
+    <div class="foot-links"><a href="/">Home</a> · <a href="/footle/">Footle</a> · <a href="/connections/">Connections XI</a> · <a href="/strands/">Pitch Strands</a> · <a href="/letterboxed/">Starting XI</a> · <a href="/700/">7-0-0</a></div>
+    <p class="foot-disclaimer">Ball Knowledge is an unofficial fan project. A new puzzle every day, free to play.</p>
+  </footer>
+</div>
+<div id="toastHost"></div>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Pitch Strands","url":"https://ballknw.com/strands/","applicationCategory":"Game","genre":"Word search","gamePlatform":"Web browser","operatingSystem":"Any","description":"Pitch Strands is a daily football word-search — find every hidden word tied to the day's theme, plus the spangram.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"publisher":{"@type":"Organization","name":"Ball Knowledge"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"What is Pitch Strands?","acceptedAnswer":{"@type":"Answer","text":"Pitch Strands is a daily football word-search. Each puzzle has a theme, and the board hides several words that fit it plus a special spangram that touches two sides of the board."}},
+{"@type":"Question","name":"How do you play Pitch Strands?","acceptedAnswer":{"@type":"Answer","text":"Tap connected letters, including diagonals, to trace a word. Theme words lock in green and the spangram locks in blue. Find every word to finish the board."}},
+{"@type":"Question","name":"Is there a new Pitch Strands every day?","acceptedAnswer":{"@type":"Answer","text":"Yes, a new football theme and board is released every day."}}]}
+</script>
+<script src="app.js" defer></script>
+</body>
+</html>

@@ -2,13 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#07120f">
-<title>Ball Knowledge — Free Football Knowledge Games</title>
-<meta name="description" content="Ball Knowledge is a free hub of football knowledge games — build a World Cup XI in 7-0-0, or test your squad recall in Lineup.">
-<meta property="og:title" content="Ball Knowledge — Free Football Knowledge Games">
-<meta property="og:description" content="Build a World Cup XI in 7-0-0, or test your squad recall in Lineup. Free, no account needed.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4ecdc">
+<title>Ball Knowledge — Free Daily Football Games, Quizzes &amp; Puzzles</title>
+<meta name="description" content="Ball Knowledge is a free hub of daily football games and puzzles: Footle (football Wordle), Connections XI, Pitch Strands, the 7-0-0 World Cup squad builder and more. No account, play in your browser.">
+<link rel="canonical" href="https://ballknw.com/">
+<meta property="og:title" content="Ball Knowledge — Free Daily Football Games &amp; Puzzles">
+<meta property="og:description" content="Daily football word games, squad builders and quizzes. Footle, Connections XI, Pitch Strands, 7-0-0 and more — free, no account.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://ballknw.com/">
 <meta property="og:image" content="assets/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="assets/og-image.png">
@@ -16,135 +18,225 @@
 <link rel="icon" type="image/svg+xml" href="assets/logo-mark.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
 <link rel="apple-touch-icon" href="assets/favicon-192.png">
-<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="shared/editorial.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div id="app">
 
-  <header class="topbar">
-    <div class="brand">
-      <img class="brand-logo" src="assets/logo-mark.svg" alt="" width="38" height="38">
-      <span>
-        <span class="brand-mark">BALL KNOWLEDGE</span>
-        <span class="brand-sub">FOOTBALL KNOWLEDGE GAMES</span>
-      </span>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <a class="mast-brand" href="/">
+        <span class="mast-title">Ball<span class="amp">·</span>Knowledge</span>
+        <span class="mast-sub">The Daily Football Almanac</span>
+      </a>
+      <nav class="mast-nav" aria-label="Primary">
+        <a href="#daily">Daily</a>
+        <a href="#games">Games</a>
+        <a href="squads/">Squads</a>
+        <a href="#about">About</a>
+      </nav>
     </div>
-    <nav class="topnav" aria-label="Primary navigation">
-      <a href="#games">Games</a>
-      <a href="squads/">Squads</a>
-      <a href="#about">About</a>
-      <a href="privacy.html">Privacy</a>
-    </nav>
+    <div class="mast-date" id="mastDate">Free football games &amp; puzzles · No account needed</div>
   </header>
 
-  <section class="hero">
-    <div class="stadium-lights" aria-hidden="true"></div>
-    <div class="pitch-map" aria-hidden="true"></div>
-    <div class="hero-inner">
-      <span class="eyebrow">Live football brain games</span>
-      <h1>Play smarter than the touchline.</h1>
-      <p>Draft World Cup XIs, identify mystery players, simulate brackets, and build a club dynasty in fast browser games made for football obsessives.</p>
-      <div class="hero-actions">
-        <a class="btn-primary" href="#games">Choose a game</a>
+  <main class="wrap">
+
+    <!-- ===================== HERO / LEDE ===================== -->
+    <section class="lede">
+      <p class="eyebrow">No. 1 — The Football Brain Edition</p>
+      <h1 class="lede-head">A new football puzzle, <em>every single day.</em></h1>
+      <p class="lede-sub">Word games, squad builders and quizzes for people who know their back four from their false nine.
+        Free to play, nothing to download, a fresh challenge each morning.</p>
+      <div class="lede-actions">
+        <a class="btn btn-primary" href="footle/">Play today's Footle →</a>
+        <a class="btn btn-ghost" href="#games">Browse all games</a>
       </div>
+    </section>
+
+    <hr class="rule rule-strong">
+
+    <!-- ===================== DAILY PUZZLES ===================== -->
+    <section id="daily">
+      <div class="section-head">
+        <h2>Today's Puzzles</h2>
+        <span class="section-meta">Reset at midnight · build your streak</span>
+      </div>
+      <div class="daily-grid">
+        <a class="daily-card" href="footle/">
+          <span class="dc-badge">Word</span>
+          <span class="dc-title">Footle</span>
+          <span class="dc-desc">Guess the 5-letter football word in six tries. A daily football Wordle.</span>
+          <span class="dc-go">Play →</span>
+        </a>
+        <a class="daily-card" href="connections/">
+          <span class="dc-badge">Grid</span>
+          <span class="dc-title">Connections XI</span>
+          <span class="dc-desc">Sort 16 footballing names into four hidden groups. One puzzle a day.</span>
+          <span class="dc-go">Play →</span>
+        </a>
+        <a class="daily-card" href="strands/">
+          <span class="dc-badge">Search</span>
+          <span class="dc-title">Pitch Strands</span>
+          <span class="dc-desc">Find every hidden football word — and the themed spangram.</span>
+          <span class="dc-go">Play →</span>
+        </a>
+        <a class="daily-card" href="letterboxed/">
+          <span class="dc-badge">Letters</span>
+          <span class="dc-title">Starting XI</span>
+          <span class="dc-desc">Spell football words around the square. Use every side.</span>
+          <span class="dc-go">Play →</span>
+        </a>
+      </div>
+    </section>
+
+    <hr class="rule">
+
+    <!-- ===================== FEATURE: 7-0-0 ===================== -->
+    <section id="feature-700" class="feature">
+      <div class="feature-body">
+        <p class="kicker">Feature · Squad Builder</p>
+        <h2 class="feature-head">7-0-0 — can your dream XI go a whole World Cup unbeaten?</h2>
+        <p class="feature-text">Search across <strong>8,200+ real players</strong> from every World Cup since 1930,
+          draft a starting eleven within the rules of your formation, then simulate the seven games it takes to win
+          the tournament — three group matches, the Round of 16, quarter-final, semi-final and final.
+          Win all seven, drop nothing, and you've got a perfect <strong>7-0-0</strong>.</p>
+        <a class="btn btn-pitch" href="700/">Build your XI →</a>
+      </div>
+      <div class="feature-side">
+        <div class="scoreline">
+          <span class="sl-line">GROUP · R16 · QF · SF · FINAL</span>
+          <span class="sl-score">7<span class="sl-dash">–</span>0<span class="sl-dash">–</span>0</span>
+          <span class="sl-cap">won · drawn · lost</span>
+        </div>
+      </div>
+    </section>
+
+    <hr class="rule rule-strong">
+
+    <!-- ===================== ALL GAMES ===================== -->
+    <section id="games">
+      <div class="section-head">
+        <h2>The Full Card</h2>
+        <span class="section-meta" id="gamesCount">9 games ready to play</span>
+      </div>
+      <div class="game-grid">
+        <a class="game-card" href="700/">
+          <span class="gc-rule"></span>
+          <span class="gc-title">7-0-0</span>
+          <span class="gc-desc">Draft a World Cup XI from 8,200 real players and chase a perfect unbeaten run.</span>
+          <span class="gc-tag">Squad builder</span>
+        </a>
+        <a class="game-card" href="footle/">
+          <span class="gc-rule"></span>
+          <span class="gc-title">Footle</span>
+          <span class="gc-desc">The daily football word game. Five letters, six guesses, green-yellow-grey.</span>
+          <span class="gc-tag">Daily word</span>
+        </a>
+        <a class="game-card" href="connections/">
+          <span class="gc-rule"></span>
+          <span class="gc-title">Connections XI</span>
+          <span class="gc-desc">Find the four hidden links between sixteen footballing names.</span>
+          <span class="gc-tag">Daily grid</span>
+        </a>
+        <a class="game-card" href="strands/">
+          <span class="gc-rule"></span>
+          <span class="gc-title">Pitch Strands</span>
+          <span class="gc-desc">A themed word hunt across a board of letters, spangram included.</span>
+          <span class="gc-tag">Daily search</span>
+        </a>
+        <a class="game-card" href="letterboxed/">
+          <span class="gc-rule"></span>
+          <span class="gc-title">Starting XI</span>
+          <span class="gc-desc">Spell your way around the square using football vocabulary.</span>
+          <span class="gc-tag">Daily letters</span>
+        </a>
+        <a class="game-card" href="dynasty/">
+          <span class="gc-rule"></span>
+          <span class="gc-title">Dynasty</span>
+          <span class="gc-desc">Draft a squad with a bench, manage fatigue and play through the tournament.</span>
+          <span class="gc-tag">Management</span>
+        </a>
+        <a class="game-card" href="lineup/">
+          <span class="gc-rule"></span>
+          <span class="gc-title">Lineup</span>
+          <span class="gc-desc">Rebuild iconic starting elevens from memory, position by position.</span>
+          <span class="gc-tag">Memory quiz</span>
+        </a>
+        <a class="game-card" href="worldcup/">
+          <span class="gc-rule"></span>
+          <span class="gc-title">Bracket</span>
+          <span class="gc-desc">Simulate the 48-team 2026 World Cup with a real statistical match engine.</span>
+          <span class="gc-tag">Simulation</span>
+        </a>
+        <a class="game-card" href="boardroom/">
+          <span class="gc-rule"></span>
+          <span class="gc-title">Boardroom</span>
+          <span class="gc-desc">Run a club across seasons — transfers, tactics, stadium and sponsors.</span>
+          <span class="gc-tag">Management</span>
+        </a>
+      </div>
+    </section>
+
+    <div class="ad-slot" id="adSlotHome" data-ad-slot="" data-ad-kind="native">
+      <span class="ad-slot-label">Advertisement</span>
     </div>
-  </section>
 
-  <div class="game-section-head" id="games">
-    <span>Match Centre</span>
-    <strong>5 games ready</strong>
-  </div>
+    <hr class="rule">
 
-  <div class="game-grid">
-    <a class="game-card" href="700/">
-      <span class="gc-thumb gc-thumb-700">7-0-0</span>
-      <span class="gc-body">
-        <span class="gc-title">7-0-0</span>
-        <span class="gc-desc">Spin for players across World Cups, draft your XI, and chase a perfect 7-0-0 run.</span>
-        <span class="gc-cta">Play 7-0-0</span>
-      </span>
-    </a>
-    <a class="game-card" href="dynasty/">
-      <span class="gc-thumb gc-thumb-dynasty">DYNASTY</span>
-      <span class="gc-body">
-        <span class="gc-title">Dynasty</span>
-        <span class="gc-desc">Draft your squad with bench options, manage player fatigue, and navigate the World Cup tournament with live match play.</span>
-        <span class="gc-cta">Play Dynasty</span>
-      </span>
-    </a>
-    <a class="game-card" href="lineup/">
-      <span class="gc-thumb gc-thumb-lineup">LINEUP</span>
-      <span class="gc-body">
-        <span class="gc-title">Lineup</span>
-        <span class="gc-desc">Recall real starting XIs from iconic matches and World Cups, position by position.</span>
-        <span class="gc-cta">Play Lineup</span>
-      </span>
-    </a>
-    <a class="game-card" href="worldcup/">
-      <span class="gc-thumb gc-thumb-bracket">BRACKET</span>
-      <span class="gc-body">
-        <span class="gc-title">Bracket</span>
-        <span class="gc-desc">Simulate the full 48-team World Cup 2026 with a real statistical match engine. Single-run bracket or Monte Carlo win probabilities.</span>
-        <span class="gc-cta">Play Bracket</span>
-      </span>
-    </a>
-    <a class="game-card" href="boardroom/">
-      <span class="gc-thumb gc-thumb-boardroom">BOARDROOM</span>
-      <span class="gc-body">
-        <span class="gc-title">Boardroom</span>
-        <span class="gc-desc">Take charge of a club: transfers, training, tactics, stadium and sponsors, across a multi-season retro management campaign.</span>
-        <span class="gc-cta">Play Boardroom</span>
-      </span>
-    </a>
-  </div>
-
-  <div class="ad-slot" id="adSlotHome" data-ad-slot="" data-ad-kind="native">
-    <span class="ad-slot-label">Advertisement</span>
-  </div>
-
-  <!-- About / FAQ — real page content (SEO + ad-network review) -->
-  <section class="about" id="about">
-    <div class="about-inner">
+    <!-- ===================== ABOUT / FAQ ===================== -->
+    <section class="about" id="about">
       <h2>About Ball Knowledge</h2>
-      <p><strong>Ball Knowledge</strong> is a small hub of free, browser-based football knowledge games.
-        No accounts, no downloads — pick a game and start playing straight away.</p>
+      <p class="dropcap"><strong>Ball Knowledge</strong> is a small, independent hub of free football games and puzzles.
+        There are no accounts and nothing to download — open a game and play. Most of our puzzles refresh once a day,
+        so there's always a reason to come back tomorrow.</p>
 
-      <h3>Our games</h3>
-      <ul>
-        <li><strong><a href="700/">7-0-0</a></strong> — spin for real World Cup squads from 2002 onward,
-          draft a player into your XI each round, and find out whether your dream team could go a whole
-          tournament unbeaten: 7 games, 7 wins, zero draws, zero losses.</li>
-        <li><strong><a href="dynasty/">Dynasty</a></strong> — draft your squad with bench options, manage injuries and rotations,
-          and navigate the World Cup tournament with live match play. Combine squad building with tournament action.</li>
-        <li><strong><a href="lineup/">Lineup</a></strong> — given a real match or tournament, place every
-          starting player in their correct position from memory before the clock runs out.</li>
-        <li><strong><a href="worldcup/">Bracket</a></strong> — simulate the FIFA World Cup 2026. A real Dixon-Coles
-          statistical match engine runs the full 48-team tournament, group stage through final, or thousands of
-          Monte Carlo runs for each team's odds of winning it all.</li>
-        <li><strong><a href="boardroom/">Boardroom</a></strong> — a retro football club management game. Sign
-          players, set your lineup, train your squad, manage the stadium and sponsors, and build a dynasty
-          across multiple seasons of promotion and relegation.</li>
+      <h3>Daily puzzles</h3>
+      <ul class="about-list">
+        <li><strong><a href="footle/">Footle</a></strong> — a football take on the daily five-letter word game. Everyone
+          gets the same word each day; share your grid without spoiling the answer.</li>
+        <li><strong><a href="connections/">Connections XI</a></strong> — sixteen names, four hidden categories. Work out
+          which players, clubs or countries belong together.</li>
+        <li><strong><a href="strands/">Pitch Strands</a></strong> — a themed word-search where every answer ties to the
+          day's football theme, plus a hidden spangram that spans the board.</li>
+        <li><strong><a href="letterboxed/">Starting XI</a></strong> — spell football words around the sides of a square,
+          using letters from different sides in turn.</li>
+      </ul>
+
+      <h3>Bigger games</h3>
+      <ul class="about-list">
+        <li><strong><a href="700/">7-0-0</a></strong> — search real World Cup squads from 1930 to 2026, draft a starting
+          XI, and simulate the seven games it takes to win the tournament. Go 7 wins, 0 draws, 0 losses for a perfect run.</li>
+        <li><strong><a href="dynasty/">Dynasty</a></strong> — squad building with a bench, injuries and rotation across a
+          full tournament.</li>
+        <li><strong><a href="lineup/">Lineup</a></strong> — place every starter from a famous match in their correct
+          position before the clock runs out.</li>
+        <li><strong><a href="worldcup/">Bracket</a></strong> — a Dixon-Coles statistical engine simulates the 2026 World
+          Cup, single run or thousands of Monte-Carlo runs for each nation's title odds.</li>
+        <li><strong><a href="boardroom/">Boardroom</a></strong> — a retro club-management campaign across multiple seasons.</li>
       </ul>
 
       <h3>World Cup squads &amp; ratings</h3>
-      <p>Browse full <a href="squads/">World Cup squads and player ratings</a> for every major nation from 2002
-        to 2026 — positions, overall ratings and the strongest XI for each team, from
+      <p>Browse full <a href="squads/">World Cup squads and player ratings</a> for every major nation from 1930 to 2026 —
+        positions, overall ratings and the strongest XI for each team, from
         <a href="squads/brazil-2002/">Brazil 2002</a> to <a href="squads/argentina-2022/">Argentina 2022</a>.</p>
 
       <h3>Frequently asked questions</h3>
       <div class="faq">
         <div class="faq-q">Is Ball Knowledge free to play?</div>
         <div class="faq-a">Yes — every game here is completely free and runs in your browser. There's nothing to download.</div>
-        <div class="faq-q">Do I need to make an account?</div>
-        <div class="faq-a">No. No sign-up, no app — just open a game and play.</div>
+        <div class="faq-q">Do I need an account?</div>
+        <div class="faq-a">No. No sign-up, no app — just open a game and play. Streaks are saved on your device.</div>
+        <div class="faq-q">How often do the puzzles change?</div>
+        <div class="faq-a">Footle, Connections XI, Pitch Strands and Starting XI all refresh once a day at midnight, and everyone gets the same puzzle.</div>
         <div class="faq-q">Where does the player and squad data come from?</div>
-        <div class="faq-a">Real World Cup squads and results, based on public football datasets including the Fjelstul World Cup Database. Ratings used in-game are stylized approximations for gameplay, not official figures.</div>
-        <div class="faq-q">Is this an official FIFA or football federation product?</div>
+        <div class="faq-a">Real World Cup squads and results, based on public football datasets including historical FIFA records and the Fjelstul World Cup Database. In-game ratings are stylised approximations for gameplay, not official figures.</div>
+        <div class="faq-q">Is this an official FIFA product?</div>
         <div class="faq-a">No — Ball Knowledge is an independent, unofficial fan project, not affiliated with FIFA, the Premier League, or any club or federation.</div>
       </div>
-    </div>
-  </section>
+    </section>
+
+  </main>
 
   <script type="application/ld+json">
   {
@@ -152,10 +244,25 @@
     "@type": "FAQPage",
     "mainEntity": [
       {"@type":"Question","name":"Is Ball Knowledge free to play?","acceptedAnswer":{"@type":"Answer","text":"Yes — every game here is completely free and runs in your browser. There's nothing to download."}},
-      {"@type":"Question","name":"Do I need to make an account?","acceptedAnswer":{"@type":"Answer","text":"No. No sign-up, no app — just open a game and play."}},
-      {"@type":"Question","name":"Where does the player and squad data come from?","acceptedAnswer":{"@type":"Answer","text":"Real World Cup squads and results, based on public football datasets including the Fjelstul World Cup Database. Ratings used in-game are stylized approximations for gameplay, not official figures."}},
-      {"@type":"Question","name":"Is this an official FIFA or football federation product?","acceptedAnswer":{"@type":"Answer","text":"No — Ball Knowledge is an independent, unofficial fan project, not affiliated with FIFA, the Premier League, or any club or federation."}}
+      {"@type":"Question","name":"Do I need an account?","acceptedAnswer":{"@type":"Answer","text":"No. No sign-up, no app — just open a game and play. Streaks are saved on your device."}},
+      {"@type":"Question","name":"How often do the puzzles change?","acceptedAnswer":{"@type":"Answer","text":"Footle, Connections XI, Pitch Strands and Starting XI all refresh once a day at midnight, and everyone gets the same puzzle."}},
+      {"@type":"Question","name":"Where does the player and squad data come from?","acceptedAnswer":{"@type":"Answer","text":"Real World Cup squads and results, based on public football datasets including historical FIFA records and the Fjelstul World Cup Database. In-game ratings are stylised approximations for gameplay, not official figures."}},
+      {"@type":"Question","name":"Is this an official FIFA product?","acceptedAnswer":{"@type":"Answer","text":"No — Ball Knowledge is an independent, unofficial fan project, not affiliated with FIFA, the Premier League, or any club or federation."}}
     ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Ball Knowledge",
+    "url": "https://ballknw.com/",
+    "description": "Free daily football games and puzzles: Footle, Connections XI, Pitch Strands, 7-0-0 and more.",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://ballknw.com/squads/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
   }
   </script>
 
@@ -166,24 +273,27 @@
     <a id="affiliateFanatics" href="#" target="_blank" rel="noopener sponsored">Kits on Fanatics</a>
   </div>
 
-  <div class="support-block">
+  <footer class="site-footer">
+    <div class="foot-links">
+      <a href="footle/">Footle</a> · <a href="connections/">Connections XI</a> · <a href="strands/">Pitch Strands</a> ·
+      <a href="letterboxed/">Starting XI</a> · <a href="700/">7-0-0</a> · <a href="dynasty/">Dynasty</a> ·
+      <a href="lineup/">Lineup</a> · <a href="worldcup/">Bracket</a> · <a href="boardroom/">Boardroom</a> ·
+      <a href="squads/">Squads</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a>
+    </div>
     <label class="remove-ads-toggle">
       <input type="checkbox" id="removeAdsToggle">
       Hide ads on this device (preview — no payment yet)
     </label>
-  </div>
-
-  <footer class="site-footer">
-    <a href="700/">7-0-0</a> · <a href="dynasty/">Dynasty</a> · <a href="lineup/">Lineup</a> · <a href="worldcup/">Bracket</a> · <a href="boardroom/">Boardroom</a> · <a href="squads/">Squads</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a>
-    <p class="footer-disclaimer">Ball Knowledge is an unofficial fan-made project, not affiliated with FIFA, the Premier League, or any club or federation. For enquiries, contact <a href="mailto:thinkhiphop12@gmail.com">thinkhiphop12@gmail.com</a>.</p>
+    <p class="foot-disclaimer">Ball Knowledge is an unofficial fan-made project, not affiliated with FIFA, the Premier League,
+      or any club or federation. For enquiries, contact <a href="mailto:thinkhiphop12@gmail.com">thinkhiphop12@gmail.com</a>.</p>
     <button class="btn-link cookie-settings-link" id="cookieSettingsBtn">Cookie settings</button>
   </footer>
 
   <div class="consent-banner hidden" id="consentBanner">
     <p class="consent-text">We use cookies for basic analytics and to show ads. Choose what you're OK with — you can change this anytime in Cookie settings.</p>
     <div class="consent-actions">
-      <button class="btn-ghost" id="consentEssentialBtn">Essential only</button>
-      <button class="btn-primary" id="consentAcceptBtn">Accept all</button>
+      <button class="btn btn-ghost" id="consentEssentialBtn">Essential only</button>
+      <button class="btn btn-primary" id="consentAcceptBtn">Accept all</button>
     </div>
   </div>
 
@@ -192,13 +302,21 @@
 <script src="shared/ads.js" defer></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  if (AFFILIATE_LINKS.amazon && AFFILIATE_LINKS.fanatics) {
+  // Masthead date
+  try {
+    const d = new Date();
+    document.getElementById('mastDate').textContent =
+      d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
+      + ' · Free football games & puzzles';
+  } catch(e){}
+
+  if (typeof AFFILIATE_LINKS !== 'undefined' && AFFILIATE_LINKS.amazon && AFFILIATE_LINKS.fanatics) {
     document.getElementById('affiliateAmazon').href = AFFILIATE_LINKS.amazon;
     document.getElementById('affiliateFanatics').href = AFFILIATE_LINKS.fanatics;
     document.getElementById('affiliateBlock').style.display = '';
   }
   const removeAdsToggle = document.getElementById('removeAdsToggle');
-  removeAdsToggle.checked = adsRemoved();
+  if (typeof adsRemoved === 'function') removeAdsToggle.checked = adsRemoved();
   removeAdsToggle.addEventListener('change', () => {
     try { localStorage.setItem('bk_remove_ads', removeAdsToggle.checked ? '1' : '0'); } catch(e){}
   });

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4ecdc">
+<title>Connections XI — The Daily Football Grouping Game | Ball Knowledge</title>
+<meta name="description" content="Connections XI is the daily football grouping puzzle: sort 16 footballing names into four hidden categories. A new puzzle every day, free, no account.">
+<link rel="canonical" href="https://ballknw.com/connections/">
+<meta property="og:title" content="Connections XI — The Daily Football Grouping Game">
+<meta property="og:description" content="Sort 16 footballing names into four hidden groups. A new Connections XI every day.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ballknw.com/connections/">
+<meta property="og:image" content="../assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../shared/editorial.css">
+<link rel="stylesheet" href="../shared/puzzle.css">
+</head>
+<body>
+<div id="app">
+  <header class="masthead">
+    <div class="masthead-inner">
+      <a class="mast-brand" href="/"><span class="mast-title">Ball<span class="amp">·</span>Knowledge</span><span class="mast-sub">Connections XI</span></a>
+      <nav class="mast-nav"><a href="/#daily">Daily</a><a href="/footle/">Footle</a><a href="/strands/">Strands</a><a href="/#games">All games</a></nav>
+    </div>
+  </header>
+
+  <main class="wrap puzzle-wrap">
+    <div class="puzzle-head">
+      <p class="eyebrow">Daily · Football Grouping</p>
+      <h1 class="puzzle-title">Connections XI</h1>
+      <p class="puzzle-sub" id="puzzleSub">Find four groups of four. Watch out for the traps.</p>
+    </div>
+
+    <div id="solvedHost"></div>
+    <div class="conn-grid" id="grid"></div>
+    <div class="mistakes" id="mistakes"></div>
+    <div class="conn-controls">
+      <button class="btn btn-ghost" id="shuffleBtn">Shuffle</button>
+      <button class="btn btn-ghost" id="deselectBtn">Deselect</button>
+      <button class="btn btn-primary" id="submitBtn" disabled>Submit</button>
+    </div>
+
+    <div class="puzzle-actions">
+      <button class="btn btn-ghost" id="howBtn">How to play</button>
+    </div>
+
+    <article class="puzzle-about">
+      <h2>What is Connections XI?</h2>
+      <p><strong>Connections XI</strong> is a daily football grouping puzzle. You're shown sixteen footballing
+        names — players, clubs, countries, stadiums or terms — and your job is to sort them into the four hidden
+        groups of four. Each group shares a theme, but some names look like they fit more than one category. That's
+        the trap.</p>
+      <h3>How to play</h3>
+      <ul>
+        <li>Tap four tiles you think belong together, then press Submit.</li>
+        <li>Solve a group and it locks in, colour-coded by difficulty: <b>yellow</b> easiest, <b>purple</b> trickiest.</li>
+        <li>You can make four mistakes before the game ends. A new puzzle arrives every day.</li>
+      </ul>
+      <p>More daily football puzzles: <a href="/footle/">Footle</a>, <a href="/strands/">Pitch Strands</a> and
+        <a href="/letterboxed/">Starting XI</a>. Prefer squad building? Play <a href="/700/">7-0-0</a>.</p>
+    </article>
+  </main>
+
+  <div class="modal-host hidden" id="modalHost"><div class="modal card" id="modalCard"></div></div>
+
+  <footer class="site-footer">
+    <div class="foot-links"><a href="/">Home</a> · <a href="/footle/">Footle</a> · <a href="/connections/">Connections XI</a> · <a href="/strands/">Pitch Strands</a> · <a href="/letterboxed/">Starting XI</a> · <a href="/700/">7-0-0</a></div>
+    <p class="foot-disclaimer">Ball Knowledge is an unofficial fan project. A new puzzle every day, free to play.</p>
+  </footer>
+</div>
+<div id="toastHost"></div>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Connections XI","url":"https://ballknw.com/connections/","applicationCategory":"Game","genre":"Logic puzzle","gamePlatform":"Web browser","operatingSystem":"Any","description":"Connections XI is the daily football grouping puzzle — sort 16 footballing names into four hidden groups of four.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"publisher":{"@type":"Organization","name":"Ball Knowledge"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"What is Connections XI?","acceptedAnswer":{"@type":"Answer","text":"Connections XI is a daily football puzzle where you sort sixteen footballing names — players, clubs, countries or terms — into four hidden groups of four."}},
+{"@type":"Question","name":"How do you play Connections XI?","acceptedAnswer":{"@type":"Answer","text":"Tap four tiles you think share a hidden theme and press Submit. Correct groups lock in, colour-coded by difficulty. You can make four mistakes before the game ends."}},
+{"@type":"Question","name":"Is there a new Connections XI daily?","acceptedAnswer":{"@type":"Answer","text":"Yes, a new Connections XI puzzle is released every day and everyone gets the same grid."}}]}
+</script>
+<script src="app.js" defer></script>
+</body>
+</html>

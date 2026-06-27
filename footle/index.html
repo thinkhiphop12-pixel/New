@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4ecdc">
+<title>Footle — The Daily Football Word Game | Ball Knowledge</title>
+<meta name="description" content="Footle is the daily football Wordle: guess the hidden 5-letter football word in six tries. Free, one new puzzle every day, no account needed.">
+<link rel="canonical" href="https://ballknw.com/footle/">
+<meta property="og:title" content="Footle — The Daily Football Word Game">
+<meta property="og:description" content="Guess the hidden 5-letter football word in six tries. A new Footle every day.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ballknw.com/footle/">
+<meta property="og:image" content="../assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="apple-touch-icon" href="../assets/favicon-192.png">
+<link rel="stylesheet" href="../shared/editorial.css">
+<link rel="stylesheet" href="../shared/puzzle.css">
+</head>
+<body>
+<div id="app">
+  <header class="masthead">
+    <div class="masthead-inner">
+      <a class="mast-brand" href="/"><span class="mast-title">Ball<span class="amp">·</span>Knowledge</span><span class="mast-sub">Footle</span></a>
+      <nav class="mast-nav"><a href="/#daily">Daily</a><a href="/connections/">Connections</a><a href="/strands/">Strands</a><a href="/#games">All games</a></nav>
+    </div>
+  </header>
+
+  <main class="wrap puzzle-wrap">
+    <div class="puzzle-head">
+      <p class="eyebrow">Daily · Football Word Game</p>
+      <h1 class="puzzle-title">Footle</h1>
+      <p class="puzzle-sub" id="puzzleSub">Guess the hidden 5-letter football word in six tries.</p>
+    </div>
+
+    <div class="board" id="board" aria-label="Footle board"></div>
+
+    <div class="keyboard" id="keyboard"></div>
+
+    <div class="puzzle-actions">
+      <button class="btn btn-ghost" id="howBtn">How to play</button>
+      <button class="btn btn-ghost" id="statsBtn">Statistics</button>
+    </div>
+
+    <article class="puzzle-about">
+      <h2>What is Footle?</h2>
+      <p><strong>Footle</strong> is a daily football word game — a football-flavoured take on the classic five-letter
+        guessing puzzle. Every day there's one hidden football word: a piece of footballing vocabulary or a famous
+        surname. You get six guesses. After each guess, tiles turn <span class="ink-good">green</span> when a letter is
+        in the right place, <span class="ink-warn">yellow</span> when the letter is in the word but in the wrong spot,
+        and grey when it isn't in the word at all.</p>
+      <h3>How to play Footle</h3>
+      <ul>
+        <li>Type any five-letter word and press Enter to guess.</li>
+        <li>Use the colour clues to narrow down the hidden football word.</li>
+        <li>Solve it in six tries to keep your streak alive — a fresh Footle drops every day at midnight.</li>
+      </ul>
+      <p>Like word puzzles? Try <a href="/connections/">Connections XI</a>, <a href="/strands/">Pitch Strands</a> and
+        <a href="/letterboxed/">Starting XI</a>, or build a squad in <a href="/700/">7-0-0</a>.</p>
+    </article>
+  </main>
+
+  <div class="modal-host hidden" id="modalHost"><div class="modal card" id="modalCard"></div></div>
+
+  <footer class="site-footer">
+    <div class="foot-links"><a href="/">Home</a> · <a href="/footle/">Footle</a> · <a href="/connections/">Connections XI</a> · <a href="/strands/">Pitch Strands</a> · <a href="/letterboxed/">Starting XI</a> · <a href="/700/">7-0-0</a></div>
+    <p class="foot-disclaimer">Ball Knowledge is an unofficial fan project. A new puzzle every day, free to play.</p>
+  </footer>
+</div>
+<div id="toastHost"></div>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Footle","url":"https://ballknw.com/footle/","applicationCategory":"Game","genre":"Word puzzle","gamePlatform":"Web browser","operatingSystem":"Any","description":"Footle is the daily football word game — guess the hidden 5-letter football word in six tries.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"publisher":{"@type":"Organization","name":"Ball Knowledge"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"What is Footle?","acceptedAnswer":{"@type":"Answer","text":"Footle is a daily football word game: guess the hidden 5-letter football word — a football term or famous surname — in six tries, with green, yellow and grey letter clues."}},
+{"@type":"Question","name":"How do you play Footle?","acceptedAnswer":{"@type":"Answer","text":"Type any five-letter word and press Enter. Green means the letter is in the right place, yellow means it's in the word but the wrong spot, grey means it isn't in the word. Solve it in six guesses."}},
+{"@type":"Question","name":"Is there a new Footle every day?","acceptedAnswer":{"@type":"Answer","text":"Yes. A new Footle puzzle is released every day at midnight, and everyone gets the same word."}}]}
+</script>
+<script src="app.js" defer></script>
+</body>
+</html>

@@ -1,1350 +1,535 @@
-'use strict';
-
 /* ============================================================
    7-0-0 — World Cup squad builder
-   Engine ported from 38-0-0 (club edition), adapted for:
-   - 11-round draft, player-chosen formation. Each player/icon has a broad
-     family (GK/DF/MF/FW, from the data) plus an inferred specific position
-     (sp/sp2: GK, LB, RB, CB, LM, RM, CM, LW, RW, ST) derived from their
-     stat profile — versatile profiles near the central/wide boundary get
-     2 eligible positions, specialists get 1, matching real squad mixes.
-   - Weighted Country|Year spin (squad_weights) instead of club+season
-   - Icon take-or-skip offers (capped)
-   - 7-game World Cup record (3 group + R16 + QF + SF + Final) as the
-     decoupled outcome stat — independent of the 11 draft rounds, exactly
-     as 38-0-0 decouples its 11 XI picks from its 38-game season record.
+   Search real World Cup players, draft an XI under a budget,
+   simulate the 7 games it takes to win the tournament.
    ============================================================ */
+'use strict';
 
 const $ = (id) => document.getElementById(id);
 
 let DATA = null;
-let SQUADS = null;        // built client-side: "Country|Year" -> [players]
-let COMBOS = [];          // ["Country|Year", ...]
-let WEIGHTS = [];         // parallel weights array
+let SQUADS = {};        // "Country|Year" -> [players]
+let SQUAD_LIST = [];    // [{key, country, year, flag, rating, xi:[...]}]
+let RANKED = [];        // all players sorted by overall desc (for default list)
+const BUDGET = 850;
+const XI_SIZE = 11;
 
-const TOTAL_ROUNDS = 11;  // draft picks = XI size, fixed by formation
-const GAMES = 7;          // simulated World Cup record length (the "7" in 7-0-0)
-const SQUAD_CAP = 23;     // every squad offer is trimmed/standardized to 23 players
+/* ---------- Positions & formations ---------- */
+const POS_LABEL = { GK:'GK', DF:'DEF', MF:'MID', FW:'FWD' };
 
-let OPP_BASELINE = 72;
-let TIER_COMBOS = { shit: [], okay: [], good: [] }; // [{k,w}] buckets by squad_weights percentile
-
-// Wide/wing-back positions are treated as interchangeable with the touchline mid/winger slot.
-const POS_EQUIV = {
-  RM: ['RW'], RW: ['RM'],
-  LM: ['LW'], LW: ['LM'],
-  LB: ['LWB'], LWB: ['LB'],
-  RB: ['RWB'], RWB: ['RB'],
+// Each formation: ordered rows from defence(back) to attack(front), GK implicit.
+const FORMATIONS = {
+  '4-3-3':   [['DF',4],['MF',3],['FW',3]],
+  '4-4-2':   [['DF',4],['MF',4],['FW',2]],
+  '3-5-2':   [['DF',3],['MF',5],['FW',2]],
+  '4-2-3-1': [['DF',4],['MF',2],['MF',3],['FW',1]],
+  '5-3-2':   [['DF',5],['MF',3],['FW',2]],
 };
-function expandPositions(sp2){
-  const set = new Set(sp2);
-  for (const label of sp2) (POS_EQUIV[label] || []).forEach(l => set.add(l));
-  return [...set];
+let FORMATION_KEY = '4-3-3';
+let SLOTS = [];         // [{id,type,x,y}]
+
+function buildSlots(key){
+  const rows = FORMATIONS[key];
+  const slots = [{ id:'s0', type:'GK', x:50, y:90 }];
+  const R = rows.length;
+  let idx = 1;
+  rows.forEach((row, ri) => {
+    const [type, n] = row;
+    const y = R > 1 ? 74 - ri * (56 / (R - 1)) : 50;
+    for (let j = 0; j < n; j++){
+      const x = n > 1 ? 14 + j * (72 / (n - 1)) : 50;
+      slots.push({ id:'s'+idx, type, x, y });
+      idx++;
+    }
+  });
+  return slots;
 }
 
-/* ---------------- Formations (slot labels = specific positions: GK/LB/RB/CB/CM/RM/LM/ST/RW/LW) ---------------- */
-const FORMATIONS = {
-  '4-3-3': { slots: [
-    { id:'gk',  label:'GK',  fam:'GK', x:50, y:92 },
-    { id:'df1', label:'RB',  fam:'DF', x:82, y:74 },
-    { id:'df2', label:'CB',  fam:'DF', x:62, y:78 },
-    { id:'df3', label:'CB',  fam:'DF', x:38, y:78 },
-    { id:'df4', label:'LB',  fam:'DF', x:18, y:74 },
-    { id:'mf1', label:'CM',  fam:'MF', x:68, y:54 },
-    { id:'mf2', label:'CM',  fam:'MF', x:50, y:58 },
-    { id:'mf3', label:'CM',  fam:'MF', x:32, y:54 },
-    { id:'fw1', label:'RW',  fam:'FW', x:78, y:24 },
-    { id:'fw2', label:'ST',  fam:'FW', x:50, y:16 },
-    { id:'fw3', label:'LW',  fam:'FW', x:22, y:24 },
-  ]},
-  '4-4-2': { slots: [
-    { id:'gk',  label:'GK', fam:'GK', x:50, y:92 },
-    { id:'df1', label:'RB', fam:'DF', x:82, y:74 },
-    { id:'df2', label:'CB', fam:'DF', x:62, y:78 },
-    { id:'df3', label:'CB', fam:'DF', x:38, y:78 },
-    { id:'df4', label:'LB', fam:'DF', x:18, y:74 },
-    { id:'mf1', label:'RM', fam:'MF', x:82, y:50 },
-    { id:'mf2', label:'CM', fam:'MF', x:60, y:54 },
-    { id:'mf3', label:'CM', fam:'MF', x:40, y:54 },
-    { id:'mf4', label:'LM', fam:'MF', x:18, y:50 },
-    { id:'fw1', label:'ST', fam:'FW', x:62, y:18 },
-    { id:'fw2', label:'ST', fam:'FW', x:38, y:18 },
-  ]},
-  '4-2-4': { slots: [
-    { id:'gk',  label:'GK', fam:'GK', x:50, y:92 },
-    { id:'df1', label:'RB', fam:'DF', x:82, y:76 },
-    { id:'df2', label:'CB', fam:'DF', x:62, y:80 },
-    { id:'df3', label:'CB', fam:'DF', x:38, y:80 },
-    { id:'df4', label:'LB', fam:'DF', x:18, y:76 },
-    { id:'mf1', label:'CM', fam:'MF', x:64, y:54 },
-    { id:'mf2', label:'CM', fam:'MF', x:36, y:54 },
-    { id:'fw1', label:'RW', fam:'FW', x:84, y:22 },
-    { id:'fw2', label:'ST', fam:'FW', x:60, y:14 },
-    { id:'fw3', label:'ST', fam:'FW', x:40, y:14 },
-    { id:'fw4', label:'LW', fam:'FW', x:16, y:22 },
-  ]},
-  '3-4-3': { slots: [
-    { id:'gk',  label:'GK', fam:'GK', x:50, y:92 },
-    { id:'df1', label:'CB', fam:'DF', x:72, y:78 },
-    { id:'df2', label:'CB', fam:'DF', x:50, y:82 },
-    { id:'df3', label:'CB', fam:'DF', x:28, y:78 },
-    { id:'mf1', label:'RM', fam:'MF', x:84, y:52 },
-    { id:'mf2', label:'CM', fam:'MF', x:60, y:56 },
-    { id:'mf3', label:'CM', fam:'MF', x:40, y:56 },
-    { id:'mf4', label:'LM', fam:'MF', x:16, y:52 },
-    { id:'fw1', label:'RW', fam:'FW', x:78, y:22 },
-    { id:'fw2', label:'ST', fam:'FW', x:50, y:14 },
-    { id:'fw3', label:'LW', fam:'FW', x:22, y:22 },
-  ]},
-  '3-5-2': { slots: [
-    { id:'gk',  label:'GK', fam:'GK', x:50, y:92 },
-    { id:'df1', label:'CB', fam:'DF', x:72, y:78 },
-    { id:'df2', label:'CB', fam:'DF', x:50, y:82 },
-    { id:'df3', label:'CB', fam:'DF', x:28, y:78 },
-    { id:'mf1', label:'RM', fam:'MF', x:88, y:54 },
-    { id:'mf2', label:'CM', fam:'MF', x:64, y:58 },
-    { id:'mf3', label:'CM', fam:'MF', x:50, y:50 },
-    { id:'mf4', label:'CM', fam:'MF', x:36, y:58 },
-    { id:'mf5', label:'LM', fam:'MF', x:12, y:54 },
-    { id:'fw1', label:'ST', fam:'FW', x:62, y:18 },
-    { id:'fw2', label:'ST', fam:'FW', x:38, y:18 },
-  ]},
-  '5-3-2': { slots: [
-    { id:'gk',  label:'GK', fam:'GK', x:50, y:92 },
-    { id:'df1', label:'RB', fam:'DF', x:88, y:76 },
-    { id:'df2', label:'CB', fam:'DF', x:68, y:80 },
-    { id:'df3', label:'CB', fam:'DF', x:50, y:84 },
-    { id:'df4', label:'CB', fam:'DF', x:32, y:80 },
-    { id:'df5', label:'LB', fam:'DF', x:12, y:76 },
-    { id:'mf1', label:'CM', fam:'MF', x:68, y:54 },
-    { id:'mf2', label:'CM', fam:'MF', x:50, y:58 },
-    { id:'mf3', label:'CM', fam:'MF', x:32, y:54 },
-    { id:'fw1', label:'ST', fam:'FW', x:62, y:18 },
-    { id:'fw2', label:'ST', fam:'FW', x:38, y:18 },
-  ]},
-  '5-4-1': { slots: [
-    { id:'gk',  label:'GK', fam:'GK', x:50, y:92 },
-    { id:'df1', label:'RB', fam:'DF', x:88, y:76 },
-    { id:'df2', label:'CB', fam:'DF', x:68, y:80 },
-    { id:'df3', label:'CB', fam:'DF', x:50, y:84 },
-    { id:'df4', label:'CB', fam:'DF', x:32, y:80 },
-    { id:'df5', label:'LB', fam:'DF', x:12, y:76 },
-    { id:'mf1', label:'RM', fam:'MF', x:84, y:52 },
-    { id:'mf2', label:'CM', fam:'MF', x:60, y:56 },
-    { id:'mf3', label:'CM', fam:'MF', x:40, y:56 },
-    { id:'mf4', label:'LM', fam:'MF', x:16, y:52 },
-    { id:'fw1', label:'ST', fam:'FW', x:50, y:16 },
-  ]},
-};
-
-let SLOTS = [];
-
-/* ---------------- Flags ---------------- */
+/* ---------- Flags ---------- */
 const ISO = {
-  Algeria:'DZ', Argentina:'AR', Australia:'AU', Austria:'AT', Belgium:'BE',
-  Bosnia:'BA', 'Bosnia and Herzegovina':'BA', Brazil:'BR', Cameroon:'CM',
-  Canada:'CA', 'Cape Verde':'CV', Chile:'CL', Colombia:'CO', 'Costa Rica':'CR',
-  Croatia:'HR', Curacao:'CW', 'Czech Republic':'CZ', 'DR Congo':'CD',
-  Denmark:'DK', Ecuador:'EC', Egypt:'EG', England:'GB-ENG', France:'FR',
-  Germany:'DE', Ghana:'GH', Greece:'GR', Haiti:'HT', Honduras:'HN',
-  Iceland:'IS', Iran:'IR', Iraq:'IQ', Italy:'IT', 'Ivory Coast':'CI',
-  Japan:'JP', Jordan:'JO', Mexico:'MX', Morocco:'MA', Netherlands:'NL',
-  'New Zealand':'NZ', Nigeria:'NG', Norway:'NO', Panama:'PA', Paraguay:'PY',
-  Peru:'PE', Poland:'PL', Portugal:'PT', Qatar:'QA', 'Republic of Ireland':'IE',
-  Russia:'RU', 'Saudi Arabia':'SA', Scotland:'GB-SCT', Senegal:'SN', Serbia:'RS',
-  Slovakia:'SK', 'South Africa':'ZA', 'South Korea':'KR', Spain:'ES',
-  Sweden:'SE', Switzerland:'CH', Tunisia:'TN', Turkey:'TR', USA:'US',
-  Ukraine:'UA', Uruguay:'UY', Uzbekistan:'UZ', Wales:'GB-WLS',
+  'Argentina':'ar','Brazil':'br','France':'fr','Germany':'de','Spain':'es','Italy':'it','England':'gb-eng',
+  'Netherlands':'nl','Portugal':'pt','Belgium':'be','Uruguay':'uy','Croatia':'hr','Mexico':'mx','USA':'us',
+  'United States':'us','Colombia':'co','Chile':'cl','Sweden':'se','Denmark':'dk','Switzerland':'ch','Poland':'pl',
+  'Japan':'jp','South Korea':'kr','Korea Republic':'kr','Nigeria':'ng','Cameroon':'cm','Ghana':'gh','Senegal':'sn',
+  'Morocco':'ma','Russia':'ru','Soviet Union':'ru','Czech Republic':'cz','Czechoslovakia':'cz','Austria':'at',
+  'Hungary':'hu','Scotland':'gb-sct','Wales':'gb-wls','Ireland':'ie','Norway':'no','Greece':'gr','Turkey':'tr',
+  'Serbia':'rs','YUG':'rs','Yugoslavia':'rs','Ecuador':'ec','Peru':'pe','Paraguay':'py','Costa Rica':'cr',
+  'Australia':'au','Iran':'ir','Saudi Arabia':'sa','Tunisia':'tn','Algeria':'dz','Egypt':'eg','Ukraine':'ua',
+  'Romania':'ro','Bulgaria':'bg','Slovakia':'sk','Slovenia':'si','Bosnia and Herzegovina':'ba','Iceland':'is',
+  'Honduras':'hn','Qatar':'qa','Canada':'ca','China':'cn','New Zealand':'nz','Panama':'pa','Jamaica':'jm',
 };
 function flagEmoji(country){
   const code = ISO[country];
-  if (!code || code.includes('-')) return '\u{1F3F3}\u{FE0F}'; // white flag fallback for home-nations codes
-  return code.toUpperCase().replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0)));
-}
-function strHash(s){ let h=0; for (let i=0;i<s.length;i++){ h=(h*31 + s.charCodeAt(i))|0; } return Math.abs(h); }
-const PALETTE = ['#1b5e3a','#0b3d91','#b22222','#d4a017','#2e2e6e','#7a1f3d','#1c6e5c','#8c5a1f'];
-// Each nation's real home-kit shirt color, [background, text], so the jersey badge on the
-// pitch/draft list matches the actual kit rather than an arbitrary hash-picked color.
-const KIT_COLORS = {
-  Algeria:['#006233','#fff'], Argentina:['#6cace4','#142a52'], Australia:['#efcb00','#1a1a1a'],
-  Austria:['#ed2939','#fff'], Belgium:['#da121a','#fff'], Bosnia:['#0f3d7c','#fcdd09'],
-  'Bosnia and Herzegovina':['#0f3d7c','#fcdd09'], Brazil:['#ffcc29','#0a5c36'], Bulgaria:['#f5f5f5','#1a1a1a'],
-  Cameroon:['#00853f','#fcd116'], Canada:['#ff0000','#fff'], 'Cape Verde':['#0033a0','#fff'],
-  Chile:['#d52b1e','#fff'], Colombia:['#fcd116','#003893'], 'Costa Rica':['#ce1126','#fff'],
-  Croatia:['#ff0000','#fff'], Curacao:['#00247d','#fff'], 'Czech Republic':['#d7141a','#fff'],
-  "Côte d'Ivoire":['#ff8200','#fff'], 'DR Congo':['#00a3e0','#ffd100'], Denmark:['#c8102e','#fff'],
-  Ecuador:['#ffd100','#002868'], Egypt:['#ce1126','#fff'], England:['#ffffff','#1b1b3a'],
-  Finland:['#ffffff','#002f6c'], France:['#0055a4','#fff'], Germany:['#ffffff','#000000'],
-  Ghana:['#ffffff','#000000'], Greece:['#0d5eaf','#fff'], Haiti:['#00209f','#fff'],
-  Honduras:['#0073cf','#fff'], Iceland:['#02529c','#fff'], Iran:['#ffffff','#239f40'],
-  Iraq:['#ffffff','#ce1126'], Italy:['#0066cc','#fff'], 'Ivory Coast':['#ff8200','#fff'],
-  Japan:['#0033a0','#fff'], Jordan:['#ffffff','#000000'], Mexico:['#006847','#fff'],
-  Morocco:['#c1272d','#006233'], Netherlands:['#ff6f00','#142a52'], 'New Zealand':['#ffffff','#000000'],
-  Nigeria:['#008751','#fff'], 'Northern Ireland':['#006428','#fff'], Norway:['#ba0c2f','#fff'],
-  Panama:['#d21034','#fff'], Paraguay:['#da121a','#fff'], Peru:['#ffffff','#d91023'],
-  Poland:['#ffffff','#dc143c'], Portugal:['#cc0000','#fff'], Qatar:['#8a1538','#fff'],
-  'Republic of Ireland':['#169b62','#fff'], Romania:['#fcd116','#002b7f'], Russia:['#da291c','#fff'],
-  'Saudi Arabia':['#ffffff','#006c35'], Scotland:['#0065bd','#fff'], Senegal:['#ffffff','#00853f'],
-  Serbia:['#c6363c','#fff'], Slovakia:['#0b4ea2','#fff'], 'South Africa':['#ffb81c','#007a4d'],
-  'South Korea':['#c60c30','#fff'], Spain:['#aa151b','#f1bf00'], Sweden:['#ffcd00','#006aa7'],
-  Switzerland:['#da291c','#fff'], Tunisia:['#e70013','#fff'], Turkey:['#e30a17','#fff'],
-  USA:['#ffffff','#002868'], Ukraine:['#ffd500','#005bbb'], Uruguay:['#75aadb','#0038a8'],
-  Uzbekistan:['#0099cc','#fff'], Wales:['#d2122e','#fff'],
-};
-function colorFor(country){
-  if (KIT_COLORS[country]) return KIT_COLORS[country];
-  const h = strHash(country);
-  return [PALETTE[h % PALETTE.length], '#f4efe0'];
-}
-function ovrTier(o){
-  if (o >= 85) return 'tier-elite';
-  if (o >= 75) return 'tier-great';
-  if (o >= 65) return 'tier-good';
-  return 'tier-avg';
-}
-// Borrowed from rival squad-builder UI patterns: a glow tier for the rarest Icon pulls,
-// layered on top of the existing OVR badge tiers (which already cover regular players).
-function iconRarityClass(o){
-  if (o >= 95) return ' icon-mythical';
-  if (o >= 90) return ' icon-legend';
-  return '';
+  if (!code || code.includes('-')) return '⚽';
+  const cc = code.toUpperCase();
+  return String.fromCodePoint(...[...cc].map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
 }
 
-/* ---------------- helpers ---------------- */
+/* ---------- RNG (seedable) ---------- */
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function strHash(s){ let h=2166136261; for (let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+function dailyKey(d = new Date()){ return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function poisson(lambda, rng){
+  const L = Math.exp(-lambda); let k = 0, p = 1;
+  do { k++; p *= rng(); } while (p > L);
+  return k - 1;
+}
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-function initials(name){
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
-  return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
-}
+
 function toast(msg){
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.textContent = msg;
-  document.body.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('show'));
-  setTimeout(() => { t.classList.remove('show'); setTimeout(()=>t.remove(), 300); }, 2200);
+  const host = $('toastHost'); if (!host) return;
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  host.appendChild(t); requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 2000);
 }
 
-/* ---------------- analytics / consent / AdSense ----------------
-   Shared across all Ball Knowledge pages — see ../shared/consent.js for
-   track/getConsent/fillAllAdSlots/initConsent etc. That script wires the
-   consent banner buttons and calls initConsent() itself on load. */
-
-/* ---------------- state ---------------- */
-let state = null;
+/* ---------- State ---------- */
+let state = null;       // { mode, picks:{slotId:player}, }
 let setupMode = null;
 let setupFormation = null;
+let searchPos = 'ALL';
 
-/* ---------------- boot ---------------- */
+/* ---------- Boot ---------- */
 async function boot(){
   try {
-    const res = await fetch('data.json?v=1');
+    const res = await fetch('data.json?v=2');
     DATA = await res.json();
-  } catch (e) {
-    $('app').innerHTML = '<div class="loadError">Could not load data.json — serve this folder over HTTP (not file://) and try again.</div>';
+  } catch (e){
+    $('setupScreen').innerHTML = '<p>Could not load player data. Please refresh.</p>';
     return;
   }
-
-  OPP_BASELINE = DATA.meta.opp_baseline ?? OPP_BASELINE;
-
-  SQUADS = {};
-  for (const p of DATA.players) {
-    const key = `${p.country}|${p.year}`;
-    (SQUADS[key] ||= []).push(p);
+  // Group into squads
+  for (const p of DATA.players){
+    const key = p.country + '|' + p.year;
+    (SQUADS[key] = SQUADS[key] || []).push(p);
   }
-  for (const key in SQUADS) {
-    if (SQUADS[key].length > SQUAD_CAP) {
-      SQUADS[key] = [...SQUADS[key]].sort((a, b) => b.o - a.o).slice(0, SQUAD_CAP);
-    }
+  for (const key in SQUADS){
+    const arr = SQUADS[key];
+    if (arr.length < 11) continue;
+    const [country, year] = key.split('|');
+    const xi = arr.slice().sort((a,b) => b.o - a.o).slice(0, 11);
+    const rating = Math.round(xi.reduce((s,p) => s + p.o, 0) / 11 * 10) / 10;
+    SQUAD_LIST.push({ key, country, year:+year, flag:flagEmoji(country), rating, xi });
   }
-  COMBOS = Object.keys(DATA.squad_weights);
-  WEIGHTS = COMBOS.map(k => DATA.squad_weights[k]);
-  buildTiers();
+  RANKED = DATA.players.slice().sort((a,b) => b.o - a.o);
+
+  // Stat labels
+  $('statPlayers').textContent = (DATA.meta.total_players || DATA.players.length).toLocaleString();
+  $('statSquads').textContent = SQUAD_LIST.length;
+  $('statYears').textContent = (DATA.meta.years || []).length || 15;
 
   buildFormationGrid();
   wireSetup();
-  wireGameScreen();
-  wireManagerScreen();
-  wireWorldCupScreen();
-  wireResultsScreen();
-  showSetup();
+  renderStatsStrip();
 }
 
-/* ---------------- setup screen ---------------- */
+/* ---------- Setup ---------- */
 function buildFormationGrid(){
-  const grid = $('formationGrid');
-  grid.innerHTML = '';
+  const grid = $('formationGrid'); grid.innerHTML = '';
   Object.keys(FORMATIONS).forEach(key => {
     const b = document.createElement('button');
     b.className = 'formation-card';
-    b.dataset.formation = key;
-    b.innerHTML = `<span class="f-shape">${key}</span>`;
+    b.innerHTML = `<span class="fc-name">${key}</span>`;
     b.addEventListener('click', () => {
       setupFormation = key;
-      document.querySelectorAll('.formation-card').forEach(c => c.classList.remove('sel'));
-      b.classList.add('sel');
-      maybeShowStart();
+      grid.querySelectorAll('.formation-card').forEach(c => c.classList.remove('is-on'));
+      b.classList.add('is-on');
+      maybeEnableStart();
     });
     grid.appendChild(b);
   });
 }
-
 function wireSetup(){
   document.querySelectorAll('.mode-card').forEach(card => {
     card.addEventListener('click', () => {
       setupMode = card.dataset.mode;
-      document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('sel'));
-      card.classList.add('sel');
-      // Daily uses a fixed 4-3-3 so the challenge is identical for everyone.
-      if (setupMode === 'daily') {
-        setupFormation = '4-3-3';
-        $('formationStep').classList.add('hidden');
-        $('setupStart').textContent = 'Start today\'s challenge →';
-      } else {
-        $('formationStep').classList.remove('hidden');
-        $('setupStart').textContent = 'Start drafting →';
-      }
-      maybeShowStart();
+      document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('is-on'));
+      card.classList.add('is-on');
+      maybeEnableStart();
     });
   });
-  $('setupStart').addEventListener('click', () => {
-    if (setupMode && setupFormation) startGame(setupMode, setupFormation);
-  });
-  $('resetBtn').addEventListener('click', () => {
-    if (confirm('Abandon this squad and start over?')) showSetup();
-  });
+  $('setupStart').addEventListener('click', () => startDraft(setupMode, setupFormation));
 }
+function maybeEnableStart(){ $('setupStart').disabled = !(setupMode && setupFormation); }
 
-function maybeShowStart(){
-  $('setupStart').disabled = !(setupMode && setupFormation);
-}
-
-function showSetup(){
-  state = null;
-  setupMode = null;
-  setupFormation = null;
-  document.querySelectorAll('.mode-card, .formation-card').forEach(c => c.classList.remove('sel'));
-  $('formationStep').classList.remove('hidden');
-  $('setupStart').textContent = 'Start drafting →';
-  $('setupStart').disabled = true;
-  $('setupScreen').classList.remove('hidden');
-  $('gameScreen').classList.add('hidden');
-  $('managerScreen').classList.add('hidden');
-  $('worldCupScreen').classList.add('hidden');
-  $('resultsScreen').classList.add('hidden');
-  $('roundPill').textContent = '';
-  renderStatsStrip();
-}
-
-/* ---------------- game start ---------------- */
-function startGame(mode, formationKey){
-  // Daily Challenge: everyone gets the same date-seeded draft + a fixed shape.
-  const isDaily = mode === 'daily';
-  if (isDaily) formationKey = '4-3-3';
-  const rng = isDaily ? mulberry32(seedFromKey(dailyKey())) : Math.random;
-  SLOTS = FORMATIONS[formationKey].slots;
-  state = {
-    round: 1,
-    picks: {},
-    mode,
-    daily: isDaily,
-    dailyKey: isDaily ? dailyKey() : null,
-    expert: mode === 'expert',
-    rng,
-    formation: formationKey,
-    roundPlan: buildRoundPlan(rng),
-    pendingIconNation: null,
-    spinning: false,
-    sortByRating: false,
-  };
+/* ---------- Draft ---------- */
+function startDraft(mode, formationKey){
+  FORMATION_KEY = formationKey;
+  SLOTS = buildSlots(formationKey);
+  state = { mode, picks:{}, formation:formationKey };
   $('setupScreen').classList.add('hidden');
-  $('managerScreen').classList.add('hidden');
-  $('worldCupScreen').classList.add('hidden');
-  $('resultsScreen').classList.add('hidden');
-  $('gameScreen').classList.remove('hidden');
-  $('formationTag').textContent = formationKey;
+  $('runScreen').classList.add('hidden');
+  $('draftScreen').classList.remove('hidden');
   buildPitch();
-  updateRoundPill();
-  updateSortBtn();
-  $('draftPane').classList.add('hidden');
-  $('spinPane').classList.remove('hidden');
-  $('iconOffer').classList.add('hidden');
-  fillAllAdSlots();
+  wireDraft();
+  searchPos = 'ALL';
+  document.querySelectorAll('.sf-btn').forEach(b => b.classList.toggle('is-on', b.dataset.pos === 'ALL'));
+  $('playerSearch').value = '';
+  renderResults('');
+  refreshDraftBar();
+  window.scrollTo(0,0);
 }
 
-function countPicks(){ return Object.keys(state.picks).length; }
-function updateRoundPill(){ $('roundPill').textContent = `Pick ${countPicks()+1} / ${TOTAL_ROUNDS}`; }
+let draftWired = false;
+function wireDraft(){
+  if (draftWired) return; draftWired = true;
+  $('playerSearch').addEventListener('input', (e) => renderResults(e.target.value));
+  document.querySelectorAll('.sf-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      searchPos = b.dataset.pos;
+      document.querySelectorAll('.sf-btn').forEach(x => x.classList.remove('is-on'));
+      b.classList.add('is-on');
+      renderResults($('playerSearch').value);
+    });
+  });
+  $('draftReset').addEventListener('click', () => {
+    state.picks = {}; refreshPitch(); refreshDraftBar(); renderResults($('playerSearch').value);
+  });
+  $('simBtn').addEventListener('click', simulateRun);
+  $('playAgainBtn').addEventListener('click', () => {
+    $('runScreen').classList.add('hidden'); $('setupScreen').classList.remove('hidden');
+    setupMode = null; setupFormation = null;
+    document.querySelectorAll('.mode-card,.formation-card').forEach(c => c.classList.remove('is-on'));
+    $('setupStart').disabled = true; window.scrollTo(0,0);
+  });
+  $('shareBtn').addEventListener('click', shareResult);
+}
 
-/* ---------------- pitch ---------------- */
 function buildPitch(){
-  const pitch = $('pitch');
-  pitch.querySelectorAll('.slot').forEach(n => n.remove());
+  const pitch = $('pitch'); pitch.innerHTML = '';
   SLOTS.forEach(slot => {
-    const node = document.createElement('div');
-    node.className = 'slot open';
+    const node = document.createElement('button');
+    node.className = 'slot slot-' + slot.type;
+    node.id = 'slot-' + slot.id;
     node.style.left = slot.x + '%';
     node.style.top = slot.y + '%';
-    node.dataset.slotId = slot.id;
-    node.innerHTML = `<div class="slot-label">${slot.label}</div>`;
-    node.addEventListener('click', () => onSlotClick(slot.id));
+    node.innerHTML = `<span class="slot-pos">${POS_LABEL[slot.type]}</span><span class="slot-name">+</span>`;
+    node.addEventListener('click', () => {
+      if (state.picks[slot.id]){ // remove
+        delete state.picks[slot.id]; refreshPitch(); refreshDraftBar(); renderResults($('playerSearch').value);
+      } else {
+        $('playerSearch').focus();
+        toast('Search a ' + POS_LABEL[slot.type] + ', then tap a player to add');
+      }
+    });
     pitch.appendChild(node);
   });
   refreshPitch();
 }
-
-function slotById(id){ return SLOTS.find(s => s.id === id); }
-function openSlotsForPlayer(player){
-  const positions = expandPositions(player.sp2);
-  return SLOTS.filter(s => !state.picks[s.id] && positions.includes(s.label));
-}
-function openSlots(){ return SLOTS.filter(s => !state.picks[s.id]); }
-
 function refreshPitch(){
   SLOTS.forEach(slot => {
-    const node = $('pitch').querySelector(`[data-slot-id="${slot.id}"]`);
-    if (!node) return;
-    const pick = state.picks[slot.id];
-    if (pick) {
-      node.className = 'slot filled';
-      const [shirt] = colorFor(pick.country);
-      node.style.setProperty('--shirt', shirt);
-      node.innerHTML = `
-        <div class="slot-jersey" style="background:${shirt}">${initials(pick.player.n)}</div>
-        <div class="slot-ovr">${pick.player.o}</div>
-        <div class="slot-name">${pick.player.n.split(' ').pop()}</div>`;
+    const node = $('slot-' + slot.id);
+    const p = state.picks[slot.id];
+    if (p){
+      node.classList.add('filled');
+      const showR = state.mode !== 'expert';
+      node.innerHTML = `<span class="slot-pos">${POS_LABEL[slot.type]}</span>` +
+        `<span class="slot-flag">${flagEmoji(p.country)}</span>` +
+        `<span class="slot-name">${shortName(p.n)}</span>` +
+        (showR ? `<span class="slot-rate">${p.o}</span>` : `<span class="slot-rate">?</span>`);
     } else {
-      node.className = 'slot open';
-      node.innerHTML = `<div class="slot-label">${slot.label}</div>`;
+      node.classList.remove('filled');
+      node.innerHTML = `<span class="slot-pos">${POS_LABEL[slot.type]}</span><span class="slot-name">+</span>`;
     }
   });
 }
-
-function onSlotClick(slotId){
-  // Clicking an open slot just highlights it as the active target during a draft offer.
-  if (!state.activeDraft) return;
-  const slot = slotById(slotId);
-  if (state.picks[slot.id]) return;
-  if (!expandPositions(state.activeDraft.player.sp2).includes(slot.label)) { toast(`Doesn't fit ${slot.label}`); return; }
-  confirmPick(slot.id, state.activeDraft.player, state.activeDraft.country, state.activeDraft.year);
+function shortName(n){
+  const parts = n.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  return parts[parts.length - 1];
 }
 
-function confirmPick(slotId, player, country, year){
-  state.picks[slotId] = { player, country, year, slotId };
-  state.activeDraft = null;
-  if (navigator.vibrate) navigator.vibrate(10);
-  refreshPitch();
-  updateRoundPill();
-  $('draftPane').classList.add('hidden');
-  $('spinPane').classList.remove('hidden');
-  if (countPicks() >= TOTAL_ROUNDS) {
-    showManagerBriefing();
+function picksArray(){ return Object.values(state.picks); }
+function spent(){ return picksArray().reduce((s,p) => s + p.o, 0); }
+function pickedNames(){ return new Set(picksArray().map(p => p.n + '|' + p.country)); }
+
+function firstOpenSlotFor(type){
+  return SLOTS.find(s => s.type === type && !state.picks[s.id]);
+}
+
+function addPlayer(p){
+  const slot = firstOpenSlotFor(p.p[0]);
+  if (!slot){ toast('No open ' + POS_LABEL[p.p[0]] + ' slot in this formation'); return; }
+  if (pickedNames().has(p.n + '|' + p.country)){ toast(p.n + ' is already in your XI'); return; }
+  if (spent() + p.o > BUDGET){ toast('Over budget — free up ' + (spent() + p.o - BUDGET) + ' points'); return; }
+  state.picks[slot.id] = p;
+  refreshPitch(); refreshDraftBar(); renderResults($('playerSearch').value);
+}
+
+function refreshDraftBar(){
+  const n = picksArray().length;
+  $('budgetLeft').textContent = (BUDGET - spent());
+  $('pickedCount').textContent = n + ' / ' + XI_SIZE;
+  if (n > 0){
+    const tr = teamRating();
+    $('teamRating').textContent = state.mode === 'expert' && n < XI_SIZE ? '—' : tr.toFixed(1);
+    $('chemVal').textContent = chemistryPct() + '%';
   } else {
-    state.round++;
+    $('teamRating').textContent = '—'; $('chemVal').textContent = '—';
   }
+  const full = n === XI_SIZE;
+  $('simBtn').disabled = !full;
+  $('simHint').textContent = full ? 'Your XI is ready — simulate the run.' :
+    (XI_SIZE - n) + ' more to pick · ' + (BUDGET - spent()) + ' budget left';
 }
 
-/* ---------------- spin ---------------- */
-function wireGameScreen(){
-  $('spinBtn').addEventListener('click', () => spin());
-  $('draftSearch').addEventListener('input', (e) => renderPlayerList(e.target.value));
-  $('iconSkipBtn').addEventListener('click', skipIcon);
-  $('draftSortBtn').addEventListener('click', () => {
-    state.sortByRating = !state.sortByRating;
-    updateSortBtn();
-    renderPlayerList($('draftSearch').value);
+/* ---------- Ratings & chemistry ---------- */
+const POS_WEIGHT = { GK:1.0, DF:1.0, MF:1.05, FW:1.1 };
+function teamRating(){
+  const ps = picksArray(); if (!ps.length) return 0;
+  let wsum = 0, w = 0;
+  ps.forEach(p => { const k = POS_WEIGHT[p.p[0]] || 1; wsum += p.o * k; w += k; });
+  return (wsum / w) + chemistryBonus();
+}
+function chemRaw(){
+  const ps = picksArray(); let sum = 0;
+  for (let i = 0; i < ps.length; i++) for (let j = i+1; j < ps.length; j++){
+    const a = ps[i], b = ps[j];
+    if (a.country === b.country && a.year === b.year) sum += 1.2;
+    else if (a.country === b.country) sum += 0.5;
+    else if (a.year === b.year) sum += 0.15;
+  }
+  return sum;
+}
+function chemistryPct(){ return clamp(Math.round(chemRaw() / 40 * 100), 0, 100); }
+function chemistryBonus(){ return chemistryPct() / 100 * 6; }
+
+/* ---------- Search results ---------- */
+function renderResults(q){
+  q = (q || '').trim().toLowerCase();
+  let pool;
+  if (q){
+    pool = DATA.players.filter(p => p.n.toLowerCase().includes(q));
+  } else {
+    pool = RANKED;
+  }
+  if (searchPos !== 'ALL') pool = pool.filter(p => p.p[0] === searchPos);
+  pool = pool.slice().sort((a,b) => b.o - a.o).slice(0, 60);
+
+  const meta = $('searchMeta');
+  meta.textContent = q ? `${pool.length ? pool.length : 'No'} match${pool.length===1?'':'es'} for "${q}"` :
+    'Top-rated players' + (searchPos !== 'ALL' ? ' · ' + POS_LABEL[searchPos] : '') + ' — type a name to search.';
+
+  const picked = pickedNames();
+  const res = $('results'); res.innerHTML = '';
+  const showR = state.mode !== 'expert';
+  pool.forEach(p => {
+    const isPicked = picked.has(p.n + '|' + p.country);
+    const canAfford = spent() + p.o <= BUDGET;
+    const hasSlot = !!firstOpenSlotFor(p.p[0]);
+    const row = document.createElement('button');
+    row.className = 'result' + (isPicked ? ' is-picked' : '');
+    if (!isPicked && (!canAfford || !hasSlot)) row.classList.add('is-blocked');
+    row.innerHTML =
+      `<span class="r-flag">${flagEmoji(p.country)}</span>` +
+      `<span class="r-main"><span class="r-name">${p.n}</span>` +
+      `<span class="r-sub">${p.country} · ${p.year} · ${p.sp || POS_LABEL[p.p[0]]}</span></span>` +
+      `<span class="chip chip-pos pos-${p.p[0]}">${POS_LABEL[p.p[0]]}</span>` +
+      (showR ? `<span class="r-rate">${p.o}</span>` : `<span class="r-rate">–</span>`) +
+      `<span class="r-add">${isPicked ? '✓' : '+'}</span>`;
+    row.addEventListener('click', () => {
+      if (isPicked){ removePlayer(p); } else { addPlayer(p); }
+    });
+    res.appendChild(row);
   });
 }
-
-function updateSortBtn(){
-  $('draftSortBtn').textContent = state.sortByRating ? 'Best first ▾' : 'Squad order ▾';
-  $('draftSortBtn').classList.toggle('active', state.sortByRating);
+function removePlayer(p){
+  for (const sid in state.picks){
+    const q = state.picks[sid];
+    if (q.n === p.n && q.country === p.country){ delete state.picks[sid]; break; }
+  }
+  refreshPitch(); refreshDraftBar(); renderResults($('playerSearch').value);
 }
 
-// Tiering by squad_weights percentile: bottom 25% = shit, top 25% = good, middle 50% = okay.
-function buildTiers(){
-  const entries = COMBOS.map((k, i) => ({ k, w: WEIGHTS[i] })).sort((a, b) => a.w - b.w);
-  const n = entries.length;
-  const lo = Math.floor(n * 0.25);
-  const hi = Math.ceil(n * 0.75);
-  TIER_COMBOS = { shit: [], okay: [], good: [] };
-  entries.forEach((entry, i) => {
-    const tier = i < lo ? 'shit' : (i >= hi ? 'good' : 'okay');
-    TIER_COMBOS[tier].push(entry);
+/* ---------- Simulation ---------- */
+const ROUND_NAMES = ['Group A', 'Group B', 'Group C', 'Round of 16', 'Quarter-final', 'Semi-final', 'Final'];
+const TARGET_RATINGS = [60, 66, 71, 75, 79, 82, 85];
+
+function pickOpponents(rng){
+  const myKeys = new Set(picksArray().map(p => p.country + '|' + p.year));
+  const used = new Set();
+  const opps = [];
+  TARGET_RATINGS.forEach(target => {
+    const cands = SQUAD_LIST
+      .filter(s => !used.has(s.key) && !myKeys.has(s.key))
+      .sort((a,b) => Math.abs(a.rating - target) - Math.abs(b.rating - target))
+      .slice(0, 8);
+    const choice = cands[Math.floor(rng() * cands.length)] || SQUAD_LIST[0];
+    used.add(choice.key);
+    opps.push(choice);
   });
+  return opps;
 }
 
-/* ---------------- player stats + streak (retention) ---------------- */
-const STATS_KEY = 'bk_700_stats';
-function loadStats(){
-  try { return JSON.parse(localStorage.getItem(STATS_KEY)) || {}; } catch(e){ return {}; }
+function playMatch(myR, opp, isKnockout, rng){
+  const oppR = opp.rating;
+  const diff = myR - oppR;
+  const lamYou = clamp(1.45 + diff * 0.07, 0.15, 5.5);
+  const lamOpp = clamp(1.45 - diff * 0.07, 0.15, 5.5);
+  const gYou = poisson(lamYou, rng);
+  const gOpp = poisson(lamOpp, rng);
+  let result, pens = null, advanced;
+  if (gYou > gOpp){ result = 'W'; advanced = true; }
+  else if (gYou < gOpp){ result = 'L'; advanced = false; }
+  else {
+    result = 'D';
+    if (isKnockout){
+      const pWin = clamp(0.5 + diff * 0.012, 0.2, 0.8);
+      const win = rng() < pWin;
+      pens = win ? 'won' : 'lost';
+      advanced = win;
+    } else advanced = true;
+  }
+  const events = buildEvents(gYou, gOpp, opp, rng);
+  return { gYou, gOpp, result, pens, advanced, events };
 }
+
+function buildEvents(gYou, gOpp, opp, rng){
+  const attackers = picksArray();
+  const weightOf = (p) => p.p[0] === 'FW' ? 6 : p.p[0] === 'MF' ? 2.2 : p.p[0] === 'DF' ? 0.5 : 0.05;
+  const totalW = attackers.reduce((s,p) => s + weightOf(p), 0);
+  function scorer(){
+    let r = rng() * totalW;
+    for (const p of attackers){ r -= weightOf(p); if (r <= 0) return shortName(p.n); }
+    return shortName(attackers[0].n);
+  }
+  const evs = [];
+  for (let i = 0; i < gYou; i++) evs.push({ m: 1 + Math.floor(rng()*90), side:'you', who: scorer() });
+  for (let i = 0; i < gOpp; i++) evs.push({ m: 1 + Math.floor(rng()*90), side:'opp', who: opp.country });
+  evs.sort((a,b) => a.m - b.m);
+  return evs;
+}
+
+function simulateRun(){
+  const ps = picksArray();
+  if (ps.length !== XI_SIZE) return;
+  const seedStr = state.mode === 'daily'
+    ? 'daily-' + dailyKey()
+    : 'run-' + Date.now() + '-' + Math.random();
+  const rng = mulberry32(strHash(seedStr));
+  const myR = teamRating();
+  const opps = pickOpponents(rng);
+
+  const games = [];
+  let eliminated = false, exitRound = -1;
+  let W = 0, D = 0, L = 0;
+  for (let i = 0; i < 7; i++){
+    const isKnockout = i >= 3;
+    const m = playMatch(myR, opps[i], isKnockout, rng);
+    games.push({ round: ROUND_NAMES[i], opp: opps[i], ...m, knockout: isKnockout });
+    if (m.result === 'W') W++; else if (m.result === 'D') D++; else L++;
+    if (isKnockout && !m.advanced){ eliminated = true; exitRound = i; break; }
+  }
+  const championship = !eliminated; // survived all knockouts incl. final
+  const result = classifyRun({ games, eliminated, exitRound, W, D, L, championship });
+  recordRun(result, W, D, L);
+  renderRun(result, games, W, D, L, myR);
+}
+
+function classifyRun({ eliminated, exitRound, W, D, L, championship }){
+  if (championship && W === 7 && D === 0 && L === 0){
+    return { tier:'perfect', title:'PERFECT 7-0-0', sub:'World Champions — seven games, seven wins, nothing dropped. Football immortality.', eyebrow:'The Perfect Cup' };
+  }
+  if (championship){
+    return { tier:'champion', title:'WORLD CHAMPIONS', sub:`You lifted the trophy on a ${W}-${D}-${L} run — but a dropped game means it isn't a perfect 7-0-0. So close.`, eyebrow:'Champions' };
+  }
+  const names = ['Round of 16','Quarter-final','Semi-final','Final'];
+  const r = exitRound;
+  const map = {
+    3: { tier:'r16', title:'ROUND OF 16 EXIT', sub:'The first knockout hurdle proved too tall. Back to the drawing board.' },
+    4: { tier:'qf',  title:'QUARTER-FINAL HEARTBREAK', sub:'So close to the last four. A cruel way to go out.' },
+    5: { tier:'sf',  title:'SEMI-FINAL AGONY', sub:'Within touching distance of the final, and it slipped away.' },
+    6: { tier:'final', title:'RUNNERS-UP', sub:'So near the trophy. Heartbreak in the final itself.' },
+  };
+  const m = map[r] || map[3];
+  return { ...m, eyebrow: names[r-3] + ' exit' };
+}
+
+/* ---------- Render run ---------- */
+function renderRun(result, games, W, D, L, myR){
+  $('draftScreen').classList.add('hidden');
+  $('runScreen').classList.remove('hidden');
+  $('runEyebrow').textContent = result.eyebrow;
+  const title = $('runTitle'); title.textContent = result.title; title.className = 'run-title tier-' + result.tier;
+  $('runSub').textContent = result.sub;
+  $('runRecord').innerHTML =
+    `<span class="rr-big">${W}<small>W</small> ${D}<small>D</small> ${L}<small>L</small></span>` +
+    `<span class="rr-meta">Team rating ${myR.toFixed(1)} · ${FORMATION_KEY} · chemistry ${chemistryPct()}%</span>`;
+
+  const host = $('matches'); host.innerHTML = '';
+  games.forEach(g => {
+    const outcome = g.result === 'W' ? 'win' : g.result === 'D' ? 'draw' : 'loss';
+    const card = document.createElement('div');
+    card.className = 'match card outcome-' + outcome;
+    let penLine = '';
+    if (g.pens) penLine = `<span class="m-pens">Penalties: ${g.pens === 'won' ? 'won' : 'lost'}</span>`;
+    const evHtml = g.events.length
+      ? '<ul class="m-events">' + g.events.map(e =>
+          `<li class="${e.side === 'you' ? 'ev-you' : 'ev-opp'}"><span class="ev-min">${e.m}'</span> ⚽ ${e.who}</li>`).join('') + '</ul>'
+      : '<p class="m-events none">No goals.</p>';
+    card.innerHTML =
+      `<div class="m-head"><span class="m-round">${g.round}</span>` +
+        `<span class="m-badge ${outcome}">${g.result}${g.pens ? ' (pens)' : ''}</span></div>` +
+      `<div class="m-score"><span class="m-team">Your XI</span>` +
+        `<span class="m-nums">${g.gYou} – ${g.gOpp}</span>` +
+        `<span class="m-team m-opp">${g.opp.flag} ${g.opp.country} ’${String(g.opp.year).slice(2)}</span></div>` +
+      penLine + evHtml;
+    host.appendChild(card);
+  });
+  window.scrollTo(0, 0);
+}
+
+/* ---------- Share ---------- */
+function shareResult(){
+  const title = $('runTitle').textContent;
+  const matches = $('matches').querySelectorAll('.match');
+  let grid = '';
+  matches.forEach(m => {
+    grid += m.classList.contains('outcome-win') ? '🟩' : m.classList.contains('outcome-draw') ? '🟨' : '🟥';
+  });
+  const txt = `7-0-0 ⚽ ${title}\n${grid}\nballknw.com/700`;
+  if (navigator.share){ navigator.share({ text: txt }).catch(()=>{}); }
+  else if (navigator.clipboard){ navigator.clipboard.writeText(txt).then(() => toast('Result copied to clipboard')); }
+  else toast(txt);
+}
+
+/* ---------- Stats / streak ---------- */
+const STATS_KEY = 'bk_700_stats_v2';
+function loadStats(){ try { return JSON.parse(localStorage.getItem(STATS_KEY)) || {}; } catch(e){ return {}; } }
 function saveStats(s){ try { localStorage.setItem(STATS_KEY, JSON.stringify(s)); } catch(e){} }
-
-// Record a completed squad. Updates totals, best record, 7-0-0 count, and the
-// daily streak (consecutive UTC days with a completed Daily Challenge).
-function recordCompletion({ W, D, L, daily }){
+function recordRun(result, W){
   const s = loadStats();
   s.played = (s.played || 0) + 1;
-  if (W === GAMES) s.sevens = (s.sevens || 0) + 1;
-  const score = W * 3 + D;
-  if (s.bestScore === undefined || score > s.bestScore) {
-    s.bestScore = score; s.bestRecord = `${W}-${D}-${L}`;
-  }
-  if (daily) {
+  if (result.tier === 'perfect') s.perfect = (s.perfect || 0) + 1;
+  if (result.tier === 'perfect' || result.tier === 'champion') s.titles = (s.titles || 0) + 1;
+  s.best = Math.max(s.best || 0, W);
+  if (state.mode === 'daily'){
     const today = dailyKey();
-    if (s.lastDaily !== today) {
-      const y = new Date(); y.setUTCDate(y.getUTCDate() - 1);
-      s.streak = (s.lastDaily === dailyKey(y)) ? (s.streak || 0) + 1 : 1;
+    if (s.lastDaily !== today){
+      const yest = dailyKey(new Date(Date.now() - 864e5));
+      s.streak = (s.lastDaily === yest) ? (s.streak || 0) + 1 : 1;
       s.lastDaily = today;
-      if (!s.bestStreak || s.streak > s.bestStreak) s.bestStreak = s.streak;
     }
   }
-  saveStats(s);
-  return s;
+  saveStats(s); renderStatsStrip();
 }
-
 function renderStatsStrip(){
-  const el = $('statsStrip');
-  if (!el) return;
   const s = loadStats();
-  if (!s.played) { el.classList.add('hidden'); return; }
-  const bits = [`<b>${s.played}</b> played`];
-  if (s.bestRecord) bits.push(`best <b>${s.bestRecord}</b>`);
-  if (s.sevens) bits.push(`<b>${s.sevens}</b>× 7-0-0`);
-  if (s.streak) bits.push(`🔥 <b>${s.streak}</b>-day streak`);
-  el.innerHTML = bits.join('<span class="stat-dot">·</span>');
-  el.classList.remove('hidden');
+  const strip = $('statsStrip');
+  if (!s.played){ strip.classList.add('hidden'); return; }
+  strip.classList.remove('hidden');
+  strip.innerHTML =
+    `<div class="ss"><span class="ss-n">${s.played}</span><span class="ss-l">runs</span></div>` +
+    `<div class="ss"><span class="ss-n">${s.titles || 0}</span><span class="ss-l">titles</span></div>` +
+    `<div class="ss"><span class="ss-n">${s.perfect || 0}</span><span class="ss-l">perfect</span></div>` +
+    `<div class="ss"><span class="ss-n">${s.streak || 0}</span><span class="ss-l">day streak</span></div>`;
 }
 
-/* ---------------- seeded RNG (for the Daily Challenge) ---------------- */
-// mulberry32 — small, fast, deterministic. In Daily mode the whole draft is
-// driven by a date-seeded stream so everyone gets the same squads that day.
-function mulberry32(seed){
-  let a = seed >>> 0;
-  return function(){
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-function dailyKey(d = new Date()){
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
-}
-function seedFromKey(key){
-  let h = 2166136261;
-  for (let i = 0; i < key.length; i++){ h ^= key.charCodeAt(i); h = Math.imul(h, 16777619); }
-  return h >>> 0;
-}
-
-// Fixed 11-round plan: 2 shit + 3 okay + 5 good squads, plus exactly 1 icon round.
-function buildRoundPlan(rnd){
-  return shuffled(['shit', 'shit', 'okay', 'okay', 'okay', 'good', 'good', 'good', 'good', 'good', 'icon'], rnd);
-}
-
-function weightedPick(entries, rnd){
-  const rand = rnd || Math.random;
-  let total = 0;
-  for (const e of entries) total += e.w;
-  let r = rand() * total;
-  for (const e of entries) {
-    r -= e.w;
-    if (r <= 0) return e.k;
-  }
-  return entries[entries.length - 1].k;
-}
-
-function allCombos(){ return COMBOS.map((k, i) => ({ k, w: WEIGHTS[i] })); }
-
-function eligibleIconsForNation(nation){
-  const openLabels = new Set(openSlots().map(s => s.label));
-  return DATA.icons.filter(ic => ic.country === nation && expandPositions(ic.sp2).some(label => openLabels.has(label)));
-}
-function eligibleIconNationEntries(){
-  const nations = [...new Set(DATA.icons.map(ic => ic.country))];
-  return nations
-    .map(n => ({ k: n, w: eligibleIconsForNation(n).length }))
-    .filter(e => e.w > 0);
-}
-
-function spin(){
-  if (state.spinning) return;
-  state.spinning = true;
-  $('spinBtn').disabled = true;
-
-  const planEntry = state.roundPlan[state.round - 1];
-  const isIconRound = planEntry === 'icon';
-  const tierPool = isIconRound ? null : (TIER_COMBOS[planEntry].length ? TIER_COMBOS[planEntry] : allCombos());
-  const iconNations = isIconRound ? DATA.icons.map(ic => ic.country) : null;
-
-  let ticks = 0;
-  const maxTicks = 22 + Math.floor(Math.random()*8);
-  const reelA = $('reelCountry'), reelB = $('reelYear');
-  const tickInterval = setInterval(() => {
-    ticks++;
-    if (isIconRound) {
-      reelA.textContent = '⭐ ICON';
-      reelB.textContent = iconNations[Math.floor(Math.random() * iconNations.length)];
-    } else {
-      const combo = weightedPick(tierPool).split('|');
-      reelA.textContent = combo[0];
-      reelB.textContent = combo[1];
-    }
-    if (ticks >= maxTicks) {
-      clearInterval(tickInterval);
-      settleSpin(planEntry);
-    }
-  }, 55);
-}
-
-function settleSpin(planEntry){
-  state.spinning = false;
-  $('spinBtn').disabled = false;
-  if (planEntry === 'icon') {
-    const nationEntries = eligibleIconNationEntries();
-    if (nationEntries.length === 0) {
-      settleSpin('good'); // no Icon fits the remaining open slots — fall back to a squad round
-      return;
-    }
-    // Weighted by eligible-Icon count, so a nation with 10 Icons (e.g. Brazil) comes up far
-    // more often than a one-Icon nation (e.g. Japan) — keeps "pick which Icon" a real choice.
-    const nation = weightedPick(nationEntries, state.rng);
-    $('reelCountry').textContent = '⭐ ICON';
-    $('reelYear').textContent = nation;
-    track('icon_offer', { nation });
-    openIconOffer(nation);
-  } else {
-    const pool = TIER_COMBOS[planEntry].length ? TIER_COMBOS[planEntry] : allCombos();
-    const comboKey = weightedPick(pool, state.rng);
-    const [country, year] = comboKey.split('|');
-    $('reelCountry').textContent = country;
-    $('reelYear').textContent = year;
-    track('spin', { country, year, tier: planEntry });
-    openDraft(country, year);
-  }
-}
-
-/* ---------------- icon offer ---------------- */
-function openIconOffer(nation){
-  state.pendingIconNation = nation;
-  $('spinPane').classList.add('hidden');
-  $('iconOffer').classList.remove('hidden');
-  $('iconOfferNation').textContent = nation;
-
-  const icons = eligibleIconsForNation(nation);
-  const wrap = $('iconOfferList');
-  wrap.innerHTML = '';
-  icons.forEach(icon => {
-    const used = isUsedPlayer(icon);
-    const row = document.createElement('div');
-    row.className = 'player-row' + (used ? ' ineligible' : '') + iconRarityClass(icon.o);
-    const [shirt] = colorFor(icon.country);
-    const ovrBadge = `<span class="p-ovr-badge ${ovrTier(icon.o)}">${icon.o}</span>`;
-    const statsGrid = `<div class="p-stats-grid">${['pac','sho','pas','dri','def','phy'].map(k =>
-      `<div class="pstat"><span>${k.toUpperCase()}</span><b>${icon[k]}</b></div>`).join('')}</div>`;
-    row.innerHTML = `
-      <div class="p-jersey" style="background:${shirt}">${initials(icon.n)}</div>
-      <div class="p-info">
-        <div class="p-top">
-          <span class="p-name">${icon.n}</span>
-          ${ovrBadge}
-        </div>
-        <div class="p-meta">${icon.sp2.join('/')}${used ? ' · used' : ''}</div>
-        ${statsGrid}
-      </div>`;
-    if (!used) row.addEventListener('click', () => takeIcon(icon));
-    wrap.appendChild(row);
-  });
-}
-
-function takeIcon(icon){
-  const slots = openSlotsForPlayer(icon);
-  if (slots.length === 0) { toast('No open slot for this icon'); return; }
-  $('iconOffer').classList.add('hidden');
-  if (slots.length === 1) {
-    confirmPick(slots[0].id, icon, icon.country, 'ICON');
-  } else {
-    state.activeDraft = { player: icon, country: icon.country, year: 'ICON' };
-    $('draftPane').classList.remove('hidden');
-    $('draftTeamName').textContent = icon.n;
-    $('draftYear').textContent = 'Pick a slot on the pitch';
-    $('playerList').innerHTML = '';
-    $('draftSearch').value = '';
-    toast('Tap a highlighted slot to place your icon');
-  }
-  track('icon_take', { name: icon.n });
-}
-
-function skipIcon(){
-  track('icon_skip', { nation: state.pendingIconNation });
-  state.pendingIconNation = null;
-  $('iconOffer').classList.add('hidden');
-  $('spinPane').classList.remove('hidden');
-}
-
-/* ---------------- draft ---------------- */
-function shuffled(arr, rnd){
-  const rand = rnd || Math.random;
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function openDraft(country, year){
-  const key = `${country}|${year}`;
-  const squad = SQUADS[key] || [];
-  state.activeSquad = squad;
-  $('spinPane').classList.add('hidden');
-  $('draftPane').classList.remove('hidden');
-  $('draftTeamName').innerHTML = `${flagEmoji(country)} ${country}`;
-  $('draftYear').textContent = `${year} squad`;
-  $('draftSearch').value = '';
-  updateInstruct();
-  renderPlayerList('');
-
-  const anyPlayable = squad.some(p => openSlotsForPlayer(p).length > 0);
-  if (!anyPlayable) {
-    toast('No room for this squad — re-spinning');
-    setTimeout(() => spin(), 500);
-  }
-}
-
-function updateInstruct(){
-  const open = openSlots().map(s => s.label).join(', ');
-  $('draftInstruct').textContent = `Open: ${open}`;
-}
-
-function isUsedPlayer(p){
-  return Object.values(state.picks).some(pick => pick.player === p);
-}
-
-function renderPlayerList(filter){
-  const squad = state.activeSquad || [];
-  const f = (filter || '').trim().toLowerCase();
-  let list = squad.filter(p => !f || p.n.toLowerCase().includes(f));
-  if (state.sortByRating) {
-    list = [...list].sort((a,b) => b.o - a.o);
-  } else if (state.expert) {
-    const order = { GK:0, DF:1, MF:2, FW:3 };
-    list = [...list].sort((a,b) => order[a.p[0]] - order[b.p[0]]);
-  }
-  const wrap = $('playerList');
-  wrap.innerHTML = '';
-  list.forEach(p => {
-    const used = isUsedPlayer(p);
-    const fits = openSlotsForPlayer(p).length > 0;
-    const ineligible = used || !fits;
-    const row = document.createElement('div');
-    row.className = 'player-row' + (ineligible ? ' ineligible' : '');
-    const [shirt] = colorFor(p.country);
-    const ovrBadge = state.expert ? '' : `<span class="p-ovr-badge ${ovrTier(p.o)}">${p.o}</span>`;
-    const statsGrid = state.expert ? '' : `<div class="p-stats-grid">${['pac','sho','pas','dri','def','phy'].map(k=>`<div class="pstat"><span>${k.toUpperCase()}</span><b>${p[k]}</b></div>`).join('')}</div>`;
-    row.innerHTML = `
-      <div class="p-jersey" style="background:${shirt}">${initials(p.n)}</div>
-      <div class="p-info">
-        <div class="p-top">
-          <span class="p-name">${p.n}</span>
-          ${ovrBadge}
-        </div>
-        <div class="p-meta">${p.sp2.join('/')}${used ? ' · used' : ''}</div>
-        ${statsGrid}
-      </div>`;
-    if (!ineligible) row.addEventListener('click', () => draftPick(p));
-    wrap.appendChild(row);
-  });
-}
-
-function draftPick(player){
-  const slots = openSlotsForPlayer(player);
-  if (slots.length === 0) return;
-  if (slots.length === 1) {
-    confirmPick(slots[0].id, player, player.country, player.year);
-  } else {
-    state.activeDraft = { player, country: player.country, year: player.year };
-    $('draftInstruct').textContent = 'Tap a highlighted slot to place this player';
-    document.querySelectorAll(`.slot`).forEach(n => {
-      const s = slotById(n.dataset.slotId);
-      if (!state.picks[s.id] && player.sp2.includes(s.label)) n.classList.add('armed');
-    });
-    toast('Tap a slot on the pitch to confirm');
-  }
-}
-
-/* ============================================================
-   RESULT SIMULATION
-   7 games (3 group + R16 + QF + SF + Final) — the brand's "7-0-0".
-   Anchors calibrated by Monte Carlo simulation of the actual spin+draft
-   mechanic (weighted squad spin, icon offers, random eligible pick) so a
-   typical/unguided draft (S≈70 median) lands at the target stage-reach
-   odds: Round of 16 ~65%, Quarter-Final ~45%, Semi-Final ~35%,
-   Final/Runner-up ~15-22%, Champion ~8-12%. Drafting deliberately
-   (e.g. sorting by rating, taking every icon) pushes S well above this
-   baseline toward the Unbeaten/Perfect tiers.
-   ============================================================ */
-const RECORD_ANCHORS = [
-  [55.0, 0, 0],
-  [62.0, 0, 1],
-  [70.06, 0, 1],
-  [70.66, 1, 1],  // 70.36 -> Round of 16+ ≈ 65%
-  [71.79, 1, 1],
-  [72.39, 2, 1],  // 72.09 -> Quarter-Finalist+ ≈ 45%
-  [72.70, 2, 1],
-  [73.30, 3, 1],  // 73.00 -> Semi-Finalist+ ≈ 35%
-  [74.43, 3, 1],
-  [75.03, 4, 1],  // 74.73 -> Runner-Up+ ≈ 15-22%
-  [75.61, 4, 1],
-  [76.21, 5, 1],  // 75.91 -> World Champion+ ≈ 8-12%
-  [83.0, 5, 1],
-  [85.0, 6, 1],   // Unbeaten floor
-  [90.0, 7, 0],   // 7-0-0 — the perfect run
-];
-const PERFECT_S = 90.0;
-
-function recordFromRating(S){
-  if (S >= PERFECT_S) return { W: GAMES, D: 0, L: 0 };
-  const Sc = clamp(S, RECORD_ANCHORS[0][0], PERFECT_S);
-  let a = RECORD_ANCHORS[0], b = RECORD_ANCHORS[RECORD_ANCHORS.length-1];
-  for (let i = 0; i < RECORD_ANCHORS.length - 1; i++) {
-    if (Sc >= RECORD_ANCHORS[i][0] && Sc <= RECORD_ANCHORS[i+1][0]) { a = RECORD_ANCHORS[i]; b = RECORD_ANCHORS[i+1]; break; }
-  }
-  const t = (Sc - a[0]) / (b[0] - a[0]);
-  let W = clamp(Math.round(a[1] + (b[1]-a[1]) * t), 0, GAMES);
-  let D = clamp(Math.round(a[2] + (b[2]-a[2]) * t), 0, GAMES - W);
-  return { W, D, L: GAMES - W - D };
-}
-
-function computeRecord(){
-  const rows = SLOTS.map(slot => {
-    const pick = state.picks[slot.id];
-    return { slot, pick, eff: pick.player.o };
-  });
-  const S = rows.reduce((a, r) => a + r.eff, 0) / rows.length;
-  let { W, D, L } = recordFromRating(S);
-  if (S >= PERFECT_S) { W = GAMES; D = 0; L = 0; }
-  else if (W === GAMES) { W = GAMES - 1; D = 1; L = 0; } // one shy of perfect stays unbeaten
-  return { W, D, L, pts: W*3 + D, S: +S.toFixed(1), rows };
-}
-
-const RUN_BY_WINS = ['Group Stage Exit', 'Round of 16', 'Quarter-Finalist', 'Semi-Finalist', 'Runner-Up', 'World Champion', 'World Champion', 'World Champion'];
-function tierFor(r){
-  if (r.W === GAMES) return { name: '7-0-0', sub: 'The perfect World Cup' };
-  if (r.L === 0) return { name: 'Unbeaten Champion', sub: `${r.W}-${r.D}-${r.L}, never lost` };
-  if (r.W >= 5) return { name: 'World Champion', sub: 'Lifted the trophy' };
-  return { name: RUN_BY_WINS[r.W], sub: `${r.W}-${r.D}-${r.L} record` };
-}
-
-function groupStageLine(r){
-  // First 3 games are framed as the group stage; deterministic-but-flavorful split of W/D/L across the 7.
-  const g = { W:0, D:0, L:0 };
-  let w = r.W, d = r.D, l = r.L;
-  for (let i = 0; i < 3; i++) {
-    if (w > 0) { g.W++; w--; } else if (d > 0) { g.D++; d--; } else { g.L++; l--; }
-  }
-  return g;
-}
-
-function topPlayer(rows){ return rows.reduce((best, r) => (!best || r.eff > best.eff) ? r : best, null); }
-function topScorer(rows){
-  const fws = rows.filter(r => r.pick.player.p[0] === 'FW');
-  const pool = fws.length ? fws : rows;
-  return pool.reduce((best, r) => (!best || r.pick.player.sho > best.pick.player.sho) ? r : best, null);
-}
-
-/* ============================================================
-   MANAGER'S BRIEFING
-   A pre-result Monte Carlo screen — runs many simulated tournaments off the
-   same squad-rating curve that drives the real (deterministic) result, so
-   the player gets title odds and round-by-round survival % before seeing
-   their actual record. Purely a presentation/manager-mode layer: it reads
-   the squad but never feeds back into computeRecord()/showResults().
-   ============================================================ */
-const KNOCKOUT_ROUNDS = ['Round of 16', 'Quarter-Final', 'Semi-Final', 'World Champion'];
-const MC_TRIALS = 10000;
-
-function simulateOdds(S){
-  const { W, D, L } = recordFromRating(S);
-  // Per-game outcome odds implied by the deterministic expected record.
-  const pWin = clamp(W / GAMES, 0, 1);
-  const pDraw = clamp(D / GAMES, 0, 1 - pWin);
-  const pLoss = 1 - pWin - pDraw;
-
-  let reach = [0, 0, 0, 0]; // R16, QF, SF, Final/Champion
-  let perfect = 0;
-
-  for (let t = 0; t < MC_TRIALS; t++) {
-    // Group stage: survive unless you lose all 3 games.
-    let groupLosses = 0, groupAllWins = true;
-    for (let g = 0; g < 3; g++) {
-      const roll = Math.random();
-      if (roll < pWin) { /* win */ }
-      else if (roll < pWin + pDraw) { groupAllWins = false; }
-      else { groupLosses++; groupAllWins = false; }
-    }
-    if (groupLosses === 3) continue; // group stage exit
-
-    let aliveAllWins = groupAllWins;
-    for (let round = 0; round < 4; round++) {
-      const roll = Math.random();
-      let survived;
-      if (roll < pWin) { survived = true; }
-      else if (roll < pWin + pDraw) { survived = Math.random() < 0.5; aliveAllWins = false; } // penalties
-      else { survived = false; aliveAllWins = false; }
-      if (!survived) break;
-      reach[round]++;
-      if (round === 3 && aliveAllWins) perfect++;
-    }
-  }
-
-  return {
-    r16: reach[0] / MC_TRIALS,
-    qf: reach[1] / MC_TRIALS,
-    sf: reach[2] / MC_TRIALS,
-    champion: reach[3] / MC_TRIALS,
-    perfect: perfect / MC_TRIALS,
-  };
-}
-
-function predictionBlurb(odds){
-  if (odds.perfect >= 0.05) return "This squad has a real shot at the legendary 7-0-0.";
-  if (odds.champion >= 0.15) return "A genuine title contender — expect a deep run.";
-  if (odds.sf >= 0.4) return "Strong enough to threaten the semi-finals.";
-  if (odds.r16 >= 0.5) return "Should get out of the group, but the knockouts will be tight.";
-  return "A tough draw to work with — group stage exit is the likeliest outcome.";
-}
-
-function pct(p){ return `${Math.round(p * 100)}%`; }
-
-let pendingOdds = null;
-function wireManagerScreen(){
-  $('briefingContinueBtn').addEventListener('click', () => {
-    $('managerScreen').classList.add('hidden');
-    showResults();
-  });
-  $('playWorldCupBtn').addEventListener('click', startWorldCupRun);
-}
-
-function showManagerBriefing(){
-  const rows = SLOTS.map(slot => ({ slot, pick: state.picks[slot.id] }));
-  const S = rows.reduce((a, r) => a + r.pick.player.o, 0) / rows.length;
-
-  $('gameScreen').classList.add('hidden');
-  $('managerScreen').classList.remove('hidden');
-  $('briefingSim').classList.remove('hidden');
-  $('briefingOdds').classList.add('hidden');
-  fillAllAdSlots();
-
-  setTimeout(() => {
-    const odds = simulateOdds(S);
-    pendingOdds = odds;
-    $('oddsChampion').textContent = pct(odds.champion);
-    $('oddsPerfect').textContent = pct(odds.perfect);
-    const oddsByRound = [odds.r16, odds.qf, odds.sf, odds.champion];
-    $('oddsBars').innerHTML = KNOCKOUT_ROUNDS.map((label, i) => ({ label, p: oddsByRound[i] })).map(row => `
-      <div class="odds-bar-row">
-        <span class="odds-bar-label">${row.label}</span>
-        <div class="odds-bar-track"><div class="odds-bar-fill" style="width:${Math.max(2, row.p*100)}%"></div></div>
-        <span class="odds-bar-pct">${pct(row.p)}</span>
-      </div>`).join('');
-    $('oddsPrediction').textContent = predictionBlurb(odds);
-    $('briefingSim').classList.add('hidden');
-    $('briefingOdds').classList.remove('hidden');
-    track('manager_briefing', { S: +S.toFixed(1), champion: odds.champion, perfect: odds.perfect });
-  }, 1400);
-}
-
-/* ============================================================
-   WORLD CUP RUN — interactive tournament play-through (manager mode)
-   A second way to experience a drafted XI: instead of jumping straight to
-   the deterministic record, play the 7 games out one at a time, advancing
-   through the rounds until you lift the trophy or get knocked out. Borrows
-   the worldcup8-0.app stage-progression format. The classic "skip to your
-   record" path is left untouched, so original 7-0-0 is fully intact.
-   ============================================================ */
-const WC_STAGES = [
-  { key: 'g1',    label: 'Group Match 1', short: 'Group 1', ko: false },
-  { key: 'g2',    label: 'Group Match 2', short: 'Group 2', ko: false },
-  { key: 'g3',    label: 'Group Match 3', short: 'Group 3', ko: false },
-  { key: 'r16',   label: 'Round of 16',   short: 'R16',     ko: true  },
-  { key: 'qf',    label: 'Quarter-Final', short: 'QF',      ko: true  },
-  { key: 'sf',    label: 'Semi-Final',    short: 'SF',      ko: true  },
-  { key: 'final', label: 'Final',         short: 'Final',   ko: true  },
-];
-
-const WC_OPPONENTS = ['Brazil','Argentina','France','Germany','Spain','England',
-  'Italy','Netherlands','Portugal','Belgium','Croatia','Uruguay','Mexico','USA',
-  'Colombia','Japan','Morocco','Senegal','Switzerland','Denmark','Poland','Serbia',
-  'South Korea','Ghana','Nigeria','Ecuador','Australia','Canada','Saudi Arabia','Cameroon'];
-
-let wcRun = null;
-let lastWcRun = null;
-
-function wcShuffle(arr){
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
-  return a;
-}
-
-function startWorldCupRun(){
-  const rows = SLOTS.map(slot => ({ slot, pick: state.picks[slot.id] }));
-  const S = rows.reduce((a, r) => a + r.pick.player.o, 0) / rows.length;
-  const { W, D } = recordFromRating(S);
-  wcRun = {
-    S, rows,
-    pWin: clamp(W / GAMES, 0.03, 0.95),
-    pDraw: clamp(D / GAMES, 0.0, 0.45),
-    stageIdx: 0,
-    opponents: wcShuffle(WC_OPPONENTS),
-    results: [],
-    W: 0, D: 0, L: 0,
-    groupPts: 0,
-    done: false,
-    champion: false,
-  };
-  $('managerScreen').classList.add('hidden');
-  $('worldCupScreen').classList.remove('hidden');
-  $('wcVerdict').classList.add('hidden');
-  $('wcStage').classList.remove('hidden');
-  $('wcNextBtn').classList.remove('hidden');
-  $('wcNextBtn').textContent = 'Kick off →';
-  resetWcMatchCard();
-  renderWcBracket();
-  updateWcStageHeader();
-  fillAllAdSlots();
-  track('wc_run_start', { S: +S.toFixed(1) });
-}
-
-function updateWcStageHeader(){
-  const stage = WC_STAGES[wcRun.stageIdx];
-  if (!stage) return;
-  if (stage.ko) {
-    $('wcTitle').textContent = stage.label;
-    $('wcSub').textContent = 'Knockout football — win or go home.';
-  } else {
-    $('wcTitle').textContent = 'Group Stage';
-    $('wcSub').textContent = `Match ${wcRun.stageIdx + 1} of 3 · ${wcRun.groupPts} pts so far`;
-  }
-}
-
-function resetWcMatchCard(){
-  $('wcScoreYou').textContent = '–';
-  $('wcScoreOpp').textContent = '–';
-  $('wcOppName').textContent = wcRun.opponents[0];
-  $('wcMatchNote').textContent = '';
-  $('wcMatch').classList.remove('win','draw','loss');
-}
-
-function renderWcBracket(){
-  $('wcBracket').innerHTML = WC_STAGES.map((stage, i) => {
-    const res = wcRun.results[i];
-    let cls = 'wc-leg', mark = '';
-    if (res) {
-      if (res.advanced === false) { cls += ' wc-leg-out'; mark = '✕'; }
-      else if (res.outcome === 'win') { cls += ' wc-leg-win'; mark = 'W'; }
-      else if (res.outcome === 'draw') { cls += res.advanced ? ' wc-leg-win' : ' wc-leg-out'; mark = res.pens === 'won' ? 'P' : 'D'; }
-      else { cls += ' wc-leg-loss'; mark = 'L'; }
-    } else if (i === wcRun.stageIdx && !wcRun.done) {
-      cls += ' wc-leg-current';
-    }
-    return `<div class="${cls}"><span class="wc-leg-name">${stage.short}</span><span class="wc-leg-mark">${mark}</span></div>`;
-  }).join('');
-}
-
-function wcScoreline(outcome){
-  const strong = wcRun.pWin > 0.6;
-  const r = Math.random();
-  if (outcome === 'win') {
-    const margin = r < 0.45 ? 1 : r < (strong ? 0.7 : 0.82) ? 2 : 3;
-    const them = Math.random() < 0.55 ? 0 : 1;
-    return { you: them + margin, them };
-  } else if (outcome === 'loss') {
-    const margin = r < 0.5 ? 1 : r < 0.85 ? 2 : 3;
-    const you = Math.random() < 0.55 ? 0 : 1;
-    return { you, them: you + margin };
-  }
-  const n = r < 0.45 ? 0 : r < 0.8 ? 1 : 2;
-  return { you: n, them: n };
-}
-
-function renderWcMatch(stage, opp, sc, outcome, pens){
-  $('wcOppName').textContent = opp;
-  $('wcScoreYou').textContent = sc.you;
-  $('wcScoreOpp').textContent = sc.them;
-  $('wcMatch').classList.remove('win','draw','loss');
-  let note;
-  if (outcome === 'win') { $('wcMatch').classList.add('win'); note = `Win ${sc.you}–${sc.them} vs ${opp}`; }
-  else if (outcome === 'loss') { $('wcMatch').classList.add('loss'); note = `Lost ${sc.you}–${sc.them} to ${opp}`; }
-  else {
-    $('wcMatch').classList.add('draw');
-    if (pens) note = `Drew ${sc.you}–${sc.them} vs ${opp} · ${pens === 'won' ? 'won' : 'lost'} on penalties`;
-    else note = `Drew ${sc.you}–${sc.them} vs ${opp}`;
-  }
-  $('wcMatchNote').textContent = note;
-}
-
-function wcPlayNext(){
-  if (!wcRun || wcRun.done) return;
-  const stage = WC_STAGES[wcRun.stageIdx];
-  const opp = wcRun.opponents[wcRun.stageIdx % wcRun.opponents.length];
-
-  const roll = Math.random();
-  let outcome;
-  if (roll < wcRun.pWin) outcome = 'win';
-  else if (roll < wcRun.pWin + wcRun.pDraw) outcome = 'draw';
-  else outcome = 'loss';
-
-  const sc = wcScoreline(outcome);
-  let pens = null;
-  let advanced = true;
-
-  if (!stage.ko) {
-    if (outcome === 'win') { wcRun.W++; wcRun.groupPts += 3; }
-    else if (outcome === 'draw') { wcRun.D++; wcRun.groupPts += 1; }
-    else { wcRun.L++; }
-  } else {
-    if (outcome === 'win') { wcRun.W++; advanced = true; }
-    else if (outcome === 'loss') { wcRun.L++; advanced = false; }
-    else {
-      wcRun.D++;
-      const youWinPens = Math.random() < (0.5 + (wcRun.pWin - 0.5) * 0.3);
-      pens = youWinPens ? 'won' : 'lost';
-      advanced = youWinPens;
-    }
-  }
-
-  wcRun.results.push({ stage, opp, you: sc.you, them: sc.them, outcome, pens, advanced });
-  renderWcMatch(stage, opp, sc, outcome, pens);
-  renderWcBracket();
-
-  // Progression
-  if (!stage.ko) {
-    if (wcRun.stageIdx === 2) {
-      // End of group stage: out only if you lost all three (matches the odds model)
-      if (wcRun.L >= 3) { wcEnd(false, 'group'); return; }
-      wcRun.stageIdx++; // into the knockouts
-    } else {
-      wcRun.stageIdx++;
-    }
-  } else {
-    if (!advanced) { wcEnd(false, stage.key); return; }
-    if (stage.key === 'final') { wcRun.champion = true; wcEnd(true, 'final'); return; }
-    wcRun.stageIdx++;
-  }
-
-  updateWcStageHeader();
-  $('wcNextBtn').textContent = WC_STAGES[wcRun.stageIdx].ko ? `Play the ${WC_STAGES[wcRun.stageIdx].label} →` : 'Next match →';
-}
-
-function wcEnd(champion, stageKey){
-  wcRun.done = true;
-  $('wcNextBtn').classList.add('hidden');
-  const total = wcRun.W + wcRun.D + wcRun.L;
-  let badge, sub;
-  if (champion) {
-    const perfect = wcRun.W === GAMES && wcRun.D === 0 && wcRun.L === 0;
-    badge = perfect ? '7-0-0 · PERFECT' : 'WORLD CHAMPIONS';
-    sub = perfect ? 'The perfect World Cup — seven games, seven wins, nothing conceded to fate.' : 'You lifted the trophy. Champions of the world!';
-  } else {
-    const map = { group: 'Out in the Group Stage', r16: 'Out in the Round of 16', qf: 'Out in the Quarter-Final', sf: 'Out in the Semi-Final' };
-    badge = stageKey === 'final' ? 'RUNNERS-UP' : (map[stageKey] || 'Knocked Out');
-    sub = stageKey === 'final' ? 'So close — beaten in the final.' : 'The run ends here. Spin up a new squad and go again.';
-  }
-  $('wcVerdictBadge').textContent = badge;
-  $('wcVerdictRecord').textContent = `${wcRun.W}-${wcRun.D}-${wcRun.L} over ${total} game${total === 1 ? '' : 's'}`;
-  $('wcVerdictSub').textContent = sub;
-  $('wcVerdict').classList.remove('hidden');
-  lastWcRun = { W: wcRun.W, D: wcRun.D, L: wcRun.L, champion, stageKey, badge };
-  recordCompletion({ W: wcRun.W, D: wcRun.D, L: wcRun.L, daily: state.daily });
-  track('wc_run_end', { champion, stage: stageKey, W: wcRun.W, D: wcRun.D, L: wcRun.L });
-}
-
-function wcShareText(){
-  const r = lastWcRun;
-  if (!r) return '';
-  return `My World Cup run in 7-0-0: ${r.badge} (${r.W}-${r.D}-${r.L}). Draft your XI and go again at ballknw.com #7oh0`;
-}
-
-async function wcShare(){
-  const text = wcShareText();
-  try {
-    if (navigator.share) { await navigator.share({ text }); return; }
-    await navigator.clipboard.writeText(text);
-  } catch (e) { /* user cancelled */ }
-}
-
-function wireWorldCupScreen(){
-  $('wcNextBtn').addEventListener('click', wcPlayNext);
-  $('wcAgainBtn').addEventListener('click', showSetup);
-  $('wcShareBtn').addEventListener('click', wcShare);
-}
-
-/* ---------------- results screen ---------------- */
-function wireResultsScreen(){
-  $('shareBtn').addEventListener('click', shareResult);
-  $('againBtn').addEventListener('click', showSetup);
-  $('showMoreBtn').addEventListener('click', () => {
-    const bd = $('breakdown');
-    bd.classList.toggle('hidden');
-    $('showMoreBtn').textContent = bd.classList.contains('hidden') ? 'Show full tournament breakdown ▾' : 'Hide breakdown ▴';
-  });
-}
-
-let lastRecord = null;
-function showResults(){
-  const r = computeRecord();
-  lastRecord = r;
-  const tier = tierFor(r);
-
-  $('gameScreen').classList.add('hidden');
-  $('resultsScreen').classList.remove('hidden');
-  fillAllAdSlots();
-
-  $('recW').textContent = r.W;
-  $('recD').textContent = r.D;
-  $('recL').textContent = r.L;
-  $('recordKey').textContent = `W · D · L over ${GAMES} games · ${r.pts} pts · squad avg ${r.S}`;
-  $('tierBadge').textContent = tier.name;
-  $('tierSub').textContent = tier.sub;
-  $('resultsQ').textContent = r.W === GAMES ? 'You went 7-0-0.' : `You finished ${tier.name}.`;
-
-  const g = groupStageLine(r);
-  $('bdGroup').textContent = `${g.W}-${g.D}-${g.L}`;
-  $('bdRun').textContent = RUN_BY_WINS[r.W];
-
-  const top = topPlayer(r.rows);
-  $('bdTopPlayer').textContent = top.pick.player.n;
-  $('bdTopPlayerSub').textContent = `${top.pick.player.o} OVR · ${top.pick.country}`;
-
-  const scorer = topScorer(r.rows);
-  $('bdTopScorer').textContent = scorer.pick.player.n;
-  $('bdTopScorerSub').textContent = `${scorer.pick.player.sho} SHO · ${scorer.pick.country}`;
-
-  $('xiList').innerHTML = r.rows.map(row => {
-    const [shirt] = colorFor(row.pick.country);
-    return `<div class="xi-row">
-      <div class="p-jersey" style="background:${shirt}">${initials(row.pick.player.n)}</div>
-      <div class="p-info"><div class="p-name">${row.pick.player.n}</div><div class="p-meta">${row.slot.label} · ${row.pick.country} ${row.pick.year}</div></div>
-      <span class="p-ovr-badge ${ovrTier(row.pick.player.o)}">${row.pick.player.o}</span>
-    </div>`;
-  }).join('');
-
-  $('breakdown').classList.add('hidden');
-  $('showMoreBtn').textContent = 'Show full tournament breakdown ▾';
-
-  recordCompletion({ W: r.W, D: r.D, L: r.L, daily: state.daily });
-  track('squad_completed', { W: r.W, D: r.D, L: r.L, S: r.S, formation: state.formation, mode: state.mode });
-  if (r.W === GAMES) track('seven_oh_oh', { S: r.S });
-}
-
-function shareText(){
-  const r = lastRecord;
-  return `I went ${r.W}-${r.D}-${r.L} in 7-0-0, the World Cup squad builder. Build yours at 7-0-0.com #7oh0`;
-}
-
-function roundRect(ctx, x, y, w, h, r){
-  ctx.beginPath();
-  ctx.moveTo(x+r, y);
-  ctx.arcTo(x+w, y, x+w, y+h, r);
-  ctx.arcTo(x+w, y+h, x, y+h, r);
-  ctx.arcTo(x, y+h, x, y, r);
-  ctx.arcTo(x, y, x+w, y, r);
-  ctx.closePath();
-}
-
-function buildShareCanvas(){
-  const r = lastRecord;
-  const tier = tierFor(r);
-  const W = 1080, H = 1350;
-  const canvas = document.createElement('canvas');
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext('2d');
-  ctx.textAlign = 'center';
-
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#0a1f14'); bg.addColorStop(1, '#0f2b1c');
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-
-  ctx.fillStyle = '#e3b23c';
-  ctx.font = '800 70px -apple-system, sans-serif';
-  ctx.fillText('7-0-0', W/2, 120);
-  ctx.fillStyle = '#a9c4b3';
-  ctx.font = '600 24px -apple-system, sans-serif';
-  ctx.fillText('WORLD CUP SQUAD BUILDER', W/2, 160);
-
-  ctx.fillStyle = '#f0d28a';
-  ctx.font = '800 170px -apple-system, sans-serif';
-  ctx.fillText(`${r.W}-${r.D}-${r.L}`, W/2, 340);
-
-  ctx.fillStyle = '#a9c4b3';
-  ctx.font = '500 28px -apple-system, sans-serif';
-  ctx.fillText(`${GAMES} GAMES · ${r.pts} PTS · SQUAD AVG ${r.S}`, W/2, 390);
-
-  ctx.font = '800 34px -apple-system, sans-serif';
-  const tierText = tier.name.toUpperCase();
-  const tw = ctx.measureText(tierText).width + 70;
-  roundRect(ctx, W/2 - tw/2, 425, tw, 68, 34);
-  ctx.fillStyle = '#e3b23c'; ctx.fill();
-  ctx.fillStyle = '#1a1206';
-  ctx.fillText(tierText, W/2, 470);
-
-  const pitchX = 110, pitchY = 560, pitchW = W - 220, pitchH = 640;
-  const pg = ctx.createLinearGradient(0, pitchY, 0, pitchY + pitchH);
-  pg.addColorStop(0, '#1d6b3e'); pg.addColorStop(1, '#19602f');
-  roundRect(ctx, pitchX, pitchY, pitchW, pitchH, 18);
-  ctx.fillStyle = pg; ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 3;
-  ctx.strokeRect(pitchX + 10, pitchY + 10, pitchW - 20, pitchH - 20);
-
-  r.rows.forEach(row => {
-    const slot = row.slot;
-    const cx = pitchX + (slot.x / 100) * pitchW;
-    const cy = pitchY + (slot.y / 100) * pitchH;
-    const [shirt] = colorFor(row.pick.country);
-    roundRect(ctx, cx - 28, cy - 28, 56, 56, 12);
-    ctx.fillStyle = shirt; ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = '800 22px -apple-system, sans-serif';
-    ctx.fillText(initials(row.pick.player.n), cx, cy + 8);
-    ctx.font = '600 17px -apple-system, sans-serif';
-    ctx.fillText(row.pick.player.n.split(' ').pop(), cx, cy + 48);
-  });
-
-  ctx.fillStyle = '#a9c4b3';
-  ctx.font = '500 24px -apple-system, sans-serif';
-  ctx.fillText('build your own at 7-0-0.com', W/2, H - 50);
-
-  return canvas;
-}
-
-async function shareResult(){
-  const text = shareText();
-  try {
-    const canvas = buildShareCanvas();
-    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-    if (!blob) throw new Error('canvas toBlob failed');
-    const file = new File([blob], '7-0-0-result.png', { type: 'image/png' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ text, files: [file] });
-      return;
-    }
-    if (navigator.share) {
-      await navigator.share({ text });
-      return;
-    }
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = '7-0-0-result.png';
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
-    try { await navigator.clipboard.writeText(text); toast('Image downloaded + result copied'); }
-    catch(e){ toast('Image downloaded'); }
-  } catch(e){
-    try { await navigator.clipboard.writeText(text); toast('Result copied to clipboard'); }
-    catch(e2){ toast(text); }
-  }
-}
-
-boot();
+document.addEventListener('DOMContentLoaded', boot);

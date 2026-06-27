@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4ecdc">
+<title>Starting XI — The Daily Football Letter Puzzle | Ball Knowledge</title>
+<meta name="description" content="Starting XI is a daily football letter puzzle: spell football words around a square using every side, and use all twelve letters in as few words as possible. Free, new every day.">
+<link rel="canonical" href="https://ballknw.com/letterboxed/">
+<meta property="og:title" content="Starting XI — The Daily Football Letter Puzzle">
+<meta property="og:description" content="Spell football words around the square and use all twelve letters. A new Starting XI every day.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ballknw.com/letterboxed/">
+<meta property="og:image" content="../assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../shared/editorial.css">
+<link rel="stylesheet" href="../shared/puzzle.css">
+</head>
+<body>
+<div id="app">
+  <header class="masthead">
+    <div class="masthead-inner">
+      <a class="mast-brand" href="/"><span class="mast-title">Ball<span class="amp">·</span>Knowledge</span><span class="mast-sub">Starting XI</span></a>
+      <nav class="mast-nav"><a href="/#daily">Daily</a><a href="/footle/">Footle</a><a href="/connections/">Connections</a><a href="/#games">All games</a></nav>
+    </div>
+  </header>
+
+  <main class="wrap puzzle-wrap">
+    <div class="puzzle-head">
+      <p class="eyebrow">Daily · Football Letters</p>
+      <h1 class="puzzle-title">Starting XI</h1>
+      <p class="puzzle-sub" id="puzzleSub">Use all twelve letters. Spell football words around the square.</p>
+    </div>
+
+    <p class="lb-current" id="current">—</p>
+    <div class="lb-stage" id="stage">
+      <div class="lb-square"></div>
+    </div>
+    <div class="lb-controls">
+      <button class="btn btn-ghost" id="delBtn">Delete</button>
+      <button class="btn btn-primary" id="enterBtn">Enter word</button>
+      <button class="btn btn-ghost" id="restartBtn">Restart</button>
+    </div>
+    <div class="lb-words" id="words"></div>
+    <p class="strands-progress" id="progress"></p>
+
+    <div class="puzzle-actions">
+      <button class="btn btn-ghost" id="howBtn">How to play</button>
+      <button class="btn btn-ghost" id="solveBtn">Reveal a solution</button>
+    </div>
+
+    <article class="puzzle-about">
+      <h2>What is Starting XI?</h2>
+      <p><strong>Starting XI</strong> is a daily football letter puzzle. Twelve letters sit around a square, three to
+        a side. Spell football words using those letters — but consecutive letters must come from <em>different</em>
+        sides of the square. Each new word has to start with the last letter of your previous word. The aim: use all
+        twelve letters in as few words as possible.</p>
+      <h3>How to play</h3>
+      <ul>
+        <li>Tap letters to build a word; you can't use two letters from the same side in a row.</li>
+        <li>Press Enter to lock a word in. Your next word must begin with that word's last letter.</li>
+        <li>Cover all twelve letters to finish. There's always at least one two-word football solution.</li>
+      </ul>
+      <p>More daily puzzles: <a href="/footle/">Footle</a>, <a href="/connections/">Connections XI</a> and
+        <a href="/strands/">Pitch Strands</a>. Or build a squad in <a href="/700/">7-0-0</a>.</p>
+    </article>
+  </main>
+
+  <div class="modal-host hidden" id="modalHost"><div class="modal card" id="modalCard"></div></div>
+
+  <footer class="site-footer">
+    <div class="foot-links"><a href="/">Home</a> · <a href="/footle/">Footle</a> · <a href="/connections/">Connections XI</a> · <a href="/strands/">Pitch Strands</a> · <a href="/letterboxed/">Starting XI</a> · <a href="/700/">7-0-0</a></div>
+    <p class="foot-disclaimer">Ball Knowledge is an unofficial fan project. A new puzzle every day, free to play.</p>
+  </footer>
+</div>
+<div id="toastHost"></div>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoGame","name":"Starting XI","url":"https://ballknw.com/letterboxed/","applicationCategory":"Game","genre":"Word puzzle","gamePlatform":"Web browser","operatingSystem":"Any","description":"Starting XI is a daily football letter puzzle — spell football words around a square and use all twelve letters in as few words as possible.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"publisher":{"@type":"Organization","name":"Ball Knowledge"}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"What is Starting XI?","acceptedAnswer":{"@type":"Answer","text":"Starting XI is a daily football letter puzzle. Twelve letters sit around a square, three to a side, and you spell football words using letters from different sides to cover all twelve."}},
+{"@type":"Question","name":"How do you play Starting XI?","acceptedAnswer":{"@type":"Answer","text":"Tap letters to build a word, but you can't use two letters from the same side in a row. Each new word starts with the last letter of the previous one. Use all twelve letters in as few words as possible."}},
+{"@type":"Question","name":"Is there a new Starting XI daily?","acceptedAnswer":{"@type":"Answer","text":"Yes. A new solvable square is released every day, and there is always at least one two-word football solution."}}]}
+</script>
+<script src="app.js" defer></script>
+</body>
+</html>
