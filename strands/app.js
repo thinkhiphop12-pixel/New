@@ -17,7 +17,9 @@ const THEMES = [
 
 const KEY = 'bk_strands_v1';
 function dayIndex(){ const e=Date.UTC(2024,0,1); const n=new Date(); return Math.floor((Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())-e)/864e5); }
-const DAY = dayIndex();
+function paramDay(){ try{ var u=new URL(location.href); var d=u.searchParams.get('d'); if(d!==null){ var n=parseInt(d,10); if(!isNaN(n)) return Math.max(0, Math.min(dayIndex(), n)); } }catch(e){} return dayIndex(); }
+const DAY = paramDay();
+const IS_TODAY = (DAY === dayIndex());
 const THEME = THEMES[((DAY%THEMES.length)+THEMES.length)%THEMES.length];
 
 function mulberry32(a){ return function(){ a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296; }; }
@@ -119,7 +121,7 @@ function checkWin(){
   if (Object.values(found).filter(Boolean).length===total){ setTimeout(end,400); }
 }
 function end(){
-  try { window.BKDaily && (BKDaily.record('strands'), BKDaily.renderStrip(document.getElementById('dailySlate'),'strands')); } catch(e){}
+  try { IS_TODAY && window.BKDaily && (BKDaily.record('strands'), BKDaily.renderStrip(document.getElementById('dailySlate'),'strands')); } catch(e){}
   openModal(`<h2>Board cleared!</h2><p>You found every word in <b>“${THEME.clue}”</b>, spangram included. A new theme drops tomorrow.</p>
     <div class="share-row"><button class="btn btn-primary" id="shareNow">Share result</button></div>`);
   $('shareNow').addEventListener('click', share);
@@ -135,6 +137,7 @@ function toast(msg){ const h=$('toastHost'); const t=document.createElement('div
 function howModal(){ openModal(`<h2>How to play Pitch Strands</h2><p>Find every word that fits the day's theme, plus the spangram.</p><ul><li>Tap connected letters (diagonals count) to trace a word.</li><li>Theme words lock green; the spangram locks blue and touches two sides.</li><li>Tap the last letter again to step back, or press Clear.</li></ul>`); }
 
 function init(){
+  if(!IS_TODAY){ try{ var b=document.createElement('div'); b.className='replay-banner'; b.innerHTML='Replaying a past puzzle · <a href="./">play today →</a> · <a href="/archive/">archive</a>'; var h=document.querySelector('.puzzle-head'); if(h) h.appendChild(b); }catch(e){} }
   load();
   BOARD = buildBoard(DAY*977+17);
   if (!BOARD){ $('board').innerHTML='<p>Could not build today\'s board. Please refresh.</p>'; return; }

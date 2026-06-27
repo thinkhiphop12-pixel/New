@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4ecdc">
+<title>Puzzle Archive — Play Past Daily Football Games | Ball Knowledge</title>
+<meta name="description" content="Missed a day? Replay past Footle, Connections XI, Pitch Strands and Starting XI puzzles from the Ball Knowledge daily football games archive. Free, no account.">
+<link rel="canonical" href="https://ballknw.com/archive/">
+<meta property="og:title" content="Puzzle Archive — Play Past Daily Football Games">
+<meta property="og:description" content="Replay past Footle, Connections XI, Pitch Strands and Starting XI puzzles. Catch up on the daily football games.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ballknw.com/archive/">
+<meta property="og:image" content="../assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="stylesheet" href="../shared/editorial.css">
+<link rel="stylesheet" href="../shared/guides.css">
+</head>
+<body>
+<header class="masthead"><div class="masthead-inner">
+<a class="mast-brand" href="/"><span class="mast-title">Ball<span class="amp">·</span>Knowledge</span><span class="mast-sub">Puzzle Archive</span></a>
+<nav class="mast-nav"><a href="/#daily">Daily</a><a href="/footle/">Footle</a><a href="/connections/">Connections</a><a href="/strands/">Strands</a><a href="/letterboxed/">Starting XI</a></nav>
+</div></header>
+
+<main class="wrap guide">
+  <p class="eyebrow">Daily Games · Archive</p>
+  <h1>Puzzle archive — play past daily football games</h1>
+  <p class="guide-lede">Missed a day, or want to catch up? Replay previous <a href="/footle/">Footle</a>,
+    <a href="/connections/">Connections XI</a>, <a href="/strands/">Pitch Strands</a> and
+    <a href="/letterboxed/">Starting XI</a> puzzles below. Your daily streak only counts today's puzzles, so
+    play as many from the archive as you like.</p>
+
+  <div id="archiveHost"></div>
+
+  <section class="guide-cta">
+    <h2>Back to today</h2>
+    <p>Play today's puzzles and build your streak: <a href="/footle/">Footle</a> ·
+      <a href="/connections/">Connections XI</a> · <a href="/strands/">Pitch Strands</a> ·
+      <a href="/letterboxed/">Starting XI</a> · or draft an XI in <a href="/700/">7-0-0</a>.</p>
+    <a class="btn btn-primary" href="/#daily">Today's puzzles →</a>
+  </section>
+</main>
+
+<footer class="site-footer">
+<div class="foot-links"><a href="/">Home</a> · <a href="/archive/">Archive</a> · <a href="/guides/">Guides</a> · <a href="/footle/">Footle</a> · <a href="/connections/">Connections XI</a> · <a href="/strands/">Pitch Strands</a> · <a href="/letterboxed/">Starting XI</a> · <a href="/700/">7-0-0</a></div>
+<p class="foot-disclaimer">Ball Knowledge is an unofficial fan project. A new puzzle every day, free to play.</p>
+</footer>
+
+<script src="../shared/daily.js" defer></script>
+<script>
+(function(){
+  function dayIndex(){ var e=Date.UTC(2024,0,1); var n=new Date(); return Math.floor((Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())-e)/864e5); }
+  function dateForDay(d){ return new Date(Date.UTC(2024,0,1) + d*864e5); }
+  var GAMES = [
+    { id:'footle', name:'Footle', path:'/footle/' },
+    { id:'connections', name:'Connections XI', path:'/connections/' },
+    { id:'strands', name:'Pitch Strands', path:'/strands/' },
+    { id:'letterboxed', name:'Starting XI', path:'/letterboxed/' }
+  ];
+  var today = dayIndex();
+  var DAYS = 28; // four weeks of archive
+  var host = document.getElementById('archiveHost');
+  GAMES.forEach(function(g){
+    var sec = document.createElement('section');
+    var done = (window.BKDaily && BKDaily.doneToday(g.id)) ? ' · played today ✓' : '';
+    var rows = '';
+    for (var k=0; k<DAYS; k++){
+      var d = today - k;
+      if (d < 0) break;
+      var dt = dateForDay(d);
+      var label = dt.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+      var tag = k===0 ? ' <span class="muted">(today)</span>' : (k===1 ? ' <span class="muted">(yesterday)</span>' : '');
+      rows += '<a class="arch-link" href="'+g.path+'?d='+d+'">'+label+tag+'</a>';
+    }
+    sec.innerHTML = '<h2>'+g.name+'<span class="muted" style="font-size:.7em;font-weight:400">'+done+'</span></h2>'+
+      '<div class="arch-grid">'+rows+'</div>';
+    host.appendChild(sec);
+  });
+})();
+</script>
+</body>
+</html>

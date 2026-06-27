@@ -18,7 +18,9 @@ function dayIndex(){
   const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   return Math.floor((today - epoch) / 864e5);
 }
-const DAY = dayIndex();
+function paramDay(){ try{ var u=new URL(location.href); var d=u.searchParams.get('d'); if(d!==null){ var n=parseInt(d,10); if(!isNaN(n)) return Math.max(0, Math.min(dayIndex(), n)); } }catch(e){} return dayIndex(); }
+const DAY = paramDay();
+const IS_TODAY = (DAY === dayIndex());
 const ANSWER = CLEAN[((DAY % CLEAN.length) + CLEAN.length) % CLEAN.length];
 
 let guesses = [];     // array of strings
@@ -139,7 +141,7 @@ function emojiGrid(){
   return guesses.map(g => score(g).map(s => s==='correct'?'🟩':s==='present'?'🟨':'⬜').join('')).join('\n');
 }
 function showEnd(){
-  try { window.BKDaily && (BKDaily.record('footle'), BKDaily.renderStrip(document.getElementById('dailySlate'),'footle')); } catch(e){}
+  try { IS_TODAY && window.BKDaily && (BKDaily.record('footle'), BKDaily.renderStrip(document.getElementById('dailySlate'),'footle')); } catch(e){}
   const st = getStats();
   const head = won ? `You got it in ${guesses.length}!` : `Today's word was ${ANSWER}`;
   openModal(`
@@ -195,6 +197,7 @@ function statsModal(){
 }
 
 function init(){
+  if(!IS_TODAY){ try{ var b=document.createElement('div'); b.className='replay-banner'; b.innerHTML='Replaying a past puzzle · <a href="./">play today →</a> · <a href="/archive/">archive</a>'; var h=document.querySelector('.puzzle-head'); if(h) h.appendChild(b); }catch(e){} }
   loadState();
   buildBoard(); buildKeyboard(); renderBoard(); paintKeys();
   $('puzzleSub').textContent = `Guess the hidden 5-letter football word in six tries · #${DAY}`;

@@ -129,3 +129,6 @@
 .sc-name { font-size: .6rem; font-weight: 700; line-height: 1.1; }
 .sc-streak { font-size: .58rem; }
 @media (max-width: 420px){ .sc-name { font-size: .54rem; } }
+
+.replay-banner { margin: 8px auto 0; max-width: 460px; background: #efe4cf; border: 1px solid var(--rule-strong); border-radius: var(--radius); padding: 6px 12px; font-size: .78rem; color: var(--ink-2); }
+.replay-banner a { font-weight: 700; }

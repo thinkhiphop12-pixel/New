@@ -30,7 +30,9 @@ TANK RANK LARK PARK PLANK CRANK PRANK GRAPE GRAPPLE NAPPER LAGER EAGLE LEAGUE PE
 
 const KEY = 'bk_lb_v1';
 function dayIndex(){ const e=Date.UTC(2024,0,1); const n=new Date(); return Math.floor((Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())-e)/864e5); }
-const DAY = dayIndex();
+function paramDay(){ try{ var u=new URL(location.href); var d=u.searchParams.get('d'); if(d!==null){ var n=parseInt(d,10); if(!isNaN(n)) return Math.max(0, Math.min(dayIndex(), n)); } }catch(e){} return dayIndex(); }
+const DAY = paramDay();
+const IS_TODAY = (DAY === dayIndex());
 const PUZZLE = PUZZLES[((DAY%PUZZLES.length)+PUZZLES.length)%PUZZLES.length];
 
 // Map letter -> side index
@@ -104,7 +106,7 @@ function checkWin(){
   if (usedLetters().size===12){ setTimeout(end,300); }
 }
 function end(){
-  try { window.BKDaily && (BKDaily.record('letterboxed'), BKDaily.renderStrip(document.getElementById('dailySlate'),'letterboxed')); } catch(e){}
+  try { IS_TODAY && window.BKDaily && (BKDaily.record('letterboxed'), BKDaily.renderStrip(document.getElementById('dailySlate'),'letterboxed')); } catch(e){}
   openModal(`<h2>All twelve letters used!</h2>
     <p>Solved in <b>${words.length}</b> word${words.length===1?'':'s'}: ${words.join(' → ')}.</p>
     <p>${words.length<=2?'A perfect two-word start. ':''}A fresh Starting XI lands tomorrow.</p>
@@ -123,6 +125,7 @@ function howModal(){ openModal(`<h2>How to play Starting XI</h2><p>Spell footbal
 function solveModal(){ openModal(`<h2>One solution</h2><p>Today's square can be solved with:</p><p style="font-family:var(--serif);font-size:1.3rem;font-weight:700;color:var(--claret)">${PUZZLE.sol.join(' → ')}</p><p>There are other valid football words too — try beating it in fewer letters.</p>`); }
 
 function init(){
+  if(!IS_TODAY){ try{ var b=document.createElement('div'); b.className='replay-banner'; b.innerHTML='Replaying a past puzzle · <a href="./">play today →</a> · <a href="/archive/">archive</a>'; var h=document.querySelector('.puzzle-head'); if(h) h.appendChild(b); }catch(e){} }
   load();
   $('puzzleSub').textContent = `Use all twelve letters in as few words as you can · #${DAY}`;
   $('delBtn').addEventListener('click', del);

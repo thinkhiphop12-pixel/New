@@ -31,3 +31,10 @@
 
 .guide-cta { margin-top: 36px; padding: 24px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: var(--radius-lg); text-align: center; }
 .guide-cta h2 { margin: 0 0 8px; }
+
+/* ---------- Archive ---------- */
+#archiveHost section { margin: 18px 0 26px; }
+#archiveHost h2 { font-size: 1.3rem; margin: 0 0 10px; border-bottom: 1px solid var(--rule); padding-bottom: 6px; }
+.arch-grid { display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.arch-link { padding: 8px 12px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: var(--radius); font-size: .86rem; font-weight: 600; color: var(--ink); text-decoration: none; }
+.arch-link:hover { background: #fff; border-color: var(--claret); text-decoration: none; }

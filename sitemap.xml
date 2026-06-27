@@ -61,6 +61,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://ballknw.com/archive/</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://ballknw.com/guides/all-time-world-cup-xi/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

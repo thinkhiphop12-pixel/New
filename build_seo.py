@@ -367,6 +367,7 @@ def build_sitemap():
     for g in ["700", "dynasty", "lineup", "worldcup", "boardroom", "manager"]:
         add(f"/{g}/", "monthly", "0.8")
     add("/guides/", "weekly", "0.8")
+    add("/archive/", "daily", "0.7")
     # all guide subpages
     gdir = os.path.join(ROOT, "guides")
     for name in sorted(os.listdir(gdir)):

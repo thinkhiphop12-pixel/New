@@ -56,7 +56,9 @@ const PUZZLES = [
 
 const KEY = 'bk_conn_v1';
 function dayIndex(){ const e=Date.UTC(2024,0,1); const n=new Date(); return Math.floor((Date.UTC(n.getFullYear(),n.getMonth(),n.getDate())-e)/864e5); }
-const DAY = dayIndex();
+function paramDay(){ try{ var u=new URL(location.href); var d=u.searchParams.get('d'); if(d!==null){ var n=parseInt(d,10); if(!isNaN(n)) return Math.max(0, Math.min(dayIndex(), n)); } }catch(e){} return dayIndex(); }
+const DAY = paramDay();
+const IS_TODAY = (DAY === dayIndex());
 const PUZZLE = PUZZLES[((DAY % PUZZLES.length)+PUZZLES.length)%PUZZLES.length];
 
 function mulberry32(a){ return function(){ a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296; }; }
@@ -133,7 +135,7 @@ function revealAll(){
   solved.sort((a,b)=>a.level-b.level); selected.clear(); render();
 }
 function end(){
-  try { window.BKDaily && (BKDaily.record('connections'), BKDaily.renderStrip(document.getElementById('dailySlate'),'connections')); } catch(e){}
+  try { IS_TODAY && window.BKDaily && (BKDaily.record('connections'), BKDaily.renderStrip(document.getElementById('dailySlate'),'connections')); } catch(e){}
   const won = mistakes<4;
   openModal(`<h2>${won?'Solved it!':'Out of guesses'}</h2>
     <p>${won?'Great grouping — share your result and return tomorrow.':'The grid is revealed above. A new Connections XI lands tomorrow.'}</p>
@@ -159,6 +161,7 @@ function toast(msg){ const h=$('toastHost'); const t=document.createElement('div
 function howModal(){ openModal(`<h2>How to play Connections XI</h2><p>Sort the sixteen names into four groups of four.</p><ul><li>Select four tiles and press Submit.</li><li>Each group shares a hidden football theme.</li><li>Four mistakes allowed. Colours: yellow easiest → purple trickiest.</li></ul>`); }
 
 function init(){
+  if(!IS_TODAY){ try{ var b=document.createElement('div'); b.className='replay-banner'; b.innerHTML='Replaying a past puzzle · <a href="./">play today →</a> · <a href="/archive/">archive</a>'; var h=document.querySelector('.puzzle-head'); if(h) h.appendChild(b); }catch(e){} }
   allItems = PUZZLE.flatMap(c=>c.items);
   load();
   if (!order || order.length!==16){ order = shuffle(allItems, mulberry32(DAY*7+13)); save(); }
