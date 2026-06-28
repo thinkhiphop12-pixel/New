@@ -39,6 +39,14 @@
       <h1 class="setup-title">Pick a squad. Chase a perfect run.</h1>
       <p class="setup-sub">Choose how you play, pick your shape, then spin across World Cups and Icons for your XI.</p>
 
+      <div class="resume-banner hidden" id="resumeBanner">
+        <p class="resume-text" id="resumeBannerText"></p>
+        <div class="resume-actions">
+          <button class="btn-ghost" id="discardDraftBtn">Discard</button>
+          <button class="btn-primary" id="resumeDraftBtn">Resume draft →</button>
+        </div>
+      </div>
+
       <div class="data-edge">
         <div class="data-edge-head">Not just nations. Real World Cups, built in.</div>
         <p class="data-edge-sub">Most squad-builder games hand you a generic roster per country. We went through
@@ -119,6 +127,7 @@
           </div>
           <div class="draft-toolbar">
             <input class="draft-search" id="draftSearch" type="text" placeholder="Search this squad…">
+            <button class="sort-btn" id="draftRerollBtn" title="Spin a different squad for this round">↻ Reroll</button>
             <button class="sort-btn" id="draftSortBtn" title="Sort players">Best first ▾</button>
           </div>
           <div class="draft-instruct" id="draftInstruct"></div>
@@ -226,6 +235,7 @@
   <section id="resultsScreen" class="screen hidden">
     <div class="results-inner">
       <div class="brand-mark results-brand">7-0-0</div>
+      <div class="shared-badge hidden" id="sharedBadge">🔗 Shared result — not yours</div>
       <h2 class="results-q" id="resultsQ"></h2>
 
       <div class="record-block">
