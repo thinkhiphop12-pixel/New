@@ -83,6 +83,14 @@ input{ font-family:inherit; }
   .data-edge-stats{ grid-template-columns:repeat(3,1fr); }
 }
 
+.resume-banner{
+  text-align:left; background:var(--panel); border:1px solid var(--gold); border-radius:18px;
+  padding:18px 20px; margin-bottom:22px; display:flex; align-items:center; justify-content:space-between;
+  gap:14px; flex-wrap:wrap;
+}
+.resume-text{ font-size:14px; color:var(--ink); margin:0; flex:1; min-width:180px; }
+.resume-actions{ display:flex; gap:10px; flex-shrink:0; }
+
 .step{ margin-bottom: 26px; text-align:left; }
 .step-label{ font-size:12px; text-transform:uppercase; letter-spacing:1.5px; color:var(--gold-soft); margin-bottom:10px; }
 
@@ -160,6 +168,7 @@ input{ font-family:inherit; }
   border-radius:8px; padding:9px 12px; font-size:12px; font-weight:700; white-space:nowrap; flex-shrink:0;
 }
 .sort-btn.active{ color:var(--gold-soft); border-color:var(--gold); }
+.sort-btn:disabled{ opacity:.4; cursor:not-allowed; }
 .draft-instruct{ font-size:12px; color:var(--gold-soft); }
 .player-list{ overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
 
@@ -322,6 +331,10 @@ input{ font-family:inherit; }
 /* ---------------- results ---------------- */
 .results-inner{ max-width:480px; margin:0 auto; text-align:center; }
 .results-brand{ font-size:18px; opacity:.7; margin-top:10px; }
+.shared-badge{
+  font-size:12px; font-weight:800; color:var(--gold-soft); background:rgba(227,178,60,.12);
+  border:1px solid var(--gold); border-radius:999px; padding:6px 14px; display:inline-block; margin:10px 0 0;
+}
 .results-q{ font-size:24px; margin: 6px 0 22px; }
 .record-block{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:24px; }
 .record-label{ font-size:11px; letter-spacing:1.5px; color:var(--ink-dim); }

@@ -25,6 +25,7 @@ let WEIGHTS = [];         // parallel weights array
 const TOTAL_ROUNDS = 11;  // draft picks = XI size, fixed by formation
 const GAMES = 7;          // simulated World Cup record length (the "7" in 7-0-0)
 const SQUAD_CAP = 23;     // every squad offer is trimmed/standardized to 23 players
+const REROLLS_PER_GAME = 2; // limited re-spins if you don't like the squad you land on
 
 let OPP_BASELINE = 72;
 let TIER_COMBOS = { shit: [], okay: [], good: [] }; // [{k,w}] buckets by squad_weights percentile
@@ -268,7 +269,14 @@ async function boot(){
   wireManagerScreen();
   wireWorldCupScreen();
   wireResultsScreen();
-  showSetup();
+
+  const sharedCode = new URLSearchParams(location.search).get('r');
+  const sharedPayload = sharedCode ? decodeShare(sharedCode) : null;
+  if (sharedPayload) {
+    viewSharedRun(sharedPayload);
+  } else {
+    showSetup();
+  }
 }
 
 /* ---------------- setup screen ---------------- */
@@ -312,8 +320,50 @@ function wireSetup(){
     if (setupMode && setupFormation) startGame(setupMode, setupFormation);
   });
   $('resetBtn').addEventListener('click', () => {
-    if (confirm('Abandon this squad and start over?')) showSetup();
+    if (confirm('Abandon this squad and start over?')) { clearDraftState(); showSetup(); }
   });
+  $('resumeDraftBtn').addEventListener('click', resumeDraft);
+  $('discardDraftBtn').addEventListener('click', () => { clearDraftState(); renderResumeBanner(); });
+}
+
+/* ---------------- draft-state persistence (survive an accidental reload) ---------------- */
+const DRAFT_KEY = 'bk_700_draft';
+function saveDraftState(){
+  if (!state) return;
+  const picks = {};
+  for (const [slotId, pick] of Object.entries(state.picks)) {
+    picks[slotId] = { country: pick.country, year: pick.year, name: pick.player.n };
+  }
+  const snapshot = {
+    mode: state.mode, daily: state.daily, dailyKey: state.dailyKey, expert: state.expert,
+    formation: state.formation, roundPlan: state.roundPlan, round: state.round,
+    picks, sortByRating: state.sortByRating, savedAt: Date.now(),
+  };
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(snapshot)); } catch(e){}
+}
+function loadDraftState(){
+  try { return JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch(e){ return null; }
+}
+function clearDraftState(){ try { localStorage.removeItem(DRAFT_KEY); } catch(e){} }
+
+function findPlayerRef(country, year, name){
+  if (year === 'ICON') return (DATA.icons || []).find(ic => ic.n === name && ic.country === country);
+  const squad = (SQUADS && SQUADS[`${country}|${year}`]) || [];
+  return squad.find(p => p.n === name)
+    || (DATA.players || []).find(p => p.n === name && p.country === country && p.year === year);
+}
+
+function renderResumeBanner(){
+  const el = $('resumeBanner');
+  if (!el) return;
+  const saved = loadDraftState();
+  const pickCount = saved ? Object.keys(saved.picks).length : 0;
+  if (!saved || pickCount === 0 || pickCount >= TOTAL_ROUNDS || !FORMATIONS[saved.formation]) {
+    el.classList.add('hidden');
+    return;
+  }
+  $('resumeBannerText').textContent = `You have an unfinished ${saved.formation} squad — pick ${pickCount + 1} of ${TOTAL_ROUNDS}.`;
+  el.classList.remove('hidden');
 }
 
 function maybeShowStart(){
@@ -335,6 +385,7 @@ function showSetup(){
   $('resultsScreen').classList.add('hidden');
   $('roundPill').textContent = '';
   renderStatsStrip();
+  renderResumeBanner();
 }
 
 /* ---------------- game start ---------------- */
@@ -357,7 +408,9 @@ function startGame(mode, formationKey){
     pendingIconNation: null,
     spinning: false,
     sortByRating: false,
+    rerolls: isDaily ? 0 : REROLLS_PER_GAME, // Daily Challenge stays fixed so every player faces the same draft
   };
+  clearDraftState();
   $('setupScreen').classList.add('hidden');
   $('managerScreen').classList.add('hidden');
   $('worldCupScreen').classList.add('hidden');
@@ -367,10 +420,52 @@ function startGame(mode, formationKey){
   buildPitch();
   updateRoundPill();
   updateSortBtn();
+  $('draftRerollBtn').classList.toggle('hidden', isDaily);
   $('draftPane').classList.add('hidden');
   $('spinPane').classList.remove('hidden');
   $('iconOffer').classList.add('hidden');
   fillAllAdSlots();
+}
+
+// Resume an in-progress draft that was auto-saved before a page reload.
+function resumeDraft(){
+  const saved = loadDraftState();
+  if (!saved || !FORMATIONS[saved.formation]) { clearDraftState(); showSetup(); return; }
+  SLOTS = FORMATIONS[saved.formation].slots;
+  const isDaily = !!saved.daily;
+  const rng = isDaily ? mulberry32(seedFromKey(saved.dailyKey)) : Math.random;
+  const picks = {};
+  for (const [slotId, p] of Object.entries(saved.picks)) {
+    const player = findPlayerRef(p.country, p.year, p.name);
+    if (player) picks[slotId] = { player, country: p.country, year: p.year, slotId };
+  }
+  state = {
+    round: saved.round,
+    picks,
+    mode: saved.mode,
+    daily: isDaily,
+    dailyKey: saved.dailyKey,
+    expert: saved.expert,
+    rng,
+    formation: saved.formation,
+    roundPlan: saved.roundPlan,
+    pendingIconNation: null,
+    spinning: false,
+    sortByRating: !!saved.sortByRating,
+    rerolls: isDaily ? 0 : REROLLS_PER_GAME,
+  };
+  $('setupScreen').classList.add('hidden');
+  $('gameScreen').classList.remove('hidden');
+  $('formationTag').textContent = saved.formation;
+  buildPitch();
+  updateRoundPill();
+  updateSortBtn();
+  $('draftRerollBtn').classList.toggle('hidden', isDaily);
+  $('draftPane').classList.add('hidden');
+  $('spinPane').classList.remove('hidden');
+  $('iconOffer').classList.add('hidden');
+  fillAllAdSlots();
+  track('draft_restored', { round: state.round, formation: state.formation });
 }
 
 function countPicks(){ return Object.keys(state.picks).length; }
@@ -438,9 +533,11 @@ function confirmPick(slotId, player, country, year){
   $('draftPane').classList.add('hidden');
   $('spinPane').classList.remove('hidden');
   if (countPicks() >= TOTAL_ROUNDS) {
+    clearDraftState();
     showManagerBriefing();
   } else {
     state.round++;
+    saveDraftState();
   }
 }
 
@@ -454,6 +551,31 @@ function wireGameScreen(){
     updateSortBtn();
     renderPlayerList($('draftSearch').value);
   });
+  $('draftRerollBtn').addEventListener('click', rerollSquad);
+}
+
+function updateRerollBtn(){
+  const btn = $('draftRerollBtn');
+  btn.textContent = `↻ Reroll (${state.rerolls})`;
+  btn.disabled = state.rerolls <= 0;
+}
+
+// Re-spin within the same round/tier if you don't like the squad you landed on —
+// capped per game so it's a real choice, not a way to dodge weak squads entirely.
+function rerollSquad(){
+  if (!state || state.rerolls <= 0) return;
+  const planEntry = state.roundPlan[state.round - 1];
+  if (planEntry === 'icon') return; // use Skip for icon offers instead
+  const pool = TIER_COMBOS[planEntry].length ? TIER_COMBOS[planEntry] : allCombos();
+  let comboKey = weightedPick(pool, state.rng);
+  if (pool.length > 1) {
+    let tries = 0;
+    while (comboKey === state.activeCombo && tries < 8) { comboKey = weightedPick(pool, state.rng); tries++; }
+  }
+  state.rerolls--;
+  const [country, year] = comboKey.split('|');
+  track('reroll_used', { country, year, rerollsLeft: state.rerolls });
+  openDraft(country, year);
 }
 
 function updateSortBtn(){
@@ -698,12 +820,14 @@ function openDraft(country, year){
   const key = `${country}|${year}`;
   const squad = SQUADS[key] || [];
   state.activeSquad = squad;
+  state.activeCombo = key;
   $('spinPane').classList.add('hidden');
   $('draftPane').classList.remove('hidden');
   $('draftTeamName').innerHTML = `${flagEmoji(country)} ${country}`;
   $('draftYear').textContent = `${year} squad`;
   $('draftSearch').value = '';
   updateInstruct();
+  updateRerollBtn();
   renderPlayerList('');
 
   const anyPlayable = squad.some(p => openSlotsForPlayer(p).length > 0);
@@ -1184,7 +1308,10 @@ function wireWorldCupScreen(){
 /* ---------------- results screen ---------------- */
 function wireResultsScreen(){
   $('shareBtn').addEventListener('click', shareResult);
-  $('againBtn').addEventListener('click', showSetup);
+  $('againBtn').addEventListener('click', () => {
+    if (location.search) history.replaceState(null, '', location.pathname);
+    showSetup();
+  });
   $('showMoreBtn').addEventListener('click', () => {
     const bd = $('breakdown');
     bd.classList.toggle('hidden');
@@ -1193,14 +1320,32 @@ function wireResultsScreen(){
 }
 
 let lastRecord = null;
+let lastFormation = null;
 function showResults(){
   const r = computeRecord();
   lastRecord = r;
+  lastFormation = state.formation;
+  renderResultsScreen(r, false);
+  recordCompletion({ W: r.W, D: r.D, L: r.L, daily: state.daily });
+  track('squad_completed', { W: r.W, D: r.D, L: r.L, S: r.S, formation: state.formation, mode: state.mode });
+  if (r.W === GAMES) track('seven_oh_oh', { S: r.S });
+}
+
+// Render the results screen either for the player's own finished draft, or read-only
+// for someone else's shared run opened via a ?r= replay-code link.
+function renderResultsScreen(r, shared){
   const tier = tierFor(r);
 
+  $('setupScreen').classList.add('hidden');
   $('gameScreen').classList.add('hidden');
+  $('managerScreen').classList.add('hidden');
+  $('worldCupScreen').classList.add('hidden');
   $('resultsScreen').classList.remove('hidden');
   fillAllAdSlots();
+
+  $('sharedBadge').classList.toggle('hidden', !shared);
+  $('shareBtn').classList.toggle('hidden', shared);
+  $('againBtn').textContent = shared ? 'Build your own →' : 'Build another';
 
   $('recW').textContent = r.W;
   $('recD').textContent = r.D;
@@ -1233,15 +1378,51 @@ function showResults(){
 
   $('breakdown').classList.add('hidden');
   $('showMoreBtn').textContent = 'Show full tournament breakdown ▾';
+}
 
-  recordCompletion({ W: r.W, D: r.D, L: r.L, daily: state.daily });
-  track('squad_completed', { W: r.W, D: r.D, L: r.L, S: r.S, formation: state.formation, mode: state.mode });
-  if (r.W === GAMES) track('seven_oh_oh', { S: r.S });
+/* ---------------- shareable replay-code links ---------------- */
+// Encode a finished run into a compact URL param so anyone who opens the link
+// sees the exact same XI and record, read-only — no account/backend needed.
+function encodeShare(r, formationKey){
+  const payload = {
+    f: formationKey,
+    W: r.W, D: r.D, L: r.L, S: r.S,
+    p: r.rows.map(row => ({ s: row.slot.id, c: row.pick.country, y: row.pick.year, n: row.pick.player.n })),
+  };
+  return btoa(encodeURIComponent(JSON.stringify(payload))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function decodeShare(code){
+  try {
+    const b64 = code.replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(decodeURIComponent(atob(b64)));
+  } catch (e) { return null; }
+}
+function shareUrlFor(r, formationKey){
+  const code = encodeShare(r, formationKey);
+  return `${location.origin}${location.pathname}?r=${code}`;
+}
+
+// Open a run shared by someone else (read-only) via ?r=<code> in the URL.
+function viewSharedRun(payload){
+  const formationKey = FORMATIONS[payload.f] ? payload.f : '4-3-3';
+  SLOTS = FORMATIONS[formationKey].slots;
+  const rows = (payload.p || []).map(item => {
+    const slot = slotById(item.s);
+    const player = findPlayerRef(item.c, item.y, item.n);
+    return (slot && player) ? { slot, pick: { player, country: item.c, year: item.y }, eff: player.o } : null;
+  }).filter(Boolean);
+  if (!rows.length) { showSetup(); return; }
+  const r = { W: payload.W, D: payload.D, L: payload.L, pts: payload.W * 3 + payload.D, S: payload.S, rows };
+  lastRecord = r;
+  lastFormation = formationKey;
+  renderResultsScreen(r, true);
+  track('shared_run_viewed', { W: r.W, D: r.D, L: r.L });
 }
 
 function shareText(){
   const r = lastRecord;
-  return `I went ${r.W}-${r.D}-${r.L} in 7-0-0, the World Cup squad builder. Build yours at 7-0-0.com #7oh0`;
+  const url = shareUrlFor(r, lastFormation);
+  return `I went ${r.W}-${r.D}-${r.L} in 7-0-0, the World Cup squad builder. See my XI: ${url} #7oh0`;
 }
 
 function roundRect(ctx, x, y, w, h, r){

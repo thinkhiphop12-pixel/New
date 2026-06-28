@@ -101,7 +101,6 @@ button{ font-family:inherit; cursor:pointer; border:none; }
   box-shadow:0 12px 34px rgba(0,0,0,.22);
   transition:border-color .2s, transform .2s, box-shadow .2s;
 }
-.game-card:nth-child(4), .game-card:nth-child(5){ grid-column:span 3; }
 .game-card:hover{ border-color:var(--line-strong); transform:translateY(-5px); box-shadow:0 22px 48px rgba(0,0,0,.34); }
 .gc-thumb{
   display:flex; align-items:center; justify-content:flex-start; padding:22px;
@@ -130,6 +129,7 @@ button{ font-family:inherit; cursor:pointer; border:none; }
 .gc-thumb.gc-thumb-boardroom:before{ background-image:url(assets/thumb-boardroom.svg); }
 .gc-thumb.gc-thumb-retro{ background:linear-gradient(135deg, #9b6bff, #2a1a4a); color:#f3eeff; }
 .gc-thumb.gc-thumb-retro:before{ background-image:url(assets/thumb-retro.svg); }
+.gc-thumb.gc-thumb-hub{ background:linear-gradient(135deg, #ffd700, #0d1b2a); color:#0d1b2a; }
 .gc-body{ padding:18px 20px 20px; display:flex; flex-direction:column; flex:1; }
 .gc-title{ display:block; font-size:18px; font-weight:900; text-transform:uppercase; letter-spacing:.7px; color:var(--ink); margin-bottom:7px; }
 .gc-desc{ display:block; font-size:13.5px; color:var(--ink-dim); line-height:1.55; flex:1; }
@@ -235,7 +235,7 @@ button{ font-family:inherit; cursor:pointer; border:none; }
 .consent-actions .btn-ghost, .consent-actions .btn-primary{ padding:10px 18px; font-size:13px; }
 
 @media (max-width:900px){
-  .game-card,.game-card:nth-child(4),.game-card:nth-child(5){ grid-column:span 3; }
+  .game-card{ grid-column:span 3; }
   .hero{ min-height:380px; }
 }
 @media (max-width:640px){
@@ -249,7 +249,7 @@ button{ font-family:inherit; cursor:pointer; border:none; }
   .hero-actions a{ text-align:center; }
   .pitch-map{ width:360px; right:-170px; bottom:-150px; opacity:.72; }
   .game-grid{ grid-template-columns:1fr; }
-  .game-card,.game-card:nth-child(4),.game-card:nth-child(5){ grid-column:span 1; }
+  .game-card{ grid-column:span 1; }
   .gc-thumb{ height:112px; }
   .about-inner{ padding:24px 20px 28px; }
   .consent-actions{ width:100%; }
@@ -262,6 +262,7 @@ button{ font-family:inherit; cursor:pointer; border:none; }
   .game-card:nth-child(3){ animation-delay:.12s; }
   .game-card:nth-child(4){ animation-delay:.18s; }
   .game-card:nth-child(5){ animation-delay:.24s; }
+  .game-card:nth-child(6){ animation-delay:.30s; }
   @keyframes rise-in{
     from{ opacity:0; transform:translateY(18px); }
     to{ opacity:1; transform:translateY(0); }
