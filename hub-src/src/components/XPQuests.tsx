@@ -62,10 +62,10 @@ export default function XPQuests({ xp }: Props) {
 
         {/* Tabs */}
         <div className="flex gap-2 mb-4">
-          <button onClick={() => setTab('progress')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'progress' ? 'bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700]/30' : 'bg-white/5 text-white/50'}`}>
+          <button onClick={() => { setTab('progress')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'progress' ? 'bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700]/30' : 'bg-white/5 text-white/50'}`}>
             Level Progress
           </button>
-          <button onClick={() => setTab('achievements')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'achievements' ? 'bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700]/30' : 'bg-white/5 text-white/50'}`}>
+          <button onClick={() => { setTab('achievements')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === 'achievements' ? 'bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700]/30' : 'bg-white/5 text-white/50'}`}>
             Achievements
           </button>
         </div>
