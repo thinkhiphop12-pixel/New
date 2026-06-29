@@ -28,7 +28,9 @@ export function HistoryScreen({ runs, mode, onSelect, onClear, onBack }: History
               <button
                 type="button"
                 className={`pc-history__item${run.success ? ' pc-history__item--perfect' : ''}`}
-                onClick={() => onSelect(run)}
+                onClick={() => {
+                  onSelect(run);
+                }}
               >
                 <span className="pc-history__record">{run.finalRecord}</span>
                 <span className="pc-history__date">

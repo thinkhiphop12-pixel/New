@@ -89,7 +89,9 @@ export default function PerfectCupGame() {
     }, 1100);
   }, [draft, squads, pool, objective, addRun]);
 
-  const openHistory = useCallback(() => setScreen('history'), []);
+  const openHistory = useCallback(() => {
+    setScreen('history');
+  }, []);
 
   const selectHistoryRun = useCallback((run: Run) => {
     setActiveRun(run);
@@ -97,8 +99,12 @@ export default function PerfectCupGame() {
     setScreen('result');
   }, []);
 
-  const backToStart = useCallback(() => setScreen('start'), []);
-  const backToHistory = useCallback(() => setScreen('history'), []);
+  const backToStart = useCallback(() => {
+    setScreen('start');
+  }, []);
+  const backToHistory = useCallback(() => {
+    setScreen('history');
+  }, []);
 
   const body = useMemo(() => {
     if (loading) {

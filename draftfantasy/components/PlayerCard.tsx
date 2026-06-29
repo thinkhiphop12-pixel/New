@@ -16,7 +16,9 @@ export function PlayerCard({ player, disabled, picked, onPick }: PlayerCardProps
         picked ? ' pc-player-row--picked' : ''
       }`}
       disabled={disabled || picked}
-      onClick={() => onPick(player)}
+      onClick={() => {
+        onPick(player);
+      }}
     >
       <span className="pc-player-row__badge">{player.position}</span>
       <span className="pc-player-row__info">

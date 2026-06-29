@@ -53,7 +53,9 @@ export function ResultScreen({
       setRevealed(n);
       if (n >= run.matches.length) window.clearInterval(timer);
     }, 550);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+    };
   }, [animate, run]);
 
   const allRevealed = revealed >= run.matches.length;
@@ -66,7 +68,9 @@ export function ResultScreen({
       else {
         await navigator.clipboard.writeText(text);
         setShared(true);
-        window.setTimeout(() => setShared(false), 2000);
+        window.setTimeout(() => {
+          setShared(false);
+        }, 2000);
       }
     } catch {
       /* user cancelled */

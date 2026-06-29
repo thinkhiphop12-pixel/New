@@ -119,7 +119,9 @@ export function DraftScreen({
           <button
             type="button"
             className="pc-btn pc-btn--primary pc-btn--large"
-            onClick={() => withSpinner(onSpin, 550)}
+            onClick={() => {
+              withSpinner(onSpin, 550);
+            }}
           >
             {state.picks.length === 0 ? 'Spin for a squad' : 'Spin for the next squad'}
           </button>
@@ -165,7 +167,9 @@ export function DraftScreen({
             <button
               type="button"
               className="pc-reroll"
-              onClick={() => withSpinner(onSwapEdition, 400)}
+              onClick={() => {
+                withSpinner(onSwapEdition, 400);
+              }}
               disabled={!canSwapEdition(state)}
             >
               <span className="pc-reroll__label">
@@ -176,7 +180,9 @@ export function DraftScreen({
             <button
               type="button"
               className="pc-reroll"
-              onClick={() => withSpinner(onSwapSquad, 400)}
+              onClick={() => {
+                withSpinner(onSwapSquad, 400);
+              }}
               disabled={!canSwapSquad(state)}
             >
               <span className="pc-reroll__label">

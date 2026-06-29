@@ -66,7 +66,9 @@ export function StartScreen({
           <button
             type="button"
             className={`pc-option${pool === 'legends' ? ' pc-option--active' : ''}`}
-            onClick={() => onSetPool('legends')}
+            onClick={() => {
+              onSetPool('legends');
+            }}
           >
             <span className="pc-option__title">Classic Legends</span>
             <span className="pc-option__desc">{legendsCount} hand-picked iconic squads</span>
@@ -74,7 +76,9 @@ export function StartScreen({
           <button
             type="button"
             className={`pc-option${pool === 'history' ? ' pc-option--active' : ''}`}
-            onClick={() => onSetPool('history')}
+            onClick={() => {
+              onSetPool('history');
+            }}
           >
             <span className="pc-option__title">Full History</span>
             <span className="pc-option__desc">Every men&apos;s World Cup squad, {historyCount} teams</span>
@@ -82,7 +86,9 @@ export function StartScreen({
           <button
             type="button"
             className={`pc-option${pool === 'england' ? ' pc-option--active' : ''}`}
-            onClick={() => onSetPool('england')}
+            onClick={() => {
+              onSetPool('england');
+            }}
           >
             <span className="pc-option__title">🏴󠁧󠁢󠁥󠁮󠁧󠁿 England</span>
             <span className="pc-option__desc">All-time England XI, {englandCount} editions</span>
@@ -96,7 +102,9 @@ export function StartScreen({
           <button
             type="button"
             className={`pc-option${objective === 'perfect' ? ' pc-option--active' : ''}`}
-            onClick={() => onSetObjective('perfect')}
+            onClick={() => {
+              onSetObjective('perfect');
+            }}
           >
             <span className="pc-option__title">🔥 Go 8-0</span>
             <span className="pc-option__desc">Win every match, group stage included.</span>
@@ -104,7 +112,9 @@ export function StartScreen({
           <button
             type="button"
             className={`pc-option${objective === 'trophy' ? ' pc-option--active' : ''}`}
-            onClick={() => onSetObjective('trophy')}
+            onClick={() => {
+              onSetObjective('trophy');
+            }}
           >
             <span className="pc-option__title">🏆 Win the Cup</span>
             <span className="pc-option__desc">Lift the trophy. A group slip-up is survivable.</span>
@@ -118,14 +128,18 @@ export function StartScreen({
           <button
             type="button"
             className={`pc-toggle__btn${revealMode === 'watch' ? ' pc-toggle__btn--active' : ''}`}
-            onClick={() => onSetRevealMode('watch')}
+            onClick={() => {
+              onSetRevealMode('watch');
+            }}
           >
             Watch
           </button>
           <button
             type="button"
             className={`pc-toggle__btn${revealMode === 'instant' ? ' pc-toggle__btn--active' : ''}`}
-            onClick={() => onSetRevealMode('instant')}
+            onClick={() => {
+              onSetRevealMode('instant');
+            }}
           >
             Instant
           </button>
