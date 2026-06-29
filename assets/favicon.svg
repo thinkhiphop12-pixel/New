@@ -1,6 +1,10 @@
-<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-  <path fill-rule="evenodd" fill="#00ff88" d="
-    M 31.000 128.000 A 97.000 97.000 0 1 0 225.000 128.000 A 97.000 97.000 0 1 0 31.000 128.000 Z
-    M 142.226 68.685 Q 148.421 64.184 154.616 68.685 L 183.497 89.668 Q 189.692 94.169 187.325 101.452 L 176.294 135.403 Q 173.928 142.686 166.270 142.686 L 130.572 142.686 Q 122.914 142.686 120.548 135.403 L 109.517 101.452 Q 107.150 94.169 113.346 89.668 Z
-  "/>
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b8ff3c"/>
+      <stop offset="100%" stop-color="#00d68f"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#g)"/>
+  <text x="32" y="43" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="900" font-size="32" fill="#04140b">B</text>
 </svg>
