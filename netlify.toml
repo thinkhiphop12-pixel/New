@@ -1,6 +1,5 @@
 [build]
   publish = "."
-  command = "cd hub-src && npm ci && npm run build"
 
 [[redirects]]
   from = "http://ballknw.com/*"
@@ -20,11 +19,6 @@
   status = 301
   force = true
 
-[[redirects]]
-  from = "/hub/*"
-  to = "/hub/index.html"
-  status = 200
-
 [[headers]]
   for = "/*"
   [headers.values]
@@ -34,10 +28,5 @@
 
 [[headers]]
   for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/hub/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
