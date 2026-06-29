@@ -33,130 +33,108 @@
     <button class="icon-btn" id="resetBtn" title="Start over">↺</button>
   </header>
 
-  <!-- ===================== SETUP ===================== -->
+  <!-- ===================== SETUP (formation) ===================== -->
   <section id="setupScreen" class="screen">
     <div class="setup-inner">
       <h1 class="setup-title">Build your dynasty</h1>
-      <p class="setup-sub">Draft your XI plus bench, manage injuries and fatigue, and play through the World Cup tournament.</p>
+      <p class="setup-sub">Pick a formation, draft a real 2026 World Cup nation's actual squad, then manage them through the genuine 48-team bracket — group stage, knockouts, team news and tactics, all the way to the final.</p>
 
       <div class="step">
         <div class="step-label">1 — Formation</div>
         <div class="formation-grid" id="formationGrid"></div>
       </div>
 
-      <div class="step">
-        <div class="step-label">2 — Draft your squad</div>
-        <p class="step-desc">Pick 11 starters + 3-5 bench players. Tap a slot or bench position to draft.</p>
-        <div class="draft-preview" id="draftPreview">
-          <div class="field-preview">
-            <svg viewBox="0 0 100 100" class="pitch">
-              <rect width="100" height="100" fill="var(--color-bg-primary)" stroke="var(--color-border)" stroke-width="0.5"/>
-              <line x1="50" y1="0" x2="50" y2="100" stroke="var(--color-border)" stroke-width="0.3"/>
-              <circle cx="50" cy="50" r="15" fill="none" stroke="var(--color-border)" stroke-width="0.3"/>
-              <circle cx="50" cy="50" r="0.5" fill="var(--color-border)"/>
-              <rect x="35" y="80" width="30" height="15" fill="none" stroke="var(--color-border)" stroke-width="0.3"/>
-              <rect x="35" y="5" width="30" height="15" fill="none" stroke="var(--color-border)" stroke-width="0.3"/>
-            </svg>
-            <div class="positions" id="draftPositions"></div>
-          </div>
-          <div class="bench-section">
-            <div class="bench-label">Bench</div>
-            <div class="bench-slots" id="benchSlots"></div>
-          </div>
-        </div>
-      </div>
+      <button class="btn-primary" id="toNationBtn" disabled>Pick your nation →</button>
+    </div>
+  </section>
 
-      <button class="btn-primary" id="setupStart" disabled>Start tournament →</button>
+  <!-- ===================== NATION SELECT ===================== -->
+  <section id="nationScreen" class="screen hidden">
+    <div class="setup-inner">
+      <h1 class="setup-title">Choose your nation</h1>
+      <p class="setup-sub">Manage one of the 48 real 2026 World Cup nations — you'll draft their actual squad and navigate the real group draw and bracket.</p>
+      <div id="nationGroups"></div>
+      <button class="btn-secondary" id="backToFormationBtn">← Back</button>
     </div>
   </section>
 
   <!-- ===================== DRAFT SCREEN ===================== -->
   <section id="draftScreen" class="screen hidden">
+    <div class="draft-header">
+      <span id="draftNationFlag" class="draft-nation-flag"></span>
+      <span id="draftNationName" class="draft-nation-name"></span>
+      <span class="draft-nation-sub">Draft your XI + bench from their real squad</span>
+    </div>
     <div class="draft-grid">
       <div class="draft-left">
         <div class="draft-squad">
           <div class="squad-xi">
-            <div class="squad-title">Starting XI</div>
+            <div class="squad-title">Starting XI (<span id="xiCount">0</span>/11)</div>
             <div class="squad-slots" id="squadSlots"></div>
           </div>
           <div class="squad-bench">
-            <div class="squad-title">Bench</div>
+            <div class="squad-title">Bench (<span id="benchCount">0</span>/5)</div>
             <div class="bench-list" id="benchList"></div>
           </div>
         </div>
+        <button class="btn-primary" id="startTournamentBtn" disabled>Start tournament →</button>
+        <button class="btn-secondary" id="backToNationBtn">← Change nation</button>
       </div>
       <div class="draft-right">
         <div class="draft-spinner">
           <div class="spinner-header">
-            <div class="spinner-label">Pick from:</div>
-            <button class="btn-secondary" id="changeSquad">Change Squad ↻</button>
+            <div class="spinner-label">Tap a player to draft them. Tap a filled slot to undo.</div>
           </div>
-          <div class="current-squad" id="currentSquad">Select a nation...</div>
           <div class="player-list" id="playerList"></div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ===================== TOURNAMENT ===================== -->
+  <!-- ===================== TOURNAMENT DASHBOARD ===================== -->
   <section id="tournamentScreen" class="screen hidden">
     <div class="tournament-container">
       <div class="tournament-header">
-        <h2>World Cup 2026</h2>
+        <h2 id="tournamentStageTitle">World Cup 2026</h2>
         <div class="squad-status" id="squadStatus"></div>
       </div>
-
-      <div class="matches-grid" id="matchesGrid"></div>
-
-      <div class="tournament-stage" id="tournamentStage"></div>
+      <div id="tournamentBody"></div>
+      <button class="btn-primary hidden" id="continueBtn">Continue →</button>
     </div>
   </section>
 
-  <!-- ===================== MATCH ===================== -->
-  <section id="matchScreen" class="screen hidden">
-    <div class="match-container">
-      <div class="match-header">
-        <div class="team your-team">
-          <div class="team-name" id="yourTeam"></div>
-          <div class="team-score" id="yourScore">0</div>
+  <!-- ===================== MATCH DECISION (team news + tactics) ===================== -->
+  <section id="decisionScreen" class="screen hidden">
+    <div class="decision-container">
+      <div class="decision-header">
+        <div class="decision-stage" id="decisionStage"></div>
+        <div class="decision-matchup" id="decisionMatchup"></div>
+      </div>
+      <div class="decision-body">
+        <div class="decision-col">
+          <div class="step-label">Team news</div>
+          <p class="step-desc" id="teamNewsNote"></p>
+          <div id="teamNewsList"></div>
         </div>
-        <div class="match-info">
-          <div class="match-stage" id="matchStage"></div>
-          <button class="btn-secondary" id="playMatch">Play Match ▶</button>
-        </div>
-        <div class="team opp-team">
-          <div class="team-name" id="oppTeam"></div>
-          <div class="team-score" id="oppScore">0</div>
+        <div class="decision-col">
+          <div class="step-label">Tactics</div>
+          <div class="tactics-grid" id="tacticsGrid"></div>
         </div>
       </div>
-
-      <div class="match-field">
-        <svg viewBox="0 0 100 100" class="pitch full-pitch" id="matchPitch">
-          <defs>
-            <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-              <feDropShadow dx="0" dy="0.5" stdDeviation="0.3" flood-opacity="0.3"/>
-            </filter>
-          </defs>
-          <rect width="100" height="100" fill="var(--color-bg-secondary)"/>
-          <line x1="50" y1="0" x2="50" y2="100" stroke="var(--color-border)" stroke-width="0.5"/>
-          <circle cx="50" cy="50" r="15" fill="none" stroke="var(--color-border)" stroke-width="0.5"/>
-          <circle cx="50" cy="50" r="0.8" fill="var(--color-border)"/>
-          <rect x="30" y="80" width="40" height="15" fill="none" stroke="var(--color-border)" stroke-width="0.5"/>
-          <rect x="30" y="5" width="40" height="15" fill="none" stroke="var(--color-border)" stroke-width="0.5"/>
-          <rect x="42" y="85" width="16" height="10" fill="none" stroke="var(--color-border)" stroke-width="0.3"/>
-          <rect x="42" y="5" width="16" height="10" fill="none" stroke="var(--color-border)" stroke-width="0.3"/>
-        </svg>
-        <div class="players-container" id="playersContainer"></div>
-      </div>
-
-      <div class="match-controls">
-        <div class="match-stats" id="matchStats"></div>
-        <button class="btn-secondary" id="continueBtn">Continue →</button>
-      </div>
+      <button class="btn-primary" id="confirmDecisionBtn">Kick off →</button>
     </div>
   </section>
 
-  <!-- ===================== RESULTS ===================== -->
+  <!-- ===================== MATCH RESULT ===================== -->
+  <section id="matchResultScreen" class="screen hidden">
+    <div class="results-container">
+      <div class="results-header" id="matchResultHeader"></div>
+      <div class="results-body" id="matchResultBody"></div>
+      <button class="btn-primary" id="matchContinueBtn">Continue →</button>
+    </div>
+  </section>
+
+  <!-- ===================== FINAL RESULTS ===================== -->
   <section id="resultsScreen" class="screen hidden">
     <div class="results-container">
       <div class="results-header" id="resultsHeader"></div>
