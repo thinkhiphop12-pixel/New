@@ -259,8 +259,22 @@ async function boot(){
       SQUADS[key] = [...SQUADS[key]].sort((a, b) => b.o - a.o).slice(0, SQUAD_CAP);
     }
   }
-  COMBOS = Object.keys(DATA.squad_weights);
-  WEIGHTS = COMBOS.map(k => DATA.squad_weights[k]);
+  if (DATA.squad_weights) {
+    COMBOS = Object.keys(DATA.squad_weights);
+    WEIGHTS = COMBOS.map(k => DATA.squad_weights[k]);
+  } else {
+    // The 1930–2026 data.json rebuild ships players/icons only (no
+    // squad_weights map), which previously crashed boot at Object.keys(null).
+    // Derive the spin pool from the grouped SQUADS instead, weighting each
+    // Country|Year by squad strength (mean overall of its capped roster) so
+    // stronger squads spin up more often and tier as "good".
+    COMBOS = Object.keys(SQUADS);
+    WEIGHTS = COMBOS.map(k => {
+      const sq = SQUADS[k];
+      const mean = sq.reduce((sum, p) => sum + (p.o || 0), 0) / (sq.length || 1);
+      return Math.max(1, Math.round(mean));
+    });
+  }
   buildTiers();
 
   buildFormationGrid();
