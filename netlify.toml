@@ -1,5 +1,6 @@
 [build]
   publish = "."
+  command = "npm ci && npm run build && cd hub-src && npm ci && npm run build"
 
 [[redirects]]
   from = "http://ballknw.com/*"
