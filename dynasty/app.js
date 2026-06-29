@@ -520,18 +520,33 @@ function renderDraftScreen() {
   $('draftNationName').textContent = t.name;
 
   const form = FORMATIONS[GAME.formation];
-  const squadDiv = $('squadSlots');
-  squadDiv.innerHTML = '';
+  const pitchDiv = $('draftPitch');
+  pitchDiv.querySelectorAll('.pitch-slot').forEach(el => el.remove());
   form.slots.forEach(slot => {
-    const s = document.createElement('div');
     const pick = GAME.xi[slot.id];
-    s.className = 'squad-slot' + (pick ? ' filled' : '');
-    s.textContent = pick ? pick.n.split(' ').pop() : slot.label;
-    s.title = pick ? `${pick.n} (${pick.sp}, ${pick.o} OVR) — tap to undo` : `Open: ${slot.label}`;
-    if (pick) s.onclick = () => { delete GAME.xi[slot.id]; renderDraftScreen(); };
-    squadDiv.appendChild(s);
+    const s = document.createElement('div');
+    s.className = 'pitch-slot' + (pick ? ' filled' : ' open');
+    s.style.left = slot.x + '%';
+    s.style.top = slot.y + '%';
+    const disc = document.createElement('div');
+    disc.className = 'pitch-disc';
+    disc.textContent = pick ? pick.o : slot.label;
+    s.appendChild(disc);
+    if (pick) {
+      const nm = document.createElement('div');
+      nm.className = 'pitch-name';
+      nm.textContent = pick.n.split(' ').pop();
+      s.appendChild(nm);
+      s.title = `${pick.n} (${pick.sp}, ${pick.o} OVR) — tap to undo`;
+      s.onclick = () => { delete GAME.xi[slot.id]; renderDraftScreen(); };
+    } else {
+      s.title = `Open: ${slot.label}`;
+    }
+    pitchDiv.appendChild(s);
   });
   $('xiCount').textContent = Object.keys(GAME.xi).length;
+  const xiVals = Object.values(GAME.xi);
+  $('squadOvr').textContent = xiVals.length ? Math.round(xiVals.reduce((s, p) => s + p.o, 0) / xiVals.length) : '—';
 
   const benchDiv = $('benchList');
   benchDiv.innerHTML = '';
@@ -1065,7 +1080,9 @@ function endCampaign(stageReached, champion) {
   if (champion) launchConfetti();
 
   const headline = champion ? `🏆 World Champions!` : `Eliminated — ${stageReached}`;
-  $('resultsHeader').innerHTML = `<h2>${headline}</h2><p>${WC.teams[GAME.nationCode].flag} ${WC.teams[GAME.nationCode].name}</p>`;
+  $('resultsHeader').className = 'results-header' + (champion ? ' champion' : '');
+  const trophy = champion ? `<div class="champion-trophy">🏆</div>` : '';
+  $('resultsHeader').innerHTML = `${trophy}<h2>${headline}</h2><p>${WC.teams[GAME.nationCode].flag} ${WC.teams[GAME.nationCode].name}</p>`;
   $('resultsBody').innerHTML = `
     <div class="results-summary">
       <p>Record: ${T.record.w}W ${T.record.d}D ${T.record.l}L</p>
