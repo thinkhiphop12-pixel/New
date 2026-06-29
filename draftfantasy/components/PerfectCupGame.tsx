@@ -1,12 +1,14 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DraftScreen } from './DraftScreen';
 import { HistoryScreen } from './HistoryScreen';
 import { ResultScreen } from './ResultScreen';
 import { SimulatingScreen } from './SimulatingScreen';
 import { StartScreen } from './StartScreen';
 import {
+  canSwapEdition,
+  canSwapSquad,
   createDraftState,
   markSquadSeen,
   pickPlayer,
@@ -39,6 +41,13 @@ export default function PerfectCupGame() {
   const [draft, setDraft] = useState<DraftState>(() => createDraftState('legends'));
   const [activeRun, setActiveRun] = useState<Run | null>(null);
   const [viewingFromHistory, setViewingFromHistory] = useState(false);
+
+  const simulationTimer = useRef<number | null>(null);
+  useEffect(() => {
+    return () => {
+      if (simulationTimer.current !== null) window.clearTimeout(simulationTimer.current);
+    };
+  }, []);
 
   const activePool = useMemo(() => squadsForPool(squads, pool), [squads, pool]);
   const counts = useMemo(
@@ -75,7 +84,8 @@ export default function PerfectCupGame() {
 
   const startSimulation = useCallback(() => {
     setScreen('simulating');
-    window.setTimeout(() => {
+    if (simulationTimer.current !== null) window.clearTimeout(simulationTimer.current);
+    simulationTimer.current = window.setTimeout(() => {
       const usedSquadIds = new Set(draft.picks.map((p) => p.squadId));
       const teamStrength = Math.round(
         draft.picks.reduce((sum, p) => sum + p.player.rating, 0) / draft.picks.length
@@ -86,6 +96,7 @@ export default function PerfectCupGame() {
       setActiveRun(run);
       setViewingFromHistory(false);
       setScreen('result');
+      simulationTimer.current = null;
     }, 1100);
   }, [draft, squads, pool, objective, addRun]);
 
@@ -147,6 +158,8 @@ export default function PerfectCupGame() {
           <DraftScreen
             state={draft}
             poolLabel={POOL_LABEL[draft.pool]}
+            canSwapEdition={canSwapEdition(draft, activePool)}
+            canSwapSquad={canSwapSquad(draft, activePool)}
             onSpin={handleSpin}
             onSwapEdition={handleSwapEdition}
             onSwapSquad={handleSwapSquad}
@@ -192,6 +205,7 @@ export default function PerfectCupGame() {
     startDraft,
     openHistory,
     draft,
+    activePool,
     handleSpin,
     handleSwapEdition,
     handleSwapSquad,

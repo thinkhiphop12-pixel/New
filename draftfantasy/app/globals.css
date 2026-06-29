@@ -39,7 +39,7 @@ body {
   background-image: var(--bg-grad);
   background-attachment: fixed;
   color: var(--text);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 

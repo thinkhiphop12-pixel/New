@@ -34,8 +34,14 @@ export function canPickPlayer(state: DraftState, player: Player): boolean {
   return canPickPosition(state, player.position);
 }
 
-/** Does this squad still contain a player for an open slot? */
+/** Has a player already been drafted from this squad? Each squad gives one. */
+function isSquadAlreadyUsed(state: DraftState, squad: Squad): boolean {
+  return state.picks.some((p) => p.squadId === squad.id);
+}
+
+/** Does this (un-drafted) squad still contain a player for an open slot? */
 function offersNeededPlayer(state: DraftState, squad: Squad): boolean {
+  if (isSquadAlreadyUsed(state, squad)) return false;
   return squad.players.some((p) => canPickPosition(state, p.position) && !isPlayerPicked(state, p));
 }
 
@@ -87,50 +93,54 @@ export function pickPlayer(state: DraftState, player: Player, squad: Squad): Dra
   };
 }
 
-export function canSwapEdition(state: DraftState): boolean {
-  return !state.swapEditionUsed && state.currentSquad !== null;
+/** Eligible "same country, different year" editions for the current squad. */
+function editionCandidates(state: DraftState, pool: Squad[]): Squad[] {
+  if (!state.currentSquad) return [];
+  const { countryName, id } = state.currentSquad;
+  return pool.filter(
+    (s) => s.countryName === countryName && s.id !== id && offersNeededPlayer(state, s)
+  );
 }
 
-export function canSwapSquad(state: DraftState): boolean {
-  return !state.swapSquadUsed && state.currentSquad !== null;
+/** Eligible "same year, different country" squads for the current squad. */
+function squadCandidates(state: DraftState, pool: Squad[]): Squad[] {
+  if (!state.currentSquad) return [];
+  const { tournamentYear, id } = state.currentSquad;
+  return pool.filter(
+    (s) => s.tournamentYear === tournamentYear && s.id !== id && offersNeededPlayer(state, s)
+  );
+}
+
+export function canSwapEdition(state: DraftState, pool: Squad[]): boolean {
+  return !state.swapEditionUsed && state.currentSquad !== null && editionCandidates(state, pool).length > 0;
+}
+
+export function canSwapSquad(state: DraftState, pool: Squad[]): boolean {
+  return !state.swapSquadUsed && state.currentSquad !== null && squadCandidates(state, pool).length > 0;
 }
 
 /**
- * Swap the edition: keep the same country, change the tournament year. Uses the
- * once-per-game edition swap. Falls back to any usable squad if the country has
- * no other eligible edition in the pool.
+ * Swap the edition: keep the same country, change the tournament year. Consumes
+ * the once-per-game edition swap only when a valid same-country edition exists;
+ * otherwise the state is returned unchanged (the reroll is never wasted).
  */
 export function swapEdition(state: DraftState, pool: Squad[]): DraftState {
-  if (!canSwapEdition(state) || !state.currentSquad) return state;
-  const { countryName, id } = state.currentSquad;
-  const used = { ...state, swapEditionUsed: true };
-  const sameCountry = pool.filter(
-    (s) => s.countryName === countryName && s.id !== id && offersNeededPlayer(used, s)
-  );
-  const squad =
-    sameCountry.length > 0
-      ? sameCountry[Math.floor(Math.random() * sameCountry.length)]
-      : spinForSquad(used, pool);
-  return markSquadSeen(used, squad);
+  if (!canSwapEdition(state, pool)) return state;
+  const candidates = editionCandidates(state, pool);
+  const squad = candidates[Math.floor(Math.random() * candidates.length)];
+  return markSquadSeen({ ...state, swapEditionUsed: true }, squad);
 }
 
 /**
- * Swap the squad: keep the same tournament year, change the country. Uses the
- * once-per-game squad swap. Falls back to any usable squad if the year has no
- * other eligible country in the pool.
+ * Swap the squad: keep the same tournament year, change the country. Consumes
+ * the once-per-game squad swap only when a valid same-year squad exists;
+ * otherwise the state is returned unchanged (the reroll is never wasted).
  */
 export function swapSquad(state: DraftState, pool: Squad[]): DraftState {
-  if (!canSwapSquad(state) || !state.currentSquad) return state;
-  const { tournamentYear, id } = state.currentSquad;
-  const used = { ...state, swapSquadUsed: true };
-  const sameYear = pool.filter(
-    (s) => s.tournamentYear === tournamentYear && s.id !== id && offersNeededPlayer(used, s)
-  );
-  const squad =
-    sameYear.length > 0
-      ? sameYear[Math.floor(Math.random() * sameYear.length)]
-      : spinForSquad(used, pool);
-  return markSquadSeen(used, squad);
+  if (!canSwapSquad(state, pool)) return state;
+  const candidates = squadCandidates(state, pool);
+  const squad = candidates[Math.floor(Math.random() * candidates.length)];
+  return markSquadSeen({ ...state, swapSquadUsed: true }, squad);
 }
 
 export function remainingPositions(state: DraftState): Position[] {

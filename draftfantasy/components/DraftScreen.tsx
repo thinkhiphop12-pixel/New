@@ -1,17 +1,13 @@
 import { useState } from 'react';
-import {
-  canPickPlayer,
-  canSwapEdition,
-  canSwapSquad,
-  draftStrength,
-  isXiComplete,
-} from '../engine/draft';
+import { canPickPlayer, draftStrength, isXiComplete } from '../engine/draft';
 import type { DraftPick, DraftState, Player, Position } from '../engine/types';
 import { PlayerCard } from './PlayerCard';
 
 interface DraftScreenProps {
   state: DraftState;
   poolLabel: string;
+  canSwapEdition: boolean;
+  canSwapSquad: boolean;
   onSpin: () => void;
   onSwapEdition: () => void;
   onSwapSquad: () => void;
@@ -42,6 +38,8 @@ function lineupSlots(state: DraftState): { pos: Position; pick?: DraftPick }[] {
 export function DraftScreen({
   state,
   poolLabel,
+  canSwapEdition,
+  canSwapSquad,
   onSpin,
   onSwapEdition,
   onSwapSquad,
@@ -74,7 +72,7 @@ export function DraftScreen({
 
       <div className="pc-lineup-head">
         <span>YOUR XI</span>
-        <span>{complete ? 'XI complete' : `Pick ${spinNumber} of 5`}</span>
+        <span>{complete ? 'Five complete' : `Pick ${spinNumber} of 5`}</span>
       </div>
 
       <div className="pc-lineup">
@@ -170,10 +168,10 @@ export function DraftScreen({
               onClick={() => {
                 withSpinner(onSwapEdition, 400);
               }}
-              disabled={!canSwapEdition(state)}
+              disabled={!canSwapEdition}
             >
               <span className="pc-reroll__label">
-                ↻ Lineage reroll {state.swapEditionUsed ? '· none' : ''}
+                ↻ Lineage reroll {canSwapEdition ? '' : '· none'}
               </span>
               <span className="pc-reroll__desc">Try another {squad.countryName} squad</span>
             </button>
@@ -183,10 +181,10 @@ export function DraftScreen({
               onClick={() => {
                 withSpinner(onSwapSquad, 400);
               }}
-              disabled={!canSwapSquad(state)}
+              disabled={!canSwapSquad}
             >
               <span className="pc-reroll__label">
-                ⇄ Year reroll {state.swapSquadUsed ? '· none' : ''}
+                ⇄ Year reroll {canSwapSquad ? '' : '· none'}
               </span>
               <span className="pc-reroll__desc">Try another {squad.tournamentYear} squad</span>
             </button>

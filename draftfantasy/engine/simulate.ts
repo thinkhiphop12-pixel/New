@@ -88,8 +88,16 @@ export function simulateRun(
   for (let round = 1; round <= TOTAL_MATCHES; round++) {
     const { name, stage } = ROUNDS[round - 1];
     const opponent = pickOpponent(round, TOTAL_MATCHES, opponentPool);
-    const ourGoals = poissonRandom(expectedGoals(teamStrength, opponent.strength));
-    const opponentGoals = poissonRandom(expectedGoals(opponent.strength, teamStrength));
+    let ourGoals = poissonRandom(expectedGoals(teamStrength, opponent.strength));
+    let opponentGoals = poissonRandom(expectedGoals(opponent.strength, teamStrength));
+
+    // Knockout ties can't stand — settle level scores with a one-goal edge
+    // (extra time / penalties) so the bracket always produces a winner.
+    if (stage === 'knockout' && ourGoals === opponentGoals) {
+      if (Math.random() < 0.5) ourGoals += 1;
+      else opponentGoals += 1;
+    }
+
     const outcome = outcomeFor(ourGoals, opponentGoals);
 
     if (outcome === 'win') wins += 1;
@@ -109,6 +117,9 @@ export function simulateRun(
       opponentGoals,
       outcome,
     });
+
+    // A knockout that isn't won ends the tournament there and then.
+    if (stage === 'knockout' && outcome !== 'win') break;
   }
 
   return {

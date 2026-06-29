@@ -72,6 +72,14 @@ export function useRunHistory(squads: Squad[]): RunHistory {
   const reset = useCallback(async () => {
     clearLocalRuns();
     setRuns([]);
+    const anonymousId = getAnonymousId();
+    if (!anonymousId) return;
+    try {
+      // Best-effort remote clear so synced history doesn't reappear on refresh.
+      await fetch(`/api/runs?anonymousId=${encodeURIComponent(anonymousId)}`, { method: 'DELETE' });
+    } catch {
+      // offline / DB not provisioned — local cache is already cleared
+    }
   }, []);
 
   return { runs, mode, addRun, reset, refresh };

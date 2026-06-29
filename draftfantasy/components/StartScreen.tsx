@@ -66,6 +66,7 @@ export function StartScreen({
           <button
             type="button"
             className={`pc-option${pool === 'legends' ? ' pc-option--active' : ''}`}
+            aria-pressed={pool === 'legends'}
             onClick={() => {
               onSetPool('legends');
             }}
@@ -76,6 +77,7 @@ export function StartScreen({
           <button
             type="button"
             className={`pc-option${pool === 'history' ? ' pc-option--active' : ''}`}
+            aria-pressed={pool === 'history'}
             onClick={() => {
               onSetPool('history');
             }}
@@ -86,6 +88,7 @@ export function StartScreen({
           <button
             type="button"
             className={`pc-option${pool === 'england' ? ' pc-option--active' : ''}`}
+            aria-pressed={pool === 'england'}
             onClick={() => {
               onSetPool('england');
             }}
@@ -102,6 +105,7 @@ export function StartScreen({
           <button
             type="button"
             className={`pc-option${objective === 'perfect' ? ' pc-option--active' : ''}`}
+            aria-pressed={objective === 'perfect'}
             onClick={() => {
               onSetObjective('perfect');
             }}
@@ -112,12 +116,13 @@ export function StartScreen({
           <button
             type="button"
             className={`pc-option${objective === 'trophy' ? ' pc-option--active' : ''}`}
+            aria-pressed={objective === 'trophy'}
             onClick={() => {
               onSetObjective('trophy');
             }}
           >
             <span className="pc-option__title">🏆 Win the Cup</span>
-            <span className="pc-option__desc">Lift the trophy. A group slip-up is survivable.</span>
+            <span className="pc-option__desc">Lift the trophy. Only knockout losses end the run.</span>
           </button>
         </div>
       </section>
@@ -128,6 +133,7 @@ export function StartScreen({
           <button
             type="button"
             className={`pc-toggle__btn${revealMode === 'watch' ? ' pc-toggle__btn--active' : ''}`}
+            aria-pressed={revealMode === 'watch'}
             onClick={() => {
               onSetRevealMode('watch');
             }}
@@ -137,6 +143,7 @@ export function StartScreen({
           <button
             type="button"
             className={`pc-toggle__btn${revealMode === 'instant' ? ' pc-toggle__btn--active' : ''}`}
+            aria-pressed={revealMode === 'instant'}
             onClick={() => {
               onSetRevealMode('instant');
             }}

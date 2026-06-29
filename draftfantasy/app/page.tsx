@@ -27,7 +27,7 @@ export default function Home() {
         </div>
         <div className="home__feature">
           <h3>Win it all</h3>
-          <p>Eight matches — group stage and knockouts. A perfect run wins every one. Saved to Supabase.</p>
+          <p>Eight matches — group stage and knockouts. A perfect run wins every one. Runs save to Supabase, with offline fallback.</p>
         </div>
       </div>
 

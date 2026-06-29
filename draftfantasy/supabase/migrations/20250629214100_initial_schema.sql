@@ -60,8 +60,18 @@ DROP POLICY IF EXISTS "Allow public read squads" ON squads;
 DROP POLICY IF EXISTS "Allow public read players" ON players;
 DROP POLICY IF EXISTS "Allow insert runs with anonymous_id" ON runs;
 DROP POLICY IF EXISTS "Allow select runs by anonymous_id" ON runs;
+DROP POLICY IF EXISTS "Allow delete runs by anonymous_id" ON runs;
 
 CREATE POLICY "Allow public read squads" ON squads FOR SELECT USING (true);
 CREATE POLICY "Allow public read players" ON players FOR SELECT USING (true);
+
+-- NOTE: this game has no user accounts — runs are keyed by a client-generated
+-- anonymous_id that can't be cryptographically verified, so these policies are
+-- intentionally open (any visitor can read/insert/delete runs). That is the
+-- accepted trade-off for an anonymous, no-login casual game. To lock the table
+-- down later, add real auth (e.g. Supabase Anonymous Auth) and scope the
+-- policies to auth.uid(), or revoke anon access and route all writes through a
+-- server using the service-role key.
 CREATE POLICY "Allow insert runs with anonymous_id" ON runs FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow select runs by anonymous_id" ON runs FOR SELECT USING (true);
+CREATE POLICY "Allow delete runs by anonymous_id" ON runs FOR DELETE USING (true);
