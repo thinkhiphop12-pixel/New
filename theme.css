@@ -1,0 +1,73 @@
+/* Global CSS Theming System — aligned with BRAND_GUIDELINES.md */
+
+:root {
+  /* Primary background surfaces — Dark Navy base */
+  --color-bg-primary: #0a0e14;
+  --color-bg-secondary: #0d1219;
+  --color-bg-tertiary: rgba(13, 18, 25, 0.92);
+
+  /* Text colors — Light Text (#e8e8e8) and Dim Text (#8892a0) */
+  --color-text-primary: #e8e8e8;
+  --color-text-secondary: #8892a0;
+
+  /* Borders and dividers — Border Color (#5a7a94) */
+  --color-border: rgba(90, 122, 148, 0.4);
+  --color-border-strong: rgba(90, 122, 148, 0.8);
+
+  /* Accent colors — Primary (Accent Green), Secondary (Gold), Tertiary (Cyan) */
+  --color-accent: #00ff88;
+  --color-accent-alt: #4488ff;
+  --color-accent-alt-2: #ffd700;
+
+  /* Status colors */
+  --color-gold: #ffd700;
+  --color-gold-soft: #ffe18a;
+  --color-danger: #ff4444;
+  --color-warning: #ffaa00;
+  --color-success: #00cc66;
+
+  /* Shadows and spacing */
+  --shadow-elevation: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --radius: 6px;
+}
+
+/* Dark theme (default) — Primary Ball Knowledge theme */
+.theme-dark {
+  --color-bg-primary: #0a0e14;
+  --color-bg-secondary: #0d1219;
+  --color-bg-tertiary: rgba(13, 18, 25, 0.92);
+  --color-text-primary: #e8e8e8;
+  --color-text-secondary: #8892a0;
+  --color-border: rgba(90, 122, 148, 0.4);
+  --color-border-strong: rgba(90, 122, 148, 0.8);
+  --color-accent: #00ff88;
+  --color-accent-soft: #00cc66;
+}
+
+/* Light theme */
+.theme-light {
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f5f5f5;
+  --color-bg-tertiary: #eeeeee;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #666666;
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-border-strong: rgba(0, 0, 0, 0.2);
+  --color-accent: #1976d2;
+  --color-accent-soft: #42a5f5;
+}
+
+/* Automatic dark mode preference (no JS required for initial load) */
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg-primary: #ffffff;
+    --color-bg-secondary: #f5f5f5;
+    --color-bg-tertiary: #eeeeee;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #666666;
+    --color-border: rgba(0, 0, 0, 0.1);
+    --color-border-strong: rgba(0, 0, 0, 0.2);
+    --color-accent: #1976d2;
+    --color-accent-soft: #42a5f5;
+  }
+}

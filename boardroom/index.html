@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0e14">
+<link rel="stylesheet" href="../theme.css">
+    <title>Boardroom — Build a Football Club Over Seasons | Ball Knowledge</title>
+    <meta name="description" content="Boardroom is a free retro football club manager game. Sign players, set lineups, train your squad, and build a dynasty across seasons of transfers, promotion and relegation.">
+    <meta property="og:title" content="Boardroom — Build a Football Club Over Seasons">
+    <meta property="og:description" content="Take charge of a club: transfers, training, tactics, stadium and sponsors, across a multi-season league campaign. Free, no account needed.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="../assets/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="../assets/og-image.png">
+    <link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon-192.png">
+    <link rel="apple-touch-icon" href="../assets/favicon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<nav class="game-nav" role="navigation" aria-label="Game navigation">
+  <a href="../">&#8592; Ball Knowledge</a>
+  <a href="index.html" class="active">&#127942; Boardroom</a>
+</nav>
+    <!-- Intro Screen -->
+    <div class="intro-screen" id="introScreen">
+        <h1 class="intro-title">⚽ BOARDROOM ⚽</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 20px;">Pick an era and a team, choose your kit, then build a dynasty over the seasons</p>
+
+        <div class="era-select">
+            <div class="era-label">CHOOSE YOUR ERA</div>
+            <div class="era-options">
+                <button class="era-option selected" data-era="2010">
+                    <span class="era-year">2010</span>
+                    <span class="era-desc">Club-accurate FIFA 10 squads</span>
+                </button>
+                <button class="era-option" data-era="2005">
+                    <span class="era-year">2005</span>
+                    <span class="era-desc">Golden-era FIFA 05 player pool</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="team-select" id="teamSelect"></div>
+        
+        <div class="color-picker-group">
+            <div class="color-picker-item">
+                <label>Primary Kit Color</label>
+                <input type="color" id="primaryColor" value="#ff0000">
+            </div>
+            <div class="color-picker-item">
+                <label>Secondary Kit Color</label>
+                <input type="color" id="secondaryColor" value="#ffffff">
+            </div>
+        </div>
+        
+        <div class="btn-group" style="margin-top: 20px;">
+            <button class="btn gold" style="font-size: 20px; padding: 16px 40px;" id="startGame" disabled>NEW GAME</button>
+            <div class="file-input-wrapper">
+                <button class="btn" style="font-size: 20px; padding: 16px 40px;">LOAD SAVE</button>
+                <input type="file" id="loadFileInput" accept=".json">
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Container -->
+    <div class="game-container" id="gameContainer" style="display: none;">
+        <!-- Header -->
+        <header class="header">
+            <div>
+                <h1>⚽ <span id="teamName">FC UNITED</span></h1>
+                <p style="color: var(--text-secondary); margin-top: 8px;">Season <span id="currentSeason">1</span> - Round <span id="currentRound">1</span>/34</p>
+            </div>
+            <div class="header-stats">
+                <div class="stat-box">
+                    <div class="stat-label">BUDGET</div>
+                    <div class="stat-value money" id="budget">5000000</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">LAST INCOME</div>
+                    <div class="stat-value money" id="weeklyIncome">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">LEAGUE POS</div>
+                    <div class="stat-value" id="leaguePos">1</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn small" onclick="saveGame()">💾 SAVE</button>
+                <div class="file-input-wrapper">
+                    <button class="btn small">📂 LOAD</button>
+                    <input type="file" id="loadGameInput" accept=".json">
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="nav-tab active" data-panel="overview">OVERVIEW</button>
+            <button class="nav-tab" data-panel="squad">SQUAD</button>
+            <button class="nav-tab" data-panel="tactics">LINEUP</button>
+            <button class="nav-tab" data-panel="transfers">TRANSFERS</button>
+            <button class="nav-tab" data-panel="training">TRAINING</button>
+            <button class="nav-tab" data-panel="recovery">RECOVERY</button>
+            <button class="nav-tab" data-panel="staff">STAFF</button>
+            <button class="nav-tab" data-panel="sponsors">SPONSORS</button>
+            <button class="nav-tab" data-panel="stadium">STADIUM</button>
+            <button class="nav-tab" data-panel="league">LEAGUE</button>
+            <button class="nav-tab" data-panel="fixtures">FIXTURES</button>
+        </nav>
+
+        <!-- Overview Panel -->
+        <div class="panel active" id="panel-overview">
+            <h2 class="panel-title">CLUB OVERVIEW</h2>
+            <div class="kit-display" id="kitDisplay"></div>
+            <div class="stadium-container">
+                <div>
+                    <h3 style="color: var(--accent-gold); margin-bottom: 16px; text-align: center;">🏟️ Stadium View</h3>
+                    <div class="stadium-graphic">
+                        <div class="stadium-pitch">
+                            <div class="pitch-center-line"></div>
+                            <div class="pitch-center-circle"></div>
+                        </div>
+                        <div class="stadium-stand north" id="stand-north">NORTH</div>
+                        <div class="stadium-stand south" id="stand-south">SOUTH</div>
+                        <div class="stadium-stand east" id="stand-east">EAST</div>
+                        <div class="stadium-stand west" id="stand-west">WEST</div>
+                    </div>
+                </div>
+                <div class="income-breakdown">
+                    <h3 style="color: var(--accent-gold); margin-bottom: 16px;">📊 Income per Round</h3>
+                    <div id="incomeBreakdown"></div>
+                </div>
+                <div style="min-width: 320px; max-width: 400px;">
+                    <h3 style="color: var(--accent-gold); margin-bottom: 16px;">📰 News Ticker</h3>
+                    <div class="message-ticker" id="messageTicker" style="background: var(--bg-card); border-radius: 8px; padding: 12px;">
+                        <p style="color: var(--text-secondary); text-align: center;">No messages yet...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Squad Panel -->
+        <div class="panel" id="panel-squad">
+            <h2 class="panel-title">SQUAD OVERVIEW</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">💡 Players recover 25 energy when rested. Rotate your squad to keep everyone fresh!</p>
+            <table class="data-table" id="squadTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>NAME</th>
+                        <th>POS</th>
+                        <th>AGE</th>
+                        <th>ENERGY</th>
+                        <th>COND</th>
+                        <th>STR</th>
+                        <th>VALUE</th>
+                        <th>STATUS</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Lineup Panel -->
+        <div class="panel" id="panel-tactics">
+            <h2 class="panel-title">MATCH LINEUP (11 Players)</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">Select 11 players. Low energy/condition = underperformance + injury risk.</p>
+            <div id="lineupSelection"></div>
+            <div class="btn-group">
+                <button class="btn" onclick="autoSelectLineup(); updateAllUI();">BEST XI</button>
+                <button class="btn" onclick="autoSelectFreshXI(); updateAllUI();">FRESHEST XI</button>
+            </div>
+        </div>
+
+        <!-- Transfers Panel -->
+        <div class="panel" id="panel-transfers">
+            <h2 class="panel-title">TRANSFER MARKET</h2>
+            <div class="transfer-section">
+                <h3>📥 Available Players</h3>
+                <table class="data-table" id="marketTable">
+                    <thead>
+                        <tr>
+                            <th>NAME</th>
+                            <th>POS</th>
+                            <th>AGE</th>
+                            <th>STR</th>
+                            <th>PRICE</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <button class="btn" style="margin-top: 16px;" onclick="refreshMarket(); updateAllUI();">REFRESH (€100,000)</button>
+            </div>
+            <div class="transfer-section">
+                <h3>📤 Sell Players</h3>
+                <table class="data-table" id="sellTable">
+                    <thead>
+                        <tr>
+                            <th>NAME</th>
+                            <th>POS</th>
+                            <th>STR</th>
+                            <th>VALUE</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Training Panel -->
+        <div class="panel" id="panel-training">
+            <h2 class="panel-title">TRAINING CAMP</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 8px;">Training improves strength but costs energy. Effects apply after the round.</p>
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">⚠️ Gains diminish for high-rated and older players — a top pro won't improve as fast as a young prospect, so you can't grind a whole squad to 99.</p>
+            <div class="training-options" id="trainingOptions">
+                <div class="training-option" data-type="basic">
+                    <h4 style="color: var(--accent-green);">BASIC TRAINING</h4>
+                    <p style="color: var(--text-secondary);">up to +3 Strength, -10 Energy</p>
+                    <p class="training-cost">€20,000 / player</p>
+                </div>
+                <div class="training-option" data-type="intensive">
+                    <h4 style="color: var(--accent-gold);">INTENSIVE CAMP</h4>
+                    <p style="color: var(--text-secondary);">up to +6 Strength, -20 Energy</p>
+                    <p class="training-cost">€60,000 / player</p>
+                </div>
+                <div class="training-option" data-type="elite">
+                    <h4 style="color: var(--accent-blue);">ELITE ACADEMY</h4>
+                    <p style="color: var(--text-secondary);">up to +10 Strength, -25 Energy</p>
+                    <p class="training-cost">€150,000 / player</p>
+                </div>
+            </div>
+            <h3 style="color: var(--accent-gold); margin: 30px 0 16px;">Select Players for Training</h3>
+            <div id="trainingPlayerList"></div>
+            <div class="btn-group">
+                <button class="btn gold" id="sendToTraining" disabled>SEND TO TRAINING</button>
+                <span style="color: var(--text-secondary); margin-left: 16px;">Cost: €<span id="trainingCost">0</span></span>
+            </div>
+        </div>
+
+        <!-- Recovery Panel -->
+        <div class="panel" id="panel-recovery">
+            <h2 class="panel-title">RECOVERY CENTRE</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 8px;">Send tired players to a recovery programme to restore energy and condition fast. Effects apply after the round.</p>
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">💤 A resting player sits out the next match (and is removed from your lineup), so rotate wisely. Benched players still recover slowly for free.</p>
+            <div class="training-options" id="restOptions">
+                <div class="training-option" data-type="physio">
+                    <h4 style="color: var(--accent-green);">PHYSIO SESSION</h4>
+                    <p style="color: var(--text-secondary);">+40 Energy, +20 Condition</p>
+                    <p class="training-cost">€20,000 / player</p>
+                </div>
+                <div class="training-option" data-type="spa">
+                    <h4 style="color: var(--accent-gold);">SPA &amp; RECOVERY</h4>
+                    <p style="color: var(--text-secondary);">+55 Energy, +30 Condition</p>
+                    <p class="training-cost">€45,000 / player</p>
+                </div>
+                <div class="training-option" data-type="retreat">
+                    <h4 style="color: var(--accent-blue);">WARM-WEATHER RETREAT</h4>
+                    <p style="color: var(--text-secondary);">+70 Energy, +45 Condition</p>
+                    <p class="training-cost">€80,000 / player</p>
+                </div>
+            </div>
+            <h3 style="color: var(--accent-gold); margin: 30px 0 16px;">Select Players to Rest <span style="color: var(--text-secondary); font-size: 14px; font-weight: normal;">(most tired first)</span></h3>
+            <div id="restPlayerList"></div>
+            <div class="btn-group">
+                <button class="btn gold" id="sendToRest" disabled>SEND TO RECOVERY</button>
+                <span style="color: var(--text-secondary); margin-left: 16px;">Cost: €<span id="restCost">0</span></span>
+            </div>
+        </div>
+
+        <!-- Staff Panel -->
+        <div class="panel" id="panel-staff">
+            <h2 class="panel-title">BACKROOM STAFF</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">Hire a Head Coach to get more out of training, and a Physio to recover players faster and cut injuries. Staff draw a wage every round.</p>
+            <div id="staffContent"></div>
+        </div>
+
+        <!-- Sponsors Panel -->
+        <div class="panel" id="panel-sponsors">
+            <h2 class="panel-title">SPONSORSHIP DEALS</h2>
+            <div class="sponsor-section">
+                <h3>👕 Shirt Sponsor</h3>
+                <div class="sponsor-grid" id="shirtSponsorSection"></div>
+            </div>
+            <div class="sponsor-section">
+                <h3>🏟️ Stadium Hoardings</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 16px;">Each stand can have its own sponsor!</p>
+                <div class="sponsor-grid" id="stadiumSponsorsSection"></div>
+            </div>
+            <div class="sponsor-section">
+                <h3>📋 Available Offers</h3>
+                <div class="sponsor-grid" id="sponsorOffers"></div>
+            </div>
+        </div>
+
+        <!-- Stadium Panel -->
+        <div class="panel" id="panel-stadium">
+            <h2 class="panel-title">STADIUM MANAGEMENT</h2>
+            <div class="stadium-container" style="margin-bottom: 30px;">
+                <div class="stadium-graphic">
+                    <div class="stadium-pitch">
+                        <div class="pitch-center-line"></div>
+                        <div class="pitch-center-circle"></div>
+                    </div>
+                    <div class="stadium-stand north" id="stand2-north">NORTH</div>
+                    <div class="stadium-stand south" id="stand2-south">SOUTH</div>
+                    <div class="stadium-stand east" id="stand2-east">EAST</div>
+                    <div class="stadium-stand west" id="stand2-west">WEST</div>
+                </div>
+            </div>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-title">🎫 TICKET PRICING</div>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="ticketPrice" min="10" max="100" value="25">
+                        <span class="slider-value">€<span id="ticketPriceValue">25</span></span>
+                    </div>
+                    <p style="color: var(--text-secondary); margin-top: 8px;">Higher prices = more revenue but lower attendance</p>
+                </div>
+                <div class="card">
+                    <div class="card-title">🏟️ EXPAND STADIUM</div>
+                    <p style="color: var(--text-secondary); margin-bottom: 12px;">Current: <span id="currentCapacity">15,000</span> seats</p>
+                    <select class="form-select" id="expansionOption">
+                        <option value="1000">+1,000 seats (€500,000)</option>
+                        <option value="2500">+2,500 seats (€1,100,000)</option>
+                        <option value="5000">+5,000 seats (€2,000,000)</option>
+                        <option value="10000">+10,000 seats (€3,500,000)</option>
+                    </select>
+                    <button class="btn" style="margin-top: 12px;" onclick="expandStadium(parseInt(document.getElementById('expansionOption').value)); updateAllUI();">BUILD</button>
+                </div>
+                <div class="card">
+                    <div class="card-title">📊 MATCH DAY PROJECTION</div>
+                    <p style="color: var(--text-secondary);">Expected Attendance:</p>
+                    <div class="card-value" id="expectedAttendance">12,000</div>
+                    <p style="color: var(--text-secondary);">Projected Revenue:</p>
+                    <div class="card-value">€<span id="projectedRevenue">300,000</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- League Panel -->
+        <div class="panel" id="panel-league">
+            <h2 class="panel-title">LEAGUE TABLE</h2>
+            <table class="data-table league-table" id="leagueTable">
+                <thead>
+                    <tr>
+                        <th>POS</th>
+                        <th>TEAM</th>
+                        <th>P</th>
+                        <th>W</th>
+                        <th>D</th>
+                        <th>L</th>
+                        <th>GF</th>
+                        <th>GA</th>
+                        <th>GD</th>
+                        <th>PTS</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Fixtures Panel -->
+        <div class="panel" id="panel-fixtures">
+            <h2 class="panel-title">SEASON FIXTURES</h2>
+            <div id="fixturesList"></div>
+        </div>
+
+        <div class="ad-placeholder ad-slot" id="ad-banner-bottom" data-ad-slot="" data-ad-kind="native">
+            <small>Advertisement</small>
+        </div>
+
+        <footer class="site-footer">
+            <a href="../">Home</a> · <a href="../700/">7-0-0</a> · <a href="../lineup/">Lineup</a> · <a href="../worldcup/">Bracket</a> · <a href="../retro/">Retro Player</a> · <a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a>
+            <p class="footer-disclaimer">Boardroom is an unofficial fan-made football club management game, not affiliated with FIFA, the Premier League, or any club or federation. For enquiries, contact <a href="mailto:thinkhiphop12@gmail.com">thinkhiphop12@gmail.com</a>.</p>
+            <button class="btn-link" id="cookieSettingsBtn">Cookie settings</button>
+        </footer>
+
+        <!-- End Round Button -->
+        <button class="round-btn" id="endRoundBtn">▶ END ROUND</button>
+    </div>
+
+    <div class="consent-banner hidden" id="consentBanner">
+        <p class="consent-text">We use cookies for basic analytics and to show ads. Choose what you're OK with — you can change this anytime in Cookie settings.</p>
+        <div class="consent-actions">
+            <button class="btn" id="consentEssentialBtn">Essential only</button>
+            <button class="btn gold" id="consentAcceptBtn">Accept all</button>
+        </div>
+    </div>
+
+    <!-- Match Modal -->
+    <div class="modal-overlay" id="matchModal">
+        <div class="modal">
+            <h2 class="modal-title">MATCH DAY - ROUND <span id="matchRound">1</span></h2>
+            <div class="match-animation" id="matchAnimation">
+                <p class="loader">⚽ SIMULATING MATCH... ⚽</p>
+            </div>
+            <div id="matchResults" style="display: none;">
+                <div class="match-result">
+                    <div class="match-teams">
+                        <div class="match-team" id="homeTeam">Home Team</div>
+                        <div class="match-score" id="matchScore">0 - 0</div>
+                        <div class="match-team" id="awayTeam">Away Team</div>
+                    </div>
+                </div>
+                <div id="allResults" style="margin-top: 20px;">
+                    <h3 style="color: var(--accent-gold); margin-bottom: 12px;">Other Results</h3>
+                    <div id="otherResults"></div>
+                </div>
+                <div id="roundSummary" style="margin-top: 20px; padding: 16px; background: var(--bg-card); border-radius: 8px;">
+                    <h3 style="color: var(--accent-gold); margin-bottom: 12px;">📊 Round Summary</h3>
+                    <div id="summaryContent"></div>
+                </div>
+                <div class="btn-group" style="justify-content: center; margin-top: 20px;">
+                    <button class="btn gold" onclick="closeMatchModal()">CONTINUE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer"></div>
+
+    <!-- Load JS Modules in correct order -->
+    <script src="js/data.js" defer></script>
+    <script src="js/realplayers.js" defer></script>
+    <script src="js/players2005.js" defer></script>
+    <script src="js/state.js" defer></script>
+    <script src="js/players.js" defer></script>
+    <script src="js/sponsors.js" defer></script>
+    <script src="js/transfers.js" defer></script>
+    <script src="js/training.js" defer></script>
+    <script src="js/recovery.js" defer></script>
+    <script src="js/staff.js" defer></script>
+    <script src="js/lineup.js" defer></script>
+    <script src="js/stadium.js" defer></script>
+    <script src="js/match.js" defer></script>
+    <script src="js/graphics.js" defer></script>
+    <script src="js/ui.js" defer></script>
+    <script src="js/main.js" defer></script>
+    <script src="../shared/consent.js" defer></script>
+    <script src="../shared/ads.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a1f14">
+<title>Dynasty — Build & Play Your World Cup</title>
+<meta name="description" content="Draft your squad, manage the bench, and play live World Cup matches. Build your dynasty one game at a time.">
+<meta property="og:title" content="Dynasty — Build & Play Your World Cup">
+<meta property="og:description" content="Draft, manage, and play. Build your World Cup dynasty.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="../assets/og-image.png">
+<meta name="twitter:card" content="content">
+<meta name="twitter:image" content="../assets/og-image.png">
+<link rel="icon" type="image/svg+xml" href="../assets/logo-mark.svg">
+<link rel="icon" type="image/png" sizes="192x192" href="../assets/favicon-192.png">
+<link rel="apple-touch-icon" href="../assets/favicon-192.png">
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-logo" src="../assets/logo-mark.svg" alt="Dynasty" width="32" height="32">
+      <div class="brand-text">
+        <span class="brand-mark">Dynasty</span>
+        <span class="brand-sub">World Cup Manager</span>
+      </div>
+    </div>
+    <div class="tournament-info hidden" id="tournamentInfo"></div>
+    <button class="icon-btn" id="resetBtn" title="Start over">↺</button>
+  </header>
+
+  <!-- ===================== SETUP (formation) ===================== -->
+  <section id="setupScreen" class="screen">
+    <div class="setup-inner">
+      <h1 class="setup-title">Build your dynasty</h1>
+      <p class="setup-sub">Pick a formation, draft a real 2026 World Cup nation's actual squad, then manage them through the genuine 48-team bracket — group stage, knockouts, team news and tactics, all the way to the final.</p>
+
+      <div class="step">
+        <div class="step-label">1 — Formation</div>
+        <div class="formation-grid" id="formationGrid"></div>
+      </div>
+
+      <button class="btn-primary" id="toNationBtn" disabled>Pick your nation →</button>
+    </div>
+  </section>
+
+  <!-- ===================== NATION SELECT ===================== -->
+  <section id="nationScreen" class="screen hidden">
+    <div class="setup-inner">
+      <h1 class="setup-title">Choose your nation</h1>
+      <p class="setup-sub">Manage one of the 48 real 2026 World Cup nations — you'll draft their actual squad and navigate the real group draw and bracket.</p>
+      <div id="nationGroups"></div>
+      <button class="btn-secondary" id="backToFormationBtn">← Back</button>
+    </div>
+  </section>
+
+  <!-- ===================== DRAFT SCREEN ===================== -->
+  <section id="draftScreen" class="screen hidden">
+    <div class="draft-header">
+      <span id="draftNationFlag" class="draft-nation-flag"></span>
+      <span id="draftNationName" class="draft-nation-name"></span>
+      <span class="draft-nation-sub">Draft your XI + bench from their real squad</span>
+    </div>
+    <div class="draft-grid">
+      <div class="draft-left panel">
+        <div class="squad-xi">
+          <div class="squad-title">Starting XI (<span id="xiCount">0</span>/11)</div>
+          <div class="ovr-line"><span class="ovr-label">Squad OVR</span><span class="ovr-value" id="squadOvr">—</span></div>
+        </div>
+        <div class="squad-bench">
+          <div class="squad-title">Bench (<span id="benchCount">0</span>/5)</div>
+          <div class="bench-list" id="benchList"></div>
+        </div>
+        <button class="btn-primary" id="startTournamentBtn" disabled>Start tournament →</button>
+        <button class="btn-secondary" id="backToNationBtn">← Change nation</button>
+      </div>
+      <div class="draft-pitchwrap panel">
+        <div class="pitch" id="draftPitch">
+          <div class="pitch-line pitch-line--half"></div>
+          <div class="pitch-line pitch-line--circle"></div>
+          <div class="pitch-box pitch-box--top"></div>
+          <div class="pitch-box pitch-box--bottom"></div>
+        </div>
+      </div>
+      <div class="draft-right panel">
+        <div class="spinner-header">
+          <div class="spinner-label">Tap a player to draft them. Tap a filled slot to undo.</div>
+        </div>
+        <div class="player-list" id="playerList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TOURNAMENT DASHBOARD ===================== -->
+  <section id="tournamentScreen" class="screen hidden">
+    <div class="tournament-container">
+      <div class="tournament-header">
+        <h2 id="tournamentStageTitle">World Cup 2026</h2>
+        <div class="squad-status" id="squadStatus"></div>
+      </div>
+      <div id="tournamentBody"></div>
+      <button class="btn-primary hidden" id="continueBtn">Continue →</button>
+    </div>
+  </section>
+
+  <!-- ===================== MATCH DECISION (team news + tactics) ===================== -->
+  <section id="decisionScreen" class="screen hidden">
+    <div class="decision-container">
+      <div class="decision-header">
+        <div class="decision-stage" id="decisionStage"></div>
+        <div class="decision-matchup" id="decisionMatchup"></div>
+      </div>
+      <div class="decision-body">
+        <div class="decision-col">
+          <div class="step-label">Team news</div>
+          <p class="step-desc" id="teamNewsNote"></p>
+          <div id="teamNewsList"></div>
+        </div>
+        <div class="decision-col">
+          <div class="step-label">Tactics</div>
+          <div class="tactics-grid" id="tacticsGrid"></div>
+        </div>
+      </div>
+      <button class="btn-primary" id="confirmDecisionBtn">Kick off →</button>
+    </div>
+  </section>
+
+  <!-- ===================== MATCH RESULT ===================== -->
+  <section id="matchResultScreen" class="screen hidden">
+    <div class="results-container">
+      <div class="results-header" id="matchResultHeader"></div>
+      <div class="results-body" id="matchResultBody"></div>
+      <button class="btn-primary" id="matchContinueBtn">Continue →</button>
+    </div>
+  </section>
+
+  <!-- ===================== FINAL RESULTS ===================== -->
+  <section id="resultsScreen" class="screen hidden">
+    <div class="results-container">
+      <div class="results-header" id="resultsHeader"></div>
+      <div class="results-body" id="resultsBody"></div>
+      <button class="btn-primary" id="newGameBtn">New Dynasty →</button>
+    </div>
+  </section>
+
+</div>
+
+<script src="app.js" defer></script>
+</body>
+</html>

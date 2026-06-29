@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /footygames/
+Disallow: /admin/
 
-Sitemap: https://thinkhiphop12-pixel.github.io/New/sitemap.xml
+Sitemap: https://ballknw.com/sitemap.xml

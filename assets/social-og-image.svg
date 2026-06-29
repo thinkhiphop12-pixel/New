@@ -1,0 +1,11 @@
+<svg viewBox="0 0 1200 628" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="628" fill="#0a0e14"/>
+  <path fill-rule="evenodd" fill="#00ff88" d="
+    M 60.000 314.000 A 110.000 110.000 0 1 0 280.000 314.000 A 110.000 110.000 0 1 0 60.000 314.000 Z
+    M 186.132 246.736 Q 193.158 241.632 200.184 246.736 L 232.934 270.531 Q 239.960 275.635 237.276 283.894 L 224.767 322.395 Q 222.083 330.654 213.399 330.654 L 172.917 330.654 Q 164.233 330.654 161.549 322.395 L 149.039 283.894 Q 146.356 275.635 153.382 270.531 Z
+  "/>
+  <text x="380" y="278" text-anchor="start" font-family="'Press Start 2P', cursive" font-weight="400" font-size="52" fill="#00ff88" letter-spacing="1">BALL KNOWLEDGE</text>
+  <text x="380" y="336" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="600" font-size="30" fill="#e8e8e8" letter-spacing="1">Football Games for Obsessives</text>
+  <text x="600" y="570" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="400" font-size="24" fill="#8892a0">ballknw.com</text>
+  <line x1="380" y1="390" x2="1120" y2="390" stroke="#00ff88" stroke-width="3" opacity="0.4"/>
+</svg>

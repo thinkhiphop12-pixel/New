@@ -1,22 +1,440 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ball Knowledge — Football Games</title>
-  <meta name="description" content="If it exists as a football game, it's here.">
-  <link rel="stylesheet" href="css/perfect-cup.css">
-</head>
-<body>
-  <div id="perfect-cup">
-    <h1 class="title">Ball Knowledge</h1>
-    <p class="brand-sub">Football games</p>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ball Knowledge — Free Football Knowledge Games | Daily Scout &amp; World Cup Challenges</title>
+    <meta name="description" content="Play free football brain games: Daily Scout mystery player puzzles, 7-0-0 World Cup XI builder, Dynasty, Lineup recall, Bracket sims &amp; more. No accounts. Build streaks, share emoji grids, test your ball knowledge.">
+    <meta name="keywords" content="football games, world cup games, daily puzzle, scout game, 7-0-0, dynasty draft, lineup quiz, bracket simulator, ball knowledge">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Anton&amp;display=swap');
+        
+        :root {
+            --primary: #00ff9d;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .font-display {
+            font-family: 'Anton', sans-serif;
+            letter-spacing: -1px;
+        }
 
-    <div class="results" style="margin-top:24px">
-      <a href="perfect-cup/" class="reroll-btn" style="display:inline-block;text-decoration:none">Perfect Cup · 8-0</a>
-      <p style="margin-top:20px"><a href="lineup/">Lineup</a></p>
-      <p style="margin-top:12px;color:rgba(255,255,255,0.4)">Dynasty — coming soon</p>
+        .game-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .game-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .section-header {
+            font-size: 2.25rem;
+            line-height: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -1.5px;
+        }
+
+        .ad-slot {
+            background: #111827;
+            border: 1px dashed #374151;
+            min-height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-align: center;
+            padding: 0.5rem;
+        }
+
+        .nav-link {
+            transition: color 0.1s ease;
+        }
+        
+        .nav-link:hover {
+            color: #00ff9d;
+        }
+
+        .streak-badge {
+            background: linear-gradient(90deg, #00ff9d, #00cc7a);
+            color: #111827;
+            font-weight: 700;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+        }
+
+        .game-badge {
+            font-size: 0.65rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200">
+    <!-- Consent Banner -->
+    <div id="consent-banner" class="hidden fixed bottom-0 left-0 right-0 bg-zinc-900 border-t border-zinc-800 p-4 z-50">
+        <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+                <span>We use cookies for analytics and ads. <a href="#" class="underline">Learn more</a></span>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="acceptConsent()" class="px-4 py-2 bg-white text-zinc-950 rounded-xl text-sm font-semibold hover:bg-zinc-100 transition">Accept</button>
+                <button onclick="rejectConsent()" class="px-4 py-2 border border-zinc-700 rounded-xl text-sm font-semibold hover:bg-zinc-900 transition">Reject non-essential</button>
+            </div>
+        </div>
     </div>
-  </div>
+
+    <!-- Header -->
+    <header class="border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-lg sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 bg-emerald-400 rounded-2xl flex items-center justify-center">
+                    <span class="text-zinc-950 font-black text-3xl tracking-tighter">B</span>
+                </div>
+                <div>
+                    <span class="font-display text-3xl tracking-tighter">BALLKNW</span>
+                </div>
+            </div>
+            
+            <nav class="hidden md:flex items-center gap-8 text-sm font-medium">
+                <a href="#games" class="nav-link">Games</a>
+                <a href="#about" class="nav-link">About</a>
+                <a href="/scout/" class="nav-link text-emerald-400 font-semibold">Play Scout Daily →</a>
+            </nav>
+            
+            <div class="flex items-center gap-3">
+                <div class="hidden sm:flex items-center gap-2 text-xs bg-zinc-900 px-3 py-1.5 rounded-2xl border border-zinc-800">
+                    <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                    <span class="font-mono text-emerald-400">12,847 playing today</span>
+                </div>
+                <a href="/scout/" class="px-5 py-2.5 bg-white text-zinc-950 rounded-2xl text-sm font-bold flex items-center gap-2 hover:bg-emerald-50 transition">
+                    <span>Play Scout</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="max-w-5xl mx-auto px-6 pt-16 pb-12 text-center">
+        <div class="inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-3xl px-4 py-1 mb-6 text-sm">
+            <span class="text-emerald-400">★</span>
+            <span class="font-medium">Daily habit for 12k+ football obsessives</span>
+        </div>
+        
+        <h1 class="text-6xl md:text-7xl font-display tracking-tighter leading-none mb-4">
+            Test your<br>ball knowledge.
+        </h1>
+        <p class="text-2xl text-zinc-400 max-w-md mx-auto mb-8">Daily puzzles. Viral shares. Real streaks.</p>
+        
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="/scout/" 
+               class="group px-8 py-4 bg-emerald-400 hover:bg-emerald-300 transition text-xl font-bold text-zinc-950 rounded-3xl flex items-center justify-center gap-3 shadow-lg shadow-emerald-400/30">
+                <span>Play Today's Scout</span>
+                <i class="fa-solid fa-play group-hover:translate-x-0.5 transition"></i>
+            </a>
+            <a href="#games" 
+               class="px-8 py-4 border border-zinc-700 hover:bg-zinc-900 transition text-xl font-semibold rounded-3xl flex items-center justify-center gap-2">
+                Browse all 7 games
+            </a>
+        </div>
+        
+        <p class="mt-6 text-sm text-zinc-500">No accounts • No downloads • Instant play • Shareable emoji grids</p>
+    </section>
+
+    <!-- Ad Slot: Header Banner -->
+    <div class="max-w-5xl mx-auto px-6 mb-8">
+        <div class="ad-slot rounded-3xl" id="ad-header">
+            <!-- REPLACE WITH YOUR AD CODE (e.g. Google AdSense) -->
+            <div>
+                <span class="font-mono text-xs tracking-[2px]">AD SLOT — HEADER (728x90 or responsive)</span><br>
+                <span class="text-[10px] opacity-60">Consent-aware • PostHog tracked</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Games Section -->
+    <section id="games" class="max-w-6xl mx-auto px-6 pb-16">
+        <div class="flex items-end justify-between mb-8">
+            <div>
+                <div class="uppercase tracking-[3px] text-xs font-semibold text-emerald-400 mb-1">MATCH CENTRE</div>
+                <h2 class="section-header">7 games ready</h2>
+            </div>
+            <div class="hidden md:block text-sm text-zinc-400">Pick one. Build a streak.</div>
+        </div>
+
+        <!-- Game Grid - REORDERED: Scout priority first, 7-0-0 deprioritized -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            
+            <!-- SCOUT - PRIORITY #1 (Daily habit + viral) -->
+            <div class="game-card bg-zinc-900 border border-emerald-400/30 rounded-3xl p-6 flex flex-col group">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-3xl">🕵️</span>
+                            <span class="font-display text-3xl tracking-tight">SCOUT</span>
+                        </div>
+                        <div class="game-badge bg-emerald-400 text-emerald-950 mt-1 inline-block">DAILY • STREAKS</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-emerald-400 font-mono">TODAY'S #247</div>
+                    </div>
+                </div>
+                <p class="text-zinc-300 flex-1">Guess the mystery World Cup player in 6 tries. Score on nation, position, era, rating &amp; pace. Share beautiful emoji grids. Daily habit with real streaks.</p>
+                
+                <div class="mt-6 flex items-center justify-between text-sm">
+                    <div class="flex items-center gap-1.5 text-emerald-400">
+                        <i class="fa-solid fa-fire"></i>
+                        <span class="font-semibold">Build your streak</span>
+                    </div>
+                    <a href="/scout/" class="px-5 py-2.5 bg-emerald-400 text-emerald-950 rounded-2xl text-sm font-bold flex items-center gap-2 group-hover:gap-3 transition-all">
+                        PLAY SCOUT <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- DYNASTY -->
+            <div class="game-card bg-zinc-900 border border-zinc-800 rounded-3xl p-6 flex flex-col">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-3xl">🏆</span>
+                    <span class="font-display text-3xl tracking-tight">DYNASTY</span>
+                </div>
+                <p class="text-zinc-300 flex-1">Draft your squad with bench options, manage player fatigue and injuries, then navigate the full World Cup tournament with live match play.</p>
+                <div class="mt-auto pt-6">
+                    <a href="/dynasty/" class="block w-full text-center px-5 py-3 border border-zinc-700 hover:bg-zinc-800 rounded-2xl text-sm font-semibold transition">Play Dynasty</a>
+                </div>
+            </div>
+
+            <!-- LINEUP -->
+            <div class="game-card bg-zinc-900 border border-zinc-800 rounded-3xl p-6 flex flex-col">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-3xl">📋</span>
+                    <span class="font-display text-3xl tracking-tight">LINEUP</span>
+                </div>
+                <p class="text-zinc-300 flex-1">Recall real starting XIs from iconic matches and World Cups. Position every player correctly before the clock runs out.</p>
+                <div class="mt-auto pt-6">
+                    <a href="/lineup/" class="block w-full text-center px-5 py-3 border border-zinc-700 hover:bg-zinc-800 rounded-2xl text-sm font-semibold transition">Play Lineup</a>
+                </div>
+            </div>
+
+            <!-- BRACKET -->
+            <div class="game-card bg-zinc-900 border border-zinc-800 rounded-3xl p-6 flex flex-col">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-3xl">🌍</span>
+                    <span class="font-display text-3xl tracking-tight">BRACKET</span>
+                </div>
+                <p class="text-zinc-300 flex-1">Simulate the full 48-team World Cup 2026 with a real statistical match engine. Single run or Monte Carlo probabilities.</p>
+                <div class="mt-auto pt-6">
+                    <a href="/worldcup/" class="block w-full text-center px-5 py-3 border border-zinc-700 hover:bg-zinc-800 rounded-2xl text-sm font-semibold transition">Play Bracket</a>
+                </div>
+            </div>
+
+            <!-- BOARDROOM -->
+            <div class="game-card bg-zinc-900 border border-zinc-800 rounded-3xl p-6 flex flex-col">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-3xl">💼</span>
+                    <span class="font-display text-3xl tracking-tight">BOARDROOM</span>
+                </div>
+                <p class="text-zinc-300 flex-1">Take charge of a club across multiple seasons: transfers, training, tactics, stadium upgrades and sponsors in a retro management sim.</p>
+                <div class="mt-auto pt-6">
+                    <a href="/boardroom/" class="block w-full text-center px-5 py-3 border border-zinc-700 hover:bg-zinc-800 rounded-2xl text-sm font-semibold transition">Play Boardroom</a>
+                </div>
+            </div>
+
+            <!-- HUB -->
+            <div class="game-card bg-zinc-900 border border-zinc-800 rounded-3xl p-6 flex flex-col">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-3xl">🧠</span>
+                    <span class="font-display text-3xl tracking-tight">HUB</span>
+                </div>
+                <p class="text-zinc-300 flex-1">All-in-one tactics board, stats compare, daily quiz, draft room and full club/national manager mode.</p>
+                <div class="mt-auto pt-6">
+                    <a href="/hub/" class="block w-full text-center px-5 py-3 border border-zinc-700 hover:bg-zinc-800 rounded-2xl text-sm font-semibold transition">Open Hub</a>
+                </div>
+            </div>
+
+            <!-- 7-0-0 -->
+            <div class="game-card bg-zinc-900 border border-zinc-800 rounded-3xl p-6 flex flex-col">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-3xl">7</span>
+                    <span class="font-display text-3xl tracking-tight">7-0-0</span>
+                </div>
+                <p class="text-zinc-300 flex-1">Spin for real World Cup squads from 1930–2026, draft your XI across 7 rounds, and chase a perfect unbeaten run. Daily challenge, classic and expert modes.</p>
+                <div class="mt-auto pt-6">
+                    <a href="/700/" class="block w-full text-center px-5 py-3 border border-zinc-700 hover:bg-zinc-800 rounded-2xl text-sm font-semibold transition">Play 7-0-0</a>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Ad Slot: In-content -->
+    <div class="max-w-5xl mx-auto px-6 mb-12">
+        <div class="ad-slot rounded-3xl" id="ad-incontent">
+            <!-- REPLACE WITH YOUR AD CODE -->
+            <div>
+                <span class="font-mono text-xs tracking-[2px]">AD SLOT — IN-CONTENT (responsive)</span><br>
+                <span class="text-[10px] opacity-60">PostHog ad_impression event fired on view</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Section -->
+    <section id="about" class="max-w-4xl mx-auto px-6 pb-20">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 md:p-12">
+            <h2 class="font-display text-4xl tracking-tight mb-6">Built for football obsessives</h2>
+            
+            <div class="grid md:grid-cols-2 gap-x-12 gap-y-8 text-[15px] text-zinc-300">
+                <div>
+                    <p class="mb-4">BALLKNW is a collection of fast, browser-based games designed to test and grow your football knowledge — from daily mystery player puzzles to full World Cup simulations and club management.</p>
+                    <p>No logins. No downloads. Just pure ball knowledge, streaks, and shareable moments.</p>
+                </div>
+                <div class="space-y-4 text-sm">
+                    <div class="flex gap-4">
+                        <i class="fa-solid fa-check text-emerald-400 mt-1"></i>
+                        <div>Real data from 2002–2026 World Cups (Fjelstul database)</div>
+                    </div>
+                    <div class="flex gap-4">
+                        <i class="fa-solid fa-check text-emerald-400 mt-1"></i>
+                        <div>Daily puzzles with persistent streaks &amp; emoji share grids</div>
+                    </div>
+                    <div class="flex gap-4">
+                        <i class="fa-solid fa-check text-emerald-400 mt-1"></i>
+                        <div>Statistical simulation engine (Poisson + real squad ratings)</div>
+                    </div>
+                    <div class="flex gap-4">
+                        <i class="fa-solid fa-check text-emerald-400 mt-1"></i>
+                        <div>Privacy-first • PostHog analytics • Consent-aware ads</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8 pt-6 border-t border-zinc-800 text-xs text-zinc-500 flex flex-wrap gap-x-6 gap-y-1">
+                <div>15,000+ real player ratings</div>
+                <div>192 country squads</div>
+                <div>97 Icons</div>
+                <div>Built for the 2026 World Cup window</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Ad + Footer -->
+    <div class="max-w-5xl mx-auto px-6">
+        <div class="ad-slot rounded-3xl mb-8" id="ad-footer">
+            <!-- REPLACE WITH YOUR AD CODE -->
+            <div>
+                <span class="font-mono text-xs tracking-[2px]">AD SLOT — FOOTER / BOTTOM (responsive)</span>
+            </div>
+        </div>
+    </div>
+
+    <footer class="border-t border-zinc-800 py-8 text-center text-xs text-zinc-500">
+        <div class="max-w-5xl mx-auto px-6">
+            Made for football heads. Data from public sources. 
+            <a href="#" class="hover:text-zinc-300">Privacy</a> • 
+            <a href="#" class="hover:text-zinc-300">Contact</a>
+            <span class="mx-2">•</span> 
+            <span class="font-mono">v2.4 • Scout-first update</span>
+        </div>
+    </footer>
+
+    <script>
+        // Tailwind script
+        function initTailwind() {
+            // Already using CDN, basic config if needed
+        }
+
+        // Consent Banner Logic
+        function showConsentBanner() {
+            const banner = document.getElementById('consent-banner');
+            if (!localStorage.getItem('ballknw_consent')) {
+                banner.classList.remove('hidden');
+                banner.classList.add('flex');
+            }
+        }
+
+        function acceptConsent() {
+            localStorage.setItem('ballknw_consent', 'accepted');
+            document.getElementById('consent-banner').classList.add('hidden');
+            // Initialize ads + PostHog here
+            initAdsAndTracking();
+        }
+
+        function rejectConsent() {
+            localStorage.setItem('ballknw_consent', 'rejected');
+            document.getElementById('consent-banner').classList.add('hidden');
+            // Limited mode - no ads
+        }
+
+        function initAdsAndTracking() {
+            // Placeholder: Fire PostHog events for ad slots
+            console.log('%c[PostHog] Ad slots initialized (consent granted)', 'color:#00ff9d');
+            
+            // Example: Track ad impressions on scroll/view
+            const adSlots = document.querySelectorAll('.ad-slot');
+            adSlots.forEach(slot => {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            console.log('%c[PostHog] ad_impression fired for slot: ' + slot.id, 'color:#00ff9d');
+                            // posthog.capture('ad_impression', { slot: slot.id });
+                            observer.disconnect();
+                        }
+                    });
+                });
+                observer.observe(slot);
+            });
+
+            // Make ad slots clickable for demo (replace with real ad networks)
+            adSlots.forEach(slot => {
+                slot.style.cursor = 'pointer';
+                slot.onclick = () => {
+                    console.log('%c[PostHog] ad_click fired for slot: ' + slot.id, 'color:#00ff9d');
+                    // posthog.capture('ad_click', { slot: slot.id });
+                    alert('Ad clicked — replace this with your actual ad network redirect.');
+                };
+            });
+        }
+
+        // Keyboard shortcut hint
+        function initKeyboardHints() {
+            document.addEventListener('keydown', function(e) {
+                if (e.key === '?' && document.activeElement.tagName === 'BODY') {
+                    e.preventDefault();
+                    window.location.href = '/scout/';
+                }
+            });
+            
+            // Subtle hint in console
+            console.log('%c[BALLKNW] Press "?" anywhere to jump to today\'s Scout', 'color:#666');
+        }
+
+        // Main init
+        function init() {
+            initTailwind();
+            showConsentBanner();
+            
+            // Auto-init ads if consent already given
+            if (localStorage.getItem('ballknw_consent') === 'accepted') {
+                initAdsAndTracking();
+            }
+            
+            initKeyboardHints();
+            
+            // Optional: Track page view
+            console.log('%c[PostHog] pageview: homepage (Scout-first update)', 'color:#00ff9d');
+        }
+
+        window.onload = init;
+    </script>
 </body>
 </html>

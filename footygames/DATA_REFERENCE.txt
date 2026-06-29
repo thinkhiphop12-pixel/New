@@ -1,0 +1,109 @@
+FootyGames — data reference (for future updates)
+==================================================
+
+IMPORTANT CAVEAT — read this first
+-----------------------------------
+What we have is NOT editable source code. It's the *built* output of a
+Vite/React app (the "Source Code Downloader" tool only managed to grab the
+thin HTML shell, and the project's actual .tsx/.ts source files were never
+provided — they live wherever the app was originally built, e.g. the
+youware.app project workspace). The actual JS in
+footygames/assets/index-MUKpinuO.js is a single 290KB minified bundle.
+
+So right now, the ONLY way to change the puzzle content is to find the exact
+text inside that minified file and string-replace it (which is how the bugs
+below were fixed). That's fragile and not how you'd want to maintain this
+long-term. If you want this to be properly editable going forward, get the
+real source (the .tsx component files + data files) from wherever it was
+built and we can re-integrate it as readable source instead of a black-box
+bundle.
+
+The 3 games and their data shapes
+----------------------------------
+
+1) Kickle (Wordle-style) — minified var name in the bundle: `Lh`
+   type KickleEntry = { answer: string; hint: string };
+   const KICKLE_ANSWERS: KickleEntry[] = [...]   // currently 30 entries
+
+   Rules enforced by the game itself:
+   - Letters only count: answer.toUpperCase().replace(/[^A-Z]/g, "")
+   - That stripped form MUST be <= 10 characters (hardcoded constant `Is=10`
+     in the bundle) or the puzzle is unsolvable — the player literally
+     cannot type enough letters. THREE entries violated this on upload
+     (NETHERLANDS=11, BAYERN MUNICH=12, MANCHESTER CITY=14) and were
+     swapped for shorter equivalents (HOLLAND, BAYERN, MAN CITY).
+   - Max guesses: 6 (constant `_s=6`).
+   - Selection: day-of-year (Jan 1 = day 0) % 30 — so it resets every
+     New Year's Day and repeats roughly every 30 days. With only 30
+     entries, every answer is seen ~12 times a year.
+
+2) Connections — minified var name: `Rh`
+   type ConnectionsPuzzle = {
+     categories: { name: string; color: string; items: string[] }[] // always 4 categories x 4 items
+   };
+   const CONNECTIONS_PUZZLES: ConnectionsPuzzle[] = [...]   // currently 3 entries
+
+   Selection: day-of-year % 3 — repeats every 3 days. Very thin; this is
+   the one most worth expanding first.
+
+   Content fixes already applied: "MOUINHO" -> "MOURINHO" (typo), lone
+   "SANTIAGO" -> "BERNABEU" (ambiguous, reads like the city not the
+   stadium), "IBEKA" -> "O REI" (not a recognizable football nickname).
+
+3) Strands (word-search) — minified var name: `Dh`
+   type StrandsWord = { word: string; positions: [row: number, col: number][] };
+   type StrandsPuzzle = {
+     title: string; hint: string;
+     grid: string[][];          // 10x10 letters
+     words: StrandsWord[];
+   };
+   const STRANDS_PUZZLES: StrandsPuzzle[] = [...]   // currently 2 entries
+
+   Selection: day-of-year % 2 — alternates every single day. Extremely
+   thin; needs more puzzles before this feels like a real daily game.
+
+   Invariant that MUST hold for every word: reading grid[r][c] for each
+   [r,c] in word.positions, in order, must spell out `word` exactly. Two
+   words failed this on upload — NEYMAR and GOALKEEPER had positions
+   pointing at the wrong cells (the puzzle was unsolvable for those words
+   no matter what the player typed). Fixed by rewriting the relevant grid
+   row so the letters actually line up with the stated positions.
+
+Daily rotation formula (same shape in all three games)
+--------------------------------------------------------
+  const dayOfYear = Math.floor(
+    (new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime())
+    / 86400000
+  );
+  const puzzle = LIST[dayOfYear % LIST.length];
+
+Note this resets on Jan 1 every year and is based on the VISITOR'S LOCAL
+clock (new Date()), not server time / UTC — so two players in different
+timezones can briefly see different "today" puzzles around midnight. Not a
+bug, just worth knowing; it's the same pattern most of these takes-on-Wordle
+projects use.
+
+Other things worth knowing
+----------------------------
+- No backend calls of any kind (confirmed: zero fetch/XHR/localStorage in
+  the bundle besides Vite's own module-preload polyfill). Nothing to wire
+  up — it's a fully static, client-only app, same as every other game on
+  this site.
+- No score/streak persistence at all right now (no localStorage) — every
+  reload starts fresh. If you want streaks like real Wordle, that's a
+  feature to add in real source, not something patchable in the bundle.
+- No "practice"/"archive" mode — daily puzzle only, no way to play past
+  days' puzzles.
+
+Current status on the live site
+----------------------------------
+Deliberately NOT public yet: no homepage card, no footer link, no
+sitemap.xml entry, and robots.txt disallows /footygames/. It's only
+reachable by typing the URL directly. To make it public: add a game card
+to index.html, a footer link site-wide, a sitemap.xml entry, and remove
+the /footygames/ line from robots.txt (and the <meta name="robots"
+content="noindex, nofollow"> tag in footygames/index.html).
+
+Recommendation before going public: expand Connections (3 -> at least 10-15
+puzzles) and Strands (2 -> at least 10-15 puzzles) so the daily rotation
+doesn't repeat within two weeks.
