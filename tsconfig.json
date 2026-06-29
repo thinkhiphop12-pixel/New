@@ -4,11 +4,11 @@
     "module": "ES2020",
     "moduleResolution": "bundler",
     "strict": true,
-    "outDir": "perfect-cup/dist",
-    "rootDir": "perfect-cup",
+    "outDir": "700/dist",
+    "rootDir": "700",
     "declaration": true,
     "skipLibCheck": true
   },
-  "include": ["perfect-cup/**/*.ts"],
-  "exclude": ["node_modules", "perfect-cup/dist"]
+  "include": ["700/**/*.ts"],
+  "exclude": ["node_modules", "700/dist"]
 }
