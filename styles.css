@@ -101,7 +101,6 @@ button{ font-family:inherit; cursor:pointer; border:none; }
   box-shadow:0 12px 34px rgba(0,0,0,.22);
   transition:border-color .2s, transform .2s, box-shadow .2s;
 }
-.game-card:nth-child(4), .game-card:nth-child(5){ grid-column:span 3; }
 .game-card:hover{ border-color:var(--line-strong); transform:translateY(-5px); box-shadow:0 22px 48px rgba(0,0,0,.34); }
 .gc-thumb{
   display:flex; align-items:center; justify-content:flex-start; padding:22px;
