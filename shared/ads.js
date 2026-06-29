@@ -1,21 +1,16 @@
-/* Shared ad infrastructure — disabled for safety.
-   All external ad networks (Adsterra, etc.) have been disabled due to
-   click-hijacking and random-click issues. Site now runs ad-free.
-   To re-enable paid advertising in future, contact thinkhiphop12@gmail.com. */
+/* Shared ad infrastructure.
+   Adsterra units re-enabled at the site owner's request. All loading stays
+   consent-gated (getConsent() === 'all') and capped at two ad surfaces per
+   page. The intrusive popunder and direct-link units remain off; only the
+   Social Bar and Native unit (the ones with live zones) are active.
+   To change ad behaviour, edit the zone constants below. */
 
-// ---- ALL AD NETWORKS DISABLED ----
-// External ad scripts that were previously integrated:
-// - Adsterra Social Bar (DISABLED: random-click hijacking detected)
-// - Adsterra Banner Network (DISABLED: link hijacking detected)
-// - Adsterra Native Unit (DISABLED: malicious click interception)
-// - Adsterra Popunder (DISABLED: intrusive redirects)
-
-const ADSTERRA_SOCIAL_BAR_SRC = '';       // DISABLED
-const ADSTERRA_BANNER_KEY = '';           // DISABLED
-const ADSTERRA_NATIVE_SRC = '';           // DISABLED
-const ADSTERRA_NATIVE_CONTAINER_ID = '';  // DISABLED
-const ADSTERRA_POPUNDER_SRC = '';         // DISABLED
-const ADSTERRA_DIRECT_LINK = '';          // DISABLED
+const ADSTERRA_SOCIAL_BAR_SRC = 'https://pl29902467.effectivecpmnetwork.com/fe/33/d2/fe33d2be9e814339b1c0fa3d089168a8.js';
+const ADSTERRA_BANNER_KEY = '';           // no banner zone configured
+const ADSTERRA_NATIVE_SRC = 'https://pl29902468.effectivecpmnetwork.com/14db44511efd6640ca8f50a10426428d/invoke.js';
+const ADSTERRA_NATIVE_CONTAINER_ID = 'container-14db44511efd6640ca8f50a10426428d';
+const ADSTERRA_POPUNDER_SRC = '';         // intentionally off (intrusive redirects)
+const ADSTERRA_DIRECT_LINK = '';          // intentionally off
 
 // Affiliate tracking links — fill in once you have real Amazon Associates /
 // Fanatics partner tags. The homepage affiliate block stays hidden until
