@@ -3,35 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#1a5c3a">
-<meta name="description" content="LINEUP - The ultimate World Cup football lineup guessing game. Can you name the starting XI?">
-<!-- Open Graph -->
-<meta property="og:title" content="LINEUP - World Cup Edition">
-<meta property="og:description" content="Can you name the starting XI? Test your football knowledge with 100 levels of legendary World Cup matches.">
+<meta name="theme-color" content="#0a1f14">
+<link rel="stylesheet" href="../shared/site.css">
+<meta name="description" content="Guess the starting XI from iconic World Cup matches. Free on Ball Knw.">
+<meta property="og:title" content="Lineup — Guess the Starting XI | Ball Knw">
+<meta property="og:description" content="Name the starting XI from legendary World Cup matches. Free football game on Ball Knw.">
 <meta property="og:type" content="website">
-<!-- Twitter -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="LINEUP - World Cup Edition">
-<meta name="twitter:description" content="Can you name the starting XI? Test your football knowledge with 100 levels of legendary World Cup matches.">
-<title>LINEUP - World Cup Edition</title>
+<title>Lineup — Guess the Starting XI | Ball Knw</title>
+<link rel="icon" href="../shared/logo-mark.svg" type="image/svg+xml">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
-  --pitch-green: #1a5c3a;
-  --pitch-light: #2d7a4f;
-  --pitch-line: rgba(255,255,255,0.8);
-  --bg-dark: #0a0e1a;
-  --bg-panel: #141b2d;
-  --bg-panel-hover: #1e2841;
-  --text-primary: #e8ecf1;
-  --text-secondary: #8b9bb4;
-  --accent: #00d4aa;
-  --accent-hover: #00b894;
-  --danger: #ff4757;
-  --warning: #ffa502;
-  --success: #2ed573;
-  --team-a-color: #3498db;
+  --pitch-green: #1b6239;
+  --pitch-light: #2a7a4f;
+  --pitch-line: rgba(255,255,255,0.75);
+  --bg-dark: #0a1f14;
+  --bg-panel: #123322;
+  --bg-panel-hover: #16402a;
+  --text-primary: #eef6ef;
+  --text-secondary: #a9c4b3;
+  --accent: #e3b23c;
+  --accent-hover: #f0d28a;
+  --danger: #ff6b6b;
+  --warning: #e3b23c;
+  --success: #2ecc71;
+  --team-a-color: #6cace4;
   --team-b-color: #e74c3c;
+  --line: #1f5536;
+  --gold-soft: #f0d28a;
 }
 
 body {
@@ -42,8 +41,8 @@ body {
   overflow-x: hidden;
 }
 
-/* Top Navigation */
-.game-nav {
+/* Hub nav */
+.hub-nav {
   display: flex;
   justify-content: center;
   gap: 0;
@@ -52,22 +51,24 @@ body {
   border-bottom: 1px solid rgba(255,255,255,0.05);
   flex-wrap: wrap;
 }
-.game-nav a {
-  padding: 10px 18px;
+.hub-nav a {
+  padding: 10px 16px;
   color: var(--text-secondary);
   text-decoration: none;
   font-size: 13px;
-  font-weight: 600;
-  transition: all 0.2s;
+  font-weight: 700;
   border-bottom: 2px solid transparent;
 }
-.game-nav a:hover, .game-nav a.active {
+.hub-nav a:hover, .hub-nav a.active {
   color: var(--accent);
   border-bottom-color: var(--accent);
-  background: var(--bg-panel-hover);
+  background: transparent;
 }
 
-/* Game Container */
+.lineup-hero { text-align: center; padding: 12px 10px 8px; }
+.lineup-title { display: block; font-size: 22px; font-weight: 900; color: var(--accent); letter-spacing: .5px; }
+.lineup-sub { display: block; font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4; }
+
 .game-container {
   max-width: 900px;
   margin: 0 auto;
@@ -200,9 +201,9 @@ body {
   cursor: pointer;
   transition: all 0.2s;
 }
-.btn-primary { background: var(--accent); color: #000; }
-.btn-primary:hover { background: var(--accent-hover); }
-.btn-hint { background: var(--warning); color: #000; }
+.btn-primary { background: linear-gradient(180deg, var(--accent-hover), var(--accent)); color: #1a1206; font-weight: 800; }
+.btn-primary:hover { filter: brightness(1.05); }
+.btn-hint { background: var(--bg-panel-hover); color: var(--accent); border: 1px solid var(--line); }
 .btn-skip { background: var(--bg-panel-hover); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.1); }
 
 /* Progress Bar */
@@ -306,7 +307,7 @@ body {
   border: 0;
 }
 
-/* Footer + consent banner (shared across Ball Knowledge pages) */
+/* Footer + consent banner */
 .site-footer{ padding:20px 0; text-align:center; }
 .site-footer > a{ color:var(--accent); text-decoration:none; font-weight:600; font-size:13px; }
 .site-footer > a:hover{ text-decoration:underline; }
@@ -328,14 +329,20 @@ body {
 </head>
 <body>
 
-<!-- Navigation -->
-<nav class="game-nav" role="navigation" aria-label="Game navigation">
-  <a href="../">&#8592; Ball Knowledge</a>
-  <a href="index.html" class="active">&#127757; World Cup</a>
+<nav class="hub-nav" role="navigation" aria-label="Game navigation">
+  <a href="../">Ball Knw</a>
+  <a href="../700/">7-0-0</a>
+  <a href="./" class="active">Lineup</a>
+  <a href="../heatmap/">HeatMap</a>
+  <a href="../scoreline/">Scoreline</a>
 </nav>
 
 <div class="game-container">
-  <!-- Top Bar -->
+  <header class="lineup-hero">
+    <span class="lineup-title">Lineup</span>
+    <span class="lineup-sub">Guess both starting XIs · fuzzy name matching · 100 World Cup matches</span>
+  </header>
+
   <div class="top-bar" role="status" aria-label="Game status">
     <div class="top-bar-item">
       <span class="label">Level</span>
@@ -424,19 +431,14 @@ body {
   <!-- Progress Bar -->
   <div class="progress-bar" id="progress-bar" role="progressbar" aria-label="Level progress"></div>
 
-  <!-- Bottom Ad -->
-  <div class="ad-placeholder ad-slot" id="ad-banner-bottom" data-ad-slot="">
-    <small>Advertisement</small>
-  </div>
-
   <!-- Share Section -->
   <div id="share-section" style="text-align:center; margin-top:10px;">
     <button class="btn btn-primary" onclick="shareResult()">&#128279; Share Result</button>
   </div>
 
   <footer class="site-footer">
-    <a href="../">Home</a> · <a href="../700/">7-0-0</a> · <a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a>
-    <p class="footer-disclaimer">LINEUP is an unofficial fan-made game, not affiliated with FIFA or any federation. For enquiries, contact <a href="mailto:thinkhiphop12@gmail.com">thinkhiphop12@gmail.com</a>.</p>
+    <a href="../">Ball Knw</a> · <a href="../700/">7-0-0</a> · <a href="../heatmap/">HeatMap</a> · <a href="../scoreline/">Scoreline</a>
+    <p class="footer-disclaimer">Ball Knw is an unofficial fan project. Not affiliated with FIFA or any federation.</p>
     <button class="btn-link cookie-settings-link" id="cookieSettingsBtn">Cookie settings</button>
   </footer>
 </div>
@@ -941,7 +943,7 @@ function levelComplete(perfect) {
       </div>
       <div>
         <button class="btn btn-hint" onclick="shareResult()">&#128228; Share</button>
-        <a href="../700/" class="btn btn-skip" style="margin-left:8px;text-decoration:none;display:inline-block;">&#9917; Try 7-0-0</a>
+        <a href="../heatmap/" class="btn btn-skip" style="margin-left:8px;text-decoration:none;display:inline-block;">Try HeatMap</a>
       </div>
     </div>
   `;
@@ -1042,6 +1044,7 @@ document.getElementById('player-input').addEventListener('keypress', (e) => {
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   loadLevel(0);
+  setTimeout(()=>{try{window.fillAllAdSlots&&window.fillAllAdSlots();}catch(e){}},800);
 });
 
 </script>

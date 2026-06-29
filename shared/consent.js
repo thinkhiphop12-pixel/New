@@ -1,5 +1,5 @@
-/* Shared consent / PostHog / AdSense foundation, used by every Ball Knowledge
-   page (homepage, 700, lineup). Fill in real IDs below before going live;
+/* Shared consent / PostHog / AdSense foundation, used by every Ball Knw
+   page (homepage, 700, lineup, heatmap). Fill in real IDs below before going live;
    until then loadPostHog/loadAdSense/fillAllAdSlots stay no-ops, and any
    element with class="ad-slot" just shows its placeholder label. */
 const POSTHOG_KEY = ''; // e.g. 'phc_xxxxxxxx'
@@ -62,11 +62,14 @@ function fillAllAdSlots(){
   });
 }
 
+// Make the function globally available so games can call it anytime
+window.fillAllAdSlots = fillAllAdSlots;
+
 function applyConsent(choice){
   setConsent(choice);
   const banner = document.getElementById('consentBanner');
   if (banner) banner.classList.add('hidden');
-  if (choice === 'all') { loadPostHog(); loadAdSense(); fillAllAdSlots(); }
+  if (choice === 'all') { loadPostHog(); loadAdSense(); setTimeout(fillAllAdSlots, 120); }
 }
 
 function initConsent(){
@@ -88,4 +91,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (essentialBtn) essentialBtn.addEventListener('click', () => applyConsent('essential'));
   if (settingsBtn) settingsBtn.addEventListener('click', () => banner && banner.classList.remove('hidden'));
   initConsent();
+  // Always attempt to fill ads on pages that become visible later
+  setTimeout(() => { try { fillAllAdSlots(); } catch(e){} }, 900);
 });

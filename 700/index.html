@@ -3,347 +3,132 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<title>7-0-0 — Build the Perfect World Cup XI</title>
-<meta name="description" content="Spin for players across 7 World Cups, draft your XI, and chase a perfect 7-0-0 run. A free squad-building game.">
-<meta property="og:title" content="7-0-0 — Build the Perfect World Cup XI">
-<meta property="og:description" content="Spin, draft, and build a World Cup squad chasing the perfect 7-0-0 run.">
+<title>7-0-0 — Build Your World Cup XI | Ball Knw</title>
+<meta name="description" content="Spin real World Cup squads. Draft your XI. Chase 7-0-0. Advanced squad builder on Ball Knw.">
+<meta property="og:title" content="7-0-0 — Build Your World Cup XI">
+<meta property="og:description" content="Spin squads from real World Cups. Build your perfect XI.">
 <meta property="og:type" content="website">
-<meta property="og:image" content="assets/og-image.png">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="assets/og-image.png">
-<link rel="icon" type="image/svg+xml" href="assets/logo-mark.svg">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
-<link rel="apple-touch-icon" href="assets/favicon-192.png">
+<link rel="icon" href="../shared/logo-mark.svg" type="image/svg+xml">
+<link rel="preload" href="data.json" as="fetch" crossorigin>
+<link rel="stylesheet" href="../shared/site.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div id="app">
 
+  <nav class="hub-nav">
+    <a href="../">Ball Knw</a>
+    <a href="./" class="active">7-0-0</a>
+    <a href="../lineup/">Lineup</a>
+    <a href="../heatmap/">HeatMap</a>
+    <a href="../scoreline/">Scoreline</a>
+  </nav>
+
   <header class="topbar">
     <div class="brand">
-      <img class="brand-logo" src="assets/logo-mark.svg" alt="7-0-0" width="32" height="32">
-      <div class="brand-text">
+      <img src="assets/logo-mark.svg" width="28" height="28" alt="" class="brand-logo">
+      <div>
         <span class="brand-mark">7-0-0</span>
-        <span class="brand-sub">World Cup Squad Builder</span>
+        <span class="brand-sub">WORLD CUP XI</span>
       </div>
     </div>
-    <div class="round-pill" id="roundPill"></div>
-    <button class="icon-btn" id="resetBtn" title="Start over">↺</button>
+    <div class="topbar-right">
+      <div class="round-pill" id="roundPill"></div>
+      <button class="icon-btn hidden" id="undoBtn" title="Undo last pick (U)">↩</button>
+      <button class="icon-btn" id="resetBtn" title="Start over">↺</button>
+    </div>
   </header>
 
-  <!-- ===================== SETUP ===================== -->
+  <div class="xi-progress hidden" id="xiProgressWrap">
+    <div class="xi-progress-meta">
+      <span id="xiProgressLabel">0 / 11 picked</span>
+      <span id="liveRating">—</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="xiProgressFill" style="width:0%"></div></div>
+  </div>
+
   <section id="setupScreen" class="screen">
-    <div class="setup-inner">
-      <h1 class="setup-title">Pick a squad. Chase a perfect run.</h1>
-      <p class="setup-sub">Choose how you play, pick your shape, then spin across World Cups and Icons for your XI.</p>
+    <div class="setup-inner anim-slide">
+      <h1>Build your World Cup XI</h1>
+      <p class="setup-sub">Spin real squads from 192 World Cups. Draft 11 players into your formation. Project your tournament record.</p>
 
-      <div class="data-edge">
-        <div class="data-edge-head">Not just nations. Real World Cups, built in.</div>
-        <p class="data-edge-sub">Most squad-builder games hand you a generic roster per country. We went through
-          actual World Cup data — match by match, squad by squad — and turned it into every player, position and
-          rating you draft with.</p>
-        <div class="data-edge-stats">
-          <div class="de-stat"><span class="de-num">15,000+</span><span class="de-label">real player ratings calculated</span></div>
-          <div class="de-stat"><span class="de-num">192</span><span class="de-label">country / World Cup squads</span></div>
-          <div class="de-stat"><span class="de-num">97</span><span class="de-label">legendary Icons</span></div>
-        </div>
+      <div class="setup-stats">
+        <span>4,634 players</span><span>·</span><span>192 squads</span><span>·</span><span>97 icons</span>
       </div>
 
       <div class="step">
-        <div class="step-label">1 — Game mode</div>
-        <div class="mode-grid">
-          <button class="mode-card" data-mode="classic">
-            <span class="m-title">Classic</span>
-            <span class="m-desc">Ratings visible. Draft by the numbers.</span>
-          </button>
-          <button class="mode-card" data-mode="expert">
-            <span class="m-title">Expert</span>
-            <span class="m-desc">Ratings hidden. Draft on reputation alone.</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="step">
-        <div class="step-label">2 — Formation</div>
+        <div class="step-label">Choose formation</div>
         <div class="formation-grid" id="formationGrid"></div>
       </div>
 
-      <button class="btn-primary" id="setupStart" disabled>Start drafting →</button>
-
-      <div class="ad-slot" id="adSlotSetup" data-ad-slot="">
-        <span class="ad-slot-label">Advertisement</span>
-      </div>
+      <button class="btn-primary big" id="setupStart" disabled>Start drafting →</button>
+      <p class="setup-hint">Tip: press <kbd>Enter</kbd> to spin · <kbd>/</kbd> to search players</p>
     </div>
   </section>
 
-  <!-- ===================== GAME ===================== -->
   <section id="gameScreen" class="screen hidden">
-    <div class="ad-rail ad-rail-left ad-slot" id="adSlotRailLeft" data-ad-slot="">
-      <span class="ad-slot-label">Advertisement</span>
-    </div>
-    <div class="ad-rail ad-rail-right ad-slot" id="adSlotRailRight" data-ad-slot="">
-      <span class="ad-slot-label">Advertisement</span>
-    </div>
-    <div class="game-grid">
-
-      <div class="left-col">
-
-        <div class="card spin-pane" id="spinPane">
-          <div class="reels">
-            <div class="reel">
-              <div class="reel-value" id="reelCountry">—</div>
-              <div class="reel-label">Country</div>
-            </div>
-            <div class="reel">
-              <div class="reel-value" id="reelYear">—</div>
-              <div class="reel-label">Tournament</div>
-            </div>
+    <div class="game-wrap">
+      <div class="left-panel">
+        <div class="spin-card" id="spinCard">
+          <div class="squad-info">
+            <div id="squadName" class="squad-name">—</div>
+            <div id="squadYear" class="squad-year">Press spin for a squad offer</div>
           </div>
-          <button class="btn-primary spin-btn" id="spinBtn">SPIN</button>
-          <p class="spin-hint">Every draft mixes weak, mid and strong squads — plus one Icon round</p>
+          <button class="spin-btn" id="spinBtn">Spin for squad</button>
+          <div class="spin-hint">Tap a player · or click a position on the pitch</div>
         </div>
 
-        <div class="card icon-offer hidden" id="iconOffer">
-          <div class="icon-card-head">⭐ ICON OFFER — <span id="iconOfferNation"></span></div>
-          <p class="icon-offer-sub">Pick one Icon to draft straight into an open slot.</p>
-          <div class="player-list icon-offer-list" id="iconOfferList"></div>
-          <div class="icon-actions">
-            <button class="btn-ghost" id="iconSkipBtn">Skip</button>
+        <div class="player-panel card" id="playerPanel">
+          <div class="panel-head">
+            <span>Eligible players</span>
+            <input id="playerSearch" type="search" placeholder="Search ( / )" autocomplete="off">
           </div>
-        </div>
-
-        <div class="card draft-pane hidden" id="draftPane">
-          <div class="draft-head">
-            <div>
-              <div class="draft-team" id="draftTeamName"></div>
-              <div class="draft-year" id="draftYear"></div>
-            </div>
-          </div>
-          <div class="draft-toolbar">
-            <input class="draft-search" id="draftSearch" type="text" placeholder="Search this squad…">
-            <button class="sort-btn" id="draftSortBtn" title="Sort players">Best first ▾</button>
-          </div>
-          <div class="draft-instruct" id="draftInstruct"></div>
           <div class="player-list" id="playerList"></div>
         </div>
-
       </div>
 
-      <div class="pitch-col">
+      <div class="pitch-panel">
         <div class="pitch-wrap">
-          <div class="pitch" id="pitch">
-            <div class="pitch-lines">
-              <div class="pl-box pl-box-top"></div>
-              <div class="pl-box pl-box-bottom"></div>
-              <div class="pl-circle"></div>
-              <div class="pl-halfway"></div>
-            </div>
-          </div>
+          <div class="pitch" id="pitch"></div>
         </div>
-        <div class="formation-tag" id="formationTag"></div>
+        <div class="pitch-label" id="formationLabel">4-3-3</div>
       </div>
-
     </div>
   </section>
 
-  <!-- ===================== RESULTS ===================== -->
   <section id="resultsScreen" class="screen hidden">
-    <div class="results-inner">
-      <div class="brand-mark results-brand">7-0-0</div>
-      <h2 class="results-q" id="resultsQ"></h2>
+    <div class="results-wrap anim-pop">
+      <div class="results-game">7-0-0</div>
+      <div class="results-head" id="resultsHead"></div>
 
-      <div class="record-block">
-        <div class="record-label">PROJECTED WORLD CUP RECORD</div>
-        <div class="record-line">
-          <span id="recW"></span>-<span id="recD"></span>-<span id="recL"></span>
-        </div>
-        <div class="record-key" id="recordKey"></div>
+      <div class="record-card" id="recordCard">
+        <div class="record-label">Projected record</div>
+        <div class="record-big"><span id="recW">0</span>-<span id="recD">0</span>-<span id="recL">0</span></div>
+        <div class="record-sub" id="recordSub"></div>
         <div class="tier-badge" id="tierBadge"></div>
-        <div class="tier-sub" id="tierSub"></div>
       </div>
 
-      <div class="results-actions">
+      <div class="actions">
         <button class="btn-ghost" id="shareBtn">Share result</button>
-        <button class="btn-primary" id="againBtn">Build another</button>
+        <button class="btn-primary" id="againBtn">Play again</button>
       </div>
 
-      <button class="btn-link" id="showMoreBtn">Show full tournament breakdown ▾</button>
-
-      <div class="breakdown hidden" id="breakdown">
-        <div class="bd-grid">
-          <div class="bd-card">
-            <div class="bd-label">Group Stage</div>
-            <div class="bd-value" id="bdGroup"></div>
-          </div>
-          <div class="bd-card">
-            <div class="bd-label">Tournament Run</div>
-            <div class="bd-value" id="bdRun"></div>
-          </div>
-          <div class="bd-card">
-            <div class="bd-label">Star Man</div>
-            <div class="bd-value" id="bdTopPlayer"></div>
-            <div class="bd-subvalue" id="bdTopPlayerSub"></div>
-          </div>
-          <div class="bd-card">
-            <div class="bd-label">Top Scorer</div>
-            <div class="bd-value" id="bdTopScorer"></div>
-            <div class="bd-subvalue" id="bdTopScorerSub"></div>
-          </div>
-        </div>
-        <div class="bd-players-label">Your XI</div>
-        <div class="xi-list" id="xiList"></div>
+      <div class="xi-card">
+        <div class="xi-head">Your XI</div>
+        <div id="xiList" class="xi-list"></div>
       </div>
 
-      <div class="ad-slot" id="adSlotResults" data-ad-slot="">
-        <span class="ad-slot-label">Advertisement</span>
-      </div>
-
-      <p class="attribution">Squad-list basis: Fjelstul World Cup Database (CC-BY-SA 4.0).</p>
+      <p class="more-games">More on Ball Knw: <a href="../lineup/">Lineup</a> · <a href="../heatmap/">HeatMap</a> · <a href="../scoreline/">Scoreline</a></p>
     </div>
   </section>
-
-  <!-- About / How it works / FAQ — real page content (SEO + ad-network review) -->
-  <section class="about" id="about">
-    <div class="about-inner">
-      <h2>About 7-0-0</h2>
-      <p><strong>7-0-0</strong> is a free online football game where you build the perfect World Cup XI
-        and find out whether it could go an entire tournament unbeaten — 7 games, 7 wins, zero draws, zero
-        losses. Spin for real countries and World Cups, draft your team player by player, and see how your
-        dream line-up would stack up across a full World Cup campaign.</p>
-
-      <h3>How it works</h3>
-      <ol>
-        <li><strong>Pick your mode and formation</strong> — choose how you want to play and the shape of your team.</li>
-        <li><strong>Spin</strong> to draw a random country and World Cup year.</li>
-        <li><strong>Draft one player</strong> from that squad into an open position — or take a rare Icon offer.</li>
-        <li><strong>Repeat</strong> until every position is filled.</li>
-        <li><strong>Get your projected 7-game record</strong> and the tier your XI earns — from a Group Stage
-          Exit all the way up to the legendary 7-0-0.</li>
-      </ol>
-
-      <h3>The 7-0-0 challenge</h3>
-      <p>Only one team in World Cup history has ever gone 7-0-0: Brazil's 2002 squad won all seven of their
-        matches — three group games plus the Round of 16, quarter-final, semi-final and final — without a
-        single draw or loss. It's been done exactly once. A flawless run is achievable in the game, but
-        deliberately punishing: you'll need elite players in every position and very little luck to spare.</p>
-
-      <h3>Formations</h3>
-      <p>Build your XI in any of seven classic shapes: <strong>4-3-3, 4-4-2, 4-2-4, 3-4-3, 3-5-2, 5-3-2</strong>
-        and <strong>5-4-1</strong>. Players can only fill positions they genuinely play, so every team you
-        build is realistic.</p>
-
-      <h3>Game modes</h3>
-      <ul>
-        <li><strong>Classic</strong> — full overall ratings and player stats are on show. Draft the strongest team you can.</li>
-        <li><strong>Expert</strong> — ratings and stats are hidden. You see only names and positions and draft on pure
-          football knowledge. The stats and final record are revealed at the end.</li>
-      </ul>
-
-      <h3>Where the ratings come from</h3>
-      <p>Ratings are based on real World Cup squads, cross-checked against public football rating data. Each
-        country and year in the game uses the real squad selected for that tournament, so the same player can
-        look very different from one World Cup to the next as they break through, peak and fade. A young talent
-        might sit in the sixties one tournament and the high eighties four years later.</p>
-      <p>That's why drawing a squad at the right moment matters as much as drawing the right country. Brazil
-        2002 is not the same as Brazil 2014, and a peak-tournament squad gives you far stronger options to draft
-        from. When you spin, you're not just drawing a flag — you're drawing a moment in that country's World
-        Cup history.</p>
-
-      <h3>The overall rating</h3>
-      <p>The overall is the single headline number on each card, usually somewhere from the fifties up into the
-        mid-nineties for the very best Icons. It's the quickest way to compare two players, and it's the number
-        that feeds directly into your projected 7-game record.</p>
-      <p>In Classic mode the overall is shown while you draft, so you can always take the strongest available
-        option. In Expert mode it's hidden until full time, so you have to judge a player on name, country, year
-        and position alone. That's where football knowledge becomes the whole game, and where knowing which
-        tournaments a player peaked in really pays off.</p>
-
-      <h3>The six attributes</h3>
-      <p>Under the overall, every outfield player is rated on six attributes:</p>
-      <ul>
-        <li><strong>Pace.</strong> Speed and acceleration. Matters most for wingers, full-backs and quick strikers.</li>
-        <li><strong>Shooting.</strong> Finishing and goal threat. The headline stat for forwards.</li>
-        <li><strong>Passing.</strong> Range and accuracy of distribution. The mark of a midfield general.</li>
-        <li><strong>Dribbling.</strong> Close control and the ability to beat a defender.</li>
-        <li><strong>Defending.</strong> Tackling, marking and reading the game. Decisive for centre-backs and holding midfielders.</li>
-        <li><strong>Physical.</strong> Strength, stamina and aerial presence.</li>
-      </ul>
-      <p>Goalkeepers are rated as keepers rather than on the outfield six, since pace and shooting tell you
-        nothing about a number one. The attributes give each player a feel and help you choose between two
-        similar options — but remember the overall is what drives your projected record.</p>
-
-      <h3>Reading attributes in Expert mode</h3>
-      <p>In Expert mode the numbers are hidden, so the attributes become a memory test. A useful habit is to
-        picture the player at their peak — a flying winger, a metronome in midfield, a defender who won
-        everything in the air? The shape of a player's game is usually a good guide to their overall, and it
-        stops you reaching for a famous name who was past their best in the year you drew.</p>
-
-      <h3>Position fit</h3>
-      <p>A player only counts at their best when they're in a position they actually play. You can't drop a
-        striker into central defence, and the game won't let you place a player in a slot they don't cover.
-        Full-backs and wing-backs share a family, so a left-back can fill a left wing-back role and the reverse
-        is true on the right, while wide midfielders can cover the wings.</p>
-      <p>Building a balanced XI in real positions is part of the challenge, and it's why two players with the
-        same overall aren't always worth the same to you. The one who fills the slot you still need is the one
-        that helps.</p>
-
-      <h3>From squad rating to a record</h3>
-      <p>When your XI is complete, the game takes the average overall of your eleven players, weighted by how
-        well each one fits the position you put them in. That squad rating maps to a projected record across
-        the 7-game tournament. A higher, better-balanced rating means more wins, fewer draws and fewer losses.</p>
-      <p>The relationship is deliberately tuned so a perfect 7-0-0 only comes from a near-flawless team, while a
-        solid XI still puts together a respectable run. There's no single weak link that sinks you and no single
-        superstar that carries you. The whole eleven counts.</p>
-
-      <h3>Why a perfect run is so rare</h3>
-      <p>To go 7-0-0 you need a top-rated player in almost every position at once, which means drawing strong
-        squads at their peak across the entire draft, plus the discipline to use your one Icon round wisely. The
-        maths is set so this happens only a small fraction of the time, even for players who draft well. That's
-        the point — a perfect run should feel like a real achievement, which is exactly why only one team in
-        World Cup history has ever actually done it: Brazil, 2002.</p>
-
-      <h3>Frequently asked questions</h3>
-      <div class="faq">
-        <div class="faq-q">Is 7-0-0 free to play?</div>
-        <div class="faq-a">Yes — it's completely free and runs in your browser. There's nothing to download.</div>
-        <div class="faq-q">Which countries and tournaments can I draw?</div>
-        <div class="faq-a">Real World Cup squads from 2002 through to the upcoming 2026 tournament, with squads and player ratings based on the Fjelstul World Cup Database.</div>
-        <div class="faq-q">Has anyone ever actually gone 7-0-0?</div>
-        <div class="faq-a">Yes — Brazil's 2002 squad is the only team in World Cup history to win all seven of their matches in a single tournament.</div>
-        <div class="faq-q">How is my record worked out?</div>
-        <div class="faq-a">Your projected 7-game record is based on the overall ratings of your XI, weighted by how well each player fits the position you put them in.</div>
-        <div class="faq-q">What's an Icon offer?</div>
-        <div class="faq-a">A rare (~11% per spin) chance to draft a legendary player who isn't tied to one squad or tournament, straight into an open position.</div>
-        <div class="faq-q">Do I need an account?</div>
-        <div class="faq-a">No sign-up and no app needed — just spin and play.</div>
-      </div>
-    </div>
-  </section>
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {"@type":"Question","name":"Is 7-0-0 free to play?","acceptedAnswer":{"@type":"Answer","text":"Yes — it's completely free and runs in your browser. There's nothing to download."}},
-      {"@type":"Question","name":"Which countries and tournaments can I draw?","acceptedAnswer":{"@type":"Answer","text":"Real World Cup squads from 2002 through to the upcoming 2026 tournament, with squads and player ratings based on the Fjelstul World Cup Database."}},
-      {"@type":"Question","name":"Has anyone ever actually gone 7-0-0?","acceptedAnswer":{"@type":"Answer","text":"Yes — Brazil's 2002 squad is the only team in World Cup history to win all seven of their matches in a single tournament."}},
-      {"@type":"Question","name":"How is my record worked out?","acceptedAnswer":{"@type":"Answer","text":"Your projected 7-game record is based on the overall ratings of your XI, weighted by how well each player fits the position you put them in."}},
-      {"@type":"Question","name":"What's an Icon offer?","acceptedAnswer":{"@type":"Answer","text":"A rare (~11% per spin) chance to draft a legendary player who isn't tied to one squad or tournament, straight into an open position."}},
-      {"@type":"Question","name":"Do I need an account?","acceptedAnswer":{"@type":"Answer","text":"No sign-up and no app needed — just spin and play."}}
-    ]
-  }
-  </script>
 
   <footer class="site-footer">
-    <a href="../">Home</a> · <a href="../lineup/">Lineup</a> · <a href="../privacy.html">Privacy</a> · <a href="../terms.html">Terms</a>
-    <p class="footer-disclaimer">7-0-0 is an unofficial fan-made game, not affiliated with FIFA or any federation. Player ratings are stylized approximations for gameplay. For enquiries, contact <a href="mailto:thinkhiphop12@gmail.com">thinkhiphop12@gmail.com</a>.</p>
+    <a href="../">Ball Knw</a> · <a href="../lineup/">Lineup</a> · <a href="../heatmap/">HeatMap</a> · <a href="../scoreline/">Scoreline</a>
     <button class="btn-link cookie-settings-link" id="cookieSettingsBtn">Cookie settings</button>
   </footer>
 
-  <!-- ===================== CONSENT BANNER ===================== -->
   <div class="consent-banner hidden" id="consentBanner">
-    <p class="consent-text">We use cookies for basic analytics and to show ads. Choose what you're OK with — you can change this anytime in Cookie settings.</p>
+    <p class="consent-text">We use cookies for analytics and ads.</p>
     <div class="consent-actions">
       <button class="btn-ghost" id="consentEssentialBtn">Essential only</button>
       <button class="btn-primary" id="consentAcceptBtn">Accept all</button>
@@ -351,6 +136,7 @@
   </div>
 
 </div>
+<script src="../shared/game-utils.js"></script>
 <script src="../shared/consent.js"></script>
 <script src="app.js"></script>
 </body>

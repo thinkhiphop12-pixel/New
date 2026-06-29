@@ -3,12 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<title>HeatMap — Name the Player | Ball Knw</title>
-<meta name="description" content="Read a mystery player's stat heatmap and name them. Classic or Blitz mode. Free on Ball Knw.">
-<meta property="og:title" content="HeatMap — Name the Player | Ball Knw">
-<meta property="og:description" content="Six-stat heatmap quiz with streak bonuses. Classic or Blitz.">
+<title>Scoreline — Guess the Score | Ball Knw</title>
+<meta name="description" content="Guess iconic World Cup scorelines from finals, upsets, and classics. Classic or Blitz mode on Ball Knw.">
+<meta property="og:title" content="Scoreline — Guess the Score | Ball Knw">
+<meta property="og:description" content="35 legendary World Cup matches. Pick the score. Streak bonuses.">
 <link rel="icon" href="../shared/logo-mark.svg" type="image/svg+xml">
-<link rel="preload" href="../700/data.json" as="fetch" crossorigin>
 <link rel="stylesheet" href="../shared/site.css">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -19,32 +18,32 @@
     <a href="../">Ball Knw</a>
     <a href="../700/">7-0-0</a>
     <a href="../lineup/">Lineup</a>
-    <a href="./" class="active">HeatMap</a>
-    <a href="../scoreline/">Scoreline</a>
+    <a href="../heatmap/">HeatMap</a>
+    <a href="./" class="active">Scoreline</a>
   </nav>
 
   <header class="topbar">
     <div class="brand">
-      <span class="brand-mark">HeatMap</span>
-      <span class="brand-sub">STAT READING QUIZ</span>
+      <span class="brand-mark">Scoreline</span>
+      <span class="brand-sub">GUESS THE SCORE</span>
     </div>
     <div class="round-pill" id="roundPill">—</div>
   </header>
 
   <section id="modeScreen" class="mode-screen">
-    <h1>Name the player</h1>
-    <p class="mode-sub">Read the six-stat heatmap. Position, nation, and era are your clues.</p>
+    <h1>Guess the score</h1>
+    <p class="mode-sub">Iconic World Cup finals, shocks, and classics. Teams and year shown — you pick the scoreline.</p>
     <div class="mode-grid">
       <button type="button" class="mode-card" data-mode="classic">
         <strong>Classic</strong>
-        <span>10 rounds · 3 lives · streak bonus</span>
+        <span>10 matches · 3 lives · streak bonus</span>
       </button>
       <button type="button" class="mode-card hot" data-mode="blitz">
         <strong>Blitz</strong>
-        <span>15 rounds · 1 life · 2× streak points</span>
+        <span>15 matches · 1 life · 2× points</span>
       </button>
     </div>
-    <p class="mode-hint">Keys <kbd>1</kbd>–<kbd>4</kbd> to answer · <kbd>Enter</kbd> for next</p>
+    <p class="mode-hint">Keys <kbd>1</kbd>–<kbd>4</kbd> to pick · <kbd>Enter</kbd> for next</p>
   </section>
 
   <div id="playUI" class="hidden">
@@ -54,19 +53,9 @@
       <div class="stat-chip"><span class="lbl">Lives</span><span class="lives" id="livesVal">❤❤❤</span></div>
     </div>
 
-    <div id="loading" class="loading">Loading players…</div>
-
     <div id="gameCard" class="card hidden">
-      <div class="clue-head">
-        <div class="who">Who is this player?</div>
-        <div class="clue-meta">
-          <span class="meta-chip meta-pos" id="metaPos">—</span>
-          <span class="meta-chip meta-nation" id="metaNation">—</span>
-          <span class="meta-chip meta-era" id="metaEra">—</span>
-        </div>
-      </div>
-      <div class="heat" id="heat"></div>
-      <div class="options" id="options"></div>
+      <div class="match-card" id="matchCard"></div>
+      <div class="score-grid" id="options"></div>
       <div class="next-row" id="nextRow"></div>
     </div>
   </div>
@@ -74,7 +63,7 @@
   <div id="modalContainer"></div>
 
   <footer class="site-footer">
-    <a href="../">Ball Knw</a> · <a href="../700/">7-0-0</a> · <a href="../lineup/">Lineup</a> · <a href="../scoreline/">Scoreline</a>
+    <a href="../">Ball Knw</a> · <a href="../700/">7-0-0</a> · <a href="../lineup/">Lineup</a> · <a href="../heatmap/">HeatMap</a>
     <p class="footer-disclaimer">Ball Knw is an unofficial fan project. Not affiliated with FIFA or any federation.</p>
     <button class="btn-link" id="cookieSettingsBtn">Cookie settings</button>
   </footer>

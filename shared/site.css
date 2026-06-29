@@ -1,0 +1,99 @@
+/* Ball Knw — shared design tokens & components */
+:root{
+  --bg:#0a1f14; --bg-alt:#0f2b1c; --panel:#123322; --panel-2:#16402a;
+  --line:#1f5536; --gold:#e3b23c; --gold-soft:#f0d28a;
+  --ink:#eef6ef; --ink-dim:#a9c4b3;
+  --green:#1b6239; --green2:#154f2e;
+  --ok:#2ecc71; --bad:#ff6b6b;
+  --radius:14px;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  min-height:100vh;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.hidden{display:none!important}
+a{color:var(--gold);text-decoration:none}
+button{font:inherit;cursor:pointer;border:none}
+input,select{font:inherit}
+
+/* Hub nav */
+.hub-nav{
+  display:flex;justify-content:center;flex-wrap:wrap;gap:0;
+  border-bottom:1px solid var(--line);margin:0 -16px 10px;padding:0 8px;
+}
+.hub-nav a{
+  padding:11px 14px;color:var(--ink-dim);font-size:13px;font-weight:700;
+  border-bottom:2px solid transparent;text-decoration:none;transition:color .12s,border-color .12s;
+}
+.hub-nav a:hover,.hub-nav a.active{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* Buttons */
+.btn-primary{
+  background:linear-gradient(180deg,var(--gold-soft),var(--gold));color:#1a1206;
+  font-weight:800;border-radius:999px;padding:12px 24px;font-size:15px;
+  transition:transform .12s var(--ease),box-shadow .12s;
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(227,178,60,.25)}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-ghost{
+  background:var(--panel);border:1px solid var(--line);color:var(--ink);
+  border-radius:999px;padding:10px 18px;font-size:13px;
+}
+.btn-ghost:hover{border-color:var(--gold)}
+
+/* Stat chips */
+.statbar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0 14px}
+.stat-chip{
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:7px 13px;font-size:14px;font-weight:700;display:flex;gap:6px;align-items:center;
+}
+.stat-chip .lbl{color:var(--ink-dim);font-size:10px;text-transform:uppercase;letter-spacing:.6px}
+
+/* Progress */
+.progress-track{
+  height:6px;background:var(--bg-alt);border-radius:999px;overflow:hidden;
+  border:1px solid var(--line);
+}
+.progress-fill{
+  height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-soft));
+  border-radius:999px;transition:width .25s var(--ease);
+}
+
+/* Cards */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius)}
+
+/* Footer */
+.site-footer{padding:22px 0 8px;text-align:center;font-size:12px}
+.site-footer a{color:var(--gold);font-weight:600;margin:0 5px}
+.footer-disclaimer{font-size:11px;color:var(--ink-dim);max-width:480px;margin:8px auto 0;line-height:1.5}
+.btn-link{background:none;color:var(--gold-soft);font-size:12px;text-decoration:underline;cursor:pointer;border:none;margin-top:8px}
+
+/* Consent */
+.consent-banner{
+  position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--panel-2);
+  border-top:1px solid var(--line);padding:12px 16px;box-shadow:0 -3px 14px rgba(0,0,0,.3);
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;
+}
+.consent-text{font-size:12px;color:var(--ink-dim);max-width:460px}
+.consent-actions{display:flex;gap:8px}
+.consent-actions .btn-ghost,.consent-actions .btn-primary{padding:8px 14px;font-size:12px}
+
+/* Animations */
+@keyframes popIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulseGold{0%,100%{box-shadow:0 0 0 0 rgba(227,178,60,.4)}50%{box-shadow:0 0 0 8px rgba(227,178,60,0)}}
+.anim-pop{animation:popIn .2s var(--ease)}
+.anim-slide{animation:slideUp .25s var(--ease)}
+
+/* Ad slot */
+.ad-slot{
+  margin:16px 0;min-height:80px;display:flex;align-items:center;justify-content:center;
+  background:var(--panel);border:1px dashed var(--line);border-radius:var(--radius);
+}
+.ad-slot-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-dim)}
+.ad-slot.is-filled .ad-slot-label{display:none}

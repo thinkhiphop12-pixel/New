@@ -3,137 +3,160 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<title>Ball Knowledge — Free Football Knowledge Games</title>
-<meta name="description" content="Ball Knowledge is a free hub of football knowledge games — build a World Cup XI in 7-0-0, or test your squad recall in Lineup.">
-<meta property="og:title" content="Ball Knowledge — Free Football Knowledge Games">
-<meta property="og:description" content="Build a World Cup XI in 7-0-0, or test your squad recall in Lineup. Free, no account needed.">
+<title>Ball Knw — Advanced Football Games, Instantly Playable</title>
+<meta name="description" content="Ball Knw: advanced football games that load fast in your browser. 7-0-0, Lineup, HeatMap, and Scoreline. Free, no sign-up.">
+<meta property="og:title" content="Ball Knw — Advanced Football Games">
+<meta property="og:description" content="If it exists as a football game, it's here. Real World Cup data. Zero install.">
 <meta property="og:type" content="website">
+<link rel="icon" href="shared/logo-mark.svg" type="image/svg+xml">
+<link rel="prefetch" href="700/data.json">
+<link rel="stylesheet" href="shared/site.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div id="app">
 
   <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark">BALL KNOWLEDGE</span>
-      <span class="brand-sub">FOOTBALL KNOWLEDGE GAMES</span>
-    </div>
+    <a href="./" class="brand brand-link">
+      <img src="shared/logo-mark.svg" width="36" height="36" alt="" class="brand-logo">
+      <div>
+        <span class="brand-mark">Ball Knw</span>
+        <span class="brand-sub">ADVANCED · FAST · FREE</span>
+      </div>
+    </a>
   </header>
 
   <section class="hero">
-    <div class="hero-shapes" aria-hidden="true">
-      <span class="hs hs1"></span><span class="hs hs2"></span>
-      <span class="hs hs3"></span><span class="hs hs4"></span>
-      <span class="hs hs5"></span>
-    </div>
+    <div class="hero-glow" aria-hidden="true"></div>
     <div class="hero-inner">
-      <h1>PLAY ZONE</h1>
-      <p>Free football knowledge games. No sign-up, no app — pick one below and start playing.</p>
+      <p class="hero-eyebrow">No download · No account · Real football data</p>
+      <h1>If it exists as a football game,<br>it's here.</h1>
+      <p class="hero-lead">Deep mechanics, instant load. Draft XIs, recall lineups, read stat heatmaps, and guess iconic scorelines — four games, one hub.</p>
+      <div class="hero-actions">
+        <a class="btn-primary hero-cta" href="700/">Play 7-0-0</a>
+        <a class="btn-ghost hero-secondary" href="scoreline/">Try Scoreline</a>
+      </div>
     </div>
   </section>
 
-  <div class="ad-slot ad-slot-leaderboard" id="adSlotTop" data-ad-slot="">
-    <span class="ad-slot-label">Advertisement</span>
+  <div class="stats-bar">
+    <div class="stat-item"><span class="stat-n">4,634</span><span class="stat-l">Players</span></div>
+    <div class="stat-item"><span class="stat-n">192</span><span class="stat-l">World Cup squads</span></div>
+    <div class="stat-item"><span class="stat-n">4</span><span class="stat-l">Games live</span></div>
+    <div class="stat-item"><span class="stat-n">&lt;2s</span><span class="stat-l">To first kick</span></div>
   </div>
 
+  <h2 class="section-title">Pick your game</h2>
   <div class="game-grid">
-    <a class="game-card" href="700/">
-      <span class="gc-thumb gc-thumb-700">7-0-0</span>
-      <span class="gc-body">
+    <a class="game-card featured" href="700/">
+      <div class="gc-thumb gc-thumb-700">
+        <span class="gc-badge">Flagship</span>
+        <span class="gc-icon">7-0-0</span>
+      </div>
+      <div class="gc-body">
         <span class="gc-title">7-0-0</span>
-        <span class="gc-desc">Spin for players across World Cups, draft your XI, and chase a perfect 7-0-0 run.</span>
-        <span class="gc-cta">Play 7-0-0 →</span>
-      </span>
+        <p class="gc-desc">Spin real World Cup squads across eras. Draft 11 into your formation. Project a full tournament record — chase the perfect 7-0-0.</p>
+        <div class="gc-tags">
+          <span class="tag">3 formations</span>
+          <span class="tag">Position logic</span>
+          <span class="tag">Live XI rating</span>
+        </div>
+        <span class="gc-cta">Play now →</span>
+      </div>
     </a>
     <a class="game-card" href="lineup/">
-      <span class="gc-thumb gc-thumb-lineup">LU</span>
-      <span class="gc-body">
+      <div class="gc-thumb gc-thumb-lineup"><span class="gc-icon sm">Lineup</span></div>
+      <div class="gc-body">
         <span class="gc-title">Lineup</span>
-        <span class="gc-desc">Recall real starting XIs from iconic matches and World Cups, position by position.</span>
-        <span class="gc-cta">Play Lineup →</span>
-      </span>
+        <p class="gc-desc">Tap positions on the pitch. Type names with fuzzy matching. 100 iconic World Cup matches from 1966 to 2022.</p>
+        <div class="gc-tags">
+          <span class="tag">Fuzzy names</span>
+          <span class="tag">Hints</span>
+        </div>
+        <span class="gc-cta">Play now →</span>
+      </div>
     </a>
     <a class="game-card" href="heatmap/">
-      <span class="gc-thumb gc-thumb-heatmap">HM</span>
-      <span class="gc-body">
+      <div class="gc-thumb gc-thumb-heatmap"><span class="gc-icon sm">HeatMap</span></div>
+      <div class="gc-body">
         <span class="gc-title">HeatMap</span>
-        <span class="gc-desc">Read a mystery player's stat heatmap and name them from four options. Pure ball knowledge.</span>
-        <span class="gc-cta">Play HeatMap →</span>
-      </span>
+        <p class="gc-desc">Six-stat colour heatmap, position and era clues. Name the mystery player. Streak bonuses in Classic or Blitz mode.</p>
+        <div class="gc-tags">
+          <span class="tag">Streak scoring</span>
+          <span class="tag">Blitz mode</span>
+        </div>
+        <span class="gc-cta">Play now →</span>
+      </div>
+    </a>
+    <a class="game-card" href="scoreline/">
+      <div class="gc-thumb gc-thumb-scoreline"><span class="gc-icon sm">Scoreline</span></div>
+      <div class="gc-body">
+        <span class="gc-title">Scoreline</span>
+        <p class="gc-desc">35 legendary World Cup matches — finals, shocks, classics. See the teams and year, pick the scoreline.</p>
+        <div class="gc-tags">
+          <span class="tag">35 matches</span>
+          <span class="tag">Keyboard play</span>
+        </div>
+        <span class="gc-cta">Play now →</span>
+      </div>
     </a>
   </div>
+
+  <section class="why">
+    <h2 class="section-title">Built for football obsessives</h2>
+    <div class="why-grid">
+      <div class="why-card">
+        <span class="why-icon">⚡</span>
+        <strong>Fast</strong>
+        <p>Pure HTML/CSS/JS. No app store. No loading screens between rounds.</p>
+      </div>
+      <div class="why-card">
+        <span class="why-icon">🧠</span>
+        <strong>Advanced</strong>
+        <p>Real squad data, position flexibility, fuzzy name matching, and streak multipliers.</p>
+      </div>
+      <div class="why-card">
+        <span class="why-icon">🌍</span>
+        <strong>Complete</strong>
+        <p>Every football game type we ship lives here. Four games today — more coming.</p>
+      </div>
+    </div>
+  </section>
 
   <div class="ad-slot" id="adSlotHome" data-ad-slot="">
     <span class="ad-slot-label">Advertisement</span>
   </div>
 
-  <!-- About / FAQ — real page content (SEO + ad-network review) -->
-  <section class="about" id="about">
-    <div class="about-inner">
-      <h2>About Ball Knowledge</h2>
-      <p><strong>Ball Knowledge</strong> is a small hub of free, browser-based football knowledge games.
-        No accounts, no downloads — pick a game and start playing straight away.</p>
-
-      <h3>Our games</h3>
-      <ul>
-        <li><strong><a href="700/">7-0-0</a></strong> — spin for real World Cup squads from 2002 onward,
-          draft a player into your XI each round, and find out whether your dream team could go a whole
-          tournament unbeaten: 7 games, 7 wins, zero draws, zero losses.</li>
-        <li><strong><a href="lineup/">Lineup</a></strong> — given a real match or tournament, place every
-          starting player in their correct position from memory before the clock runs out.</li>
-        <li><strong><a href="heatmap/">HeatMap</a></strong> — a mystery player's six core attributes are shown
-          as a colour-coded heatmap. Read the stats, the position and the era, and pick the right name from four options.</li>
-      </ul>
-
-      <h3>Frequently asked questions</h3>
-      <div class="faq">
-        <div class="faq-q">Is Ball Knowledge free to play?</div>
-        <div class="faq-a">Yes — every game here is completely free and runs in your browser. There's nothing to download.</div>
-        <div class="faq-q">Do I need to make an account?</div>
-        <div class="faq-a">No. No sign-up, no app — just open a game and play.</div>
-        <div class="faq-q">Where does the player and squad data come from?</div>
-        <div class="faq-a">Real World Cup squads and results, based on public football datasets including the Fjelstul World Cup Database. Ratings used in-game are stylized approximations for gameplay, not official figures.</div>
-        <div class="faq-q">Is this an official FIFA or football federation product?</div>
-        <div class="faq-a">No — Ball Knowledge is an independent, unofficial fan project, not affiliated with FIFA, the Premier League, or any club or federation.</div>
-      </div>
-    </div>
-  </section>
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {"@type":"Question","name":"Is Ball Knowledge free to play?","acceptedAnswer":{"@type":"Answer","text":"Yes — every game here is completely free and runs in your browser. There's nothing to download."}},
-      {"@type":"Question","name":"Do I need to make an account?","acceptedAnswer":{"@type":"Answer","text":"No. No sign-up, no app — just open a game and play."}},
-      {"@type":"Question","name":"Where does the player and squad data come from?","acceptedAnswer":{"@type":"Answer","text":"Real World Cup squads and results, based on public football datasets including the Fjelstul World Cup Database. Ratings used in-game are stylized approximations for gameplay, not official figures."}},
-      {"@type":"Question","name":"Is this an official FIFA or football federation product?","acceptedAnswer":{"@type":"Answer","text":"No — Ball Knowledge is an independent, unofficial fan project, not affiliated with FIFA, the Premier League, or any club or federation."}}
-    ]
-  }
-  </script>
-
   <footer class="site-footer">
-    <a href="700/">7-0-0</a> · <a href="lineup/">Lineup</a> · <a href="heatmap/">HeatMap</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a>
-    <p class="footer-disclaimer">Ball Knowledge is an unofficial fan-made project, not affiliated with FIFA, the Premier League, or any club or federation. For enquiries, contact <a href="mailto:thinkhiphop12@gmail.com">thinkhiphop12@gmail.com</a>.</p>
+    <nav class="footer-nav">
+      <a href="700/">7-0-0</a>
+      <a href="lineup/">Lineup</a>
+      <a href="heatmap/">HeatMap</a>
+      <a href="scoreline/">Scoreline</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+    </nav>
+    <p class="footer-disclaimer">Ball Knw is an unofficial fan project. Not affiliated with FIFA or any federation.</p>
     <button class="btn-link cookie-settings-link" id="cookieSettingsBtn">Cookie settings</button>
   </footer>
 
   <div class="consent-banner hidden" id="consentBanner">
-    <p class="consent-text">We use cookies for basic analytics and to show ads. Choose what you're OK with — you can change this anytime in Cookie settings.</p>
+    <p class="consent-text">We use cookies for analytics and ads. You can change this anytime.</p>
     <div class="consent-actions">
       <button class="btn-ghost" id="consentEssentialBtn">Essential only</button>
       <button class="btn-primary" id="consentAcceptBtn">Accept all</button>
     </div>
   </div>
 
-  <div class="ad-rail ad-rail-left ad-slot" id="adSlotRailLeft" data-ad-slot="">
-    <span class="ad-slot-label">Advertisement</span>
-  </div>
-  <div class="ad-rail ad-rail-right ad-slot" id="adSlotRailRight" data-ad-slot="">
-    <span class="ad-slot-label">Advertisement</span>
-  </div>
-
 </div>
+<script src="shared/game-utils.js"></script>
 <script src="shared/consent.js"></script>
+<script>
+  BK.prefetch('700/');
+  BK.prefetch('lineup/');
+  BK.prefetch('heatmap/');
+  BK.prefetch('scoreline/');
+  window.addEventListener('load', () => setTimeout(()=>{try{window.fillAllAdSlots&&window.fillAllAdSlots();}catch(e){}},650));
+</script>
 </body>
 </html>

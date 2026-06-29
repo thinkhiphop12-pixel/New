@@ -1,924 +1,431 @@
 'use strict';
 
-/* ============================================================
-   7-0-0 — World Cup squad builder
-   Engine ported from 38-0-0 (club edition), adapted for:
-   - 11-round draft, player-chosen formation. Each player/icon has a broad
-     family (GK/DF/MF/FW, from the data) plus an inferred specific position
-     (sp/sp2: GK, LB, RB, CB, LM, RM, CM, LW, RW, ST) derived from their
-     stat profile — versatile profiles near the central/wide boundary get
-     2 eligible positions, specialists get 1, matching real squad mixes.
-   - Weighted Country|Year spin (squad_weights) instead of club+season
-   - Icon take-or-skip offers (capped)
-   - 7-game World Cup record (3 group + R16 + QF + SF + Final) as the
-     decoupled outcome stat — independent of the 11 draft rounds, exactly
-     as 38-0-0 decouples its 11 XI picks from its 38-game season record.
-   ============================================================ */
-
-const $ = (id) => document.getElementById(id);
+const $ = id => document.getElementById(id);
 
 let DATA = null;
-let SQUADS = null;        // built client-side: "Country|Year" -> [players]
-let COMBOS = [];          // ["Country|Year", ...]
-let WEIGHTS = [];         // parallel weights array
+let SQUADS = {};
+let COMBOS = [];
+let spinning = false;
 
-const TOTAL_ROUNDS = 11;  // draft picks = XI size, fixed by formation
-const GAMES = 7;          // simulated World Cup record length (the "7" in 7-0-0)
-const SQUAD_CAP = 23;     // every squad offer is trimmed/standardized to 23 players
-
-let OPP_BASELINE = 72;
-let TIER_COMBOS = { shit: [], okay: [], good: [] }; // [{k,w}] buckets by squad_weights percentile
-
-// Wide/wing-back positions are treated as interchangeable with the touchline mid/winger slot.
-const POS_EQUIV = {
-  RM: ['RW'], RW: ['RM'],
-  LM: ['LW'], LW: ['LM'],
-  LB: ['LWB'], LWB: ['LB'],
-  RB: ['RWB'], RWB: ['RB'],
-};
-function expandPositions(sp2){
-  const set = new Set(sp2);
-  for (const label of sp2) (POS_EQUIV[label] || []).forEach(l => set.add(l));
-  return [...set];
-}
-
-/* ---------------- Formations (slot labels = specific positions: GK/LB/RB/CB/CM/RM/LM/ST/RW/LW) ---------------- */
 const FORMATIONS = {
-  '4-3-3': { slots: [
-    { id:'gk',  label:'GK',  fam:'GK', x:50, y:92 },
-    { id:'df1', label:'RB',  fam:'DF', x:82, y:74 },
-    { id:'df2', label:'CB',  fam:'DF', x:62, y:78 },
-    { id:'df3', label:'CB',  fam:'DF', x:38, y:78 },
-    { id:'df4', label:'LB',  fam:'DF', x:18, y:74 },
-    { id:'mf1', label:'CM',  fam:'MF', x:68, y:54 },
-    { id:'mf2', label:'CM',  fam:'MF', x:50, y:58 },
-    { id:'mf3', label:'CM',  fam:'MF', x:32, y:54 },
-    { id:'fw1', label:'RW',  fam:'FW', x:78, y:24 },
-    { id:'fw2', label:'ST',  fam:'FW', x:50, y:16 },
-    { id:'fw3', label:'LW',  fam:'FW', x:22, y:24 },
-  ]},
-  '4-4-2': { slots: [
-    { id:'gk',  label:'GK', fam:'GK', x:50, y:92 },
-    { id:'df1', label:'RB', fam:'DF', x:82, y:74 },
-    { id:'df2', label:'CB', fam:'DF', x:62, y:78 },
-    { id:'df3', label:'CB', fam:'DF', x:38, y:78 },
-    { id:'df4', label:'LB', fam:'DF', x:18, y:74 },
-    { id:'mf1', label:'RM', fam:'MF', x:82, y:50 },
-    { id:'mf2', label:'CM', fam:'MF', x:60, y:54 },
-    { id:'mf3', label:'CM', fam:'MF', x:40, y:54 },
-    { id:'mf4', label:'LM', fam:'MF', x:18, y:50 },
-    { id:'fw1', label:'ST', fam:'FW', x:62, y:18 },
-    { id:'fw2', label:'ST', fam:'FW', x:38, y:18 },
-  ]},
-  '4-2-4': { slots: [
-    { id:'gk',  label:'GK', fam:'GK', x:50, y:92 },
-    { id:'df1', label:'RB', fam:'DF', x:82, y:76 },
-    { id:'df2', label:'CB', fam:'DF', x:62, y:80 },
-    { id:'df3', label:'CB', fam:'DF', x:38, y:80 },
-    { id:'df4', label:'LB', fam:'DF', x:18, y:76 },
-    { id:'mf1', label:'CM', fam:'MF', x:64, y:54 },
-    { id:'mf2', label:'CM', fam:'MF', x:36, y:54 },
-    { id:'fw1', label:'RW', fam:'FW', x:84, y:22 },
-    { id:'fw2', label:'ST', fam:'FW', x:60, y:14 },
-    { id:'fw3', label:'ST', fam:'FW', x:40, y:14 },
-    { id:'fw4', label:'LW', fam:'FW', x:16, y:22 },
-  ]},
-  '3-4-3': { slots: [
-    { id:'gk',  label:'GK', fam:'GK', x:50, y:92 },
-    { id:'df1', label:'CB', fam:'DF', x:72, y:78 },
-    { id:'df2', label:'CB', fam:'DF', x:50, y:82 },
-    { id:'df3', label:'CB', fam:'DF', x:28, y:78 },
-    { id:'mf1', label:'RM', fam:'MF', x:84, y:52 },
-    { id:'mf2', label:'CM', fam:'MF', x:60, y:56 },
-    { id:'mf3', label:'CM', fam:'MF', x:40, y:56 },
-    { id:'mf4', label:'LM', fam:'MF', x:16, y:52 },
-    { id:'fw1', label:'RW', fam:'FW', x:78, y:22 },
-    { id:'fw2', label:'ST', fam:'FW', x:50, y:14 },
-    { id:'fw3', label:'LW', fam:'FW', x:22, y:22 },
-  ]},
-  '3-5-2': { slots: [
-    { id:'gk',  label:'GK', fam:'GK', x:50, y:92 },
-    { id:'df1', label:'CB', fam:'DF', x:72, y:78 },
-    { id:'df2', label:'CB', fam:'DF', x:50, y:82 },
-    { id:'df3', label:'CB', fam:'DF', x:28, y:78 },
-    { id:'mf1', label:'RM', fam:'MF', x:88, y:54 },
-    { id:'mf2', label:'CM', fam:'MF', x:64, y:58 },
-    { id:'mf3', label:'CM', fam:'MF', x:50, y:50 },
-    { id:'mf4', label:'CM', fam:'MF', x:36, y:58 },
-    { id:'mf5', label:'LM', fam:'MF', x:12, y:54 },
-    { id:'fw1', label:'ST', fam:'FW', x:62, y:18 },
-    { id:'fw2', label:'ST', fam:'FW', x:38, y:18 },
-  ]},
-  '5-3-2': { slots: [
-    { id:'gk',  label:'GK', fam:'GK', x:50, y:92 },
-    { id:'df1', label:'RB', fam:'DF', x:88, y:76 },
-    { id:'df2', label:'CB', fam:'DF', x:68, y:80 },
-    { id:'df3', label:'CB', fam:'DF', x:50, y:84 },
-    { id:'df4', label:'CB', fam:'DF', x:32, y:80 },
-    { id:'df5', label:'LB', fam:'DF', x:12, y:76 },
-    { id:'mf1', label:'CM', fam:'MF', x:68, y:54 },
-    { id:'mf2', label:'CM', fam:'MF', x:50, y:58 },
-    { id:'mf3', label:'CM', fam:'MF', x:32, y:54 },
-    { id:'fw1', label:'ST', fam:'FW', x:62, y:18 },
-    { id:'fw2', label:'ST', fam:'FW', x:38, y:18 },
-  ]},
-  '5-4-1': { slots: [
-    { id:'gk',  label:'GK', fam:'GK', x:50, y:92 },
-    { id:'df1', label:'RB', fam:'DF', x:88, y:76 },
-    { id:'df2', label:'CB', fam:'DF', x:68, y:80 },
-    { id:'df3', label:'CB', fam:'DF', x:50, y:84 },
-    { id:'df4', label:'CB', fam:'DF', x:32, y:80 },
-    { id:'df5', label:'LB', fam:'DF', x:12, y:76 },
-    { id:'mf1', label:'RM', fam:'MF', x:84, y:52 },
-    { id:'mf2', label:'CM', fam:'MF', x:60, y:56 },
-    { id:'mf3', label:'CM', fam:'MF', x:40, y:56 },
-    { id:'mf4', label:'LM', fam:'MF', x:16, y:52 },
-    { id:'fw1', label:'ST', fam:'FW', x:50, y:16 },
-  ]},
+  '4-3-3': [
+    {id:'gk',  label:'GK', fam:'GK', x:50, y:92},
+    {id:'rb',  label:'RB', fam:'DF', x:82, y:72},
+    {id:'cb1', label:'CB', fam:'DF', x:62, y:76},
+    {id:'cb2', label:'CB', fam:'DF', x:38, y:76},
+    {id:'lb',  label:'LB', fam:'DF', x:18, y:72},
+    {id:'cm1', label:'CM', fam:'MF', x:65, y:52},
+    {id:'cm2', label:'CM', fam:'MF', x:50, y:56},
+    {id:'cm3', label:'CM', fam:'MF', x:35, y:52},
+    {id:'rw',  label:'RW', fam:'FW', x:78, y:22},
+    {id:'st',  label:'ST', fam:'FW', x:50, y:15},
+    {id:'lw',  label:'LW', fam:'FW', x:22, y:22},
+  ],
+  '4-4-2': [
+    {id:'gk',  label:'GK', fam:'GK', x:50, y:92},
+    {id:'rb',  label:'RB', fam:'DF', x:82, y:74},
+    {id:'cb1', label:'CB', fam:'DF', x:62, y:78},
+    {id:'cb2', label:'CB', fam:'DF', x:38, y:78},
+    {id:'lb',  label:'LB', fam:'DF', x:18, y:74},
+    {id:'rm',  label:'RM', fam:'MF', x:82, y:48},
+    {id:'cm1', label:'CM', fam:'MF', x:62, y:52},
+    {id:'cm2', label:'CM', fam:'MF', x:38, y:52},
+    {id:'lm',  label:'LM', fam:'MF', x:18, y:48},
+    {id:'st1', label:'ST', fam:'FW', x:62, y:18},
+    {id:'st2', label:'ST', fam:'FW', x:38, y:18},
+  ],
+  '3-4-3': [
+    {id:'gk',  label:'GK', fam:'GK', x:50, y:92},
+    {id:'cb1', label:'CB', fam:'DF', x:70, y:76},
+    {id:'cb2', label:'CB', fam:'DF', x:50, y:80},
+    {id:'cb3', label:'CB', fam:'DF', x:30, y:76},
+    {id:'rm',  label:'RM', fam:'MF', x:84, y:50},
+    {id:'cm1', label:'CM', fam:'MF', x:62, y:54},
+    {id:'cm2', label:'CM', fam:'MF', x:38, y:54},
+    {id:'lm',  label:'LM', fam:'MF', x:16, y:50},
+    {id:'rw',  label:'RW', fam:'FW', x:76, y:22},
+    {id:'st',  label:'ST', fam:'FW', x:50, y:15},
+    {id:'lw',  label:'LW', fam:'FW', x:24, y:22},
+  ]
 };
 
 let SLOTS = [];
-
-/* ---------------- Flags ---------------- */
-const ISO = {
-  Algeria:'DZ', Argentina:'AR', Australia:'AU', Austria:'AT', Belgium:'BE',
-  Bosnia:'BA', 'Bosnia and Herzegovina':'BA', Brazil:'BR', Cameroon:'CM',
-  Canada:'CA', 'Cape Verde':'CV', Chile:'CL', Colombia:'CO', 'Costa Rica':'CR',
-  Croatia:'HR', Curacao:'CW', 'Czech Republic':'CZ', 'DR Congo':'CD',
-  Denmark:'DK', Ecuador:'EC', Egypt:'EG', England:'GB-ENG', France:'FR',
-  Germany:'DE', Ghana:'GH', Greece:'GR', Haiti:'HT', Honduras:'HN',
-  Iceland:'IS', Iran:'IR', Iraq:'IQ', Italy:'IT', 'Ivory Coast':'CI',
-  Japan:'JP', Jordan:'JO', Mexico:'MX', Morocco:'MA', Netherlands:'NL',
-  'New Zealand':'NZ', Nigeria:'NG', Norway:'NO', Panama:'PA', Paraguay:'PY',
-  Peru:'PE', Poland:'PL', Portugal:'PT', Qatar:'QA', 'Republic of Ireland':'IE',
-  Russia:'RU', 'Saudi Arabia':'SA', Scotland:'GB-SCT', Senegal:'SN', Serbia:'RS',
-  Slovakia:'SK', 'South Africa':'ZA', 'South Korea':'KR', Spain:'ES',
-  Sweden:'SE', Switzerland:'CH', Tunisia:'TN', Turkey:'TR', USA:'US',
-  Ukraine:'UA', Uruguay:'UY', Uzbekistan:'UZ', Wales:'GB-WLS',
-};
-function flagEmoji(country){
-  const code = ISO[country];
-  if (!code || code.includes('-')) return '\u{1F3F3}\u{FE0F}'; // white flag fallback for home-nations codes
-  return code.toUpperCase().replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0)));
-}
-function strHash(s){ let h=0; for (let i=0;i<s.length;i++){ h=(h*31 + s.charCodeAt(i))|0; } return Math.abs(h); }
-const PALETTE = ['#1b5e3a','#0b3d91','#b22222','#d4a017','#2e2e6e','#7a1f3d','#1c6e5c','#8c5a1f'];
-// Each nation's real home-kit shirt color, [background, text], so the jersey badge on the
-// pitch/draft list matches the actual kit rather than an arbitrary hash-picked color.
-const KIT_COLORS = {
-  Algeria:['#006233','#fff'], Argentina:['#6cace4','#142a52'], Australia:['#efcb00','#1a1a1a'],
-  Austria:['#ed2939','#fff'], Belgium:['#da121a','#fff'], Bosnia:['#0f3d7c','#fcdd09'],
-  'Bosnia and Herzegovina':['#0f3d7c','#fcdd09'], Brazil:['#ffcc29','#0a5c36'], Bulgaria:['#f5f5f5','#1a1a1a'],
-  Cameroon:['#00853f','#fcd116'], Canada:['#ff0000','#fff'], 'Cape Verde':['#0033a0','#fff'],
-  Chile:['#d52b1e','#fff'], Colombia:['#fcd116','#003893'], 'Costa Rica':['#ce1126','#fff'],
-  Croatia:['#ff0000','#fff'], Curacao:['#00247d','#fff'], 'Czech Republic':['#d7141a','#fff'],
-  "Côte d'Ivoire":['#ff8200','#fff'], 'DR Congo':['#00a3e0','#ffd100'], Denmark:['#c8102e','#fff'],
-  Ecuador:['#ffd100','#002868'], Egypt:['#ce1126','#fff'], England:['#ffffff','#1b1b3a'],
-  Finland:['#ffffff','#002f6c'], France:['#0055a4','#fff'], Germany:['#ffffff','#000000'],
-  Ghana:['#ffffff','#000000'], Greece:['#0d5eaf','#fff'], Haiti:['#00209f','#fff'],
-  Honduras:['#0073cf','#fff'], Iceland:['#02529c','#fff'], Iran:['#ffffff','#239f40'],
-  Iraq:['#ffffff','#ce1126'], Italy:['#0066cc','#fff'], 'Ivory Coast':['#ff8200','#fff'],
-  Japan:['#0033a0','#fff'], Jordan:['#ffffff','#000000'], Mexico:['#006847','#fff'],
-  Morocco:['#c1272d','#006233'], Netherlands:['#ff6f00','#142a52'], 'New Zealand':['#ffffff','#000000'],
-  Nigeria:['#008751','#fff'], 'Northern Ireland':['#006428','#fff'], Norway:['#ba0c2f','#fff'],
-  Panama:['#d21034','#fff'], Paraguay:['#da121a','#fff'], Peru:['#ffffff','#d91023'],
-  Poland:['#ffffff','#dc143c'], Portugal:['#cc0000','#fff'], Qatar:['#8a1538','#fff'],
-  'Republic of Ireland':['#169b62','#fff'], Romania:['#fcd116','#002b7f'], Russia:['#da291c','#fff'],
-  'Saudi Arabia':['#ffffff','#006c35'], Scotland:['#0065bd','#fff'], Senegal:['#ffffff','#00853f'],
-  Serbia:['#c6363c','#fff'], Slovakia:['#0b4ea2','#fff'], 'South Africa':['#ffb81c','#007a4d'],
-  'South Korea':['#c60c30','#fff'], Spain:['#aa151b','#f1bf00'], Sweden:['#ffcd00','#006aa7'],
-  Switzerland:['#da291c','#fff'], Tunisia:['#e70013','#fff'], Turkey:['#e30a17','#fff'],
-  USA:['#ffffff','#002868'], Ukraine:['#ffd500','#005bbb'], Uruguay:['#75aadb','#0038a8'],
-  Uzbekistan:['#0099cc','#fff'], Wales:['#d2122e','#fff'],
-};
-function colorFor(country){
-  if (KIT_COLORS[country]) return KIT_COLORS[country];
-  const h = strHash(country);
-  return [PALETTE[h % PALETTE.length], '#f4efe0'];
-}
-function ovrTier(o){
-  if (o >= 85) return 'tier-elite';
-  if (o >= 75) return 'tier-great';
-  if (o >= 65) return 'tier-good';
-  return 'tier-avg';
-}
-
-/* ---------------- helpers ---------------- */
-const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-function initials(name){
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
-  return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
-}
-function toast(msg){
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.textContent = msg;
-  document.body.appendChild(t);
-  requestAnimationFrame(() => t.classList.add('show'));
-  setTimeout(() => { t.classList.remove('show'); setTimeout(()=>t.remove(), 300); }, 2200);
-}
-
-/* ---------------- analytics / consent / AdSense ----------------
-   Shared across all Ball Knowledge pages — see ../shared/consent.js for
-   track/getConsent/fillAllAdSlots/initConsent etc. That script wires the
-   consent banner buttons and calls initConsent() itself on load. */
-
-/* ---------------- state ---------------- */
 let state = null;
-let setupMode = null;
-let setupFormation = null;
+let pickOrder = [];
 
-/* ---------------- boot ---------------- */
-async function boot(){
+function expandPos(sp2) {
+  const out = new Set(sp2 || []);
+  (sp2 || []).forEach(p => {
+    if (p === 'RM') out.add('RW');
+    if (p === 'LM') out.add('LW');
+    if (p === 'RW') out.add('RM');
+    if (p === 'LW') out.add('LM');
+    if (p === 'RB') out.add('RWB');
+    if (p === 'LB') out.add('LWB');
+  });
+  return [...out];
+}
+
+function colorFor(country) {
+  const map = {
+    Brazil: ['#ffcc29','#0a5c36'], Argentina: ['#6cace4','#142a52'], France: ['#0055a4','#fff'],
+    Germany: ['#ffffff','#000000'], Spain: ['#aa151b','#f1bf00'], England: ['#ffffff','#1b1b3a'],
+    Portugal: ['#cc0000','#fff'], Netherlands: ['#ff6f00','#142a52'], Italy: ['#0066cc','#fff']
+  };
+  return map[country] || ['#1b5e3a', '#f4efe0'];
+}
+
+function initials(n) {
+  const p = n.trim().split(/\s+/);
+  return p.length > 1 ? (p[0][0] + p[p.length-1][0]).toUpperCase() : p[0].slice(0,2).toUpperCase();
+}
+
+function formationMini(key) {
+  return FORMATIONS[key].map(s =>
+    `<span class="fm-dot" style="left:${s.x}%;top:${s.y}%"></span>`
+  ).join('');
+}
+
+async function boot() {
   try {
-    const res = await fetch('data.json?v=1');
-    DATA = await res.json();
-  } catch (e) {
-    $('app').innerHTML = '<div class="loadError">Could not load data.json — serve this folder over HTTP (not file://) and try again.</div>';
+    const r = await fetch('data.json');
+    DATA = await r.json();
+  } catch(e) {
+    $('app').innerHTML = '<div class="boot-err">Failed to load squad data. Serve from a web server.</div>';
     return;
   }
 
-  OPP_BASELINE = DATA.meta.opp_baseline ?? OPP_BASELINE;
-
   SQUADS = {};
   for (const p of DATA.players) {
-    const key = `${p.country}|${p.year}`;
-    (SQUADS[key] ||= []).push(p);
+    const k = p.country + '|' + p.year;
+    (SQUADS[k] ||= []).push(p);
   }
-  for (const key in SQUADS) {
-    if (SQUADS[key].length > SQUAD_CAP) {
-      SQUADS[key] = [...SQUADS[key]].sort((a, b) => b.o - a.o).slice(0, SQUAD_CAP);
-    }
-  }
-  COMBOS = Object.keys(DATA.squad_weights);
-  WEIGHTS = COMBOS.map(k => DATA.squad_weights[k]);
-  buildTiers();
+  COMBOS = Object.keys(SQUADS);
 
-  buildFormationGrid();
-  wireSetup();
-  wireGameScreen();
-  wireResultsScreen();
+  buildFormations();
+  wireUI();
   showSetup();
 }
 
-/* ---------------- setup screen ---------------- */
-function buildFormationGrid(){
+function buildFormations() {
   const grid = $('formationGrid');
   grid.innerHTML = '';
   Object.keys(FORMATIONS).forEach(key => {
     const b = document.createElement('button');
+    b.type = 'button';
     b.className = 'formation-card';
+    b.innerHTML = `
+      <span class="fc-name">${key}</span>
+      <span class="fc-mini">${formationMini(key)}</span>`;
     b.dataset.formation = key;
-    b.innerHTML = `<span class="f-shape">${key}</span>`;
-    b.addEventListener('click', () => {
-      setupFormation = key;
-      document.querySelectorAll('.formation-card').forEach(c => c.classList.remove('sel'));
+    b.onclick = () => {
+      document.querySelectorAll('.formation-card').forEach(el => el.classList.remove('sel'));
       b.classList.add('sel');
-      maybeShowStart();
-    });
+      state = { formation: key };
+      $('setupStart').disabled = false;
+    };
     grid.appendChild(b);
   });
 }
 
-function wireSetup(){
-  document.querySelectorAll('.mode-card').forEach(card => {
-    card.addEventListener('click', () => {
-      setupMode = card.dataset.mode;
-      document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('sel'));
-      card.classList.add('sel');
-      maybeShowStart();
-    });
-  });
-  $('setupStart').addEventListener('click', () => {
-    if (setupMode && setupFormation) startGame(setupMode, setupFormation);
-  });
-  $('resetBtn').addEventListener('click', () => {
-    if (confirm('Abandon this squad and start over?')) showSetup();
+function wireUI() {
+  $('setupStart').onclick = () => { if (state?.formation) startGame(state.formation); };
+  $('spinBtn').onclick = spin;
+  $('resetBtn').onclick = () => { if (confirm('Start over?')) showSetup(); };
+  $('againBtn').onclick = showSetup;
+  $('shareBtn').onclick = share;
+  $('undoBtn').onclick = undoPick;
+  $('playerSearch').oninput = () => renderPlayers($('playerSearch').value);
+
+  document.addEventListener('keydown', e => {
+    if ($('gameScreen').classList.contains('hidden')) {
+      if (e.key === 'Enter' && state?.formation && !$('setupStart').disabled) {
+        e.preventDefault();
+        startGame(state.formation);
+      }
+      return;
+    }
+    if (e.key === '/' && document.activeElement !== $('playerSearch')) {
+      e.preventDefault();
+      $('playerSearch').focus();
+    }
+    if ((e.key === 'Enter' || e.key === ' ') && document.activeElement !== $('playerSearch')) {
+      e.preventDefault();
+      if (!spinning) spin();
+    }
+    if ((e.key === 'u' || e.key === 'U') && pickOrder.length) undoPick();
   });
 }
 
-function maybeShowStart(){
-  $('setupStart').disabled = !(setupMode && setupFormation);
-}
-
-function showSetup(){
+function showSetup() {
   state = null;
-  setupMode = null;
-  setupFormation = null;
-  document.querySelectorAll('.mode-card, .formation-card').forEach(c => c.classList.remove('sel'));
-  $('setupStart').disabled = true;
+  pickOrder = [];
   $('setupScreen').classList.remove('hidden');
   $('gameScreen').classList.add('hidden');
   $('resultsScreen').classList.add('hidden');
+  $('xiProgressWrap').classList.add('hidden');
   $('roundPill').textContent = '';
+  $('undoBtn').classList.add('hidden');
+  $('setupStart').disabled = true;
+  document.querySelectorAll('.formation-card').forEach(c => c.classList.remove('sel'));
 }
 
-/* ---------------- game start ---------------- */
-function startGame(mode, formationKey){
-  SLOTS = FORMATIONS[formationKey].slots;
-  state = {
-    round: 1,
-    picks: {},
-    mode,
-    expert: mode === 'expert',
-    formation: formationKey,
-    roundPlan: buildRoundPlan(),
-    pendingIconNation: null,
-    spinning: false,
-    sortByRating: false,
-  };
+function startGame(formation) {
+  SLOTS = FORMATIONS[formation];
+  state = { formation, picks: {}, currentSquad: null };
+  pickOrder = [];
   $('setupScreen').classList.add('hidden');
   $('resultsScreen').classList.add('hidden');
   $('gameScreen').classList.remove('hidden');
-  $('formationTag').textContent = formationKey;
+  $('xiProgressWrap').classList.remove('hidden');
+  $('formationLabel').textContent = formation;
   buildPitch();
-  updateRoundPill();
-  updateSortBtn();
-  $('draftPane').classList.add('hidden');
-  $('spinPane').classList.remove('hidden');
-  $('iconOffer').classList.add('hidden');
-  fillAllAdSlots();
+  updateProgress();
+  $('squadName').textContent = '—';
+  $('squadYear').textContent = 'Press spin for a squad offer';
+  $('playerPanel').classList.add('dim');
+  $('playerList').innerHTML = '';
+  $('playerSearch').value = '';
+  BK.tap($('gameScreen'));
 }
 
-function countPicks(){ return Object.keys(state.picks).length; }
-function updateRoundPill(){ $('roundPill').textContent = `Pick ${countPicks()+1} / ${TOTAL_ROUNDS}`; }
+function updateProgress() {
+  const done = Object.keys(state.picks).length;
+  $('roundPill').textContent = `${done}/11`;
+  $('xiProgressLabel').textContent = `${done} / 11 picked`;
+  $('xiProgressFill').style.width = `${(done / 11) * 100}%`;
+  $('undoBtn').classList.toggle('hidden', !pickOrder.length);
 
-/* ---------------- pitch ---------------- */
-function buildPitch(){
+  if (done === 0) {
+    $('liveRating').textContent = '—';
+    return;
+  }
+  let sum = 0;
+  Object.values(state.picks).forEach(p => { sum += (p.player.o || 65); });
+  const avg = (sum / done).toFixed(1);
+  $('liveRating').textContent = `XI avg ${avg}`;
+}
+
+function buildPitch() {
   const pitch = $('pitch');
-  pitch.querySelectorAll('.slot').forEach(n => n.remove());
+  pitch.innerHTML = `
+    <div class="pitch-lines">
+      <div class="pl-box top"></div><div class="pl-box bot"></div>
+      <div class="pl-circle"></div><div class="pl-mid"></div>
+    </div>`;
   SLOTS.forEach(slot => {
-    const node = document.createElement('div');
-    node.className = 'slot open';
-    node.style.left = slot.x + '%';
-    node.style.top = slot.y + '%';
-    node.dataset.slotId = slot.id;
-    node.innerHTML = `<div class="slot-label">${slot.label}</div>`;
-    node.addEventListener('click', () => onSlotClick(slot.id));
-    pitch.appendChild(node);
+    const el = document.createElement('div');
+    el.className = 'slot';
+    el.style.left = slot.x + '%';
+    el.style.top = slot.y + '%';
+    el.dataset.id = slot.id;
+    el.innerHTML = `<div class="slot-label">${slot.label}</div>`;
+    el.onclick = () => onSlotClick(slot.id);
+    pitch.appendChild(el);
   });
-  refreshPitch();
 }
 
-function slotById(id){ return SLOTS.find(s => s.id === id); }
-function openSlotsForPlayer(player){
-  const positions = expandPositions(player.sp2);
-  return SLOTS.filter(s => !state.picks[s.id] && positions.includes(s.label));
-}
-function openSlots(){ return SLOTS.filter(s => !state.picks[s.id]); }
-
-function refreshPitch(){
-  SLOTS.forEach(slot => {
-    const node = $('pitch').querySelector(`[data-slot-id="${slot.id}"]`);
-    if (!node) return;
-    const pick = state.picks[slot.id];
+function refreshPitch() {
+  SLOTS.forEach(s => {
+    const el = $('pitch').querySelector(`[data-id="${s.id}"]`);
+    if (!el) return;
+    const pick = state.picks[s.id];
     if (pick) {
-      node.className = 'slot filled';
-      const [shirt] = colorFor(pick.country);
-      node.style.setProperty('--shirt', shirt);
-      node.innerHTML = `
-        <div class="slot-jersey" style="background:${shirt}">${initials(pick.player.n)}</div>
+      const [bg] = colorFor(pick.country);
+      el.className = 'slot filled anim-pop';
+      el.innerHTML = `
+        <div class="slot-jersey" style="background:${bg}">${initials(pick.player.n)}</div>
         <div class="slot-ovr">${pick.player.o}</div>
         <div class="slot-name">${pick.player.n.split(' ').pop()}</div>`;
     } else {
-      node.className = 'slot open';
-      node.innerHTML = `<div class="slot-label">${slot.label}</div>`;
+      el.className = 'slot';
+      el.innerHTML = `<div class="slot-label">${s.label}</div>`;
     }
   });
 }
 
-function onSlotClick(slotId){
-  // Clicking an open slot just highlights it as the active target during a draft offer.
-  if (!state.activeDraft) return;
-  const slot = slotById(slotId);
-  if (state.picks[slot.id]) return;
-  if (!expandPositions(state.activeDraft.player.sp2).includes(slot.label)) { toast(`Doesn't fit ${slot.label}`); return; }
-  confirmPick(slot.id, state.activeDraft.player, state.activeDraft.country, state.activeDraft.year);
+let armedSlot = null;
+
+function onSlotClick(slotId) {
+  if (state.picks[slotId]) return;
+  armedSlot = slotId;
+  document.querySelectorAll('.slot').forEach(s => s.classList.remove('armed'));
+  $('pitch').querySelector(`[data-id="${slotId}"]`)?.classList.add('armed');
 }
 
-function confirmPick(slotId, player, country, year){
-  state.picks[slotId] = { player, country, year, slotId };
-  state.activeDraft = null;
-  if (navigator.vibrate) navigator.vibrate(10);
+function clearArmed() {
+  armedSlot = null;
+  document.querySelectorAll('.slot').forEach(s => s.classList.remove('armed'));
+}
+
+function bestSlotFor(player) {
+  const possible = expandPos(player.sp2 || [player.sp]);
+  const avail = SLOTS.filter(s => !state.picks[s.id] && possible.includes(s.label));
+  if (!avail.length) return null;
+  if (armedSlot) {
+    const armed = SLOTS.find(s => s.id === armedSlot);
+    if (armed && possible.includes(armed.label)) return armedSlot;
+  }
+  return avail[0].id;
+}
+
+function placePlayer(slotId, player, country, year) {
+  state.picks[slotId] = { player, country, year };
+  pickOrder.push(slotId);
   refreshPitch();
-  updateRoundPill();
-  $('draftPane').classList.add('hidden');
-  $('spinPane').classList.remove('hidden');
-  if (countPicks() >= TOTAL_ROUNDS) {
-    showResults();
-  } else {
-    state.round++;
+  updateProgress();
+  renderPlayers($('playerSearch').value);
+  clearArmed();
+
+  if (Object.keys(state.picks).length >= 11) {
+    $('recordCard').classList.add('perfect-glow');
+    setTimeout(showResults, 320);
   }
 }
 
-/* ---------------- spin ---------------- */
-function wireGameScreen(){
-  $('spinBtn').addEventListener('click', () => spin());
-  $('draftSearch').addEventListener('input', (e) => renderPlayerList(e.target.value));
-  $('iconSkipBtn').addEventListener('click', skipIcon);
-  $('draftSortBtn').addEventListener('click', () => {
-    state.sortByRating = !state.sortByRating;
-    updateSortBtn();
-    renderPlayerList($('draftSearch').value);
-  });
+function undoPick() {
+  const last = pickOrder.pop();
+  if (!last || !state.picks[last]) return;
+  delete state.picks[last];
+  refreshPitch();
+  updateProgress();
+  renderPlayers($('playerSearch').value);
 }
 
-function updateSortBtn(){
-  $('draftSortBtn').textContent = state.sortByRating ? 'Best first ▾' : 'Squad order ▾';
-  $('draftSortBtn').classList.toggle('active', state.sortByRating);
-}
-
-// Tiering by squad_weights percentile: bottom 25% = shit, top 25% = good, middle 50% = okay.
-function buildTiers(){
-  const entries = COMBOS.map((k, i) => ({ k, w: WEIGHTS[i] })).sort((a, b) => a.w - b.w);
-  const n = entries.length;
-  const lo = Math.floor(n * 0.25);
-  const hi = Math.ceil(n * 0.75);
-  TIER_COMBOS = { shit: [], okay: [], good: [] };
-  entries.forEach((entry, i) => {
-    const tier = i < lo ? 'shit' : (i >= hi ? 'good' : 'okay');
-    TIER_COMBOS[tier].push(entry);
-  });
-}
-
-// Fixed 11-round plan: 2 shit + 3 okay + 5 good squads, plus exactly 1 icon round.
-function buildRoundPlan(){
-  return shuffled(['shit', 'shit', 'okay', 'okay', 'okay', 'good', 'good', 'good', 'good', 'good', 'icon']);
-}
-
-function weightedPick(entries){
-  let total = 0;
-  for (const e of entries) total += e.w;
-  let r = Math.random() * total;
-  for (const e of entries) {
-    r -= e.w;
-    if (r <= 0) return e.k;
-  }
-  return entries[entries.length - 1].k;
-}
-
-function allCombos(){ return COMBOS.map((k, i) => ({ k, w: WEIGHTS[i] })); }
-
-function eligibleIconsForNation(nation){
-  const openLabels = new Set(openSlots().map(s => s.label));
-  return DATA.icons.filter(ic => ic.country === nation && expandPositions(ic.sp2).some(label => openLabels.has(label)));
-}
-function eligibleIconNationEntries(){
-  const nations = [...new Set(DATA.icons.map(ic => ic.country))];
-  return nations
-    .map(n => ({ k: n, w: eligibleIconsForNation(n).length }))
-    .filter(e => e.w > 0);
-}
-
-function spin(){
-  if (state.spinning) return;
-  state.spinning = true;
+function spin() {
+  if (!COMBOS.length || spinning) return;
+  spinning = true;
   $('spinBtn').disabled = true;
+  $('spinCard').classList.add('spinning');
 
-  const planEntry = state.roundPlan[state.round - 1];
-  const isIconRound = planEntry === 'icon';
-  const tierPool = isIconRound ? null : (TIER_COMBOS[planEntry].length ? TIER_COMBOS[planEntry] : allCombos());
-  const iconNations = isIconRound ? DATA.icons.map(ic => ic.country) : null;
-
+  const finalKey = COMBOS[Math.floor(Math.random() * COMBOS.length)];
   let ticks = 0;
-  const maxTicks = 22 + Math.floor(Math.random()*8);
-  const reelA = $('reelCountry'), reelB = $('reelYear');
-  const tickInterval = setInterval(() => {
+  const maxTicks = 14;
+  const tick = () => {
+    const k = COMBOS[Math.floor(Math.random() * COMBOS.length)];
+    const [c, y] = k.split('|');
+    $('squadName').textContent = c;
+    $('squadYear').textContent = `${y} World Cup · spinning…`;
     ticks++;
-    if (isIconRound) {
-      reelA.textContent = '⭐ ICON';
-      reelB.textContent = iconNations[Math.floor(Math.random() * iconNations.length)];
+    if (ticks < maxTicks) {
+      setTimeout(tick, 55 + ticks * 8);
     } else {
-      const combo = weightedPick(tierPool).split('|');
-      reelA.textContent = combo[0];
-      reelB.textContent = combo[1];
+      const [country, year] = finalKey.split('|');
+      state.currentSquad = SQUADS[finalKey] || [];
+      state.activeSquadKey = finalKey;
+      $('squadName').textContent = country;
+      $('squadYear').textContent = `${year} World Cup · ${state.currentSquad.length} players`;
+      $('playerPanel').classList.remove('dim');
+      $('playerSearch').value = '';
+      renderPlayers('');
+      $('spinCard').classList.remove('spinning');
+      $('spinBtn').disabled = false;
+      spinning = false;
+      BK.tap($('spinCard'));
     }
-    if (ticks >= maxTicks) {
-      clearInterval(tickInterval);
-      settleSpin(planEntry);
-    }
-  }, 55);
+  };
+  tick();
 }
 
-function settleSpin(planEntry){
-  state.spinning = false;
-  $('spinBtn').disabled = false;
-  if (planEntry === 'icon') {
-    const nationEntries = eligibleIconNationEntries();
-    if (nationEntries.length === 0) {
-      settleSpin('good'); // no Icon fits the remaining open slots — fall back to a squad round
-      return;
-    }
-    // Weighted by eligible-Icon count, so a nation with 10 Icons (e.g. Brazil) comes up far
-    // more often than a one-Icon nation (e.g. Japan) — keeps "pick which Icon" a real choice.
-    const nation = weightedPick(nationEntries);
-    $('reelCountry').textContent = '⭐ ICON';
-    $('reelYear').textContent = nation;
-    track('icon_offer', { nation });
-    openIconOffer(nation);
-  } else {
-    const pool = TIER_COMBOS[planEntry].length ? TIER_COMBOS[planEntry] : allCombos();
-    const comboKey = weightedPick(pool);
-    const [country, year] = comboKey.split('|');
-    $('reelCountry').textContent = country;
-    $('reelYear').textContent = year;
-    track('spin', { country, year, tier: planEntry });
-    openDraft(country, year);
-  }
-}
+function renderPlayers(filter = '') {
+  const list = $('playerList');
+  list.innerHTML = '';
+  if (!state.currentSquad) return;
 
-/* ---------------- icon offer ---------------- */
-function openIconOffer(nation){
-  state.pendingIconNation = nation;
-  $('spinPane').classList.add('hidden');
-  $('iconOffer').classList.remove('hidden');
-  $('iconOfferNation').textContent = nation;
+  const q = filter.toLowerCase().trim();
+  const openSlots = SLOTS.filter(s => !state.picks[s.id]).map(s => s.label);
+  let players = [...state.currentSquad].sort((a, b) => (b.o || 0) - (a.o || 0));
 
-  const icons = eligibleIconsForNation(nation);
-  const wrap = $('iconOfferList');
-  wrap.innerHTML = '';
-  icons.forEach(icon => {
-    const used = isUsedPlayer(icon);
+  if (q) players = players.filter(p => p.n.toLowerCase().includes(q));
+
+  const frag = document.createDocumentFragment();
+  players.forEach(p => {
+    const slotId = bestSlotFor(p);
+    const fits = slotId && expandPos(p.sp2 || [p.sp]).some(pos => openSlots.includes(pos));
+    if (!fits && !q) return;
+
     const row = document.createElement('div');
-    row.className = 'player-row' + (used ? ' ineligible' : '');
-    const [shirt] = colorFor(icon.country);
-    const ovrBadge = `<span class="p-ovr-badge ${ovrTier(icon.o)}">${icon.o}</span>`;
-    const statsGrid = `<div class="p-stats-grid">${['pac','sho','pas','dri','def','phy'].map(k =>
-      `<div class="pstat"><span>${k.toUpperCase()}</span><b>${icon[k]}</b></div>`).join('')}</div>`;
+    row.className = 'player-row' + (fits ? '' : ' disabled');
+    const [bg] = colorFor(p.country);
+    const slot = slotId ? SLOTS.find(s => s.id === slotId) : null;
     row.innerHTML = `
-      <div class="p-jersey" style="background:${shirt}">${initials(icon.n)}</div>
-      <div class="p-info">
-        <div class="p-top">
-          <span class="p-name">${icon.n}</span>
-          ${ovrBadge}
-        </div>
-        <div class="p-meta">${icon.sp2.join('/')}${used ? ' · used' : ''}</div>
-        ${statsGrid}
-      </div>`;
-    if (!used) row.addEventListener('click', () => takeIcon(icon));
-    wrap.appendChild(row);
+      <div class="p-avatar" style="background:${bg}">${initials(p.n)}</div>
+      <div class="p-meta">
+        <div class="pname">${p.n}</div>
+        <div class="p-sub">${(p.sp2||[p.sp]).join('/')} ${slot ? '→ ' + slot.label : ''}</div>
+      </div>
+      <div class="povr">${p.o}</div>`;
+    if (fits) row.onclick = () => selectPlayer(p, slotId);
+    frag.appendChild(row);
   });
+  list.appendChild(frag);
 }
 
-function takeIcon(icon){
-  const slots = openSlotsForPlayer(icon);
-  if (slots.length === 0) { toast('No open slot for this icon'); return; }
-  $('iconOffer').classList.add('hidden');
-  if (slots.length === 1) {
-    confirmPick(slots[0].id, icon, icon.country, 'ICON');
-  } else {
-    state.activeDraft = { player: icon, country: icon.country, year: 'ICON' };
-    $('draftPane').classList.remove('hidden');
-    $('draftTeamName').textContent = icon.n;
-    $('draftYear').textContent = 'Pick a slot on the pitch';
-    $('playerList').innerHTML = '';
-    $('draftSearch').value = '';
-    toast('Tap a highlighted slot to place your icon');
+function selectPlayer(player, slotId) {
+  if (!slotId) {
+    slotId = bestSlotFor(player);
   }
-  track('icon_take', { name: icon.n });
+  if (!slotId) return;
+  placePlayer(slotId, player, player.country, player.year);
 }
 
-function skipIcon(){
-  track('icon_skip', { nation: state.pendingIconNation });
-  state.pendingIconNation = null;
-  $('iconOffer').classList.add('hidden');
-  $('spinPane').classList.remove('hidden');
+function computeRecord() {
+  const picks = Object.values(state.picks);
+  if (!picks.length) return { W:0, D:0, L:7, S:0 };
+  let sum = 0;
+  picks.forEach(p => { sum += (p.player.o || 65); });
+  const avg = sum / picks.length;
+  let W = Math.max(1, Math.min(7, Math.round((avg - 58) / 4.5)));
+  let D = Math.max(0, Math.min(3, Math.floor((78 - avg) / 5)));
+  let L = 7 - W - D;
+  if (L < 0) { L = 0; D = 7 - W; }
+  if (avg > 82) { W = 7; D = 0; L = 0; }
+  return { W, D, L, S: avg.toFixed(1) };
 }
 
-/* ---------------- draft ---------------- */
-function shuffled(arr){
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
+function tierName(r) {
+  if (r.W === 7) return '7-0-0 PERFECT';
+  if (r.L === 0) return 'UNBEATEN';
+  if (r.W >= 5) return 'CHAMPIONS';
+  if (r.W >= 3) return 'QUARTER-FINALS';
+  return 'GROUP STAGE';
 }
 
-function openDraft(country, year){
-  const key = `${country}|${year}`;
-  const squad = SQUADS[key] || [];
-  state.activeSquad = squad;
-  $('spinPane').classList.add('hidden');
-  $('draftPane').classList.remove('hidden');
-  $('draftTeamName').innerHTML = `${flagEmoji(country)} ${country}`;
-  $('draftYear').textContent = `${year} squad`;
-  $('draftSearch').value = '';
-  updateInstruct();
-  renderPlayerList('');
-
-  const anyPlayable = squad.some(p => openSlotsForPlayer(p).length > 0);
-  if (!anyPlayable) {
-    toast('No room for this squad — re-spinning');
-    setTimeout(() => spin(), 500);
-  }
-}
-
-function updateInstruct(){
-  const open = openSlots().map(s => s.label).join(', ');
-  $('draftInstruct').textContent = `Open: ${open}`;
-}
-
-function isUsedPlayer(p){
-  return Object.values(state.picks).some(pick => pick.player === p);
-}
-
-function renderPlayerList(filter){
-  const squad = state.activeSquad || [];
-  const f = (filter || '').trim().toLowerCase();
-  let list = squad.filter(p => !f || p.n.toLowerCase().includes(f));
-  if (state.sortByRating) {
-    list = [...list].sort((a,b) => b.o - a.o);
-  } else if (state.expert) {
-    const order = { GK:0, DF:1, MF:2, FW:3 };
-    list = [...list].sort((a,b) => order[a.p[0]] - order[b.p[0]]);
-  }
-  const wrap = $('playerList');
-  wrap.innerHTML = '';
-  list.forEach(p => {
-    const used = isUsedPlayer(p);
-    const fits = openSlotsForPlayer(p).length > 0;
-    const ineligible = used || !fits;
-    const row = document.createElement('div');
-    row.className = 'player-row' + (ineligible ? ' ineligible' : '');
-    const [shirt] = colorFor(p.country);
-    const ovrBadge = state.expert ? '' : `<span class="p-ovr-badge ${ovrTier(p.o)}">${p.o}</span>`;
-    const statsGrid = state.expert ? '' : `<div class="p-stats-grid">${['pac','sho','pas','dri','def','phy'].map(k=>`<div class="pstat"><span>${k.toUpperCase()}</span><b>${p[k]}</b></div>`).join('')}</div>`;
-    row.innerHTML = `
-      <div class="p-jersey" style="background:${shirt}">${initials(p.n)}</div>
-      <div class="p-info">
-        <div class="p-top">
-          <span class="p-name">${p.n}</span>
-          ${ovrBadge}
-        </div>
-        <div class="p-meta">${p.sp2.join('/')}${used ? ' · used' : ''}</div>
-        ${statsGrid}
-      </div>`;
-    if (!ineligible) row.addEventListener('click', () => draftPick(p));
-    wrap.appendChild(row);
-  });
-}
-
-function draftPick(player){
-  const slots = openSlotsForPlayer(player);
-  if (slots.length === 0) return;
-  if (slots.length === 1) {
-    confirmPick(slots[0].id, player, player.country, player.year);
-  } else {
-    state.activeDraft = { player, country: player.country, year: player.year };
-    $('draftInstruct').textContent = 'Tap a highlighted slot to place this player';
-    document.querySelectorAll(`.slot`).forEach(n => {
-      const s = slotById(n.dataset.slotId);
-      if (!state.picks[s.id] && player.sp2.includes(s.label)) n.classList.add('armed');
-    });
-    toast('Tap a slot on the pitch to confirm');
-  }
-}
-
-/* ============================================================
-   RESULT SIMULATION
-   7 games (3 group + R16 + QF + SF + Final) — the brand's "7-0-0".
-   Anchors calibrated by Monte Carlo simulation of the actual spin+draft
-   mechanic (weighted squad spin, icon offers, random eligible pick) so a
-   typical/unguided draft (S≈70 median) lands at the target stage-reach
-   odds: Round of 16 ~65%, Quarter-Final ~45%, Semi-Final ~35%,
-   Final/Runner-up ~15-22%, Champion ~8-12%. Drafting deliberately
-   (e.g. sorting by rating, taking every icon) pushes S well above this
-   baseline toward the Unbeaten/Perfect tiers.
-   ============================================================ */
-const RECORD_ANCHORS = [
-  [55.0, 0, 0],
-  [62.0, 0, 1],
-  [70.06, 0, 1],
-  [70.66, 1, 1],  // 70.36 -> Round of 16+ ≈ 65%
-  [71.79, 1, 1],
-  [72.39, 2, 1],  // 72.09 -> Quarter-Finalist+ ≈ 45%
-  [72.70, 2, 1],
-  [73.30, 3, 1],  // 73.00 -> Semi-Finalist+ ≈ 35%
-  [74.43, 3, 1],
-  [75.03, 4, 1],  // 74.73 -> Runner-Up+ ≈ 15-22%
-  [75.61, 4, 1],
-  [76.21, 5, 1],  // 75.91 -> World Champion+ ≈ 8-12%
-  [83.0, 5, 1],
-  [85.0, 6, 1],   // Unbeaten floor
-  [90.0, 7, 0],   // 7-0-0 — the perfect run
-];
-const PERFECT_S = 90.0;
-
-function recordFromRating(S){
-  if (S >= PERFECT_S) return { W: GAMES, D: 0, L: 0 };
-  const Sc = clamp(S, RECORD_ANCHORS[0][0], PERFECT_S);
-  let a = RECORD_ANCHORS[0], b = RECORD_ANCHORS[RECORD_ANCHORS.length-1];
-  for (let i = 0; i < RECORD_ANCHORS.length - 1; i++) {
-    if (Sc >= RECORD_ANCHORS[i][0] && Sc <= RECORD_ANCHORS[i+1][0]) { a = RECORD_ANCHORS[i]; b = RECORD_ANCHORS[i+1]; break; }
-  }
-  const t = (Sc - a[0]) / (b[0] - a[0]);
-  let W = clamp(Math.round(a[1] + (b[1]-a[1]) * t), 0, GAMES);
-  let D = clamp(Math.round(a[2] + (b[2]-a[2]) * t), 0, GAMES - W);
-  return { W, D, L: GAMES - W - D };
-}
-
-function computeRecord(){
-  const rows = SLOTS.map(slot => {
-    const pick = state.picks[slot.id];
-    return { slot, pick, eff: pick.player.o };
-  });
-  const S = rows.reduce((a, r) => a + r.eff, 0) / rows.length;
-  let { W, D, L } = recordFromRating(S);
-  if (S >= PERFECT_S) { W = GAMES; D = 0; L = 0; }
-  else if (W === GAMES) { W = GAMES - 1; D = 1; L = 0; } // one shy of perfect stays unbeaten
-  return { W, D, L, pts: W*3 + D, S: +S.toFixed(1), rows };
-}
-
-const RUN_BY_WINS = ['Group Stage Exit', 'Round of 16', 'Quarter-Finalist', 'Semi-Finalist', 'Runner-Up', 'World Champion', 'World Champion', 'World Champion'];
-function tierFor(r){
-  if (r.W === GAMES) return { name: '7-0-0', sub: 'The perfect World Cup' };
-  if (r.L === 0) return { name: 'Unbeaten Champion', sub: `${r.W}-${r.D}-${r.L}, never lost` };
-  if (r.W >= 5) return { name: 'World Champion', sub: 'Lifted the trophy' };
-  return { name: RUN_BY_WINS[r.W], sub: `${r.W}-${r.D}-${r.L} record` };
-}
-
-function groupStageLine(r){
-  // First 3 games are framed as the group stage; deterministic-but-flavorful split of W/D/L across the 7.
-  const g = { W:0, D:0, L:0 };
-  let w = r.W, d = r.D, l = r.L;
-  for (let i = 0; i < 3; i++) {
-    if (w > 0) { g.W++; w--; } else if (d > 0) { g.D++; d--; } else { g.L++; l--; }
-  }
-  return g;
-}
-
-function topPlayer(rows){ return rows.reduce((best, r) => (!best || r.eff > best.eff) ? r : best, null); }
-function topScorer(rows){
-  const fws = rows.filter(r => r.pick.player.p[0] === 'FW');
-  const pool = fws.length ? fws : rows;
-  return pool.reduce((best, r) => (!best || r.pick.player.sho > best.pick.player.sho) ? r : best, null);
-}
-
-/* ---------------- results screen ---------------- */
-function wireResultsScreen(){
-  $('shareBtn').addEventListener('click', shareResult);
-  $('againBtn').addEventListener('click', showSetup);
-  $('showMoreBtn').addEventListener('click', () => {
-    const bd = $('breakdown');
-    bd.classList.toggle('hidden');
-    $('showMoreBtn').textContent = bd.classList.contains('hidden') ? 'Show full tournament breakdown ▾' : 'Hide breakdown ▴';
-  });
-}
-
-let lastRecord = null;
-function showResults(){
+function showResults() {
   const r = computeRecord();
-  lastRecord = r;
-  const tier = tierFor(r);
-
   $('gameScreen').classList.add('hidden');
+  $('xiProgressWrap').classList.add('hidden');
   $('resultsScreen').classList.remove('hidden');
-  fillAllAdSlots();
 
+  $('resultsHead').textContent = r.W === 7 ? 'You went 7-0-0!' : `Projected ${r.W}-${r.D}-${r.L}`;
   $('recW').textContent = r.W;
   $('recD').textContent = r.D;
   $('recL').textContent = r.L;
-  $('recordKey').textContent = `W · D · L over ${GAMES} games · ${r.pts} pts · squad avg ${r.S}`;
-  $('tierBadge').textContent = tier.name;
-  $('tierSub').textContent = tier.sub;
-  $('resultsQ').textContent = r.W === GAMES ? 'You went 7-0-0.' : `You finished ${tier.name}.`;
+  $('recordSub').textContent = `Squad average ${r.S} · ${state.formation}`;
+  $('tierBadge').textContent = tierName(r);
+  $('recordCard').classList.toggle('perfect-glow', r.W === 7);
 
-  const g = groupStageLine(r);
-  $('bdGroup').textContent = `${g.W}-${g.D}-${g.L}`;
-  $('bdRun').textContent = RUN_BY_WINS[r.W];
-
-  const top = topPlayer(r.rows);
-  $('bdTopPlayer').textContent = top.pick.player.n;
-  $('bdTopPlayerSub').textContent = `${top.pick.player.o} OVR · ${top.pick.country}`;
-
-  const scorer = topScorer(r.rows);
-  $('bdTopScorer').textContent = scorer.pick.player.n;
-  $('bdTopScorerSub').textContent = `${scorer.pick.player.sho} SHO · ${scorer.pick.country}`;
-
-  $('xiList').innerHTML = r.rows.map(row => {
-    const [shirt] = colorFor(row.pick.country);
-    return `<div class="xi-row">
-      <div class="p-jersey" style="background:${shirt}">${initials(row.pick.player.n)}</div>
-      <div class="p-info"><div class="p-name">${row.pick.player.n}</div><div class="p-meta">${row.slot.label} · ${row.pick.country} ${row.pick.year}</div></div>
-      <span class="p-ovr-badge ${ovrTier(row.pick.player.o)}">${row.pick.player.o}</span>
-    </div>`;
-  }).join('');
-
-  $('breakdown').classList.add('hidden');
-  $('showMoreBtn').textContent = 'Show full tournament breakdown ▾';
-
-  track('squad_completed', { W: r.W, D: r.D, L: r.L, S: r.S, formation: state.formation, mode: state.mode });
-  if (r.W === GAMES) track('seven_oh_oh', { S: r.S });
-}
-
-function shareText(){
-  const r = lastRecord;
-  return `I went ${r.W}-${r.D}-${r.L} in 7-0-0, the World Cup squad builder. Build yours at 7-0-0.com #7oh0`;
-}
-
-function roundRect(ctx, x, y, w, h, r){
-  ctx.beginPath();
-  ctx.moveTo(x+r, y);
-  ctx.arcTo(x+w, y, x+w, y+h, r);
-  ctx.arcTo(x+w, y+h, x, y+h, r);
-  ctx.arcTo(x, y+h, x, y, r);
-  ctx.arcTo(x, y, x+w, y, r);
-  ctx.closePath();
-}
-
-function buildShareCanvas(){
-  const r = lastRecord;
-  const tier = tierFor(r);
-  const W = 1080, H = 1350;
-  const canvas = document.createElement('canvas');
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext('2d');
-  ctx.textAlign = 'center';
-
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#0a1f14'); bg.addColorStop(1, '#0f2b1c');
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-
-  ctx.fillStyle = '#e3b23c';
-  ctx.font = '800 70px -apple-system, sans-serif';
-  ctx.fillText('7-0-0', W/2, 120);
-  ctx.fillStyle = '#a9c4b3';
-  ctx.font = '600 24px -apple-system, sans-serif';
-  ctx.fillText('WORLD CUP SQUAD BUILDER', W/2, 160);
-
-  ctx.fillStyle = '#f0d28a';
-  ctx.font = '800 170px -apple-system, sans-serif';
-  ctx.fillText(`${r.W}-${r.D}-${r.L}`, W/2, 340);
-
-  ctx.fillStyle = '#a9c4b3';
-  ctx.font = '500 28px -apple-system, sans-serif';
-  ctx.fillText(`${GAMES} GAMES · ${r.pts} PTS · SQUAD AVG ${r.S}`, W/2, 390);
-
-  ctx.font = '800 34px -apple-system, sans-serif';
-  const tierText = tier.name.toUpperCase();
-  const tw = ctx.measureText(tierText).width + 70;
-  roundRect(ctx, W/2 - tw/2, 425, tw, 68, 34);
-  ctx.fillStyle = '#e3b23c'; ctx.fill();
-  ctx.fillStyle = '#1a1206';
-  ctx.fillText(tierText, W/2, 470);
-
-  const pitchX = 110, pitchY = 560, pitchW = W - 220, pitchH = 640;
-  const pg = ctx.createLinearGradient(0, pitchY, 0, pitchY + pitchH);
-  pg.addColorStop(0, '#1d6b3e'); pg.addColorStop(1, '#19602f');
-  roundRect(ctx, pitchX, pitchY, pitchW, pitchH, 18);
-  ctx.fillStyle = pg; ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 3;
-  ctx.strokeRect(pitchX + 10, pitchY + 10, pitchW - 20, pitchH - 20);
-
-  r.rows.forEach(row => {
-    const slot = row.slot;
-    const cx = pitchX + (slot.x / 100) * pitchW;
-    const cy = pitchY + (slot.y / 100) * pitchH;
-    const [shirt] = colorFor(row.pick.country);
-    roundRect(ctx, cx - 28, cy - 28, 56, 56, 12);
-    ctx.fillStyle = shirt; ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = '800 22px -apple-system, sans-serif';
-    ctx.fillText(initials(row.pick.player.n), cx, cy + 8);
-    ctx.font = '600 17px -apple-system, sans-serif';
-    ctx.fillText(row.pick.player.n.split(' ').pop(), cx, cy + 48);
+  const wrap = $('xiList');
+  wrap.innerHTML = '';
+  SLOTS.forEach(slot => {
+    const pick = state.picks[slot.id];
+    if (!pick) return;
+    const row = document.createElement('div');
+    row.className = 'xi-row';
+    const [bg] = colorFor(pick.country);
+    row.innerHTML = `
+      <div class="p-avatar sm" style="background:${bg}">${initials(pick.player.n)}</div>
+      <div class="xi-info"><b>${pick.player.n}</b><span>${slot.label} · ${pick.country} ${pick.year}</span></div>
+      <div class="xi-ovr">${pick.player.o}</div>`;
+    wrap.appendChild(row);
   });
 
-  ctx.fillStyle = '#a9c4b3';
-  ctx.font = '500 24px -apple-system, sans-serif';
-  ctx.fillText('build your own at 7-0-0.com', W/2, H - 50);
-
-  return canvas;
+  try { track('700_complete', { record: `${r.W}-${r.D}-${r.L}`, formation: state.formation }); } catch(e) {}
 }
 
-async function shareResult(){
-  const text = shareText();
-  try {
-    const canvas = buildShareCanvas();
-    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-    if (!blob) throw new Error('canvas toBlob failed');
-    const file = new File([blob], '7-0-0-result.png', { type: 'image/png' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ text, files: [file] });
-      return;
-    }
-    if (navigator.share) {
-      await navigator.share({ text });
-      return;
-    }
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = '7-0-0-result.png';
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
-    try { await navigator.clipboard.writeText(text); toast('Image downloaded + result copied'); }
-    catch(e){ toast('Image downloaded'); }
-  } catch(e){
-    try { await navigator.clipboard.writeText(text); toast('Result copied to clipboard'); }
-    catch(e2){ toast(text); }
-  }
+function share() {
+  const w = $('recW').textContent, d = $('recD').textContent, l = $('recL').textContent;
+  BK.share(`I went ${w}-${d}-${l} in 7-0-0 on Ball Knw! Spin World Cup squads and build your XI.`, $('shareBtn'));
 }
 
 boot();

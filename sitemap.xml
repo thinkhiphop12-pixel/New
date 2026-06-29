@@ -21,6 +21,11 @@
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://thinkhiphop12-pixel.github.io/New/scoreline/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://thinkhiphop12-pixel.github.io/New/privacy.html</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
