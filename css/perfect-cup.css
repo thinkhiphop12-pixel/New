@@ -1,0 +1,191 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.hidden { display: none !important; }
+
+body {
+  background: #050505;
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+a { color: #B8FF3C; text-decoration: none; }
+
+#perfect-cup {
+  max-width: 520px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+.title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.brand-sub {
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.brand { font-weight: 800; font-size: 18px; }
+.mode { font-size: 12px; color: rgba(255,255,255,0.5); letter-spacing: 1px; text-transform: uppercase; }
+
+.loading { text-align: center; padding: 40px; color: rgba(255,255,255,0.5); }
+
+.hud {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #B8FF3C;
+}
+
+.status {
+  font-size: 14px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.btn-spin {
+  width: 100%;
+  padding: 16px;
+  font-size: 17px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #B8FF3C, #00D68F);
+  color: #050505;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.btn-spin.hidden { display: none; }
+
+.squad-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.squad-card .flag { font-size: 40px; display: block; margin-bottom: 8px; }
+.squad-card .squad-name { font-size: 22px; font-weight: 800; }
+.squad-card .squad-meta { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+.reroll-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 16px 0;
+}
+
+.reroll-btn {
+  background: linear-gradient(135deg, #B8FF3C, #00D68F);
+  color: #050505;
+  padding: 16px 32px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  margin: 8px;
+}
+
+.reroll-btn.disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.reroll-row .reroll-btn {
+  font-size: 0.8rem;
+  padding: 10px 16px;
+}
+
+.results .reroll-btn {
+  margin-top: 20px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.player-card {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+  font: inherit;
+}
+
+.player-card:hover:not(.disabled) {
+  background: rgba(184,255,60,0.15);
+  transform: translateY(-2px);
+  border-color: rgba(184,255,60,0.3);
+}
+
+.player-card.disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.player-card .pos {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #B8FF3C;
+  margin-bottom: 6px;
+}
+
+.player-card .name { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+.player-card .ovr { font-weight: 800; font-size: 18px; }
+
+.picks-wrap { margin-top: 8px; }
+.picks-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
+.picks-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.pick-chip {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.results {
+  text-align: center;
+  padding: 40px 20px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 20px;
+  border: 1px solid rgba(184,255,60,0.2);
+}
+
+.results h2 {
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+}
+
+.results p {
+  color: rgba(255,255,255,0.6);
+}
