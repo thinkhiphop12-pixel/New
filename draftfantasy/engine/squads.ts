@@ -150,7 +150,8 @@ let cache: Squad[] | null = null;
 export async function loadSquads(): Promise<Squad[]> {
   if (cache) return cache;
 
-  const res = await fetch('/data/players.json');
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+  const res = await fetch(`${base}/data/players.json`);
   if (!res.ok) throw new Error(`Failed to load player data: ${res.status}`);
   const raw: RawBundle = await res.json();
 

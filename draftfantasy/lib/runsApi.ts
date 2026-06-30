@@ -28,15 +28,19 @@ export function makeShareCode(): string {
   return `${time}${rand}`.toUpperCase();
 }
 
-/** Builds the POST body for /api/runs from a completed run. */
-export function runToInsert(run: Run, anonymousId: string) {
-  const squadIds = Array.from(new Set(run.picks.map((p) => p.squadId)));
-  const playerIds = run.picks.map((p) => p.player.id);
+function makeReplayCode(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
+  return makeShareCode();
+}
+
+/** Builds a `runs` row to insert directly into Supabase from the browser. */
+export function runToRow(run: Run, anonymousId: string) {
   return {
-    shareCode: makeShareCode(),
-    anonymousId,
-    squad_ids: squadIds,
-    player_ids: playerIds,
+    share_code: makeShareCode(),
+    anonymous_id: anonymousId,
+    replay_code: makeReplayCode(),
+    squad_ids: Array.from(new Set(run.picks.map((p) => p.squadId))),
+    player_ids: run.picks.map((p) => p.player.id),
     match_results: run.matches,
     goals_for: run.goalsFor,
     goals_against: run.goalsAgainst,

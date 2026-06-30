@@ -1,0 +1,2 @@
+:HL["/perfect-cup/_next/static/chunks/2k6y4yx87yr88.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}},"staleTime":300,"buildId":"AkhrmSuzHMjeMgU0onG2l"}
