@@ -13,7 +13,9 @@ export default function Page() {
 
   useEffect(() => {
     let alive = true
-    fetch("/data/squads.json")
+    // Raw fetch() is not auto-prefixed by Next's basePath, so add it ourselves.
+    const bp = process.env.NEXT_PUBLIC_BASE_PATH || ""
+    fetch(`${bp}/data/squads.json`)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         return r.json()

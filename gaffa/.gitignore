@@ -16,3 +16,6 @@ node_modules
 # TypeScript build info / Next env (generated)
 tsconfig.tsbuildinfo
 next-env.d.ts
+
+# Static export output (published copy is committed under /perfect-cup)
+out/
