@@ -7,7 +7,6 @@ import {
   DIFFICULTIES,
   ERAS,
   FORMATIONS,
-  GAME_MODES,
 } from "@/lib/draft-data"
 import type { Settings } from "./use-gaffa-game"
 import { Eye, EyeOff, Target, Trophy } from "lucide-react"
@@ -95,15 +94,6 @@ export function SetupScreen({ settings, setSettings, onStart }: Props) {
 
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="space-y-7">
-          <Section label="Game Mode">
-            <OptionGrid
-              columns={1}
-              value={settings.mode}
-              onChange={(mode) => update({ mode })}
-              options={GAME_MODES.map((m) => ({ id: m.id, title: m.name, subtitle: m.tagline }))}
-            />
-          </Section>
-
           <Section label="Formation">
             <OptionGrid
               value={settings.formationId}
@@ -133,18 +123,6 @@ export function SetupScreen({ settings, setSettings, onStart }: Props) {
                 title: `${d.name} · ${d.spins} spins`,
                 subtitle: d.description,
               }))}
-            />
-          </Section>
-
-          <Section label="Rating basis">
-            <OptionGrid
-              columns={2}
-              value={settings.ratingBasis}
-              onChange={(ratingBasis) => update({ ratingBasis })}
-              options={[
-                { id: "form", title: "Form on the day", subtitle: "Rated for that exact season" },
-                { id: "peak", title: "At his very best", subtitle: "Career-peak rating" },
-              ]}
             />
           </Section>
 

@@ -6,13 +6,35 @@
 
 export type Position = "GK" | "DEF" | "MID" | "FWD"
 
+/** Granular ("closest actual") position, as tagged in the real dataset. */
+export type SpecificPosition =
+  | "GK"
+  | "CB"
+  | "RB"
+  | "LB"
+  | "RWB"
+  | "LWB"
+  | "RM"
+  | "LM"
+  | "RW"
+  | "LW"
+  | "CM"
+  | "CDM"
+  | "CAM"
+  | "ST"
+  | "CF"
+
 export type Player = {
   id: string
   name: string
   pos: Position
-  /** rating for the specific club-season ("form on the day") */
+  /** specific position for this club-season, from real data (optional) */
+  spec?: SpecificPosition
+  /** other specific positions the player can cover */
+  alt?: SpecificPosition[]
+  /** rating for the specific club-season */
   rating: number
-  /** career-peak rating ("at his very best") */
+  /** retained for schema compatibility; equals `rating` for real data */
   peak: number
 }
 
@@ -38,9 +60,7 @@ export type GameMode = {
 }
 
 export const GAME_MODES: GameMode[] = [
-  { id: "pl", name: "Premier League", tagline: "English top-flight, 1992 → today" },
-  { id: "club", name: "Club XI", tagline: "European & world club greats" },
-  { id: "world", name: "World Cup XI", tagline: "International squads, 1966 → 2026" },
+  { id: "world", name: "World Cup XI", tagline: "International squads, 1930 → 2026" },
 ]
 
 // ---------- Formations ----------
@@ -58,6 +78,42 @@ export type Formation = {
   id: string
   name: string
   slots: Slot[]
+}
+
+// ---------- Position matching ----------
+// For each formation slot (keyed by its label) the specific positions a player
+// may hold to fill it — their "closest actual position". Wing-back and hybrid
+// slots fall back to the nearest real roles present in the dataset.
+export const SLOT_ACCEPTS: Record<string, SpecificPosition[]> = {
+  GK: ["GK"],
+  RB: ["RB", "RWB"],
+  LB: ["LB", "LWB"],
+  CB: ["CB"],
+  RWB: ["RWB", "RB", "RM"],
+  LWB: ["LWB", "LB", "LM"],
+  RM: ["RM", "RW"],
+  LM: ["LM", "LW"],
+  RW: ["RW", "RM"],
+  LW: ["LW", "LM"],
+  CDM: ["CDM", "CM"],
+  CM: ["CM", "CDM", "CAM"],
+  CAM: ["CAM", "CM"],
+  ST: ["ST", "CF"],
+  CF: ["CF", "ST"],
+}
+
+/**
+ * Whether a player can fill a given formation slot. Uses the player's specific
+ * position (+ alternates) against the slot's accepted set when real data is
+ * present; otherwise falls back to the generic line match.
+ */
+export function playerFillsSlot(slot: Slot, player: Player): boolean {
+  if (player.spec) {
+    const accepted = SLOT_ACCEPTS[slot.label] ?? []
+    if (accepted.includes(player.spec)) return true
+    return (player.alt ?? []).some((a) => accepted.includes(a))
+  }
+  return player.pos === slot.pos
 }
 
 const GK_SLOT: Slot = { pos: "GK", label: "GK", x: 50, y: 8 }
@@ -727,4 +783,14 @@ export const CLUB_SEASONS: ClubSeason[] = [
   },
 ]
 
-export const ERAS = ["All eras", "1970s", "1980s", "1990s", "2000s", "2010s"]
+export const ERAS = [
+  "All eras",
+  "1930s",
+  "1950s",
+  "1960s",
+  "1970s",
+  "1980s",
+  "2000s",
+  "2010s",
+  "2020s",
+]

@@ -1,4 +1,4 @@
-import type { Player, Position, RatingBasis, Slot } from "./draft-data"
+import type { Player, Position } from "./draft-data"
 
 export type DraftedPlayer = Player & {
   slotIndex: number
@@ -39,18 +39,14 @@ export type SimResult = {
 
 const POS_WEIGHT: Record<Position, number> = { GK: 1, DEF: 1, MID: 1, FWD: 1 }
 
-function ratingOf(p: Player, basis: RatingBasis) {
-  return basis === "peak" ? p.peak : p.rating
-}
-
 function avg(nums: number[]) {
   if (nums.length === 0) return 0
   return nums.reduce((a, b) => a + b, 0) / nums.length
 }
 
 /** Build line ratings (out of 99) from the drafted XI. */
-export function lineRatings(squad: DraftedPlayer[], basis: RatingBasis) {
-  const byPos = (pos: Position) => squad.filter((s) => s.pos === pos).map((s) => ratingOf(s, basis))
+export function lineRatings(squad: DraftedPlayer[]) {
+  const byPos = (pos: Position) => squad.filter((s) => s.pos === pos).map((s) => s.rating)
   const gk = byPos("GK")
   const def = byPos("DEF")
   const mid = byPos("MID")
@@ -59,7 +55,7 @@ export function lineRatings(squad: DraftedPlayer[], basis: RatingBasis) {
   const midfield = avg(mid) || 70
   const attack = avg(fwd) || 70
   const overall =
-    avg(squad.map((s) => ratingOf(s, basis) * POS_WEIGHT[s.pos])) || 70
+    avg(squad.map((s) => s.rating * POS_WEIGHT[s.pos])) || 70
   return {
     defence: Math.round(defence),
     midfield: Math.round(midfield),
@@ -113,13 +109,9 @@ const RIVALS = [
   "Summit FC",
 ]
 
-export function simulateSeason(
-  squad: DraftedPlayer[],
-  basis: RatingBasis,
-  seed: number,
-): SimResult {
+export function simulateSeason(squad: DraftedPlayer[], seed: number): SimResult {
   const rng = mulberry32(seed)
-  const { defence, midfield, attack, overall } = lineRatings(squad, basis)
+  const { defence, midfield, attack, overall } = lineRatings(squad)
 
   const teamStrength = attack * 0.4 + midfield * 0.3 + defence * 0.3
 
@@ -209,12 +201,12 @@ export function simulateSeason(
   // Top scorer: distribute your goals across forwards/mids by rating share.
   const scorers = squad.filter((s) => s.pos === "FWD" || s.pos === "MID")
   const totalShare = scorers.reduce(
-    (sum, s) => sum + (s.pos === "FWD" ? 2 : 1) * ratingOf(s, basis),
+    (sum, s) => sum + (s.pos === "FWD" ? 2 : 1) * s.rating,
     0,
   )
   let topScorer = { name: scorers[0]?.name ?? "—", goals: 0 }
   for (const s of scorers) {
-    const share = ((s.pos === "FWD" ? 2 : 1) * ratingOf(s, basis)) / totalShare
+    const share = ((s.pos === "FWD" ? 2 : 1) * s.rating) / totalShare
     const goals = Math.round(you.gf * share)
     if (goals > topScorer.goals) topScorer = { name: s.name, goals }
   }

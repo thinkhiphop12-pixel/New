@@ -163,7 +163,7 @@ export function DraftScreen({ game }: { game: Game }) {
                                 pickable ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
                               )}
                             >
-                              {game.settings.ratingBasis === "peak" ? p.peak : p.rating}
+                              {p.rating}
                             </span>
                           )}
                         </button>

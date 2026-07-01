@@ -27,9 +27,10 @@ export function ResultsScreen({ game }: { game: Game }) {
     topScorerGoals: result.topScorer.goals,
     squadRating: result.squadRating,
     difficultyId: settings.difficultyId,
-    ratingBasis: settings.ratingBasis,
+    ratingBasis: "form",
   }
   const earned = CHALLENGES.filter((c) => c.test(ctx))
+  const modeName = GAME_MODES.find((m) => m.id === settings.mode)?.name ?? "World Cup XI"
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-8">
@@ -41,7 +42,7 @@ export function ResultsScreen({ game }: { game: Game }) {
           ← New side
         </button>
         <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          {settings.mode} · {formation.name} · {difficulty.name}
+          {modeName} · {formation.name} · {difficulty.name}
         </span>
       </div>
 

@@ -1,12 +1,36 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useGaffaGame } from "@/components/game/use-gaffa-game"
 import { SetupScreen } from "@/components/game/setup-screen"
 import { DraftScreen } from "@/components/game/draft-screen"
 import { ResultsScreen } from "@/components/game/results-screen"
+import type { ClubSeason } from "@/lib/draft-data"
 
 export default function Page() {
-  const game = useGaffaGame()
+  const [clubSeasons, setClubSeasons] = useState<ClubSeason[]>([])
+  const [loadError, setLoadError] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    fetch("/data/squads.json")
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.json()
+      })
+      .then((data: ClubSeason[]) => {
+        if (alive) setClubSeasons(data)
+      })
+      .catch(() => {
+        if (alive) setLoadError(true)
+      })
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  const game = useGaffaGame(clubSeasons)
+  const ready = clubSeasons.length > 0
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -16,20 +40,28 @@ export default function Page() {
             Gaffa<span className="text-primary">Draft</span>
           </span>
           <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-            Prototype
+            World Cup XI
           </span>
         </div>
       </div>
 
-      {game.phase === "setup" && (
+      {!ready && (
+        <div className="mx-auto max-w-6xl px-4 py-24 text-center">
+          <p className="font-mono text-xs uppercase tracking-[0.25em] text-muted-foreground">
+            {loadError ? "Could not load squad data — please refresh." : "Loading squads…"}
+          </p>
+        </div>
+      )}
+
+      {ready && game.phase === "setup" && (
         <SetupScreen
           settings={game.settings}
           setSettings={game.setSettings}
           onStart={game.startDraft}
         />
       )}
-      {game.phase === "draft" && <DraftScreen game={game} />}
-      {game.phase === "result" && <ResultsScreen game={game} />}
+      {ready && game.phase === "draft" && <DraftScreen game={game} />}
+      {ready && game.phase === "result" && <ResultsScreen game={game} />}
     </main>
   )
 }
