@@ -1,3 +1,9 @@
+> **RESOLVED (July 2026):** the ratings issue described below was fixed by
+> replacing the source dataset with the hand-curated DBC dataset
+> (`data/dbc-squads.js`, 133 curated XIs, tournament-specific ratings) and a
+> hand-curated position table (`gaffa/scripts/spec-overrides.mjs`). See
+> `gaffa/README.md` for the current pipeline. Kept for historical context.
+
 # Handoff: Fix player ratings for the /perfect-cup/ World Cup XI draft
 
 ## Goal

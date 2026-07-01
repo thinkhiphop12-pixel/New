@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Pitch } from "./pitch"
+import { playerFillsSlot, type Player } from "@/lib/draft-data"
 import type { useGaffaGame } from "./use-gaffa-game"
 import { Dices, RotateCw, Shuffle } from "lucide-react"
 
@@ -36,10 +37,10 @@ export function DraftScreen({ game }: { game: Game }) {
   const filledCount = squad.filter(Boolean).length
 
   // Show the WHOLE squad for context; a player is pickable only when his
-  // position matches the slot currently being drafted. Everyone else is
-  // greyed out (e.g. once your GK slot is filled, keepers show disabled).
+  // specific position (or an alternate) fits the slot currently being drafted.
+  // Everyone else is greyed out (e.g. on an RB slot, centre-backs show disabled).
   const squadPlayers = currentSpin ? currentSpin.players : []
-  const canPickPlayer = (pos: string) => !!currentSlot && pos === currentSlot.pos
+  const canPickPlayer = (p: Player) => !!currentSlot && playerFillsSlot(currentSlot, p)
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-8">
@@ -112,18 +113,37 @@ export function DraftScreen({ game }: { game: Game }) {
                   <div className="flex items-center gap-3 rounded-md border border-border bg-background p-3">
                     <span
                       className="flex size-10 shrink-0 items-center justify-center rounded font-heading text-sm font-extrabold text-background"
-                      style={{ backgroundColor: currentSpin.color }}
+                      style={{
+                        backgroundColor: currentSpin.color,
+                        boxShadow: currentSpin.trim ? `inset 0 0 0 2px ${currentSpin.trim}` : undefined,
+                      }}
                     >
-                      {currentSpin.club.slice(0, 2).toUpperCase()}
+                      <Flag flag={currentSpin.flag} fallback={currentSpin.club.slice(0, 2).toUpperCase()} />
                     </span>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="font-heading text-lg font-bold uppercase leading-none">
-                        {currentSpin.club}
+                        {currentSpin.club}{" "}
+                        <span className="font-mono text-xs font-normal normal-case text-muted-foreground">
+                          {currentSpin.season}
+                        </span>
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {currentSpin.season} · {currentSpin.era}
+                      <p className="truncate text-xs text-muted-foreground">
+                        {currentSpin.note ? `${currentSpin.note} · ` : ""}
+                        {currentSpin.era}
                       </p>
                     </div>
+                    {currentSpin.finish && (
+                      <span
+                        className={cn(
+                          "shrink-0 rounded px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wider",
+                          currentSpin.finish === "Champions"
+                            ? "bg-primary/20 text-primary"
+                            : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {currentSpin.finish}
+                      </span>
+                    )}
                   </div>
 
                   <p className="mt-4 font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
@@ -131,7 +151,8 @@ export function DraftScreen({ game }: { game: Game }) {
                   </p>
                   <div className="mt-2 grid gap-2 sm:grid-cols-2">
                     {squadPlayers.map((p) => {
-                      const pickable = canPickPlayer(p.pos)
+                      const pickable = canPickPlayer(p)
+                      const goals = p.stats?.g ?? 0
                       return (
                         <button
                           key={p.id}
@@ -145,21 +166,26 @@ export function DraftScreen({ game }: { game: Game }) {
                               : "cursor-not-allowed border-border/40 bg-background/40 opacity-40",
                           )}
                         >
-                          <span className="flex items-center gap-2">
+                          <span className="flex min-w-0 items-center gap-2">
                             <span
                               className={cn(
                                 "flex w-9 shrink-0 items-center justify-center rounded px-1 py-0.5 font-mono text-[10px] font-bold uppercase",
                                 pickable ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground",
                               )}
                             >
-                              {p.pos}
+                              {p.spec ?? p.pos}
                             </span>
-                            <span className="text-sm font-semibold">{p.name}</span>
+                            <span className="truncate text-sm font-semibold">{p.name}</span>
+                            {goals > 0 && (
+                              <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                                {goals}g
+                              </span>
+                            )}
                           </span>
                           {showRatings && (
                             <span
                               className={cn(
-                                "ml-2 flex size-7 items-center justify-center rounded text-xs font-bold",
+                                "ml-2 flex size-7 shrink-0 items-center justify-center rounded text-xs font-bold",
                                 pickable ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
                               )}
                             >
@@ -246,6 +272,21 @@ function RerollMenu({
       </select>
     </div>
   )
+}
+
+/** Nation flag: an emoji for most nations, or an inline SVG (England, Wales,
+ * Scotland, USSR, Yugoslavia, Zaire…) rendered via a data URI. */
+function Flag({ flag, fallback }: { flag?: string; fallback: string }) {
+  if (!flag) return <>{fallback}</>
+  if (flag.startsWith("<svg"))
+    return (
+      <img
+        src={`data:image/svg+xml;utf8,${encodeURIComponent(flag)}`}
+        alt=""
+        className="h-5 w-7 rounded-[2px] object-cover"
+      />
+    )
+  return <span className="text-xl leading-none">{flag}</span>
 }
 
 function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {

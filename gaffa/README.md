@@ -39,18 +39,25 @@ changes port App B's squad logic onto it:
   Added `5-3-2`, `5-4-1`, `4-2-3-1`, `3-4-3`, `4-5-1`, and `3-5-2 Wingbacks`
   alongside the original `4-4-2`, `4-3-3`, `3-5-2`.
 
-- **Real World Cup player data with specific positions**
+- **Hand-curated DBC dataset with specific positions**
   (`scripts/build-squads.mjs` → `public/data/squads.json`)
-  The draft now runs on the repo's real dataset (`../data/players.json`, 344
-  national squads, 1930–2026). Each player carries their **specific** position
-  (`GK, CB, RB, LB, RM, LM, LW, RW, CM, CDM, CAM, ST`) plus any alternates, taken
-  straight from the dataset — so a formation slot only enables players whose
-  closest actual position fits it (`SLOT_ACCEPTS` / `playerFillsSlot` in
-  `lib/draft-data.ts`). `app/page.tsx` loads the JSON at runtime and passes it to
-  `useGaffaGame`. The game is **World Cup only**; the placeholder Premier League /
-  Club XI modes and the form/peak rating toggle were removed.
+  The draft runs on the DBC dataset (`../data/dbc-squads.js`): 133 curated
+  starting XIs across all 23 World Cups (1930–2026), tournament-specific
+  ratings (68–98, "Immortal" 97+ reserved for Pelé '70 / Maradona '86 /
+  Messi '22), kit colours, flags, squad notes/finishes and per-player stats.
+  Each player gets a **specific** position (`GK, CB, RB, LB, RM, LM, LW, RW,
+  CM, CDM, CAM, ST, CF`) plus alternates, assigned in priority order:
+  1. `scripts/spec-overrides.mjs` — ~400 hand-curated legends and stars.
+  2. The legacy dataset (`../data/players.json`), 2002+ rows only, gated so
+     the position must agree with the player's DBC line (pre-2000 rows in the
+     legacy data are unreliable — nearly everything is tagged CM).
+  3. Line defaults (DEF→CB, MID→CM, …), then a per-squad coverage pass that
+     widens the lowest-rated defaults so every squad can fill every slot type.
+  A formation slot only enables players whose position fits it
+  (`SLOT_ACCEPTS` / `playerFillsSlot` in `lib/draft-data.ts`). `app/page.tsx`
+  loads the JSON at runtime. The game is **World Cup only**.
 
-  Regenerate the data after editing the source dataset:
+  Regenerate the data after editing the source dataset or overrides:
   ```bash
   pnpm build:squads
   ```
@@ -59,7 +66,5 @@ changes port App B's squad logic onto it:
 
 - No real **club** dataset exists yet, so only World Cup XI is offered. A club
   dataset in the same shape would restore the other modes.
-- A handful of older squads (pre-1970) have sparse position tagging; they simply
-  aren't offered for slots they can't fill.
-- Promoting this app to replace `../perfect-cup/` and wiring the Vercel/Netlify
-  deploy is a deliberate follow-up, not done here.
+- ~330 lesser-known players (mostly pre-2002 squad role-players) carry
+  line-default positions (CB/CM/ST); refine via `scripts/spec-overrides.mjs`.
