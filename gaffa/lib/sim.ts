@@ -4,6 +4,7 @@ export type DraftedPlayer = Player & {
   slotIndex: number
   club: string
   season: string
+  flag?: string
 }
 
 export type TableRow = {
@@ -44,8 +45,8 @@ function avg(nums: number[]) {
   return nums.reduce((a, b) => a + b, 0) / nums.length
 }
 
-/** Build line ratings (out of 99) from the drafted XI. */
-export function lineRatings(squad: DraftedPlayer[]) {
+/** Build line ratings (out of 99) from any XI with positions and ratings. */
+export function lineRatings(squad: Array<{ pos: Position; rating: number }>) {
   const byPos = (pos: Position) => squad.filter((s) => s.pos === pos).map((s) => s.rating)
   const gk = byPos("GK")
   const def = byPos("DEF")
@@ -65,7 +66,7 @@ export function lineRatings(squad: DraftedPlayer[]) {
 }
 
 // Simple seeded RNG so results are reproducible per draft.
-function mulberry32(seed: number) {
+export function mulberry32(seed: number) {
   return function () {
     seed |= 0
     seed = (seed + 0x6d2b79f5) | 0
@@ -75,7 +76,7 @@ function mulberry32(seed: number) {
   }
 }
 
-function poisson(lambda: number, rng: () => number) {
+export function poisson(lambda: number, rng: () => number) {
   const L = Math.exp(-lambda)
   let k = 0
   let prod = 1
