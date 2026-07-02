@@ -1,6 +1,6 @@
-# Ball Knowledge - LLM Access File
+# BALLKNW - LLM Access File
 
-**Site Name:** Ball Knowledge
+**Site Name:** BALLKNW
 
 **URL:** https://ballknw.com
 
