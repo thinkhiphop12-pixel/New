@@ -2,7 +2,7 @@
   "name": "ball-knw",
   "private": true,
   "scripts": {
-    "build": "tsc && tsc -p perfect/tsconfig.json",
+    "build": "tsc && tsc -p perfect-cup/tsconfig.json",
     "watch": "tsc --watch"
   },
   "devDependencies": {
