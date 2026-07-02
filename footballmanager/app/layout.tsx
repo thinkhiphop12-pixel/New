@@ -4,6 +4,7 @@ import './globals.css';
 
 const inter = Inter({
   subsets: ['latin'],
+  preload: true,
   display: 'swap',
 });
 
