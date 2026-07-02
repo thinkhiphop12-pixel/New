@@ -1,17 +1,11 @@
-<nav>
-  <ul>
-    <li><a href="/">Home</a></li>
-    <li><a href="/about">About</a></li>
-    <li><a href="/contact">Contact</a></li>
-  </ul>
-</nav>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1f14">
-<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="styles.css">
 <title>Terms of Use — Ball Knowledge</title>
 <meta name="description" content="Terms of Use for Ball Knowledge, 8-0-0 and Lineup.">
 <meta property="og:title" content="Terms of Use — Ball Knowledge">
@@ -22,16 +16,22 @@
 <link rel="icon" type="image/svg+xml" href="assets/logo-mark.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
 <link rel="apple-touch-icon" href="assets/favicon-192.png">
-<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div id="app">
 
   <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark">BALL KNOWLEDGE</span>
-      <span class="brand-sub">FOOTBALL KNOWLEDGE GAMES</span>
-    </div>
+    <nav class="nav">
+      <div class="wrap nav-inner">
+        <a href="/" class="brand"><span class="mark">B</span>BALL<b>KNW</b></a>
+        <nav class="nav-links">
+          <a href="/">Home</a>
+          <a href="/#games">Games</a>
+          <a href="/#about">About</a>
+          <a href="/scout/" class="btn btn-primary">Play Scout</a>
+        </nav>
+      </div>
+    </nav>
   </header>
 
   <section class="about" id="about">
@@ -87,8 +87,8 @@
   </section>
 
   <footer class="site-footer">
-    <a href="perfect-cup/">8-0-0</a> · <a href="dynasty/">Dynasty</a> · <a href="lineup/">Lineup</a> · <a href="boardroom/">Boardroom</a> · <a href="scout/">Scout</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a>
-    <p class="footer-disclaimer">Ball Knowledge is an unofficial fan-made project, not affiliated with FIFA, the Premier League, or any club or federation. For enquiries, contact <a href="mailto:thinkhiphop12@gmail.com">thinkhiphop12@gmail.com</a>.</p>
+    <a href="perfect-cup/">8-0-0</a> · <a href="dynasty/">Dynasty</a> · <a href="scout/">Scout</a> · <a href="privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="mailto:thinkhiphop12@gmail.com">Contact</a>
+    <p class="footer-disclaimer">Ball Knowledge is an unofficial fan-made project, not affiliated with FIFA, the Premier League, or any club or federation. For enquiries, contact <a href="mailto:thinkhiphop12@gmail.com">thinkhiphop12@gmail.com</a></p>
     <button class="btn-link cookie-settings-link" id="cookieSettingsBtn">Cookie settings</button>
   </footer>
 
