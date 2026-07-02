@@ -2,10 +2,14 @@
   "name": "ball-knw",
   "private": true,
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc -p perfect/tsconfig.json",
     "watch": "tsc --watch"
   },
   "devDependencies": {
     "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.2"
   }
 }

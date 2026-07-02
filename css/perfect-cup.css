@@ -8,13 +8,56 @@ body {
   min-height: 100vh;
 }
 
+.site-nav {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 16px 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.site-nav-brand { font-weight: 800; }
+.site-nav-links { display: flex; gap: 16px; }
+.site-nav-links a { color: rgba(255,255,255,0.55); }
+.site-nav-links a:hover { color: #B8FF3C; }
+.site-nav-active { color: #B8FF3C; font-weight: 700; }
+
 a { color: #B8FF3C; text-decoration: none; }
 
-#perfect-cup {
+#perfect-cup,
+.perfect-app {
   max-width: 520px;
   margin: 40px auto;
   padding: 20px;
 }
+
+.screen-desc {
+  text-align: center;
+  color: rgba(255,255,255,0.55);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.lineup-list {
+  text-align: left;
+  margin: 20px 0;
+}
+
+.lineup-row {
+  display: flex;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  font-size: 14px;
+}
+
+.lineup-row:last-child { border: none; }
+.lineup-row .slot { font-weight: 800; color: #B8FF3C; min-width: 48px; }
+.lineup-row .ovr { margin-left: auto; font-weight: 800; }
+.lineup-row .empty { color: rgba(255,255,255,0.4); }
 
 .title {
   text-align: center;

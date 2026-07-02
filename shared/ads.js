@@ -169,7 +169,7 @@ function initSocialBar(){
 // still carries at most two ad surfaces (in-content slot + side rail).
 function shouldShowSideRail(){
   const wideEnough = window.matchMedia && window.matchMedia('(min-width: 1180px)').matches;
-  // Game pages live in a subdirectory (/700/, /boardroom/, …); the homepage is
+  // Game pages live in subdirectories (/dynasty/, /lineup/); the homepage is Perfect Cup.
   // at the site root. Anything with a path segment is a game.
   const segs = window.location.pathname.split('/').filter(s => s && s !== 'index.html');
   const isGamePage = segs.length >= 1;

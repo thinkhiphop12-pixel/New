@@ -475,7 +475,7 @@ function levelComplete(perfect) {
       </div>
       <div>
         <button class="btn btn-hint" onclick="shareResult()">&#128228; Share</button>
-        <a href="../700/" class="btn btn-skip" style="margin-left:8px;text-decoration:none;display:inline-block;">&#9917; Try 7-0-0</a>
+        <a href="../" class="btn btn-skip" style="margin-left:8px;text-decoration:none;display:inline-block;">&#9917; Try Perfect Cup</a>
       </div>
     </div>
   `;

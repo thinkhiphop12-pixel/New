@@ -1,5 +1,5 @@
 /* Shared consent / PostHog / AdSense foundation, used by every Ball Knowledge
-   page (homepage, 700, lineup). Fill in real IDs below before going live;
+   page (homepage, perfect-cup, dynasty, lineup). Fill in real IDs below before going live;
    until then loadPostHog/loadAdSense/fillAllAdSlots stay no-ops, and any
    element with class="ad-slot" just shows its placeholder label. */
 const POSTHOG_KEY = ''; // e.g. 'phc_xxxxxxxx'
