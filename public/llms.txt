@@ -1,0 +1,65 @@
+# Ball Knowledge - LLM Access File
+
+**Site Name:** Ball Knowledge
+
+**URL:** https://ballknw.com
+
+**Purpose:** Free, no-login web-based football quiz and simulation games designed to test and grow football knowledge through daily puzzles and strategic team management.
+
+## Games
+
+### Daily Scout
+- **Type:** Daily word-puzzle variant (Wordle-style)
+- **Gameplay:** Guess a mystery World Cup player in 6 attempts
+- **Clues:** Nation, position, era, rating, and pace revealed after each guess
+- **Features:** Daily streaks, shareable emoji result grids
+- **URL:** https://ballknw.com/scout/
+
+### Name Your Side (8-0-0)
+- **Type:** Squad draft and tournament simulation
+- **Gameplay:** Draft 11 players (one per squad) from randomly selected real World Cup squads (1930–2026), then guide them through a tournament
+- **Features:** Formation selection, full XI drafting, tactical decisions, tournament play
+- **URL:** https://ballknw.com/perfect-cup/
+
+### Football Manager
+- **Type:** Club management simulation
+- **Gameplay:** Take charge of a club, select formation and XI, trade on the transfer market, manage a full 38-round season
+- **Features:** League navigation, promotion/relegation, tactical management
+- **URL:** https://ballknw.com/football-manager/
+
+## Key Features
+
+- **No Login Required:** Play instantly without accounts or sign-ups
+- **Privacy-First:** All game progress stored locally in browser; no personal data collection
+- **Real Data:** Player ratings and squads sourced from historical World Cup records (1930–2026)
+- **Cross-Platform:** Works on desktop, tablet, and mobile browsers
+- **Shareable Results:** Emoji grid sharing for Scout puzzle results
+- **Historical Scope:** 192 country squads, 15,000+ real player ratings
+
+## Data & Attribution
+
+- Player and squad data sourced from public football datasets
+- Fjelstul World Cup Database (CC-BY-SA 4.0) used for historical squad information
+- Player ratings are styled approximations built for gameplay, not official statistics
+- Site is unofficial and not affiliated with FIFA, Premier League, or any federation/club
+
+## Core Sections
+
+- **Home:** Game overview, featured puzzles, trust metrics
+- **Privacy Policy:** Consent, analytics, advertising, data practices
+- **Terms of Use:** Service details, warranties, data attribution, acceptable use
+- **Contact:** thinkhiphop12@gmail.com
+
+## Technology
+
+- Frontend: HTML5, CSS3, JavaScript (TypeScript in sub-apps)
+- Architecture: Static site with embedded game applications
+- Hosting: GitHub Pages / Netlify
+- Analytics: PostHog (optional, consent-based)
+- Ads: Google AdSense (optional, consent-based)
+
+## Social & Contact
+
+- **Email:** thinkhiphop12@gmail.com
+- **Tagline:** "Test your ball knowledge. Pure football trivia, nothing else."
+- **Creator:** Independent fan project
