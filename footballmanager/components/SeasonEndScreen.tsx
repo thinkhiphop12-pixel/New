@@ -7,19 +7,25 @@ export default function SeasonEndScreen({
   state,
   summary,
   onContinue,
+  onAcceptJob,
+  onRetire,
 }: {
   state: GameState;
   summary: SeasonSummary;
   onContinue: () => void;
+  onAcceptJob: (clubId: number) => void;
+  onRetire: () => void;
 }) {
   const club = state.clubs.find((c) => c.id === state.userClubId)!;
-  const banner = summary.champions
-    ? { cls: 'fm-banner--gold', text: '🏆 CHAMPIONS!' }
-    : summary.promoted
-      ? { cls: 'fm-banner--green', text: '⬆ PROMOTED!' }
-      : summary.relegated
-        ? { cls: 'fm-banner--red', text: '⬇ RELEGATED' }
-        : { cls: 'fm-banner--plain', text: 'SEASON COMPLETE' };
+  const banner = summary.sacked
+    ? { cls: 'fm-banner--red', text: '❌ SACKED' }
+    : summary.champions
+      ? { cls: 'fm-banner--gold', text: '🏆 CHAMPIONS!' }
+      : summary.promoted
+        ? { cls: 'fm-banner--green', text: '⬆ PROMOTED!' }
+        : summary.relegated
+          ? { cls: 'fm-banner--red', text: '⬇ RELEGATED' }
+          : { cls: 'fm-banner--plain', text: 'SEASON COMPLETE' };
 
   return (
     <div className="fm-screen fm-start">
@@ -48,6 +54,42 @@ export default function SeasonEndScreen({
         </div>
       </div>
 
+      <div className="fm-panel" style={{ textAlign: 'left' }}>
+        <p className="fm-label" style={{ marginTop: 0 }}>
+          Season review
+        </p>
+        <ul className="fm-news">
+          <li>
+            Board objective: {summary.objective} — {summary.objectiveMet ? '✅ achieved' : '❌ missed'}
+          </li>
+          {summary.cupRun && <li>BALLKNW Cup: {summary.cupRun}</li>}
+          {summary.continentalRun && <li>Continental Champions Cup: {summary.continentalRun}</li>}
+        </ul>
+      </div>
+
+      {state.jobOffers.length > 0 && (
+        <div className="fm-panel" style={{ textAlign: 'left' }}>
+          <p className="fm-label" style={{ marginTop: 0 }}>
+            {summary.sacked ? 'Clubs willing to give you a second chance' : 'Job offers on the table'}
+          </p>
+          {state.jobOffers.map((o) => {
+            const c = state.clubs.find((x) => x.id === o.clubId);
+            if (!c) return null;
+            return (
+              <div key={o.clubId} className="fm-job-offer">
+                <span>
+                  <strong>{c.name}</strong>
+                  <span className="fm-player-row__sub">{o.note}</span>
+                </span>
+                <button className="fm-btn fm-btn--primary fm-btn--small" onClick={() => onAcceptJob(o.clubId)}>
+                  Accept
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {state.history.length > 1 && (
         <div className="fm-panel" style={{ textAlign: 'left' }}>
           <p className="fm-label" style={{ marginTop: 0 }}>
@@ -59,6 +101,7 @@ export default function SeasonEndScreen({
                 {h.year}/{(h.year + 1) % 100}: D{h.division}, {h.position}
                 {ordinal(h.position)} — {h.pts} pts
                 {h.champions ? ' 🏆' : h.promoted ? ' ⬆' : h.relegated ? ' ⬇' : ''}
+                {h.sacked ? ' ❌' : ''}
               </li>
             ))}
           </ul>
@@ -66,11 +109,24 @@ export default function SeasonEndScreen({
       )}
 
       <p className="fm-hint">
-        Players have aged a year — youngsters improved, veterans declined. Prize money added to your budget.
+        Players have aged a year, contracts have ticked down, loans have ended and the academy class
+        has graduated. Prize money added to your budget.
       </p>
-      <button className="fm-btn fm-btn--primary fm-btn--large" onClick={onContinue}>
-        Start the {state.seasonYear}/{(state.seasonYear + 1) % 100} season
-      </button>
+      {summary.sacked ? (
+        <>
+          <p className="fm-error-text">
+            The board have lost patience — you&apos;re out at {club.name}.
+            {state.jobOffers.length > 0 ? ' Take a rescue job above, or walk away.' : ''}
+          </p>
+          <button className="fm-btn fm-btn--danger fm-btn--large" onClick={onRetire}>
+            Retire from management
+          </button>
+        </>
+      ) : (
+        <button className="fm-btn fm-btn--primary fm-btn--large" onClick={onContinue}>
+          Start the {state.seasonYear}/{(state.seasonYear + 1) % 100} season
+        </button>
+      )}
     </div>
   );
 }

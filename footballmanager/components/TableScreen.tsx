@@ -1,24 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import type { GameState } from '@/engine/types';
+import type { Division, GameState } from '@/engine/types';
 import { CLUBS_PER_DIVISION, PROMOTION_SPOTS } from '@/engine/gameRules';
-import { computeTable, userDivision } from '@/engine/seasonProgression';
+import { computeTable, hasThirdDivision, userDivision } from '@/engine/seasonProgression';
 
 export default function TableScreen({ state }: { state: GameState }) {
-  const [division, setDivision] = useState<1 | 2>(userDivision(state));
+  const [division, setDivision] = useState<Division>(userDivision(state));
   const table = computeTable(state, division);
   const clubName = (id: number) => state.clubs.find((c) => c.id === id)?.name ?? '—';
+  const divisions: Division[] = hasThirdDivision(state) ? [1, 2, 3] : [1, 2];
+  const bottomDiv = divisions[divisions.length - 1];
 
   return (
     <>
       <div className="fm-division-toggle" style={{ alignSelf: 'center' }}>
-        <button className={division === 1 ? 'active' : ''} onClick={() => setDivision(1)}>
-          Division 1
-        </button>
-        <button className={division === 2 ? 'active' : ''} onClick={() => setDivision(2)}>
-          Division 2
-        </button>
+        {divisions.map((d) => (
+          <button key={d} className={division === d ? 'active' : ''} onClick={() => setDivision(d)}>
+            Division {d}
+          </button>
+        ))}
       </div>
       <div className="fm-panel" style={{ padding: '8px 6px', overflowX: 'auto' }}>
         <table className="fm-table">
@@ -37,8 +38,8 @@ export default function TableScreen({ state }: { state: GameState }) {
           <tbody>
             {table.map((row, i) => {
               const pos = i + 1;
-              const promo = division === 2 && pos <= PROMOTION_SPOTS;
-              const releg = division === 1 && pos > CLUBS_PER_DIVISION - PROMOTION_SPOTS;
+              const promo = division !== 1 && pos <= PROMOTION_SPOTS;
+              const releg = division !== bottomDiv && pos > CLUBS_PER_DIVISION - PROMOTION_SPOTS;
               const me = row.clubId === state.userClubId;
               return (
                 <tr key={row.clubId} className={`${me ? 'me ' : ''}${promo ? 'promo' : ''}${releg ? 'releg' : ''}`}>
@@ -58,8 +59,10 @@ export default function TableScreen({ state }: { state: GameState }) {
       </div>
       <p className="fm-hint">
         {division === 1
-          ? `Bottom ${PROMOTION_SPOTS} are relegated to Division 2.`
-          : `Top ${PROMOTION_SPOTS} are promoted to Division 1.`}
+          ? `Bottom ${PROMOTION_SPOTS} are relegated. Top 8 qualify for the Continental Champions Cup.`
+          : division === bottomDiv
+            ? `Top ${PROMOTION_SPOTS} are promoted to Division ${division - 1}.`
+            : `Top ${PROMOTION_SPOTS} go up, bottom ${PROMOTION_SPOTS} go down.`}
       </p>
     </>
   );

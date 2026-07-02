@@ -1,9 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { GameData } from '@/engine/types';
+import type { Division, GameData } from '@/engine/types';
 import { STARTING_BUDGET } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
+
+const DIV_BLURB: Record<Division, string> = {
+  1: 'Top flight. Stronger squads, higher expectations, continental football.',
+  2: 'Second tier. Weaker squads but a promotion push awaits.',
+  3: 'Third tier. Tiny budgets, big dreams — the ultimate rebuild.',
+};
 
 export default function ClubSelectScreen({
   data,
@@ -11,11 +17,17 @@ export default function ClubSelectScreen({
   onBack,
 }: {
   data: GameData;
-  onPick: (clubId: number) => void;
+  onPick: (clubId: number, managerName: string) => void;
   onBack: () => void;
 }) {
-  const [division, setDivision] = useState<1 | 2>(1);
+  const [division, setDivision] = useState<Division>(1);
   const [selected, setSelected] = useState<number | null>(null);
+  const [managerName, setManagerName] = useState('');
+
+  const divisions = useMemo(() => {
+    const set = new Set(data.clubs.map((c) => c.division));
+    return ([1, 2, 3] as Division[]).filter((d) => set.has(d));
+  }, [data]);
 
   const clubInfo = useMemo(() => {
     const byId = new Map(data.players.map((p) => [p.id, p]));
@@ -34,18 +46,23 @@ export default function ClubSelectScreen({
       <p className="fm-label" style={{ textAlign: 'center' }}>
         Choose your club
       </p>
+      <input
+        className="fm-search"
+        style={{ alignSelf: 'center', maxWidth: 320 }}
+        placeholder="Your manager name (optional)"
+        value={managerName}
+        maxLength={24}
+        onChange={(e) => setManagerName(e.target.value)}
+      />
       <div className="fm-division-toggle">
-        <button className={division === 1 ? 'active' : ''} onClick={() => setDivision(1)}>
-          Division 1
-        </button>
-        <button className={division === 2 ? 'active' : ''} onClick={() => setDivision(2)}>
-          Division 2
-        </button>
+        {divisions.map((d) => (
+          <button key={d} className={division === d ? 'active' : ''} onClick={() => setDivision(d)}>
+            Division {d}
+          </button>
+        ))}
       </div>
       <p className="fm-hint">
-        {division === 1
-          ? `Top flight. Stronger squads, higher expectations. Budget ${formatMoney(STARTING_BUDGET[1])}.`
-          : `Second tier. Weaker squads but a promotion push awaits. Budget ${formatMoney(STARTING_BUDGET[2])}.`}
+        {DIV_BLURB[division]} Budget {formatMoney(STARTING_BUDGET[division])}.
       </p>
       <div className="fm-club-grid">
         {shown.map(({ club, avg, star }) => (
@@ -71,7 +88,7 @@ export default function ClubSelectScreen({
         <button
           className="fm-btn fm-btn--primary"
           disabled={selected === null}
-          onClick={() => selected !== null && onPick(selected)}
+          onClick={() => selected !== null && onPick(selected, managerName.trim() || 'The Gaffer')}
         >
           Take the job
         </button>
