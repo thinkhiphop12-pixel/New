@@ -1,0 +1,15 @@
+This branch removes obsolete folders and legacy build artifacts.
+Folders deleted:
+- boardroom/
+- gaffa/
+- footygames/
+- scout/
+- squads/
+- lineup/
+- perfect-cup/
+- football-manager/
+
+Active projects preserved:
+- footballmanager/
+- draftfantasy/
+- dynasty/
