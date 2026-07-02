@@ -4,10 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Ball Knowledge — Free Football Knowledge Games | Daily Scout &amp; 8-0-0</title>
-<meta name="description" content="Two fast, free football brain games. Daily Scout: guess the mystery World Cup player in 6 tries. 8-0-0: draft a perfect World Cup XI across 8 rounds. No accounts, real streaks, shareable grids." />
-<meta name="keywords" content="football games, world cup games, daily puzzle, scout game, 8-0-0, ball knowledge" />
+<meta name="description" content="Fast, free football brain games. Guess the mystery player, draft a perfect World Cup XI, or manage a club through a full season. No accounts, real streaks, shareable grids." />
+<meta name="keywords" content="football games, world cup games, daily puzzle, scout game, 8-0-0, football manager, ball knowledge" />
 <meta property="og:title" content="Ball Knowledge — Daily Scout & 8-0-0" />
-<meta property="og:description" content="Two fast, free football brain games. Build a streak. Climb the global ranks." />
+<meta property="og:description" content="Fast, free football brain games. Build a streak. Climb the global ranks." />
 <meta property="og:image" content="/assets/og-image.png" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary_large_image" />
@@ -101,7 +101,7 @@ body::before{
 .eyebrow{font-size:12px;font-weight:700;letter-spacing:.16em;color:var(--lime);text-transform:uppercase}
 .section-head h2{font-size:clamp(1.6rem,4vw,2.1rem);font-weight:800;letter-spacing:-0.02em;margin-top:8px}
 .section-head p{color:var(--muted);margin-top:6px;font-size:15px}
-.games-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.games-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
 @media(max-width:760px){.games-grid{grid-template-columns:1fr}}
 .game-card{
   position:relative;display:flex;flex-direction:column;
@@ -116,6 +116,9 @@ body::before{
   background:radial-gradient(420px 200px at 100% 0%,var(--gcol,rgba(184,255,60,0.10)),transparent 70%);
 }
 .game-card.draft{--gcol:rgba(0,214,143,0.12)}
+.game-card.manager{--gcol:rgba(245,179,1,0.10)}
+.game-card.manager:hover{box-shadow:0 18px 50px -20px rgba(245,179,1,0.35)}
+.chip.gold{color:#f5b301;background:rgba(245,179,1,0.10);border:1px solid rgba(245,179,1,0.28)}
 .chips{display:flex;gap:8px;margin-bottom:18px;position:relative;z-index:1}
 .chip{font-size:10.5px;font-weight:800;letter-spacing:.12em;padding:5px 10px;border-radius:7px;text-transform:uppercase}
 .chip.lime{color:var(--lime);background:rgba(184,255,60,0.10);border:1px solid rgba(184,255,60,0.25)}
@@ -183,10 +186,10 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   <div class="wrap">
     <div class="live-pill"><span class="dot"></span> <b>12,847</b>&nbsp;playing today</div>
     <h1>Test your <span class="grad">ball knowledge.</span></h1>
-    <p class="lead">Two fast, free football brain games. Guess the mystery player. Draft the perfect XI. Build a streak.</p>
+    <p class="lead">Fast, free football brain games. Guess the mystery player. Draft the perfect XI. Manage a club. Build a streak.</p>
     <div class="hero-ctas">
       <a href="/scout/" class="btn btn-primary">Play Today's Scout →</a>
-      <a href="#games" class="btn btn-ghost">See both games</a>
+      <a href="#games" class="btn btn-ghost">See all games</a>
     </div>
     <p class="subline">No accounts • No downloads • Instant play • Shareable emoji grids</p>
   </div>
@@ -196,9 +199,9 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 <section id="games" class="section">
   <div class="wrap">
     <div class="section-head">
-      <div class="eyebrow">Two games</div>
+      <div class="eyebrow">The games</div>
       <h2>Pick one. Build a streak.</h2>
-      <p>No bloat. Just the two games worth playing every day.</p>
+      <p>No bloat. Just the games worth playing every day.</p>
     </div>
 
     <div class="games-grid">
@@ -227,6 +230,18 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <div class="play"><span class="btn btn-ghost">Play Name Your Side</span></div>
       </a>
 
+      <!-- FOOTBALL MANAGER -->
+      <a href="/football-manager/" class="game-card manager">
+        <div class="chips">
+          <span class="chip gold">Manager</span>
+          <span class="chip ghost">Career · 38 rounds</span>
+        </div>
+        <div class="game-icon">📋</div>
+        <h3>Football Manager</h3>
+        <p class="desc">Take charge of a club across two divisions. Pick your formation and XI, buy and sell on the transfer market, and manage a full 38-round season — promotion, relegation and all.</p>
+        <div class="play"><span class="btn btn-ghost">Play Manager</span></div>
+      </a>
+
     </div>
   </div>
 </section>
@@ -249,7 +264,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
     <div class="about-card">
       <div class="eyebrow">Built for football obsessives</div>
       <h2 style="margin-top:10px">Pure ball knowledge. Nothing else.</h2>
-      <p>BALLKNW is two browser games designed to test and grow your football knowledge — a daily mystery-player puzzle and a full World Cup squad draft. No logins, no downloads, no clutter.</p>
+      <p>BALLKNW is a set of browser games designed to test and grow your football knowledge — a daily mystery-player puzzle, a World Cup squad draft, and a full club management sim. No logins, no downloads, no clutter.</p>
       <div class="about-feats">
         <div class="feat"><span>Real data</span> from 1930–2026 World Cups</div>
         <div class="feat"><span>Daily puzzles</span> with persistent streaks</div>
@@ -268,6 +283,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       <nav class="foot-links">
         <a href="/scout/">Scout</a>
         <a href="/perfect-cup/">8-0-0</a>
+        <a href="/football-manager/">Football Manager</a>
         <a href="/privacy.html">Privacy</a>
         <a href="/terms.html">Terms</a>
         <a href="mailto:thinkhiphop12@gmail.com">Contact</a>
