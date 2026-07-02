@@ -1,9 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import type { GameState, Player, Pressing, TacticStyle } from '@/engine/types';
+import type { GameState, Player, Pressing, TacticStyle, Tempo, TrainingFocus, Width } from '@/engine/types';
 import { FORMATIONS, getFormation } from '@/engine/gameRules';
-import { autoPickLineup, getSquad, lineupStrength } from '@/engine/teamManagement';
+import { autoPickLineup, getSquad, isOnLoan, lineupStrength } from '@/engine/teamManagement';
+import { canLoanOut, loanOut, renewContract } from '@/engine/transferMarket';
+import { traitNames } from '@/engine/traits';
+import { formatMoney } from '@/engine/utils';
 
 function lastName(name: string): string {
   const parts = name.split(' ').filter((w) => !/^jr\.?$/i.test(w));
@@ -11,6 +14,7 @@ function lastName(name: string): string {
 }
 
 function formTag(p: Player): React.ReactNode {
+  if (isOnLoan(p)) return <span className="cold">On loan</span>;
   if (p.injuryWeeks > 0) return <span className="inj">INJ {p.injuryWeeks}w</span>;
   if (p.form >= 1.06) return <span className="hot">In form</span>;
   if (p.form <= 0.94) return <span className="cold">Poor form</span>;
@@ -25,9 +29,10 @@ export default function SquadScreen({
   onChange: (next: GameState) => void;
 }) {
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
+  const [detailId, setDetailId] = useState<number | null>(null);
   const formation = getFormation(state.formationId);
   const squad = getSquad(state, state.userClubId).sort((a, b) => b.rating - a.rating);
-  const strength = lineupStrength(state, state.lineup, formation, state.tactics, state.morale);
+  const strength = lineupStrength(state, state.lineup, formation, state.tactics, state.morale, state.chemistry);
 
   const update = (patch: Partial<GameState>) => onChange({ ...state, ...patch });
 
@@ -58,10 +63,12 @@ export default function SquadScreen({
 
   const eligible = (p: Player): boolean => {
     if (selectedSlot === null) return false;
-    if (p.injuryWeeks > 0) return false;
+    if (p.injuryWeeks > 0 || isOnLoan(p)) return false;
     const slot = formation.slots[selectedSlot];
     return (p.pos === 'GK') === (slot.pos === 'GK');
   };
+
+  const detail = detailId !== null ? state.players[detailId] : null;
 
   return (
     <>
@@ -104,9 +111,45 @@ export default function SquadScreen({
             </button>
           ))}
         </div>
+        <p className="fm-label">Tempo</p>
+        <div className="fm-pills">
+          {(['slow', 'normal', 'fast'] as Tempo[]).map((t) => (
+            <button
+              key={t}
+              className={`fm-pill${state.tactics.tempo === t ? ' active' : ''}`}
+              onClick={() => update({ tactics: { ...state.tactics, tempo: t } })}
+            >
+              {t[0].toUpperCase() + t.slice(1)}
+            </button>
+          ))}
+        </div>
+        <p className="fm-label">Width</p>
+        <div className="fm-pills">
+          {(['narrow', 'standard', 'wide'] as Width[]).map((w) => (
+            <button
+              key={w}
+              className={`fm-pill${state.tactics.width === w ? ' active' : ''}`}
+              onClick={() => update({ tactics: { ...state.tactics, width: w } })}
+            >
+              {w[0].toUpperCase() + w.slice(1)}
+            </button>
+          ))}
+        </div>
+        <p className="fm-label">Training focus</p>
+        <div className="fm-pills">
+          {(['balanced', 'attack', 'defense', 'fitness'] as TrainingFocus[]).map((t) => (
+            <button
+              key={t}
+              className={`fm-pill${state.training === t ? ' active' : ''}`}
+              onClick={() => update({ training: t })}
+            >
+              {t[0].toUpperCase() + t.slice(1)}
+            </button>
+          ))}
+        </div>
         <p className="fm-hint" style={{ marginBottom: 0, marginTop: 12 }}>
           Attack {Math.round(strength.attack)} · Midfield {Math.round(strength.midfield)} · Defense{' '}
-          {Math.round(strength.defense)}
+          {Math.round(strength.defense)} · Chemistry {state.chemistry}
         </p>
       </div>
 
@@ -143,8 +186,69 @@ export default function SquadScreen({
       <p className="fm-hint">
         {selectedSlot !== null
           ? `Pick a player for the ${formation.slots[selectedSlot].label} slot below.`
-          : 'Tap a slot on the pitch, then tap a player to assign them.'}
+          : 'Tap a slot on the pitch to change the XI, or tap a player for details, contracts and loans.'}
       </p>
+
+      {detail && selectedSlot === null && (
+        <div className="fm-panel fm-player-detail">
+          <p className="fm-label" style={{ marginTop: 0 }}>
+            {detail.name} — {detail.role}, {detail.age}y
+          </p>
+          <p className="fm-club-line">
+            {detail.rating} OVR · value {formatMoney(detail.value)} · {formatMoney(detail.wage)}/w ·{' '}
+            {detail.contractYears}y contract · {detail.apps} apps, {detail.goals} goals this season
+          </p>
+          {traitNames(detail).length > 0 && (
+            <div className="fm-pills" style={{ marginBottom: 8 }}>
+              {traitNames(detail).map((t) => (
+                <span key={t} className="fm-trait">
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
+          {detail.career.length > 0 && (
+            <>
+              <p className="fm-label">Career history</p>
+              <ul className="fm-news">
+                {[...detail.career].reverse().slice(0, 6).map((c, i) => (
+                  <li key={i}>
+                    {c.year}/{(c.year + 1) % 100} {c.club}: {c.apps} apps, {c.goals} goals
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          <div className="fm-actions" style={{ justifyContent: 'flex-start', marginTop: 10 }}>
+            {detail.contractYears <= 1 && (
+              <button
+                className="fm-btn fm-btn--primary fm-btn--small"
+                disabled={detail.wage * 10 > state.budget}
+                onClick={() => onChange(renewContract(state, detail.id))}
+              >
+                Renew contract ({formatMoney(detail.wage * 10)} bonus)
+              </button>
+            )}
+            {!isOnLoan(detail) && (
+              <button
+                className="fm-btn fm-btn--secondary fm-btn--small"
+                disabled={!canLoanOut(state, detail.id).ok}
+                onClick={() => onChange(loanOut(state, detail.id))}
+              >
+                Loan out for the season
+              </button>
+            )}
+            <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setDetailId(null)}>
+              Close
+            </button>
+          </div>
+          {detail.contractYears <= 1 && (
+            <p className="fm-hint" style={{ textAlign: 'left', marginBottom: 0 }}>
+              ⚠ Contract expiring — renew or he walks for free at the end of the season.
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="fm-player-list">
         {squad.map((p) => {
@@ -155,13 +259,17 @@ export default function SquadScreen({
               key={p.id}
               className={`fm-player-row fm-pos-${p.pos}${canPick ? ' highlight' : ''}${inLineup ? ' in-lineup' : ''}`}
               disabled={selectedSlot !== null && !canPick}
-              onClick={() => (selectedSlot !== null ? assignToSlot(p.id) : undefined)}
+              onClick={() =>
+                selectedSlot !== null ? assignToSlot(p.id) : setDetailId(detailId === p.id ? null : p.id)
+              }
             >
               <span className="fm-player-row__badge">{p.role}</span>
               <span className="fm-player-row__name">
                 {p.name}
                 <span className="fm-player-row__sub">
-                  {p.nat} · {p.age}y{inLineup ? ' · Starting XI' : ''}
+                  {p.nat} · {p.age}y · {p.contractYears}y deal · {formatMoney(p.wage)}/w
+                  {inLineup ? ' · Starting XI' : ''}
+                  {p.contractYears <= 1 ? ' · ⚠ expiring' : ''}
                 </span>
               </span>
               <span className="fm-player-row__tag">{formTag(p)}</span>

@@ -38,6 +38,11 @@ export function formatMoney(v: number): string {
   return `£${v}`;
 }
 
+/** Weekly wage for a player — must stay in sync with scripts/build-gamedata.mjs. */
+export function weeklyWage(value: number, rating: number): number {
+  return Math.max(500, Math.round((value * 0.0005 + rating * 15) / 100) * 100);
+}
+
 /** Market value formula — must stay in sync with scripts/build-gamedata.mjs. */
 export function marketValue(rating: number, age: number): number {
   const base = 50_000 * Math.pow(1.135, rating - 50);

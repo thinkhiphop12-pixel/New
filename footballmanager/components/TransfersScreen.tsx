@@ -3,12 +3,12 @@
 import { useMemo, useState } from 'react';
 import type { GameState, Position } from '@/engine/types';
 import {
-  askingPrice, buyPlayer, canBuy, canSell, saleValue, sellPlayer, transferTargets,
+  askingPrice, buyPlayer, canBuy, canSell, saleValue, scoutRecommendations, sellPlayer, transferTargets,
 } from '@/engine/transferMarket';
 import { getSquad } from '@/engine/teamManagement';
 import { formatMoney } from '@/engine/utils';
 
-type MarketTab = 'buy' | 'sell' | 'offers';
+type MarketTab = 'buy' | 'sell' | 'offers' | 'scout';
 const POSITIONS: (Position | 'ALL')[] = ['ALL', 'GK', 'DEF', 'MID', 'FWD'];
 
 export default function TransfersScreen({
@@ -68,6 +68,9 @@ export default function TransfersScreen({
         </button>
         <button className={tab === 'offers' ? 'active' : ''} onClick={() => setTab('offers')}>
           Offers{state.incomingOffers.length ? ` (${state.incomingOffers.length})` : ''}
+        </button>
+        <button className={tab === 'scout' ? 'active' : ''} onClick={() => setTab('scout')}>
+          Scout
         </button>
       </div>
 
@@ -142,6 +145,46 @@ export default function TransfersScreen({
             </div>
           ))}
         </div>
+      )}
+
+      {tab === 'scout' && (
+        <>
+          <p className="fm-hint">
+            Your scouts flag affordable players who would raise your level in each area of the pitch.
+          </p>
+          {scoutRecommendations(state).map((rep) => (
+            <div key={rep.pos}>
+              <p className="fm-label">
+                {rep.pos} — your average {rep.need}
+              </p>
+              {rep.picks.length === 0 ? (
+                <p className="fm-hint">No affordable upgrades found. Raise funds or lower your sights.</p>
+              ) : (
+                <div className="fm-player-list">
+                  {rep.picks.map((p) => (
+                    <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`}>
+                      <span className="fm-player-row__badge">{p.role}</span>
+                      <span className="fm-player-row__name">
+                        {p.name}
+                        <span className="fm-player-row__sub">
+                          {p.nat} · {p.age}y · {clubName(p.clubId)}
+                        </span>
+                      </span>
+                      <button className="fm-btn fm-btn--small fm-btn--primary" onClick={() => doBuy(p.id)}>
+                        {formatMoney(askingPrice(p))}
+                      </button>
+                      <span
+                        className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}
+                      >
+                        {p.rating}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </>
       )}
 
       {tab === 'offers' &&

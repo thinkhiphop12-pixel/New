@@ -1,4 +1,4 @@
-import type { FormationDef, Position } from './types';
+import type { Division, FormationDef, Position } from './types';
 
 export const SEASON_ROUNDS = 38;
 export const CLUBS_PER_DIVISION = 20;
@@ -7,10 +7,27 @@ export const PROMOTION_SPOTS = 3;
 export const MIN_SQUAD_SIZE = 16;
 export const MAX_SQUAD_SIZE = 30;
 
-export const STARTING_BUDGET: Record<1 | 2, number> = {
+export const STARTING_BUDGET: Record<Division, number> = {
   1: 40_000_000,
   2: 12_000_000,
+  3: 4_000_000,
 };
+
+/** Calendar weeks each domestic cup round is played (6 rounds, 60 clubs). */
+export const CUP_WEEKS = [4, 9, 14, 19, 25, 31];
+/** Prize for winning a tie in each cup round (last = winning the final). */
+export const CUP_PRIZES = [150_000, 300_000, 600_000, 1_200_000, 2_500_000, 6_000_000];
+
+/** Continental Champions Cup: 8 teams, QF/SF/Final. */
+export const CONTINENTAL_WEEKS = [7, 17, 29];
+export const CONTINENTAL_PRIZES = [3_000_000, 6_000_000, 15_000_000];
+export const CONTINENTAL_SPOTS = 8;
+
+/** Weekly gate income baseline per division. */
+export const GATE_BASE: Record<Division, number> = { 1: 550_000, 2: 180_000, 3: 60_000 };
+
+/** Cost to upgrade the youth academy to level 2 / level 3. */
+export const ACADEMY_UPGRADE_COST: Record<number, number> = { 2: 5_000_000, 3: 12_000_000 };
 
 export const HOME_ADVANTAGE = 1.18;
 export const BASE_GOALS = 1.32; // league-average goals per team per match
@@ -23,10 +40,10 @@ export const MORALE_MIN = 30;
 export const MORALE_MAX = 95;
 
 /** Prize money by final league position (1-based). */
-export function prizeMoney(division: 1 | 2, position: number): number {
-  return division === 1
-    ? 32_000_000 - (position - 1) * 1_200_000
-    : 10_000_000 - (position - 1) * 350_000;
+export function prizeMoney(division: Division, position: number): number {
+  if (division === 1) return 32_000_000 - (position - 1) * 1_200_000;
+  if (division === 2) return 10_000_000 - (position - 1) * 350_000;
+  return 3_000_000 - (position - 1) * 100_000;
 }
 
 function line(pos: Position, labels: string[], y: number): { pos: Position; label: string; x: number; y: number }[] {
