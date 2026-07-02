@@ -10,7 +10,6 @@ import {
   type Formation,
   type GameModeId,
   type Player,
-  type Slot,
 } from "@/lib/draft-data"
 import { mulberry32, simulateSeason, type DraftedPlayer, type SimResult } from "@/lib/sim"
 import { simulateCup, type CupResult } from "@/lib/cup"
@@ -69,27 +68,36 @@ export function useGaffaGame(clubSeasons: ClubSeason[]) {
     [settings.difficultyId],
   )
 
-  const currentSlotIndex = useMemo(() => squad.findIndex((s) => s === null), [squad])
-  const currentSlot = currentSlotIndex >= 0 ? formation.slots[currentSlotIndex] : null
-  const isComplete = squad.length > 0 && currentSlotIndex === -1
-
-  // Pool of club-seasons that are unused and contain a player who can fill the
-  // given slot. If the selected era yields nothing, fall back to all eras so a
-  // narrow window can never dead-end the draft.
-  const eligibleClubSeasons = useCallback(
-    (slot: Slot) => {
-      const base = clubSeasons.filter(
-        (cs) =>
-          cs.mode === settings.mode &&
-          !usedClubSeasons.includes(cs.id) &&
-          cs.players.some((p) => playerFillsSlot(slot, p)),
-      )
-      if (settings.era === "All eras") return base
-      const inEra = base.filter((cs) => cs.era === settings.era)
-      return inEra.length > 0 ? inEra : base
-    },
-    [clubSeasons, settings.mode, settings.era, usedClubSeasons],
+  // Free placement: any open slot can be filled from the spun squad.
+  const openSlotIndexes = useMemo(
+    () => squad.map((s, i) => (s === null ? i : -1)).filter((i) => i >= 0),
+    [squad],
   )
+  const isComplete = squad.length > 0 && openSlotIndexes.length === 0
+
+  // Which of the OPEN slots a given player can fill.
+  const compatibleOpenSlots = useCallback(
+    (player: Player) =>
+      openSlotIndexes.filter((i) => playerFillsSlot(formation.slots[i], player)),
+    [openSlotIndexes, formation.slots],
+  )
+
+  // Pool of club-seasons that are unused and contain a player who can fill AT
+  // LEAST ONE open slot. If the selected era yields nothing, fall back to all
+  // eras so a narrow window can never dead-end the draft.
+  const eligibleClubSeasons = useCallback(() => {
+    const base = clubSeasons.filter(
+      (cs) =>
+        cs.mode === settings.mode &&
+        !usedClubSeasons.includes(cs.id) &&
+        cs.players.some((p) =>
+          openSlotIndexes.some((i) => playerFillsSlot(formation.slots[i], p)),
+        ),
+    )
+    if (settings.era === "All eras") return base
+    const inEra = base.filter((cs) => cs.era === settings.era)
+    return inEra.length > 0 ? inEra : base
+  }, [clubSeasons, settings.mode, settings.era, usedClubSeasons, openSlotIndexes, formation.slots])
 
   const beginDraft = useCallback((s: Settings) => {
     const f = FORMATIONS.find((x) => x.id === s.formationId) ?? FORMATIONS[0]
@@ -119,19 +127,15 @@ export function useGaffaGame(clubSeasons: ClubSeason[]) {
     beginDraft(s)
   }, [beginDraft])
 
-  const doSpin = useCallback(
-    (slot: Slot) => {
-      const pool = eligibleClubSeasons(slot)
-      if (pool.length === 0) return null
-      const pick = pool[Math.floor(rngRef.current() * pool.length)]
-      return pick
-    },
-    [eligibleClubSeasons],
-  )
+  const doSpin = useCallback(() => {
+    const pool = eligibleClubSeasons()
+    if (pool.length === 0) return null
+    return pool[Math.floor(rngRef.current() * pool.length)]
+  }, [eligibleClubSeasons])
 
   const spin = useCallback(
     (isReroll: boolean) => {
-      if (!currentSlot || spinning) return
+      if (isComplete || spinning) return
       if (isReroll) {
         if (spinsLeft <= 0) return
         setSpinsLeft((n) => n - 1)
@@ -139,85 +143,87 @@ export function useGaffaGame(clubSeasons: ClubSeason[]) {
       setSpinning(true)
       // brief animation window
       window.setTimeout(() => {
-        const pick = doSpin(currentSlot)
-        setCurrentSpin(pick)
+        setCurrentSpin(doSpin())
         setSpinning(false)
       }, 700)
     },
-    [currentSlot, spinning, spinsLeft, doSpin],
+    [isComplete, spinning, spinsLeft, doSpin],
   )
 
   // Strategic reroll: keep the same YEAR/season, draw a different club.
   // (App B "reroll the country in the same year".) Costs one re-roll.
   const rerollTeam = useCallback(() => {
-    if (!currentSlot || !currentSpin || spinning || spinsLeft <= 0) return
+    if (!currentSpin || spinning || spinsLeft <= 0) return
     const season = currentSpin.season
     setSpinsLeft((n) => n - 1)
     setSpinning(true)
     window.setTimeout(() => {
-      const pool = eligibleClubSeasons(currentSlot).filter(
+      const pool = eligibleClubSeasons().filter(
         (cs) => cs.season === season && cs.id !== currentSpin.id,
       )
       // Fall back to a normal spin if no same-year club is available.
-      const source = pool.length > 0 ? pool : eligibleClubSeasons(currentSlot)
+      const source = pool.length > 0 ? pool : eligibleClubSeasons()
       const pick = source.length > 0 ? source[Math.floor(rngRef.current() * source.length)] : null
       setCurrentSpin(pick ?? currentSpin)
       setSpinning(false)
     }, 700)
-  }, [currentSlot, currentSpin, spinning, spinsLeft, eligibleClubSeasons])
+  }, [currentSpin, spinning, spinsLeft, eligibleClubSeasons])
 
   // Strategic reroll: keep the same CLUB, shift to a different season.
   // (App B "switch the year of the same country".) Costs one re-roll.
   const rerollYear = useCallback(() => {
-    if (!currentSlot || !currentSpin || spinning || spinsLeft <= 0) return
+    if (!currentSpin || spinning || spinsLeft <= 0) return
     const club = currentSpin.club
     setSpinsLeft((n) => n - 1)
     setSpinning(true)
     window.setTimeout(() => {
-      const pool = eligibleClubSeasons(currentSlot).filter(
+      const pool = eligibleClubSeasons().filter(
         (cs) => cs.club === club && cs.id !== currentSpin.id,
       )
-      const source = pool.length > 0 ? pool : eligibleClubSeasons(currentSlot)
+      const source = pool.length > 0 ? pool : eligibleClubSeasons()
       const pick = source.length > 0 ? source[Math.floor(rngRef.current() * source.length)] : null
       setCurrentSpin(pick ?? currentSpin)
       setSpinning(false)
     }, 700)
-  }, [currentSlot, currentSpin, spinning, spinsLeft, eligibleClubSeasons])
+  }, [currentSpin, spinning, spinsLeft, eligibleClubSeasons])
 
   // Whether a same-year / same-club alternative exists for the current spin.
   const canRerollTeam = useMemo(() => {
-    if (!currentSlot || !currentSpin) return false
-    return eligibleClubSeasons(currentSlot).some(
+    if (!currentSpin) return false
+    return eligibleClubSeasons().some(
       (cs) => cs.season === currentSpin.season && cs.id !== currentSpin.id,
     )
-  }, [currentSlot, currentSpin, eligibleClubSeasons])
+  }, [currentSpin, eligibleClubSeasons])
 
   const canRerollYear = useMemo(() => {
-    if (!currentSlot || !currentSpin) return false
-    return eligibleClubSeasons(currentSlot).some(
+    if (!currentSpin) return false
+    return eligibleClubSeasons().some(
       (cs) => cs.club === currentSpin.club && cs.id !== currentSpin.id,
     )
-  }, [currentSlot, currentSpin, eligibleClubSeasons])
+  }, [currentSpin, eligibleClubSeasons])
 
+  // Place a player from the spun squad into a chosen FREE slot they can fill.
   const pickPlayer = useCallback(
-    (player: Player) => {
-      if (currentSlotIndex < 0 || !currentSpin) return
+    (player: Player, slotIndex: number) => {
+      if (!currentSpin) return
+      if (squad[slotIndex] !== null) return
+      if (!playerFillsSlot(formation.slots[slotIndex], player)) return
       const drafted: DraftedPlayer = {
         ...player,
-        slotIndex: currentSlotIndex,
+        slotIndex,
         club: currentSpin.club,
         season: currentSpin.season,
         flag: currentSpin.flag,
       }
       setSquad((prev) => {
         const next = [...prev]
-        next[currentSlotIndex] = drafted
+        next[slotIndex] = drafted
         return next
       })
       setUsedClubSeasons((prev) => [...prev, currentSpin.id])
       setCurrentSpin(null)
     },
-    [currentSlotIndex, currentSpin],
+    [currentSpin, squad, formation.slots],
   )
 
   const simulate = useCallback(() => {
@@ -288,8 +294,8 @@ export function useGaffaGame(clubSeasons: ClubSeason[]) {
     formation,
     difficulty,
     squad,
-    currentSlot,
-    currentSlotIndex,
+    openSlotIndexes,
+    compatibleOpenSlots,
     isComplete,
     currentSpin,
     spinsLeft,
