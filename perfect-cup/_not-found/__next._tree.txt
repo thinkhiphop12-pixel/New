@@ -1,2 +1,2 @@
-:HL["/perfect-cup/_next/static/chunks/109ypn4ro19qm.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"N28EXNzhOm317pQiascSv"}
+:HL["/perfect-cup/_next/static/chunks/0nxyo.2223voc.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"c9EQ4pL6wEWGoNwdKyMJ1"}

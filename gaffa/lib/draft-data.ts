@@ -327,12 +327,17 @@ export type ChallengeContext = {
   squadRating: number
   difficultyId: string
   ratingBasis: RatingBasis
+  /** cup-run outcomes (only set after a cup competition) */
+  champion?: boolean
+  giantKill?: boolean
 }
 
 export type Challenge = {
   id: string
   name: string
   description: string
+  /** which competition the challenge belongs to */
+  scope: "league" | "cup"
   test: (c: ChallengeContext) => boolean
 }
 
@@ -340,44 +345,65 @@ export const CHALLENGES: Challenge[] = [
   {
     id: "champions",
     name: "Champions",
+    scope: "league",
     description: "Win the league (finish 1st).",
     test: (c) => c.position === 1,
   },
   {
     id: "invincibles",
     name: "The Invincibles",
+    scope: "league",
     description: "Complete the season unbeaten.",
     test: (c) => c.unbeaten,
   },
   {
     id: "ninety-pts",
     name: "Ninety Club",
+    scope: "league",
     description: "Finish on 90 points or more.",
     test: (c) => c.points >= 90,
   },
   {
     id: "fortress",
     name: "Fortress",
+    scope: "league",
     description: "Keep 18+ clean sheets in the season.",
     test: (c) => c.cleanSheets >= 18,
   },
   {
     id: "golden-boot",
     name: "Golden Boot",
+    scope: "league",
     description: "Have a player score 25+ goals.",
     test: (c) => c.topScorerGoals >= 25,
   },
   {
     id: "hard-way",
     name: "The Hard Way",
+    scope: "league",
     description: "Win the league on Gaffer difficulty (ratings hidden).",
     test: (c) => c.position === 1 && c.difficultyId === "gaffer",
   },
   {
     id: "underdogs",
     name: "Underdogs",
+    scope: "league",
     description: "Finish top 4 with a squad rating under 80.",
     test: (c) => c.position <= 4 && c.squadRating < 80,
+  },
+  {
+    id: "world-champions",
+    name: "World Champions",
+    scope: "cup",
+    description: "Win the Cup run — lift the trophy.",
+    test: (c) => !!c.champion,
+  },
+  {
+    id: "giant-killers",
+    name: "Giant Killers",
+    scope: "cup",
+    description: "Knock out a squad rated above your XI.",
+    test: (c) => !!c.giantKill,
   },
 ]
 

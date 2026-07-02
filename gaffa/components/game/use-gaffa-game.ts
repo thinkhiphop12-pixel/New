@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   DIFFICULTIES,
   FORMATIONS,
@@ -12,15 +12,21 @@ import {
   type Player,
   type Slot,
 } from "@/lib/draft-data"
-import { simulateSeason, type DraftedPlayer, type SimResult } from "@/lib/sim"
+import { mulberry32, simulateSeason, type DraftedPlayer, type SimResult } from "@/lib/sim"
+import { simulateCup, type CupResult } from "@/lib/cup"
+import { dailySeed, dailySettings, dayNumber, getDailyState, recordDaily, type DailyState } from "@/lib/daily"
+import { buildCupShare, buildLeagueShare } from "@/lib/share"
 
 export type Phase = "setup" | "draft" | "result"
+
+export type Competition = "league" | "cup"
 
 export type Settings = {
   mode: GameModeId
   formationId: string
   difficultyId: string
   era: string
+  competition: Competition
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -28,6 +34,7 @@ const DEFAULT_SETTINGS: Settings = {
   formationId: "442",
   difficultyId: "standard",
   era: "All eras",
+  competition: "league",
 }
 
 export function useGaffaGame(clubSeasons: ClubSeason[]) {
@@ -40,6 +47,18 @@ export function useGaffaGame(clubSeasons: ClubSeason[]) {
   const [spinsLeft, setSpinsLeft] = useState(0)
   const [spinning, setSpinning] = useState(false)
   const [result, setResult] = useState<SimResult | null>(null)
+  const [cupResult, setCupResult] = useState<CupResult | null>(null)
+
+  // Daily challenge: null = free play; a number = playing that daily.
+  const [dailyDay, setDailyDay] = useState<number | null>(null)
+  const [dailyState, setDailyState] = useState<DailyState | null>(null)
+  useEffect(() => {
+    // read localStorage only on the client, after hydration
+    setDailyState(getDailyState())
+  }, [])
+
+  // All draft randomness flows through this ref so dailies can be seeded.
+  const rngRef = useRef<() => number>(Math.random)
 
   const formation: Formation = useMemo(
     () => FORMATIONS.find((f) => f.id === settings.formationId) ?? FORMATIONS[0],
@@ -72,22 +91,39 @@ export function useGaffaGame(clubSeasons: ClubSeason[]) {
     [clubSeasons, settings.mode, settings.era, usedClubSeasons],
   )
 
-  const startDraft = useCallback(() => {
-    const f = FORMATIONS.find((x) => x.id === settings.formationId) ?? FORMATIONS[0]
-    const d = DIFFICULTIES.find((x) => x.id === settings.difficultyId) ?? DIFFICULTIES[1]
+  const beginDraft = useCallback((s: Settings) => {
+    const f = FORMATIONS.find((x) => x.id === s.formationId) ?? FORMATIONS[0]
+    const d = DIFFICULTIES.find((x) => x.id === s.difficultyId) ?? DIFFICULTIES[1]
     setSquad(new Array(f.slots.length).fill(null))
     setUsedClubSeasons([])
     setCurrentSpin(null)
     setResult(null)
+    setCupResult(null)
     setSpinsLeft(d.spins)
     setPhase("draft")
-  }, [settings.formationId, settings.difficultyId])
+  }, [])
+
+  const startDraft = useCallback(() => {
+    rngRef.current = Math.random
+    setDailyDay(null)
+    beginDraft(settings)
+  }, [settings, beginDraft])
+
+  // Start today's daily: fixed settings, seeded spins — same draw for everyone.
+  const startDaily = useCallback(() => {
+    const day = dayNumber()
+    const s = dailySettings(day)
+    setSettings(s)
+    setDailyDay(day)
+    rngRef.current = mulberry32(dailySeed(day))
+    beginDraft(s)
+  }, [beginDraft])
 
   const doSpin = useCallback(
     (slot: Slot) => {
       const pool = eligibleClubSeasons(slot)
       if (pool.length === 0) return null
-      const pick = pool[Math.floor(Math.random() * pool.length)]
+      const pick = pool[Math.floor(rngRef.current() * pool.length)]
       return pick
     },
     [eligibleClubSeasons],
@@ -124,7 +160,7 @@ export function useGaffaGame(clubSeasons: ClubSeason[]) {
       )
       // Fall back to a normal spin if no same-year club is available.
       const source = pool.length > 0 ? pool : eligibleClubSeasons(currentSlot)
-      const pick = source.length > 0 ? source[Math.floor(Math.random() * source.length)] : null
+      const pick = source.length > 0 ? source[Math.floor(rngRef.current() * source.length)] : null
       setCurrentSpin(pick ?? currentSpin)
       setSpinning(false)
     }, 700)
@@ -142,7 +178,7 @@ export function useGaffaGame(clubSeasons: ClubSeason[]) {
         (cs) => cs.club === club && cs.id !== currentSpin.id,
       )
       const source = pool.length > 0 ? pool : eligibleClubSeasons(currentSlot)
-      const pick = source.length > 0 ? source[Math.floor(Math.random() * source.length)] : null
+      const pick = source.length > 0 ? source[Math.floor(rngRef.current() * source.length)] : null
       setCurrentSpin(pick ?? currentSpin)
       setSpinning(false)
     }, 700)
@@ -171,6 +207,7 @@ export function useGaffaGame(clubSeasons: ClubSeason[]) {
         slotIndex: currentSlotIndex,
         club: currentSpin.club,
         season: currentSpin.season,
+        flag: currentSpin.flag,
       }
       setSquad((prev) => {
         const next = [...prev]
@@ -186,10 +223,49 @@ export function useGaffaGame(clubSeasons: ClubSeason[]) {
   const simulate = useCallback(() => {
     const filled = squad.filter((s): s is DraftedPlayer => s !== null)
     if (filled.length !== formation.slots.length) return
-    const seed = filled.reduce((acc, p) => acc + p.rating * 31 + p.name.length, 7)
-    setResult(simulateSeason(filled, seed))
+    const seed =
+      dailyDay != null
+        ? dailySeed(dailyDay) ^ 0x5f3759df
+        : filled.reduce((acc, p) => acc + p.rating * 31 + p.name.length, 7)
+
+    if (settings.competition === "cup") {
+      const cup = simulateCup(filled, clubSeasons, usedClubSeasons, seed)
+      setCupResult(cup)
+      setResult(null)
+      if (dailyDay != null) {
+        const summary = cup.champion
+          ? "🏆 World Champions"
+          : `Out at the ${cup.rounds[cup.rounds.length - 1].stage}`
+        const share = buildCupShare({
+          daily: dailyDay,
+          formationName: formation.name,
+          difficultyName: difficulty.name,
+          cup,
+          squad: filled,
+        })
+        recordDaily(dailyDay, summary, share)
+        setDailyState(getDailyState())
+      }
+    } else {
+      const r = simulateSeason(filled, seed)
+      setResult(r)
+      setCupResult(null)
+      if (dailyDay != null) {
+        const summary = `${r.position === 1 ? "🏆 " : ""}${r.verdict.split(".")[0]} · ${r.points} pts`
+        const share = buildLeagueShare({
+          daily: dailyDay,
+          formationName: formation.name,
+          difficultyName: difficulty.name,
+          position: r.position,
+          points: r.points,
+          squad: filled,
+        })
+        recordDaily(dailyDay, summary, share)
+        setDailyState(getDailyState())
+      }
+    }
     setPhase("result")
-  }, [squad, formation.slots.length])
+  }, [squad, formation, difficulty, settings.competition, clubSeasons, usedClubSeasons, dailyDay])
 
   const reset = useCallback(() => {
     setPhase("setup")
@@ -197,6 +273,8 @@ export function useGaffaGame(clubSeasons: ClubSeason[]) {
     setUsedClubSeasons([])
     setCurrentSpin(null)
     setResult(null)
+    setCupResult(null)
+    setDailyDay(null)
   }, [])
 
   const playAgain = useCallback(() => {
@@ -217,8 +295,12 @@ export function useGaffaGame(clubSeasons: ClubSeason[]) {
     spinsLeft,
     spinning,
     result,
+    cupResult,
+    dailyDay,
+    dailyState,
     eligibleClubSeasons,
     startDraft,
+    startDaily,
     spin,
     rerollTeam,
     rerollYear,

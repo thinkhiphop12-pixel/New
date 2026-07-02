@@ -60,6 +60,8 @@ export default function Page() {
           settings={game.settings}
           setSettings={game.setSettings}
           onStart={game.startDraft}
+          onStartDaily={game.startDaily}
+          daily={game.dailyState}
         />
       )}
       {ready && game.phase === "draft" && <DraftScreen game={game} />}
