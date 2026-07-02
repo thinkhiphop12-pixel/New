@@ -4,6 +4,7 @@ import './globals.css';
 
 const inter = Inter({
   subsets: ['latin'],
+  preload: true,
   display: 'swap',
 });
 
@@ -18,7 +19,7 @@ export const viewport: Viewport = {
   themeColor: '#09090b',
 };
 
-export default function RootLayout({ children }: { React.ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.className}>
       <body>{children}</body>
