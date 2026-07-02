@@ -136,7 +136,8 @@ function buildFromPlayers(raw: RawBundle): { squads: Squad[]; cards: Card[] } {
  * Load squad & card data. Tries pre-built squads.json first, falls back to players.json.
  */
 export async function loadData(
-  squadsUrl = '/data/squads.json',
+  squadsUrl = 'data/squads.json',
+  playersUrl = 'data/players.json'
   playersUrl = '/data/players.json'
 ) {
   try {
