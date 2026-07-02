@@ -1,18 +1,12 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Pitch } from "./pitch"
-import { playerFillsSlot, type Player } from "@/lib/draft-data"
+import type { Player } from "@/lib/draft-data"
 import type { useGaffaGame } from "./use-gaffa-game"
 import { Dices, RotateCw, Shuffle } from "lucide-react"
-
-const POS_LABEL: Record<string, string> = {
-  GK: "a goalkeeper",
-  DEF: "a defender",
-  MID: "a midfielder",
-  FWD: "a forward",
-}
 
 type Game = ReturnType<typeof useGaffaGame>
 
@@ -21,8 +15,8 @@ export function DraftScreen({ game }: { game: Game }) {
     formation,
     difficulty,
     squad,
-    currentSlot,
-    currentSlotIndex,
+    openSlotIndexes,
+    compatibleOpenSlots,
     isComplete,
     currentSpin,
     spinsLeft,
@@ -36,11 +30,36 @@ export function DraftScreen({ game }: { game: Game }) {
   const showRatings = !difficulty.ratingsHidden
   const filledCount = squad.filter(Boolean).length
 
-  // Show the WHOLE squad for context; a player is pickable only when his
-  // specific position (or an alternate) fits the slot currently being drafted.
-  // Everyone else is greyed out (e.g. on an RB slot, centre-backs show disabled).
+  // A clicked player who fits SEVERAL open slots waits here while the user
+  // taps one of the highlighted positions on the pitch.
+  const [pending, setPending] = useState<Player | null>(null)
+  useEffect(() => setPending(null), [currentSpin])
+
+  // Show the WHOLE squad for context; a player is pickable when he fits ANY
+  // open slot in your formation. Everyone else is greyed out (e.g. once both
+  // your CB slots are filled, remaining centre-backs show disabled).
   const squadPlayers = currentSpin ? currentSpin.players : []
-  const canPickPlayer = (p: Player) => !!currentSlot && playerFillsSlot(currentSlot, p)
+  const canPickPlayer = (p: Player) => compatibleOpenSlots(p).length > 0
+
+  const handlePlayerClick = (p: Player) => {
+    const slots = compatibleOpenSlots(p)
+    if (slots.length === 0) return
+    if (slots.length === 1) {
+      pickPlayer(p, slots[0])
+      setPending(null)
+      return
+    }
+    setPending(p)
+  }
+
+  const handleSlotClick = (index: number) => {
+    if (!pending) return
+    if (!compatibleOpenSlots(pending).includes(index)) return
+    pickPlayer(pending, index)
+    setPending(null)
+  }
+
+  const highlightIndexes = pending ? compatibleOpenSlots(pending) : []
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-8">
@@ -66,9 +85,24 @@ export function DraftScreen({ game }: { game: Game }) {
           <Pitch
             formation={formation}
             squad={squad}
-            activeIndex={currentSlotIndex >= 0 ? currentSlotIndex : undefined}
             showRatings={showRatings}
+            onSlotClick={pending ? handleSlotClick : undefined}
+            highlightIndexes={highlightIndexes}
           />
+          {pending && (
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-md border border-primary/50 bg-primary/10 px-3 py-2">
+              <p className="text-sm font-semibold">
+                Place <span className="text-primary">{pending.name}</span> — tap a highlighted
+                position
+              </p>
+              <button
+                onClick={() => setPending(null)}
+                className="shrink-0 font-mono text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
 
         {/* draft panel */}
@@ -78,10 +112,10 @@ export function DraftScreen({ game }: { game: Game }) {
           ) : (
             <>
               <p className="font-mono text-xs uppercase tracking-[0.25em] text-primary">
-                Slot {currentSlotIndex + 1} · {currentSlot?.label}
+                {openSlotIndexes.length} slot{openSlotIndexes.length === 1 ? "" : "s"} open
               </p>
               <h2 className="mt-2 font-heading text-3xl font-extrabold uppercase leading-none sm:text-4xl">
-                Pick {currentSlot ? POS_LABEL[currentSlot.pos] : "a player"}
+                Draft your XI
               </h2>
 
               {!currentSpin ? (
@@ -97,7 +131,7 @@ export function DraftScreen({ game }: { game: Game }) {
                   <p className="text-center text-sm text-muted-foreground">
                     {spinning
                       ? "Spinning the wheel…"
-                      : "Spin to draw a random club-season for this position."}
+                      : "Spin for a random World Cup squad, then place one of its players into any free slot."}
                   </p>
                   <Button
                     size="lg"
@@ -147,7 +181,7 @@ export function DraftScreen({ game }: { game: Game }) {
                   </div>
 
                   <p className="mt-4 font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                    Full squad — pick your {currentSlot?.label}
+                    Full squad — pick anyone who fits a free slot
                   </p>
                   <div className="mt-2 grid gap-2 sm:grid-cols-2">
                     {squadPlayers.map((p) => {
@@ -156,7 +190,7 @@ export function DraftScreen({ game }: { game: Game }) {
                       return (
                         <button
                           key={p.id}
-                          onClick={() => pickable && pickPlayer(p)}
+                          onClick={() => pickable && handlePlayerClick(p)}
                           disabled={!pickable}
                           aria-disabled={!pickable}
                           className={cn(

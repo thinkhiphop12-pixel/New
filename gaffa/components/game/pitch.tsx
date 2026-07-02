@@ -10,9 +10,18 @@ type Props = {
   activeIndex?: number
   showRatings?: boolean
   onSlotClick?: (index: number) => void
+  /** open slots the pending player can be placed into — pulse + clickable */
+  highlightIndexes?: number[]
 }
 
-export function Pitch({ formation, squad, activeIndex, showRatings = true, onSlotClick }: Props) {
+export function Pitch({
+  formation,
+  squad,
+  activeIndex,
+  showRatings = true,
+  onSlotClick,
+  highlightIndexes = [],
+}: Props) {
   return (
     <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg border border-border bg-[oklch(0.28_0.05_150)]">
       {/* pitch markings */}
@@ -20,16 +29,17 @@ export function Pitch({ formation, squad, activeIndex, showRatings = true, onSlo
       {formation.slots.map((slot, i) => {
         const player = squad[i] ?? null
         const isActive = i === activeIndex
+        const isHighlighted = highlightIndexes.includes(i)
         return (
           <button
             key={i}
             type="button"
-            disabled={!onSlotClick}
-            onClick={() => onSlotClick?.(i)}
+            disabled={!onSlotClick || !isHighlighted}
+            onClick={() => isHighlighted && onSlotClick?.(i)}
             style={{ left: `${slot.x}%`, top: `${100 - slot.y}%` }}
             className={cn(
               "absolute -translate-x-1/2 -translate-y-1/2 flex w-[19%] flex-col items-center gap-1 outline-none",
-              onSlotClick && "cursor-default",
+              isHighlighted ? "cursor-pointer" : onSlotClick && "cursor-default",
             )}
           >
             <span
@@ -39,6 +49,8 @@ export function Pitch({ formation, squad, activeIndex, showRatings = true, onSlo
                   ? "border-primary bg-background text-foreground"
                   : "border-dashed border-foreground/40 bg-background/30 text-foreground/60",
                 isActive && "scale-110 border-primary bg-primary text-primary-foreground shadow-[0_0_0_4px_oklch(0.86_0.21_130_/_0.25)]",
+                isHighlighted &&
+                  "scale-110 animate-pulse border-solid border-primary bg-primary/30 text-foreground shadow-[0_0_0_4px_oklch(0.86_0.21_130_/_0.35)]",
               )}
             >
               {player && showRatings ? player.rating : slot.label}
