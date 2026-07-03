@@ -1,5 +1,6 @@
+import type { LeagueId } from './leagues';
+
 export type Position = 'GK' | 'DEF' | 'MID' | 'FWD';
-export type Division = 1 | 2 | 3;
 
 /** One season of a player's career, recorded at season end. */
 export interface CareerEntry {
@@ -48,7 +49,7 @@ export interface Club {
   name: string;
   code: string;
   color: string;
-  division: Division;
+  leagueId: LeagueId;
   playerIds: number[];
 }
 
@@ -183,7 +184,7 @@ export interface JobOffer {
 
 export interface ClubRecords {
   biggestWin: { text: string; margin: number } | null;
-  bestFinish: { year: number; division: Division; position: number } | null;
+  bestFinish: { year: number; leagueId: LeagueId; position: number } | null;
   topSeasonScorer: { name: string; goals: number; year: number } | null;
 }
 
@@ -196,7 +197,7 @@ export interface LegacyEntry {
 
 export interface SeasonSummary {
   year: number;
-  division: Division;
+  leagueId: LeagueId;
   position: number;
   pts: number;
   champions: boolean;
@@ -220,7 +221,7 @@ export interface Staff {
 }
 
 export interface GameState {
-  version: 2;
+  version: 3; // bumped from 2 for migration
   userClubId: number;
   seasonYear: number;
   /** Next round to be played, 1..SEASON_ROUNDS. > SEASON_ROUNDS means season over. */
@@ -250,7 +251,8 @@ export interface GameState {
   nextPlayerId: number; // for youth academy generation
   players: Record<number, Player>;
   clubs: Club[];
-  fixtures: { d1: Fixture[]; d2: Fixture[]; d3?: Fixture[] };
+  /** Fixtures keyed by leagueId. */
+  fixtures: Record<LeagueId, Fixture[]>;
   incomingOffers: TransferOffer[];
   history: SeasonSummary[];
   news: string[];
