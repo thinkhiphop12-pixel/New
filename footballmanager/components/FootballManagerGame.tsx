@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import type { GameData, GameState, MatchReport, SeasonSummary } from '@/engine/types';
-import { endSeason, newGame, playRound, seasonOver } from '@/engine/seasonProgression';
+import { endSeason, newGame, playRound, seasonOver, switchJob } from '@/engine/seasonProgression';
 import { loadGameData } from '@/lib/gamedata';
-import { clearSave, loadGame, saveGame } from '@/lib/storage';
+import { clearSave, listSaves, loadGame, saveGame, SAVE_SLOTS, type SaveMeta } from '@/lib/storage';
 import MainMenuScreen from './MainMenuScreen';
 import ClubSelectScreen from './ClubSelectScreen';
 import HubScreen from './HubScreen';
@@ -17,35 +17,45 @@ export default function FootballManagerGame() {
   const [data, setData] = useState<GameData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [gs, setGs] = useState<GameState | null>(null);
+  const [slot, setSlot] = useState(0);
   const [view, setView] = useState<View>('menu');
   const [summary, setSummary] = useState<SeasonSummary | null>(null);
-  const [hasExistingSave, setHasExistingSave] = useState(false);
+  const [saves, setSaves] = useState<(SaveMeta | null)[]>(Array(SAVE_SLOTS).fill(null));
 
   useEffect(() => {
     loadGameData()
       .then(setData)
       .catch((e) => setLoadError(String(e)));
-    setHasExistingSave(loadGame() !== null);
+    setSaves(listSaves());
   }, []);
 
-  const apply = (next: GameState) => {
+  const apply = (next: GameState, toSlot = slot) => {
     setGs(next);
-    saveGame(next);
+    saveGame(next, toSlot);
   };
 
-  const handleContinue = () => {
-    const save = loadGame();
+  const handleContinue = (s: number) => {
+    const save = loadGame(s);
     if (save) {
+      setSlot(s);
       setGs(save);
-      setView(seasonOver(save) ? 'hub' : 'hub');
+      setView('hub');
     }
   };
 
-  const handleNewGame = () => setView('clubselect');
+  const handleNewGame = (s: number) => {
+    setSlot(s);
+    setView('clubselect');
+  };
 
-  const handlePickClub = (clubId: number) => {
+  const handleDelete = (s: number) => {
+    clearSave(s);
+    setSaves(listSaves());
+  };
+
+  const handlePickClub = (clubId: number, managerName: string) => {
     if (!data) return;
-    const state = newGame(data, clubId);
+    const state = newGame(data, clubId, managerName);
     apply(state);
     setView('hub');
   };
@@ -64,11 +74,21 @@ export default function FootballManagerGame() {
     }
   };
 
-  const handleAbandon = () => {
-    clearSave();
+  const handleAcceptJob = (clubId: number) => {
+    if (!gs) return;
+    apply(switchJob(gs, clubId));
+    setView('hub');
+  };
+
+  const backToMenu = () => {
     setGs(null);
-    setHasExistingSave(false);
+    setSaves(listSaves());
     setView('menu');
+  };
+
+  const handleAbandon = () => {
+    clearSave(slot);
+    backToMenu();
   };
 
   return (
@@ -90,17 +110,23 @@ export default function FootballManagerGame() {
             <p className="fm-hint">Loading player database…</p>
           </div>
         ) : view === 'menu' ? (
-          <MainMenuScreen hasSave={hasExistingSave} onContinue={handleContinue} onNewGame={handleNewGame} />
+          <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} />
         ) : view === 'clubselect' ? (
-          <ClubSelectScreen data={data} onPick={handlePickClub} onBack={() => setView('menu')} />
+          <ClubSelectScreen data={data} onPick={handlePickClub} onBack={backToMenu} />
         ) : view === 'match' && gs ? (
           <MatchDayScreen state={gs} onDone={handleMatchDone} />
         ) : view === 'seasonend' && gs && summary ? (
-          <SeasonEndScreen state={gs} summary={summary} onContinue={() => setView('hub')} />
+          <SeasonEndScreen
+            state={gs}
+            summary={summary}
+            onContinue={() => setView('hub')}
+            onAcceptJob={handleAcceptJob}
+            onRetire={handleAbandon}
+          />
         ) : gs ? (
           <HubScreen state={gs} onChange={apply} onPlayMatch={() => setView('match')} onAbandon={handleAbandon} />
         ) : (
-          <MainMenuScreen hasSave={hasExistingSave} onContinue={handleContinue} onNewGame={handleNewGame} />
+          <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} />
         )}
       </main>
     </div>

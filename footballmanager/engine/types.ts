@@ -1,4 +1,13 @@
 export type Position = 'GK' | 'DEF' | 'MID' | 'FWD';
+export type Division = 1 | 2 | 3;
+
+/** One season of a player's career, recorded at season end. */
+export interface CareerEntry {
+  year: number;
+  club: string;
+  apps: number;
+  goals: number;
+}
 
 /** A player record. Static attributes come from the dataset; form/injury/club
  *  are dynamic and live in the save. */
@@ -17,9 +26,16 @@ export interface Player {
   phy: number;
   age: number;
   value: number;
+  wage: number; // weekly wage
   clubId: number; // 0 = free agent
   form: number; // 0.85–1.15 multiplier, drifts weekly
   injuryWeeks: number; // 0 = fit
+  contractYears: number; // seasons left on contract
+  apps: number; // appearances this season
+  goals: number; // goals this season
+  /** Season year the loan ends; while set the player is away on loan. */
+  onLoanUntil?: number;
+  career: CareerEntry[];
 }
 
 export interface Club {
@@ -27,7 +43,7 @@ export interface Club {
   name: string;
   code: string;
   color: string;
-  division: 1 | 2;
+  division: Division;
   playerIds: number[];
 }
 
@@ -46,11 +62,17 @@ export interface FormationDef {
 
 export type TacticStyle = 'defensive' | 'balanced' | 'attacking';
 export type Pressing = 'low' | 'mid' | 'high';
+export type Tempo = 'slow' | 'normal' | 'fast';
+export type Width = 'narrow' | 'standard' | 'wide';
 
 export interface Tactics {
   style: TacticStyle;
   pressing: Pressing;
+  tempo: Tempo;
+  width: Width;
 }
+
+export type TrainingFocus = 'balanced' | 'attack' | 'defense' | 'fitness';
 
 export interface Fixture {
   round: number; // 1-based
@@ -68,6 +90,7 @@ export interface MatchEvent {
   type: MatchEventType;
   clubId: number; // 0 for neutral events (kickoff etc.)
   text: string;
+  playerId?: number; // scorer for goal events
 }
 
 export interface MatchReport {
@@ -78,6 +101,8 @@ export interface MatchReport {
   homeXG: number;
   awayXG: number;
   events: MatchEvent[];
+  homeLineup: number[]; // player ids who took part
+  awayLineup: number[];
 }
 
 export interface TableRow {
@@ -99,19 +124,89 @@ export interface TransferOffer {
   amount: number;
 }
 
+/** A single tie in a knockout competition. */
+export interface CupTie {
+  homeId: number;
+  awayId: number;
+  played: boolean;
+  homeGoals: number;
+  awayGoals: number;
+  /** Winner on penalties when the tie was drawn. */
+  pensWinnerId?: number;
+}
+
+/** A knockout competition (domestic cup, continental cup). */
+export interface Knockout {
+  name: string;
+  /** Calendar week each round is played (weeks[i] = round i). */
+  weeks: number[];
+  /** rounds[i] exists once round i is drawn. */
+  rounds: CupTie[][];
+  /** Clubs with a bye into round 2 (domestic cup only). */
+  byes: number[];
+  /** Index of the next round to be played. */
+  round: number;
+  winnerId: number | null;
+}
+
+export interface LedgerEntry {
+  week: number;
+  desc: string;
+  amount: number; // positive = income
+}
+
+export interface Manager {
+  name: string;
+  reputation: number; // 0–100
+  wins: number;
+  draws: number;
+  losses: number;
+  seasons: number;
+  trophies: string[];
+}
+
+export interface Board {
+  objective: string;
+  minPosition: number; // finish at or above this to satisfy the board
+  confidence: number; // 0–100; too low = sacked at season end
+}
+
+export interface JobOffer {
+  clubId: number;
+  note: string;
+}
+
+export interface ClubRecords {
+  biggestWin: { text: string; margin: number } | null;
+  bestFinish: { year: number; division: Division; position: number } | null;
+  topSeasonScorer: { name: string; goals: number; year: number } | null;
+}
+
+/** All-time contribution of a player at the user's club (legends list). */
+export interface LegacyEntry {
+  name: string;
+  apps: number;
+  goals: number;
+}
+
 export interface SeasonSummary {
   year: number;
-  division: 1 | 2;
+  division: Division;
   position: number;
   pts: number;
   champions: boolean;
   promoted: boolean;
   relegated: boolean;
   prize: number;
+  objective: string;
+  objectiveMet: boolean;
+  sacked: boolean;
+  cupRun: string | null;
+  continentalRun: string | null;
 }
 
 export interface GameState {
-  version: 1;
+  version: 2;
   userClubId: number;
   seasonYear: number;
   /** Next round to be played, 1..SEASON_ROUNDS. > SEASON_ROUNDS means season over. */
@@ -122,9 +217,22 @@ export interface GameState {
   /** Player id per formation slot (11 entries). null = empty slot. */
   lineup: (number | null)[];
   tactics: Tactics;
+  training: TrainingFocus;
+  chemistry: number; // 0–100 team chemistry
+  fanConfidence: number; // 0–100
+  board: Board;
+  manager: Manager;
+  academyLevel: number; // 1–3
+  ledger: LedgerEntry[];
+  cup: Knockout;
+  continental: Knockout;
+  jobOffers: JobOffer[];
+  records: ClubRecords;
+  legacy: Record<number, LegacyEntry>;
+  nextPlayerId: number; // for youth academy generation
   players: Record<number, Player>;
   clubs: Club[];
-  fixtures: { d1: Fixture[]; d2: Fixture[] };
+  fixtures: { d1: Fixture[]; d2: Fixture[]; d3?: Fixture[] };
   incomingOffers: TransferOffer[];
   history: SeasonSummary[];
   news: string[];
@@ -133,5 +241,7 @@ export interface GameState {
 export interface GameData {
   meta: { attribution: string; clubCount: number; playerCount: number };
   clubs: Club[];
-  players: Omit<Player, 'form' | 'injuryWeeks'>[];
+  players: (Omit<Player, 'form' | 'injuryWeeks' | 'contractYears' | 'apps' | 'goals' | 'career' | 'wage'> & {
+    wage?: number;
+  })[];
 }

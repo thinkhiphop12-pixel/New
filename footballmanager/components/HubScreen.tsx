@@ -4,14 +4,17 @@ import { useState } from 'react';
 import type { GameState } from '@/engine/types';
 import { SEASON_ROUNDS } from '@/engine/gameRules';
 import { computeTable, nextUserFixture, userDivision } from '@/engine/seasonProgression';
+import { isClubAlive, knockoutRoundDue } from '@/engine/cups';
 import { isLineupValid } from '@/engine/teamManagement';
 import { formatMoney } from '@/engine/utils';
 import SquadScreen from './SquadScreen';
 import TransfersScreen from './TransfersScreen';
 import TableScreen from './TableScreen';
 import FixturesScreen from './FixturesScreen';
+import CupScreen from './CupScreen';
+import ClubScreen from './ClubScreen';
 
-type Tab = 'squad' | 'transfers' | 'table' | 'fixtures';
+type Tab = 'squad' | 'transfers' | 'table' | 'fixtures' | 'cups' | 'club';
 
 export default function HubScreen({
   state,
@@ -33,6 +36,9 @@ export default function HubScreen({
   const opponentId = fixture ? (fixture.homeId === state.userClubId ? fixture.awayId : fixture.homeId) : null;
   const opponent = opponentId ? state.clubs.find((c) => c.id === opponentId) : null;
   const lineupOk = isLineupValid(state, state.userClubId, state.lineup);
+  const cupWeek =
+    (knockoutRoundDue(state.cup, state.week) && isClubAlive(state.cup, state.userClubId)) ||
+    (knockoutRoundDue(state.continental, state.week) && isClubAlive(state.continental, state.userClubId));
 
   return (
     <div className="fm-screen">
@@ -44,7 +50,7 @@ export default function HubScreen({
           <div className="fm-hub-head__club">{club.name}</div>
           <div className="fm-hub-head__sub">
             Division {div} · {state.seasonYear}/{(state.seasonYear + 1) % 100} · Week {Math.min(state.week, SEASON_ROUNDS)} of{' '}
-            {SEASON_ROUNDS}
+            {SEASON_ROUNDS} · {state.manager.name}
           </div>
         </div>
         <div className="fm-hub-stats">
@@ -60,13 +66,21 @@ export default function HubScreen({
             <span className="fm-stat__label">Morale</span>
             <span className="fm-stat__value">{state.morale}</span>
           </div>
+          <div className="fm-stat">
+            <span className="fm-stat__label">Board</span>
+            <span className="fm-stat__value">{state.board.confidence}</span>
+          </div>
+          <div className="fm-stat">
+            <span className="fm-stat__label">Fans</span>
+            <span className="fm-stat__value">{state.fanConfidence}</span>
+          </div>
         </div>
       </div>
 
       {fixture && (
         <button className="fm-btn fm-btn--primary fm-btn--large" onClick={onPlayMatch} disabled={!lineupOk}>
           {lineupOk
-            ? `Play Week ${state.week}: ${fixture.homeId === state.userClubId ? 'vs' : 'at'} ${opponent?.name ?? ''}`
+            ? `Play Week ${state.week}: ${fixture.homeId === state.userClubId ? 'vs' : 'at'} ${opponent?.name ?? ''}${cupWeek ? ' (+ cup tie midweek)' : ''}`
             : 'Fix your lineup to play (11 fit players)'}
         </button>
       )}
@@ -77,7 +91,7 @@ export default function HubScreen({
             Club news
           </p>
           <ul className="fm-news">
-            {state.news.slice(0, 4).map((n, i) => (
+            {state.news.slice(0, 5).map((n, i) => (
               <li key={i}>{n}</li>
             ))}
           </ul>
@@ -98,12 +112,20 @@ export default function HubScreen({
         <button className={`fm-tab${tab === 'fixtures' ? ' active' : ''}`} onClick={() => setTab('fixtures')}>
           Fixtures
         </button>
+        <button className={`fm-tab${tab === 'cups' ? ' active' : ''}`} onClick={() => setTab('cups')}>
+          Cups
+        </button>
+        <button className={`fm-tab${tab === 'club' ? ' active' : ''}`} onClick={() => setTab('club')}>
+          Club
+        </button>
       </nav>
 
       {tab === 'squad' && <SquadScreen state={state} onChange={onChange} />}
       {tab === 'transfers' && <TransfersScreen state={state} onChange={onChange} />}
       {tab === 'table' && <TableScreen state={state} />}
       {tab === 'fixtures' && <FixturesScreen state={state} />}
+      {tab === 'cups' && <CupScreen state={state} />}
+      {tab === 'club' && <ClubScreen state={state} onChange={onChange} />}
 
       <div className="fm-actions" style={{ marginTop: 20 }}>
         <button

@@ -1,6 +1,7 @@
-import type { GameState, MatchEvent, MatchReport, Tactics, FormationDef } from './types';
+import type { GameState, MatchEvent, MatchReport, Player, Tactics, FormationDef } from './types';
 import { BASE_GOALS, HOME_ADVANTAGE, MORALE_START, getFormation } from './gameRules';
 import { aiMatchSetup, lineupStrength } from './teamManagement';
+import { scorerTraitMult } from './traits';
 import { poisson, weightedIndex } from './utils';
 
 interface SideSetup {
@@ -9,6 +10,7 @@ interface SideSetup {
   formation: FormationDef;
   tactics: Tactics;
   morale: number;
+  chemistry: number;
 }
 
 function userSetup(state: GameState): SideSetup {
@@ -18,41 +20,48 @@ function userSetup(state: GameState): SideSetup {
     formation: getFormation(state.formationId),
     tactics: state.tactics,
     morale: state.morale,
+    chemistry: state.chemistry,
   };
 }
 
-function setupFor(state: GameState, clubId: number): SideSetup {
+function setupFor(state: GameState, clubId: number, opponentId: number): SideSetup {
   if (clubId === state.userClubId) return userSetup(state);
-  return { clubId, ...aiMatchSetup(state, clubId), morale: MORALE_START };
+  return { clubId, ...aiMatchSetup(state, clubId, opponentId), morale: MORALE_START, chemistry: 50 };
 }
 
 /** Expected goals for the attacking side given both strengths. */
-function expectedGoals(attack: number, defense: number, pressing: Tactics['pressing'], home: boolean): number {
+function expectedGoals(attack: number, defense: number, tactics: Tactics, home: boolean): number {
   const ratio = attack / defense;
   let lambda = BASE_GOALS * Math.pow(ratio, 3.4);
   if (home) lambda *= HOME_ADVANTAGE;
-  if (pressing === 'high') lambda *= 1.08;
-  if (pressing === 'low') lambda *= 0.94;
+  if (tactics.pressing === 'high') lambda *= 1.08;
+  if (tactics.pressing === 'low') lambda *= 0.94;
+  if (tactics.tempo === 'fast') lambda *= 1.05;
+  if (tactics.tempo === 'slow') lambda *= 0.95;
   return Math.min(lambda, 5.5);
 }
 
-/** Concession multiplier from your own pressing (high press = exposed at the back). */
-function pressingConcede(pressing: Tactics['pressing']): number {
-  return pressing === 'high' ? 1.06 : pressing === 'low' ? 0.92 : 1;
+/** Concession multiplier from your own setup (high press / fast tempo = exposed). */
+function concedeMult(tactics: Tactics): number {
+  let m = 1;
+  if (tactics.pressing === 'high') m *= 1.06;
+  if (tactics.pressing === 'low') m *= 0.92;
+  if (tactics.tempo === 'fast') m *= 1.04;
+  if (tactics.tempo === 'slow') m *= 0.96;
+  return m;
 }
 
-function scorerName(state: GameState, side: SideSetup): string {
+function pickScorer(state: GameState, side: SideSetup): Player | null {
   const candidates = side.lineup
-    .map((id, i) => ({ id, slot: side.formation.slots[i] }))
-    .filter((x): x is { id: number; slot: (typeof side.formation.slots)[0] } => x.id !== null)
-    .map((x) => state.players[x.id])
+    .filter((id): id is number => id !== null)
+    .map((id) => state.players[id])
     .filter(Boolean);
-  if (!candidates.length) return 'Unknown';
+  if (!candidates.length) return null;
   const weights = candidates.map((p) => {
     const posW = p.pos === 'FWD' ? 5 : p.pos === 'MID' ? 2.2 : p.pos === 'DEF' ? 0.5 : 0.05;
-    return posW * Math.max(p.sho, 20);
+    return posW * Math.max(p.sho, 20) * scorerTraitMult(p);
   });
-  return candidates[weightedIndex(weights)].name;
+  return candidates[weightedIndex(weights)];
 }
 
 const CHANCE_TEXT = [
@@ -65,14 +74,14 @@ const CHANCE_TEXT = [
 
 /** Simulate one match. Does NOT mutate state — apply results via seasonProgression. */
 export function simulateMatch(state: GameState, homeId: number, awayId: number): MatchReport {
-  const home = setupFor(state, homeId);
-  const away = setupFor(state, awayId);
+  const home = setupFor(state, homeId, awayId);
+  const away = setupFor(state, awayId, homeId);
 
-  const hs = lineupStrength(state, home.lineup, home.formation, home.tactics, home.morale);
-  const as = lineupStrength(state, away.lineup, away.formation, away.tactics, away.morale);
+  const hs = lineupStrength(state, home.lineup, home.formation, home.tactics, home.morale, home.chemistry);
+  const as = lineupStrength(state, away.lineup, away.formation, away.tactics, away.morale, away.chemistry);
 
-  const homeXG = expectedGoals(hs.attack, as.defense, home.tactics.pressing, true) * pressingConcede(away.tactics.pressing);
-  const awayXG = expectedGoals(as.attack, hs.defense, away.tactics.pressing, false) * pressingConcede(home.tactics.pressing);
+  const homeXG = expectedGoals(hs.attack, as.defense, home.tactics, true) * concedeMult(away.tactics);
+  const awayXG = expectedGoals(as.attack, hs.defense, away.tactics, false) * concedeMult(home.tactics);
 
   const homeGoals = poisson(homeXG);
   const awayGoals = poisson(awayXG);
@@ -84,11 +93,13 @@ export function simulateMatch(state: GameState, homeId: number, awayId: number):
   const addGoals = (side: SideSetup, count: number) => {
     for (let i = 0; i < count; i++) {
       const minute = 2 + Math.floor(Math.random() * 89);
+      const scorer = pickScorer(state, side);
       events.push({
         minute,
         type: 'goal',
         clubId: side.clubId,
-        text: `GOAL! ${scorerName(state, side)} scores for ${clubName(side.clubId)}!`,
+        playerId: scorer?.id,
+        text: `GOAL! ${scorer?.name ?? 'Unknown'} scores for ${clubName(side.clubId)}!`,
       });
     }
   };
@@ -104,7 +115,7 @@ export function simulateMatch(state: GameState, homeId: number, awayId: number):
         minute: 2 + Math.floor(Math.random() * 89),
         type: 'chance',
         clubId: side.clubId,
-        text: `${scorerName(state, side)} ${CHANCE_TEXT[Math.floor(Math.random() * CHANCE_TEXT.length)]}`,
+        text: `${pickScorer(state, side)?.name ?? 'A player'} ${CHANCE_TEXT[Math.floor(Math.random() * CHANCE_TEXT.length)]}`,
       });
     }
     if (Math.random() < 0.55) {
@@ -128,5 +139,7 @@ export function simulateMatch(state: GameState, homeId: number, awayId: number):
     homeXG: Math.round(homeXG * 100) / 100,
     awayXG: Math.round(awayXG * 100) / 100,
     events,
+    homeLineup: home.lineup.filter((id): id is number => id !== null),
+    awayLineup: away.lineup.filter((id): id is number => id !== null),
   };
 }

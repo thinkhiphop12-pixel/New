@@ -328,6 +328,63 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--gold); }
 .fm-hint { font-size: 12px; color: var(--muted-dim); text-align: center; }
 .fm-error-text { color: var(--red); font-size: 13px; text-align: center; }
 
+/* Save slots */
+.fm-slots { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.fm-slot-card {
+  display: flex; flex-direction: column; gap: 6px; align-items: flex-start; text-align: left;
+  background: var(--panel); border: 1.5px solid var(--border-soft);
+  border-radius: 14px; padding: 14px;
+}
+.fm-slot-card__num { font-size: 10px; letter-spacing: 1.5px; color: var(--muted-dim); font-weight: 800; }
+.fm-slot-card__club { font-weight: 800; font-size: 15px; }
+.fm-slot-card__meta { font-size: 12px; color: var(--muted); }
+.fm-slot-card__actions { display: flex; gap: 8px; margin-top: 4px; }
+
+/* Trait chips */
+.fm-trait {
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.5px;
+  background: rgba(127, 180, 255, 0.14); color: var(--blue);
+  border-radius: 999px; padding: 3px 10px;
+}
+
+/* Confidence bars */
+.fm-bar-row { display: grid; grid-template-columns: 76px 1fr 34px; align-items: center; gap: 10px; margin: 7px 0; font-size: 12px; }
+.fm-bar-row__label { color: var(--muted); font-weight: 700; }
+.fm-bar-row__value { font-weight: 800; text-align: right; }
+.fm-bar { height: 8px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--border-soft); overflow: hidden; }
+.fm-bar__fill { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
+.fm-bar__fill.good { background: var(--green); }
+.fm-bar__fill.mid { background: var(--gold); }
+.fm-bar__fill.bad { background: var(--red); }
+
+/* Finance ledger */
+.fm-ledger { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.fm-ledger li { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; font-size: 12px; color: var(--muted); }
+.fm-ledger .wk { color: var(--muted-dim); font-weight: 700; }
+.fm-ledger .in { color: var(--green); font-weight: 700; }
+.fm-ledger .out { color: var(--red); font-weight: 700; }
+
+/* Cup brackets */
+.fm-cup-status { font-size: 13px; color: var(--muted); margin: 4px 0 10px; }
+.fm-cup-ties { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.fm-cup-ties li {
+  display: grid; grid-template-columns: 1fr 56px 1fr; gap: 8px; align-items: center;
+  font-size: 12.5px; padding: 5px 8px; border-radius: 8px; border: 1px solid transparent;
+}
+.fm-cup-ties li.me { border-color: var(--gold); background: var(--gold-soft); }
+.fm-cup-ties li .score { text-align: center; font-weight: 800; color: var(--muted); }
+.fm-cup-ties li span:first-child { text-align: right; }
+.fm-cup-ties li .w { color: var(--green); font-weight: 700; }
+
+/* Player detail & misc */
+.fm-player-detail { border-color: var(--gold); }
+.fm-club-line { font-size: 13px; color: var(--muted); margin: 4px 0 8px; }
+.fm-job-offer {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  border-top: 1px solid var(--border-soft); padding: 10px 0 4px; font-size: 14px;
+}
+.fm-job-offer:first-of-type { border-top: none; }
+
 @media (max-width: 560px) {
   .fm-hub-stats { margin-left: 0; width: 100%; justify-content: space-between; }
   .fm-stat { min-width: 0; flex: 1; }
