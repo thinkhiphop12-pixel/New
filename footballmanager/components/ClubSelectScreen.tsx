@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { Division, GameData } from '@/engine/types';
-import { STARTING_BUDGET } from '@/engine/gameRules';
+import { DIVISION_NAMES, STARTING_BUDGET } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
 
 const DIV_BLURB: Record<Division, string> = {
@@ -57,7 +57,7 @@ export default function ClubSelectScreen({
       <div className="fm-division-toggle">
         {divisions.map((d) => (
           <button key={d} className={division === d ? 'active' : ''} onClick={() => setDivision(d)}>
-            Division {d}
+            {DIVISION_NAMES[d]}
           </button>
         ))}
       </div>

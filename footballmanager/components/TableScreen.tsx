@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { Division, GameState } from '@/engine/types';
-import { CLUBS_PER_DIVISION, PROMOTION_SPOTS } from '@/engine/gameRules';
+import { CLUBS_PER_DIVISION, DIVISION_NAMES, PROMOTION_SPOTS } from '@/engine/gameRules';
 import { computeTable, hasThirdDivision, userDivision } from '@/engine/seasonProgression';
 
 export default function TableScreen({ state }: { state: GameState }) {
@@ -17,7 +17,7 @@ export default function TableScreen({ state }: { state: GameState }) {
       <div className="fm-division-toggle" style={{ alignSelf: 'center' }}>
         {divisions.map((d) => (
           <button key={d} className={division === d ? 'active' : ''} onClick={() => setDivision(d)}>
-            Division {d}
+            {DIVISION_NAMES[d]}
           </button>
         ))}
       </div>

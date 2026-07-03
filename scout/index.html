@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scout • Daily World Cup Player Guess | BALLKNW</title>
+    <meta name="description" content="Guess today's mystery World Cup player in 6 tries. Score on nation, position, era, rating and pace. Daily streaks + shareable emoji grids.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Anton&amp;display=swap');
+        body { font-family: 'Inter', system_ui, sans-serif; }
+        .font-display { font-family: 'Anton', system_ui, sans-serif; letter-spacing: -1px; }
+        
+        .guess-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+        
+        .guess-cell {
+            aspect-ratio: 1;
+            border: 2px solid #3f3f46;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: all 0.1s ease;
+        }
+        
+        .guess-cell.exact { background: #166534; border-color: #4ade80; color: white; }
+        .guess-cell.close { background: #854d0e; border-color: #facc15; color: white; }
+        .guess-cell.wrong { background: #27251f; border-color: #52525b; color: #a1a1aa; }
+        
+        .player-option {
+            transition: all 0.1s ease;
+        }
+        
+        .player-option:hover {
+            background-color: #27251f;
+            transform: translateY(-1px);
+        }
+        
+        .player-option.selected {
+            background-color: #166534;
+            border-color: #4ade80;
+        }
+
+        .streak-flame {
+            animation: flame 1.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200">
+    <div class="max-w-lg mx-auto px-5 pt-8 pb-12">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-emerald-400 rounded-2xl flex items-center justify-center">
+                    <span class="text-zinc-950 text-3xl">🕵️</span>
+                </div>
+                <div>
+                    <span class="font-display text-4xl tracking-tighter">SCOUT</span>
+                    <div id="puzzle-number" class="text-emerald-400 text-xs font-mono tracking-[2px] -mt-1">SCOUT #247</div>
+                </div>
+            </div>
+            
+            <div class="text-right">
+                <div class="flex items-center justify-end gap-1.5">
+                    <i class="fa-solid fa-fire text-orange-400 streak-flame"></i>
+                    <span id="streak-count" class="font-mono text-2xl font-bold text-orange-400">7</span>
+                </div>
+                <div class="text-[10px] text-zinc-500 -mt-1">DAY STREAK</div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="text-center mb-6">
+            <p class="text-zinc-400 text-sm">Guess the mystery World Cup player.<br>Score on <span class="font-semibold">nation • position • era • rating • pace</span>.</p>
+        </div>
+
+        <!-- Game Area -->
+        <div id="game-area">
+            <!-- Guesses will be rendered here by JS -->
+            <div id="guesses-container" class="space-y-3 mb-6"></div>
+
+            <!-- Input / Options -->
+            <div class="mb-4">
+                <div class="text-xs uppercase tracking-widest text-zinc-500 mb-2 px-1">YOUR GUESS</div>
+                
+                <!-- Searchable player list (simplified for demo) -->
+                <div class="relative">
+                    <input id="guess-input" 
+                           type="text" 
+                           placeholder="Type player name or click suggestions..."
+                           class="w-full bg-zinc-900 border border-zinc-700 focus:border-emerald-400 rounded-2xl px-5 py-4 text-lg placeholder:text-zinc-500 outline-none"
+                           onkeyup="filterPlayers()">
+                    
+                    <div id="player-suggestions" 
+                         class="absolute z-10 mt-1 w-full max-h-64 overflow-auto bg-zinc-900 border border-zinc-700 rounded-3xl shadow-2xl hidden">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="submitGuess()" 
+                    class="w-full py-4 bg-emerald-400 hover:bg-emerald-300 active:bg-emerald-500 text-emerald-950 font-extrabold text-xl rounded-3xl transition flex items-center justify-center gap-2">
+                SUBMIT GUESS <span class="text-sm">(or press Enter)</span>
+            </button>
+        </div>
+
+        <!-- Results / Share -->
+        <div id="results-area" class="hidden mt-8">
+            <div class="text-center mb-6">
+                <div id="result-title" class="font-display text-4xl tracking-tight mb-1"></div>
+                <div id="result-subtitle" class="text-zinc-400"></div>
+            </div>
+
+            <!-- Emoji Grid -->
+            <div class="mb-6">
+                <div class="text-xs uppercase tracking-[2px] text-center text-zinc-500 mb-2">SHARE YOUR GRID</div>
+                <div id="emoji-grid" 
+                     class="bg-zinc-900 border border-zinc-700 p-4 rounded-3xl font-mono text-3xl tracking-[4px] text-center cursor-pointer hover:bg-zinc-800 transition"
+                     onclick="copyShareText()">
+                    <!-- Populated by JS -->
+                </div>
+                <div class="text-center text-[10px] text-emerald-400 mt-1">Tap grid to copy • Works in WhatsApp, X, iMessage</div>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="copyShareText()" 
+                        class="flex-1 py-3.5 border border-zinc-700 hover:bg-zinc-900 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-copy"></i> <span>COPY GRID</span>
+                </button>
+                <button onclick="shareNative()" 
+                        class="flex-1 py-3.5 bg-emerald-400 text-emerald-950 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-share-alt"></i> <span>SHARE</span>
+                </button>
+            </div>
+
+            <button onclick="resetGame()" 
+                    class="mt-4 w-full py-3 text-sm text-zinc-400 hover:text-white flex items-center justify-center gap-2">
+                <i class="fa-solid fa-redo"></i> <span>Play again tomorrow (new puzzle)</span>
+            </button>
+        </div>
+
+        <!-- Streak Stats -->
+        <div class="mt-10 text-center text-xs text-zinc-500">
+            <div class="flex justify-center gap-6">
+                <div>Current streak: <span id="current-streak" class="font-mono text-emerald-400">7</span></div>
+                <div>Best streak: <span id="best-streak" class="font-mono text-emerald-400">14</span></div>
+            </div>
+            <div class="mt-1">Wins today: <span id="wins-today" class="font-mono">128</span> • Global players: <span class="font-mono">4.2k</span></div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== SCOUT GAME LOGIC (Polished) ====================
+        
+        // Sample player database (expand with real data in production)
+        const PLAYERS = [
+            { name: "Lionel Messi", nation: "Argentina", position: "FW", era: "2010s", rating: 94, pace: 85 },
+            { name: "Cristiano Ronaldo", nation: "Portugal", position: "FW", era: "2010s", rating: 93, pace: 88 },
+            { name: "Kylian Mbappé", nation: "France", position: "FW", era: "2020s", rating: 91, pace: 97 },
+            { name: "Erling Haaland", nation: "Norway", position: "FW", era: "2020s", rating: 90, pace: 89 },
+            { name: "Kevin De Bruyne", nation: "Belgium", position: "MF", era: "2010s", rating: 91, pace: 76 },
+            { name: "Luka Modrić", nation: "Croatia", position: "MF", era: "2010s", rating: 88, pace: 72 },
+            { name: "Virgil van Dijk", nation: "Netherlands", position: "DF", era: "2010s", rating: 89, pace: 75 },
+            { name: "Thibaut Courtois", nation: "Belgium", position: "GK", era: "2010s", rating: 90, pace: 45 },
+            { name: "Mohamed Salah", nation: "Egypt", position: "FW", era: "2010s", rating: 89, pace: 93 },
+            { name: "Harry Kane", nation: "England", position: "FW", era: "2010s", rating: 89, pace: 68 },
+            { name: "Neymar", nation: "Brazil", position: "FW", era: "2010s", rating: 90, pace: 91 },
+            { name: "Sergio Ramos", nation: "Spain", position: "DF", era: "2010s", rating: 88, pace: 70 },
+            { name: "Manuel Neuer", nation: "Germany", position: "GK", era: "2010s", rating: 89, pace: 55 },
+            { name: "Jude Bellingham", nation: "England", position: "MF", era: "2020s", rating: 87, pace: 82 },
+            { name: "Pedri", nation: "Spain", position: "MF", era: "2020s", rating: 85, pace: 78 }
+        ];
+
+        // Today's mystery player (in production: seeded by date)
+        let MYSTERY_PLAYER = null;
+        let currentGuesses = [];
+        let gameOver = false;
+
+        function getTodayKey() {
+            const date = new Date();
+            return date.toISOString().split('T')[0]; // YYYY-MM-DD
+        }
+
+        function getDayOfYear() {
+            const date = new Date();
+            const start = new Date(date.getFullYear(), 0, 0);
+            const diff = date - start;
+            const oneDay = 1000 * 60 * 60 * 24;
+            return Math.floor(diff / oneDay);
+        }
+
+        function updatePuzzleNumber() {
+            const dayNum = getDayOfYear();
+            const el = document.getElementById('puzzle-number');
+            if (el) el.textContent = `SCOUT #${dayNum}`;
+        }
+
+        function pickMysteryPlayer() {
+            // Deterministic daily player (simple hash of date)
+            const today = getTodayKey();
+            const hash = today.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+            const index = hash % PLAYERS.length;
+            MYSTERY_PLAYER = PLAYERS[index];
+            
+            // For demo variety, you can override:
+            // MYSTERY_PLAYER = PLAYERS[0]; // Force Messi for testing
+        }
+
+        function calculateScore(guess, mystery) {
+            let exact = 0;
+            let close = 0;
+
+            // Nation
+            if (guess.nation === mystery.nation) exact++;
+            else if (guess.nation && mystery.nation) close++; // simplified
+            
+            // Position
+            if (guess.position === mystery.position) exact++;
+            
+            // Era (rough decade match)
+            if (guess.era === mystery.era) exact++;
+            
+            // Rating (within 3)
+            if (Math.abs(guess.rating - mystery.rating) <= 3) exact++;
+            else if (Math.abs(guess.rating - mystery.rating) <= 8) close++;
+            
+            // Pace (within 5)
+            if (Math.abs(guess.pace - mystery.pace) <= 5) exact++;
+            else if (Math.abs(guess.pace - mystery.pace) <= 12) close++;
+
+            return { exact, close, total: exact + close };
+        }
+
+        function generateEmojiGrid(guesses) {
+            return guesses.map(guess => {
+                const score = calculateScore(guess, MYSTERY_PLAYER);
+                if (score.exact >= 4) return '🟩🟩🟩🟩🟩'; // near perfect
+                if (score.exact >= 3) return '🟩🟩🟩🟨⬜';
+                if (score.exact >= 2 || score.close >= 2) return '🟩🟨🟨⬜⬜';
+                if (score.exact === 1 || score.close >= 1) return '🟨⬜⬜⬜⬜';
+                return '⬜⬜⬜⬜⬜';
+            }).join('\n');
+        }
+
+        function loadStreakStats() {
+            const today = getTodayKey();
+            const streakKey = 'scout_streak';
+            const bestKey = 'scout_best_streak';
+            
+            let current = parseInt(localStorage.getItem(streakKey) || '0');
+            let best = parseInt(localStorage.getItem(bestKey) || '0');
+            
+            // Update UI
+            document.getElementById('streak-count').textContent = current;
+            document.getElementById('current-streak').textContent = current;
+            document.getElementById('best-streak').textContent = best;
+            
+            // Fake global wins for demo
+            document.getElementById('wins-today').textContent = Math.floor(Math.random() * 200) + 80;
+        }
+
+        function recordDailyResult(didWin) {
+            const today = getTodayKey();
+            const key = `scout_daily_${today}`;
+            
+            // Prevent double-recording (the key fix)
+            if (localStorage.getItem(key)) {
+                console.log('%c[Scout] Daily result already recorded for today — skipping duplicate', 'color:#666');
+                return;
+            }
+            
+            localStorage.setItem(key, didWin ? 'win' : 'loss');
+            
+            const streakKey = 'scout_streak';
+            const bestKey = 'scout_best_streak';
+            
+            if (didWin) {
+                let streak = parseInt(localStorage.getItem(streakKey) || '0') + 1;
+                localStorage.setItem(streakKey, streak.toString());
+                
+                let best = parseInt(localStorage.getItem(bestKey) || '0');
+                if (streak > best) {
+                    localStorage.setItem(bestKey, streak.toString());
+                }
+            } else {
+                localStorage.setItem(streakKey, '0');
+            }
+            
+            loadStreakStats();
+            console.log('%c[Scout] recordDailyResult saved — win:', didWin, 'streak updated', 'color:#00ff9d');
+        }
+
+        function filterPlayers() {
+            const input = document.getElementById('guess-input').value.toLowerCase().trim();
+            const container = document.getElementById('player-suggestions');
+            
+            if (!input || input.length < 2) {
+                container.classList.add('hidden');
+                return;
+            }
+            
+            const matches = PLAYERS.filter(p => 
+                p.name.toLowerCase().includes(input) ||
+                p.nation.toLowerCase().includes(input)
+            ).slice(0, 6);
+            
+            if (matches.length === 0) {
+                container.classList.add('hidden');
+                return;
+            }
+            
+            container.innerHTML = matches.map(p => `
+                <div onclick="selectPlayer('${p.name}')" 
+                     class="player-option px-5 py-3.5 border-b border-zinc-800 last:border-b-0 cursor-pointer flex justify-between items-center text-sm">
+                    <div>
+                        <span class="font-semibold">${p.name}</span>
+                        <span class="text-xs text-zinc-500 ml-2">${p.nation} • ${p.position}</span>
+                    </div>
+                    <div class="text-xs font-mono text-emerald-400">${p.rating}</div>
+                </div>
+            `).join('');
+            
+            container.classList.remove('hidden');
+        }
+
+        function selectPlayer(name) {
+            document.getElementById('guess-input').value = name;
+            document.getElementById('player-suggestions').classList.add('hidden');
+            submitGuess();
+        }
+
+        function submitGuess() {
+            if (gameOver) return;
+            
+            const input = document.getElementById('guess-input');
+            const name = input.value.trim();
+            
+            if (!name) return;
+            
+            const player = PLAYERS.find(p => p.name.toLowerCase() === name.toLowerCase());
+            if (!player) {
+                alert('Player not found. Try one from the suggestions.');
+                return;
+            }
+            
+            // Prevent duplicate guesses
+            if (currentGuesses.some(g => g.name === player.name)) {
+                alert('Already guessed that player!');
+                return;
+            }
+            
+            currentGuesses.push(player);
+            
+            renderGuesses();
+            input.value = '';
+            document.getElementById('player-suggestions').classList.add('hidden');
+            
+            // Check win condition
+            const score = calculateScore(player, MYSTERY_PLAYER);
+            const isWin = score.exact >= 4 || player.name === MYSTERY_PLAYER.name;
+            
+            if (isWin || currentGuesses.length >= 6) {
+                gameOver = true;
+                showResults(isWin);
+                recordDailyResult(isWin);
+            }
+        }
+
+        function renderGuesses() {
+            const container = document.getElementById('guesses-container');
+            container.innerHTML = '';
+            
+            currentGuesses.forEach((guess, index) => {
+                const score = calculateScore(guess, MYSTERY_PLAYER);
+                const row = document.createElement('div');
+                row.className = 'guess-row';
+                
+                // Create 5 cells representing the 5 attributes
+                const attrs = ['nation', 'position', 'era', 'rating', 'pace'];
+                attrs.forEach(attr => {
+                    const cell = document.createElement('div');
+                    cell.className = 'guess-cell';
+                    
+                    let value = guess[attr];
+                    if (attr === 'rating' || attr === 'pace') value = guess[attr];
+                    
+                    cell.textContent = value;
+                    
+                    // Color coding
+                    if (attr === 'nation' || attr === 'position' || attr === 'era') {
+                        if (guess[attr] === MYSTERY_PLAYER[attr]) {
+                            cell.classList.add('exact');
+                        } else {
+                            cell.classList.add('wrong');
+                        }
+                    } else {
+                        // rating / pace
+                        const diff = Math.abs(guess[attr] - MYSTERY_PLAYER[attr]);
+                        if (diff <= 3) cell.classList.add('exact');
+                        else if (diff <= 8) cell.classList.add('close');
+                        else cell.classList.add('wrong');
+                    }
+                    
+                    row.appendChild(cell);
+                });
+                
+                container.appendChild(row);
+            });
+        }
+
+        function showResults(didWin) {
+            const resultsArea = document.getElementById('results-area');
+            const gameArea = document.getElementById('game-area');
+            
+            gameArea.style.display = 'none';
+            resultsArea.classList.remove('hidden');
+            
+            const titleEl = document.getElementById('result-title');
+            const subEl = document.getElementById('result-subtitle');
+            
+            if (didWin) {
+                titleEl.innerHTML = `🎉 Perfect! It was <span class="text-emerald-400">${MYSTERY_PLAYER.name}</span>`;
+                subEl.textContent = `Solved in ${currentGuesses.length} guess${currentGuesses.length > 1 ? 'es' : ''}. Great ball knowledge!`;
+            } else {
+                titleEl.innerHTML = `Close! The player was <span class="text-emerald-400">${MYSTERY_PLAYER.name}</span>`;
+                subEl.textContent = `Better luck tomorrow. Streak reset.`;
+            }
+            
+            // Render emoji grid
+            const gridEl = document.getElementById('emoji-grid');
+            gridEl.innerHTML = generateEmojiGrid(currentGuesses).replace(/\n/g, '<br>');
+            
+            // Update streak display immediately
+            loadStreakStats();
+        }
+
+        function copyShareText() {
+            const gridText = generateEmojiGrid(currentGuesses);
+            const today = getTodayKey();
+            const dayNum = getDayOfYear();
+            
+            const shareText = `Scout #${dayNum} (${today})\n${gridText}\n\nPlay daily at ballknw.com/scout/`;
+            
+            navigator.clipboard.writeText(shareText).then(() => {
+                const btns = document.querySelectorAll('#results-area button');
+                btns.forEach(b => {
+                    if (b.textContent.includes('COPY')) {
+                        const orig = b.innerHTML;
+                        b.innerHTML = '<i class="fa-solid fa-check"></i> COPIED!';
+                        setTimeout(() => { b.innerHTML = orig; }, 1800);
+                    }
+                });
+            }).catch(() => {
+                // Fallback
+                prompt('Copy this text:', shareText);
+            });
+        }
+
+        async function shareNative() {
+            const gridText = generateEmojiGrid(currentGuesses);
+            const dayNum = getDayOfYear();
+            const shareText = `Scout #${dayNum} — I scored ${currentGuesses.length}/6!\n\n${gridText}\n\nDaily at ballknw.com/scout/`;
+            
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: `Scout #${dayNum} on BALLKNW`,
+                        text: shareText
+                    });
+                } catch (e) {
+                    copyShareText();
+                }
+            } else {
+                copyShareText();
+            }
+        }
+
+        function resetGame() {
+            // For demo: reload to get new daily puzzle
+            window.location.reload();
+        }
+
+        function initScoutGame() {
+            updatePuzzleNumber();
+            pickMysteryPlayer();
+            loadStreakStats();
+            
+            // Keyboard support
+            const input = document.getElementById('guess-input');
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    submitGuess();
+                }
+            });
+            
+            // Click outside suggestions to close
+            document.addEventListener('click', function(e) {
+                const suggestions = document.getElementById('player-suggestions');
+                if (!suggestions.contains(e.target) && e.target.id !== 'guess-input') {
+                    suggestions.classList.add('hidden');
+                }
+            });
+            
+            console.log('%c[Scout] Game initialized. Mystery player:', MYSTERY_PLAYER.name, '— fixes applied (daily key, emoji grid, streak guard)', 'color:#00ff9d');
+        }
+
+        // Boot
+        window.onload = function() {
+            initScoutGame();
+            
+            // Show consent reminder if needed (from homepage)
+            if (!localStorage.getItem('ballknw_consent')) {
+                console.log('%c[Scout] Tip: Accept consent on homepage for full analytics + ads', 'color:#666');
+            }
+        };
+    </script>
+</body>
+</html>

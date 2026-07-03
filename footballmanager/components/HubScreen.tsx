@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { GameState } from '@/engine/types';
-import { SEASON_ROUNDS } from '@/engine/gameRules';
+import { DIVISION_NAMES, SEASON_ROUNDS } from '@/engine/gameRules';
 import { computeTable, nextUserFixture, userDivision } from '@/engine/seasonProgression';
 import { isClubAlive, knockoutRoundDue } from '@/engine/cups';
 import { isLineupValid } from '@/engine/teamManagement';
@@ -49,7 +49,7 @@ export default function HubScreen({
         <div>
           <div className="fm-hub-head__club">{club.name}</div>
           <div className="fm-hub-head__sub">
-            Division {div} · {state.seasonYear}/{(state.seasonYear + 1) % 100} · Week {Math.min(state.week, SEASON_ROUNDS)} of{' '}
+            {DIVISION_NAMES[div]} · {state.seasonYear}/{(state.seasonYear + 1) % 100} · Week {Math.min(state.week, SEASON_ROUNDS)} of{' '}
             {SEASON_ROUNDS} · {state.manager.name}
           </div>
         </div>

@@ -7,6 +7,12 @@ export const PROMOTION_SPOTS = 3;
 export const MIN_SQUAD_SIZE = 16;
 export const MAX_SQUAD_SIZE = 30;
 
+export const DIVISION_NAMES: Record<Division, string> = {
+  1: 'Premier League',
+  2: 'Championship',
+  3: 'League One',
+};
+
 export const STARTING_BUDGET: Record<Division, number> = {
   1: 40_000_000,
   2: 12_000_000,

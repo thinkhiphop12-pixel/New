@@ -68,7 +68,7 @@ export default function MainMenuScreen({
           <span className="fm-howto__num">1</span>
           <div>
             <h3>Choose your club</h3>
-            <p>60 clubs across three divisions, packed with real FC 26 players. Take a giant or rebuild a minnow.</p>
+            <p>Real clubs and real FC 26 squads across the Premier League, Championship and League One.</p>
           </div>
         </li>
         <li className="fm-howto__step">
