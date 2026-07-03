@@ -186,14 +186,35 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   <div class="wrap">
     <div class="live-pill"><span class="dot"></span> <b>12,847</b>&nbsp;playing today</div>
     <h1>Test your <span class="grad">ball knowledge.</span></h1>
-    <p class="lead">Fast, free football brain games. Guess the mystery player. Draft the perfect XI. Manage a club. Build a streak.</p>
+    <p class="lead">Fast, free football brain games. Manage a club right here on this page, draft the perfect XI, build a streak.</p>
     <div class="hero-ctas">
-      <a href="/football-manager/" class="btn btn-primary">Play Football Manager →</a>
+      <a href="#play" class="btn btn-primary">Play Football Manager ↓</a>
       <a href="#games" class="btn btn-ghost">See all games</a>
     </div>
     <p class="subline">No accounts • No downloads • Instant play • Shareable emoji grids</p>
   </div>
 </section>
+
+<!-- FOOTBALL MANAGER — PLAY ON THE FRONT PAGE -->
+<section id="play" class="section" style="padding-top:10px">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Featured game</div>
+      <h2>Football Manager</h2>
+      <p>Three divisions, cups, transfers, contracts and a youth academy — play the full game right here. Your save lives in your browser.</p>
+    </div>
+    <div class="game-embed">
+      <iframe src="/football-manager/" title="BALLKNW Football Manager" loading="lazy" allow="fullscreen"></iframe>
+    </div>
+    <p style="text-align:center;margin-top:12px">
+      <a href="/football-manager/" class="btn btn-ghost">Open full screen ↗</a>
+    </p>
+  </div>
+</section>
+<style>
+  .game-embed{border:1px solid var(--border);border-radius:16px;overflow:hidden;background:#06120c;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+  .game-embed iframe{display:block;width:100%;height:min(82vh,860px);border:0}
+</style>
 
 <!-- GAMES -->
 <section id="games" class="section">
@@ -214,7 +235,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         </div>
         <div class="game-icon">📋</div>
         <h3>Football Manager</h3>
-        <p class="desc">Take charge of a club across two divisions. Pick your formation and XI, buy and sell on the transfer market, and manage a full 38-round season — promotion, relegation and all.</p>
+        <p class="desc">Take charge of a club across three divisions, packed with real FC 26 players. Tactics, transfers, contracts, cups, a youth academy and a board to keep happy — full career mode, promotion, relegation and all.</p>
         <div class="play"><span class="btn btn-primary">Play Football Manager</span></div>
       </a>
 
