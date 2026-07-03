@@ -166,6 +166,13 @@ body::before{
 .feat{font-size:13px;color:var(--white);background:var(--glass);border:1px solid var(--border);padding:9px 15px;border-radius:11px}
 .feat span{color:var(--emerald);font-weight:700}
 
+/* AMAZON SHOP SECTION */
+.shop-section{position:relative;z-index:1;margin-top:40px;text-align:center}
+.shop-section h3{font-size:14px;font-weight:700;color:var(--lime);text-transform:uppercase;letter-spacing:.16em;margin-bottom:12px}
+.shop-links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.shop-links a{font-size:13px;color:var(--white);background:var(--glass);border:1px solid var(--border);padding:8px 14px;border-radius:10px;transition:background .2s,border-color .2s}
+.shop-links a:hover{background:rgba(255,255,255,.08);border-color:var(--border-bright)}
+
 /* FOOTER */
 footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top:40px;padding:34px 0}
 .foot-inner{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
@@ -260,7 +267,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         {
           "@type": "Question",
           "name": "How does the daily Scout puzzle work?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Every day there's one mystery World Cup player. You get 6 guesses, and after each one you see clues comparing nation, position, era, rating and pace. Solve it to extend your streak and share your emoji grid." }
+          "acceptedAnswer": { "@type": "Answer", "text": "Every day there's one mystery World Cup player. You get 6 guesses, and after each one you see clues comparing nation, position, era, rating and pace. Solve it to extend your streak and share your result." }
         },
         {
           "@type": "Question",
@@ -298,6 +305,15 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       <a href="#games" class="btn btn-ghost">See all games</a>
     </div>
     <p class="subline">No accounts • No downloads • Instant play • Shareable emoji grids</p>
+  </div>
+</section>
+
+<!-- TOP AD BANNER -->
+<section class="section" style="padding:20px 0">
+  <div class="wrap">
+    <div class="ad-slot" id="topAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto">
+      <span class="ad-slot-label">Advertisement</span>
+    </div>
   </div>
 </section>
 
@@ -341,11 +357,11 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         </div>
         <div class="game-icon">📋</div>
         <h3>Football Manager</h3>
-        <p class="desc">Take charge of a real club — Premier League, Championship or League One — with real FC 26 squads. Tactics, transfers, contracts, cups, a youth academy and a board to keep happy — full career mode, promotion, relegation and all.</p>
+        <p class="desc">Take charge of a real club — Premier League, Championship or League One — with real FC 26 squads. Tactics, transfers, contracts, cups, a youth academy and a board to keep happy.</p>
         <div class="play"><span class="btn btn-primary">Play Football Manager</span></div>
       </a>
 
-      <!-- BALLKNW Draft XI (Name Your Side) -->
+      <!-- BALLKNW Draft XI -->
       <a href="/perfect-cup/" class="game-card draft">
         <div class="chips">
           <span class="chip em">BALLKNW Draft XI</span>
@@ -353,7 +369,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         </div>
         <div class="game-icon">🏆</div>
         <h3>BALLKNW Draft XI</h3>
-        <p class="desc">Spin for real World Cup squads from 1930–2026 and draft a full XI — one player per squad, into your chosen formation. Take them into a league season or a knockout Cup run against the greatest sides ever, share your result, and keep the daily streak alive.</p>
+        <p class="desc">Spin for real World Cup squads from 1930–2026 and draft a full XI — one player per squad, into your chosen formation. Take them into a league season or a knockout Cup run.</p>
         <div class="play"><span class="btn btn-ghost">Play Draft XI</span></div>
       </a>
 
@@ -365,7 +381,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         </div>
         <div class="game-icon">🕵️</div>
         <h3>Scout</h3>
-        <p class="desc">Guess the mystery World Cup player in 6 tries. Clues on nation, position, era, rating &amp; pace after every guess. Share beautiful emoji grids. Real streaks, daily habit.</p>
+        <p class="desc">Guess the mystery World Cup player in 6 tries. Clues on nation, position, era, rating &amp; pace after every guess. Share beautiful emoji grids. Real streaks, daily habit-building.</p>
         <div class="play"><span class="btn btn-ghost">Play Scout</span></div>
       </a>
 
@@ -383,8 +399,10 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       <div class="stat"><div class="num">100%</div><div class="lbl">Free, no login</div></div>
     </div>
 
-    <!-- In-content ad (consent-gated; placeholder until consent) -->
-    <div class="ad-slot" id="homeNativeAd" data-ad-kind="native"><span class="ad-slot-label">Advertisement</span></div>
+    <!-- MIDDLE AD BANNER -->
+    <div class="ad-slot" id="middleAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto">
+      <span class="ad-slot-label">Advertisement</span>
+    </div>
   </div>
 </section>
 
@@ -394,12 +412,22 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
     <div class="about-card">
       <div class="eyebrow">Built for football obsessives</div>
       <h2 style="margin-top:10px">Pure ball knowledge. Nothing else.</h2>
-      <p>BALLKNW is a set of browser games designed to test and grow your football knowledge — a daily mystery-player puzzle, a World Cup squad draft, and a full club management sim. No logins, no downloads, no clutter.</p>
+      <p>BALLKNW is a set of browser games designed to test and grow your football knowledge — a daily mystery-player puzzle, a World Cup squad draft, and a full club management sim. No logins, no ads interrupting play, just pure football brain games.</p>
       <div class="about-feats">
         <div class="feat"><span>Real data</span> from 1930–2026 World Cups</div>
         <div class="feat"><span>Daily puzzles</span> with persistent streaks</div>
         <div class="feat"><span>Emoji grids</span> built to share</div>
         <div class="feat"><span>Privacy-first</span> · consent-aware</div>
+      </div>
+      <!-- AMAZON SHOP SECTION -->
+      <div class="shop-section">
+        <h3>Shop football gear</h3>
+        <div class="shop-links">
+          <a href="https://www.amazon.com/s?k=football+shirts&tag=lloydevans01-21" target="_blank">Football Shirts</a>
+          <a href="https://www.amazon.com/s?k=football+boots&tag=lloydevans01-21" target="_blank">Football Boots</a>
+          <a href="https://www.amazon.com/s?k=football+balls&tag=lloydevans01-21" target="_blank">Footballs</a>
+          <a href="https://www.amazon.com/s?k=football+games&tag=lloydevans01-21" target="_blank">Football Games</a>
+        </div>
       </div>
     </div>
   </div>
@@ -423,7 +451,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       </details>
       <details class="faq-item">
         <summary>How does the daily Scout puzzle work?</summary>
-        <p>Every day there's one mystery World Cup player. You get 6 guesses, and after each one you see clues comparing nation, position, era, rating and pace. Solve it to extend your streak and share your emoji grid.</p>
+        <p>Every day there's one mystery World Cup player. You get 6 guesses, and after each one you see clues comparing nation, position, era, rating and pace. Solve it to extend your streak and share your emoji grid on social media.</p>
       </details>
       <details class="faq-item">
         <summary>Where does the player and squad data come from?</summary>
@@ -440,7 +468,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       <div class="foot-brand"><span class="mark">B</span> BALLKNW</div>
       <nav class="foot-links">
         <a href="/scout/">Scout</a>
-        <a href="/perfect-cup/">8-0-0</a>
+        <a href="/perfect-cup/">Draft XI</a>
         <a href="/football-manager/">Football Manager</a>
         <a href="/privacy.html">Privacy</a>
         <a href="/terms.html">Terms</a>
@@ -448,7 +476,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <a href="mailto:thinkhiphop12@gmail.com">Contact</a>
       </nav>
     </div>
-    <p class="foot-meta">Made for football heads. Data from public sources. © BALLKNW · ballknw.com</p>
+    <p class="foot-meta">Made for football heads. Data from public sources. © BALLKNW · ballknw.com | <a href="https://www.amazon.com/s?k=football&tag=lloydevans01-21" target="_blank" style="color:var(--muted)">Shop on Amazon</a></p>
   </div>
 </footer>
 
