@@ -5,12 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>BALLKNW — Free Football Games | Football Manager & Draft XI</title>
 <meta name="description" content="Fast, free football brain games. Guess the mystery player, draft a perfect World Cup XI, or manage a club through a full season. No accounts, real streaks, shareable grids." />
-<meta name="keywords" content="football games, world cup games, daily puzzle, scout game, 8-0-0, football manager, ball knowledge" />
-<meta property="og:title" content="BALLKNW — Football Manager & Draft XI" />
-<meta property="og:description" content="Fast, free football brain games. Build a streak. Climb the global ranks." />
-<meta property="og:image" content="/assets/og-image.png" />
+<meta name="keywords" content="football games, football manager game, world cup games, draft xi, daily football puzzle, guess the footballer, football wordle, scout game, ball knowledge, ballknw" />
+<link rel="canonical" href="https://ballknw.com/" />
+<meta name="theme-color" content="#050505" />
+<meta property="og:site_name" content="BALLKNW" />
+<meta property="og:url" content="https://ballknw.com/" />
+<meta property="og:title" content="BALLKNW — Free Football Games | Football Manager & Draft XI" />
+<meta property="og:description" content="Fast, free football brain games. Manage a real club, draft the perfect World Cup XI, guess the mystery player. Build a streak." />
+<meta property="og:image" content="https://ballknw.com/assets/og-image.png" />
 <meta property="og:type" content="website" />
+<meta property="og:locale" content="en_US" />
 <meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="BALLKNW — Free Football Games" />
+<meta name="twitter:description" content="Manage a real club, draft the perfect XI, guess the mystery player. Free, no login." />
+<meta name="twitter:image" content="https://ballknw.com/assets/og-image.png" />
+<!-- Google AdSense (site verification + library load) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2741492847457362" crossorigin="anonymous" data-adsense="1"></script>
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="/assets/favicon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -165,7 +175,103 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 .foot-links a{color:var(--muted);font-size:13.5px;transition:color .15s}
 .foot-links a:hover{color:var(--white)}
 .foot-meta{color:var(--muted);font-size:12px;margin-top:18px}
+
+/* FAQ */
+.faq-list{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.faq-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.faq-item summary{cursor:pointer;padding:16px 18px;font-weight:700;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:"+";color:var(--lime);font-size:18px;font-weight:800;flex-shrink:0}
+.faq-item[open] summary::after{content:"–"}
+.faq-item p{color:var(--muted);font-size:14px;padding:0 18px 16px;line-height:1.6}
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://ballknw.com/#website",
+      "url": "https://ballknw.com/",
+      "name": "BALLKNW",
+      "description": "Fast, free football brain games — a browser Football Manager with real FC 26 squads, a World Cup Draft XI, and a daily guess-the-player puzzle.",
+      "publisher": { "@id": "https://ballknw.com/#org" }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://ballknw.com/#org",
+      "name": "BALLKNW",
+      "url": "https://ballknw.com/",
+      "logo": "https://ballknw.com/assets/favicon-192.png",
+      "email": "thinkhiphop12@gmail.com"
+    },
+    {
+      "@type": "VideoGame",
+      "name": "BALLKNW Football Manager",
+      "url": "https://ballknw.com/football-manager/",
+      "description": "Manage a real club across three English divisions with real FC 26 squads — tactics, transfers, contracts, cups and a youth academy in a full career mode.",
+      "genre": "Sports",
+      "gamePlatform": "Web Browser",
+      "applicationCategory": "Game",
+      "playMode": "SinglePlayer",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "publisher": { "@id": "https://ballknw.com/#org" }
+    },
+    {
+      "@type": "VideoGame",
+      "name": "BALLKNW Draft XI",
+      "url": "https://ballknw.com/perfect-cup/",
+      "description": "Spin for real World Cup squads from 1930–2026 and draft a full XI, then take them into a league season or knockout Cup run against the greatest sides ever.",
+      "genre": "Sports",
+      "gamePlatform": "Web Browser",
+      "applicationCategory": "Game",
+      "playMode": "SinglePlayer",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "publisher": { "@id": "https://ballknw.com/#org" }
+    },
+    {
+      "@type": "VideoGame",
+      "name": "Scout",
+      "url": "https://ballknw.com/scout/",
+      "description": "Guess the mystery World Cup player in 6 tries. Clues on nation, position, era, rating and pace after every guess. Daily puzzle with streaks and shareable emoji grids.",
+      "genre": "Puzzle",
+      "gamePlatform": "Web Browser",
+      "applicationCategory": "Game",
+      "playMode": "SinglePlayer",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "publisher": { "@id": "https://ballknw.com/#org" }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Are the BALLKNW football games really free?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes — every game on ballknw.com is 100% free to play in your browser. No account, no download, no paywall. The site is supported by light, consent-based advertising." }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need an account to play or save my progress?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Your Football Manager save, streaks and progress are stored in your browser automatically. Come back on the same device and browser and your game continues." }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the daily Scout puzzle work?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Every day there's one mystery World Cup player. You get 6 guesses, and after each one you see clues comparing nation, position, era, rating and pace. Solve it to extend your streak and share your emoji grid." }
+        },
+        {
+          "@type": "Question",
+          "name": "Where does the player and squad data come from?",
+          "acceptedAnswer": { "@type": "Answer", "text": "BALLKNW uses real squad data — FC 26 clubs in Football Manager and every World Cup squad from 1930 through 2026 — with over 15,000 player ratings compiled from public sources." }
+        }
+      ]
+    }
+  ]
+}
+</script>
 </head>
 <body>
 
@@ -276,6 +382,9 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       <div class="stat"><div class="num">1930–2026</div><div class="lbl">World Cup data</div></div>
       <div class="stat"><div class="num">100%</div><div class="lbl">Free, no login</div></div>
     </div>
+
+    <!-- In-content ad (consent-gated; placeholder until consent) -->
+    <div class="ad-slot" id="homeNativeAd" data-ad-kind="native"><span class="ad-slot-label">Advertisement</span></div>
   </div>
 </section>
 
@@ -296,6 +405,34 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </section>
 
+<!-- FAQ (content mirrors the FAQPage structured data in <head>) -->
+<section id="faq" class="section">
+  <div class="wrap">
+    <div class="section-head" style="text-align:center">
+      <div class="eyebrow">FAQ</div>
+      <h2>Quick answers</h2>
+    </div>
+    <div class="faq-list">
+      <details class="faq-item">
+        <summary>Are the BALLKNW football games really free?</summary>
+        <p>Yes — every game on ballknw.com is 100% free to play in your browser. No account, no download, no paywall. The site is supported by light, consent-based advertising.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Do I need an account to play or save my progress?</summary>
+        <p>No. Your Football Manager save, streaks and progress are stored in your browser automatically. Come back on the same device and browser and your game continues.</p>
+      </details>
+      <details class="faq-item">
+        <summary>How does the daily Scout puzzle work?</summary>
+        <p>Every day there's one mystery World Cup player. You get 6 guesses, and after each one you see clues comparing nation, position, era, rating and pace. Solve it to extend your streak and share your emoji grid.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Where does the player and squad data come from?</summary>
+        <p>BALLKNW uses real squad data — FC 26 clubs in Football Manager and every World Cup squad from 1930 through 2026 — with over 15,000 player ratings compiled from public sources.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
 <!-- FOOTER -->
 <footer>
   <div class="wrap">
@@ -307,11 +444,15 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <a href="/football-manager/">Football Manager</a>
         <a href="/privacy.html">Privacy</a>
         <a href="/terms.html">Terms</a>
+        <a href="#" id="cookieSettingsBtn">Cookie settings</a>
         <a href="mailto:thinkhiphop12@gmail.com">Contact</a>
       </nav>
     </div>
     <p class="foot-meta">Made for football heads. Data from public sources. © BALLKNW · ballknw.com</p>
   </div>
 </footer>
+
+<script src="/shared/consent.js" defer></script>
+<script src="/shared/ads.js" defer></script>
 </body>
 </html>
