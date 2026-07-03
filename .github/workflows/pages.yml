@@ -2,7 +2,7 @@ name: Deploy site to GitHub Pages
 
 on:
   push:
-    branches: [claude/build-vnqqbp]
+    branches: [claude/ball-knw-website-strategy-qmtvp0, claude/build-vnqqbp]
   workflow_dispatch: {}
 
 permissions:
