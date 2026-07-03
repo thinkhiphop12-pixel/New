@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Football Manager — Ball Knowledge',
+  title: 'Football Manager — BALLKNW',
   description:
     'Take charge of a club: pick your formation, work the transfer market, and manage your way through a full league season.',
   icons: { icon: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/favicon.svg` },
