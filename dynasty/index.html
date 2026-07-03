@@ -38,6 +38,14 @@
 <link rel="apple-touch-icon" href="../assets/favicon-192.png">
 <link rel="stylesheet" href="../theme.css">
 <link rel="stylesheet" href="styles.css">
+<style>
+  /* Ad slot styles for Dynasty page */
+  .ad-slot { margin:20px auto; min-height:90px; max-width:728px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.04); border:1px dashed rgba(255,255,255,.14); border-radius:14px; position:relative; overflow:hidden; }
+  .ad-slot-label { font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#8a8a8e; }
+  .ad-slot.is-filled .ad-slot-label { display:none; }
+  .ad-slot ins.adsbygoogle { width:100%; }
+  .ad-banner-wrapper { width:100%; text-align:center; margin:20px 0; padding:0 22px; }
+</style>
 </head>
 <body>
 <div id="app">
@@ -58,7 +66,7 @@
   <section id="setupScreen" class="screen">
     <div class="setup-inner">
       <h1 class="setup-title">Build your dynasty</h1>
-      <p class="setup-sub">Pick a formation, draft a real 2026 World Cup nation's actual squad, then manage them through the genuine 48-team bracket — group stage, knockouts, team news and tactics, all the way to the final.</p>
+      <p class="setup-sub">Pick a formation, draft a real 2026 World Cup nation's actual squad, then manage them through the genuine 48-team bracket — group stage, knockouts, team news and tactics.</p>
 
       <div class="step">
         <div class="step-label">1 — Formation</div>
@@ -66,6 +74,13 @@
       </div>
 
       <button class="btn-primary" id="toNationBtn" disabled>Pick your nation →</button>
+
+      <!-- TOP AD BANNER -->
+      <div class="ad-banner-wrapper">
+        <div class="ad-slot" id="dynastyTopAd" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto">
+          <span class="ad-slot-label">Advertisement</span>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -164,6 +179,14 @@
     <div class="results-container">
       <div class="results-header" id="resultsHeader"></div>
       <div class="results-body" id="resultsBody"></div>
+
+      <!-- BOTTOM AD BANNER -->
+      <div class="ad-banner-wrapper" style="margin-top:30px">
+        <div class="ad-slot" id="dynastyBottomAd" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto">
+          <span class="ad-slot-label">Advertisement</span>
+        </div>
+      </div>
+
       <button class="btn-primary" id="newGameBtn">New Dynasty →</button>
     </div>
   </section>
