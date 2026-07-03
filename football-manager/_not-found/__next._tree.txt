@@ -1,2 +1,2 @@
-:HL["/football-manager/_next/static/chunks/2lll4s-s6ukv-.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"u37B3_kzdhWDh4118KgXV"}
+:HL["/football-manager/_next/static/chunks/0l3unqw3gx445.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"3trXsVdc3UxRK-8ljbiOD"}

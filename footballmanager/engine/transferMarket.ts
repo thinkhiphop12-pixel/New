@@ -131,7 +131,9 @@ export function generateWeeklyOffers(state: GameState): TransferOffer[] {
   const offers: TransferOffer[] = [];
   for (const p of squad) {
     const interest = (p.rating - 62) / 90; // ~0 for squad players, ~0.3 for stars
-    if (Math.random() < Math.max(0.02, interest * 0.35)) {
+    // Unhappy players (benched, wanting a move) attract noticeably more interest.
+    const unhappyBoost = p.unhappy ? 0.12 : 0;
+    if (Math.random() < Math.max(0.02, interest * 0.35 + unhappyBoost)) {
       const bidder = others[Math.floor(Math.random() * others.length)];
       offers.push({
         playerId: p.id,
@@ -162,14 +164,18 @@ export interface ScoutReport {
 export function scoutRecommendations(state: GameState): ScoutReport[] {
   const squad = getSquad(state, state.userClubId);
   const targets = transferTargets(state).filter((p) => askingPrice(p) <= state.budget);
+  const scoutLevel = state.staff?.scout ?? 0;
+  const perPos = 4 + scoutLevel * 2; // a better scouting team surfaces more options
   const reports: ScoutReport[] = [];
   for (const pos of ['GK', 'DEF', 'MID', 'FWD'] as Position[]) {
     const group = squad.filter((p) => p.pos === pos);
     const need = group.length ? group.reduce((s, p) => s + p.rating, 0) / group.length : 50;
+    // A sharper scouting team lowers the bar for what counts as an upgrade lead.
+    const threshold = need - 1 - scoutLevel;
     const picks = targets
-      .filter((p) => p.pos === pos && p.rating >= need - 1)
+      .filter((p) => p.pos === pos && p.rating >= threshold)
       .sort((a, b) => b.rating + (28 - b.age) * 0.3 - (a.rating + (28 - a.age) * 0.3))
-      .slice(0, 4);
+      .slice(0, perPos);
     reports.push({ pos, need: Math.round(need), picks });
   }
   return reports;

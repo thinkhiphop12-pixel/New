@@ -67,6 +67,19 @@ export default function SeasonEndScreen({
         </ul>
       </div>
 
+      {summary.awards && summary.awards.length > 0 && (
+        <div className="fm-panel" style={{ textAlign: 'left' }}>
+          <p className="fm-label" style={{ marginTop: 0 }}>
+            Season awards
+          </p>
+          <ul className="fm-news">
+            {summary.awards.map((a, i) => (
+              <li key={i}>🏅 {a}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {state.jobOffers.length > 0 && (
         <div className="fm-panel" style={{ textAlign: 'left' }}>
           <p className="fm-label" style={{ marginTop: 0 }}>

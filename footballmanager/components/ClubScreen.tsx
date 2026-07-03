@@ -1,9 +1,21 @@
 'use client';
 
-import type { GameState } from '@/engine/types';
-import { ACADEMY_UPGRADE_COST } from '@/engine/gameRules';
-import { gateIncome, upgradeAcademy, weeklyWageBill } from '@/engine/seasonProgression';
+import type { GameState, Staff } from '@/engine/types';
+import { ACADEMY_UPGRADE_COST, STADIUM_UPGRADE_COST, STAFF_MAX_LEVEL, STAFF_UPGRADE_COST } from '@/engine/gameRules';
+import {
+  gateIncome, getStadiumLevel, getStaff, setCaptain, staffWageBill, upgradeAcademy, upgradeStadium,
+  upgradeStaff, weeklyWageBill,
+} from '@/engine/seasonProgression';
+import { getSquad } from '@/engine/teamManagement';
+import { traitNames } from '@/engine/traits';
 import { formatMoney } from '@/engine/utils';
+
+const STAFF_LABELS: Record<keyof Staff, string> = { coach: 'Assistant coach', physio: 'Physio', scout: 'Chief scout' };
+const STAFF_BLURB: Record<keyof Staff, string> = {
+  coach: 'Speeds up player development from training.',
+  physio: 'Fewer injuries, faster recovery.',
+  scout: 'More scouting leads, spotted earlier.',
+};
 
 function Bar({ value, label }: { value: number; label: string }) {
   const tone = value >= 65 ? 'good' : value >= 35 ? 'mid' : 'bad';
@@ -27,8 +39,14 @@ export default function ClubScreen({
 }) {
   const m = state.manager;
   const wages = weeklyWageBill(state);
+  const staffWages = staffWageBill(state);
   const gate = gateIncome(state);
   const upgradeCost = ACADEMY_UPGRADE_COST[state.academyLevel + 1];
+  const staff = getStaff(state);
+  const stadiumLevel = getStadiumLevel(state);
+  const stadiumCost = STADIUM_UPGRADE_COST[stadiumLevel + 1];
+  const squad = getSquad(state, state.userClubId).sort((a, b) => b.rating - a.rating);
+  const captain = state.captainId != null ? state.players[state.captainId] : null;
   const legends = Object.values(state.legacy)
     .map((l) => ({ ...l, score: l.apps + l.goals * 2 }))
     .sort((a, b) => b.score - a.score)
@@ -76,9 +94,10 @@ export default function ClubScreen({
           Finances
         </p>
         <p className="fm-club-line">
-          Weekly: {formatMoney(gate)} gate income − {formatMoney(wages)} wages ={' '}
-          <strong style={{ color: gate - wages >= 0 ? 'var(--green)' : 'var(--red)' }}>
-            {formatMoney(gate - wages)}
+          Weekly: {formatMoney(gate)} gate income − {formatMoney(wages)} player wages
+          {staffWages > 0 ? ` − ${formatMoney(staffWages)} staff wages` : ''} ={' '}
+          <strong style={{ color: gate - wages - staffWages >= 0 ? 'var(--green)' : 'var(--red)' }}>
+            {formatMoney(gate - wages - staffWages)}
           </strong>
         </p>
         {state.ledger.length > 0 && (
@@ -113,6 +132,75 @@ export default function ClubScreen({
             onClick={() => onChange(upgradeAcademy(state))}
           >
             Upgrade to level {state.academyLevel + 1} — {formatMoney(upgradeCost)}
+          </button>
+        )}
+      </div>
+
+      <div className="fm-panel">
+        <p className="fm-label" style={{ marginTop: 0 }}>
+          Captain
+        </p>
+        <p className="fm-club-line">
+          {captain
+            ? `${captain.name} wears the armband — a steady influence on the pitch, doubled if he's a natural Leader.`
+            : 'No captain appointed. A senior player with the Leader trait makes the strongest choice.'}
+        </p>
+        <div className="fm-pills">
+          {squad.slice(0, 8).map((p) => (
+            <button
+              key={p.id}
+              className={`fm-pill${state.captainId === p.id ? ' active' : ''}`}
+              onClick={() => onChange(setCaptain(state, state.captainId === p.id ? null : p.id))}
+            >
+              {p.name}
+              {traitNames(p).includes('Leader') ? ' ⭐' : ''}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="fm-panel">
+        <p className="fm-label" style={{ marginTop: 0 }}>
+          Backroom staff
+        </p>
+        {(Object.keys(STAFF_LABELS) as (keyof Staff)[]).map((role) => {
+          const level = staff[role];
+          const cost = STAFF_UPGRADE_COST[level + 1];
+          return (
+            <div key={role} style={{ marginBottom: 10 }}>
+              <p className="fm-club-line" style={{ marginBottom: 4 }}>
+                <strong>{STAFF_LABELS[role]}</strong> — level {level}/{STAFF_MAX_LEVEL}. {STAFF_BLURB[role]}
+              </p>
+              {level < STAFF_MAX_LEVEL && (
+                <button
+                  className="fm-btn fm-btn--secondary fm-btn--small"
+                  disabled={cost > state.budget}
+                  onClick={() => onChange(upgradeStaff(state, role))}
+                >
+                  Hire level {level + 1} — {formatMoney(cost)}
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="fm-panel">
+        <p className="fm-label" style={{ marginTop: 0 }}>
+          Stadium — level {stadiumLevel}/3
+        </p>
+        <p className="fm-club-line">
+          {stadiumLevel >= 3
+            ? 'Fully expanded — matchday income is at its peak.'
+            : `Expanding the stadium permanently raises gate income by 25% per level.`}
+        </p>
+        {stadiumCost && (
+          <button
+            className="fm-btn fm-btn--secondary fm-btn--small"
+            disabled={stadiumCost > state.budget}
+            onClick={() => onChange(upgradeStadium(state))}
+          >
+            Expand to level {stadiumLevel + 1} — {formatMoney(stadiumCost)}
           </button>
         )}
       </div>

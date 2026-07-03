@@ -101,6 +101,15 @@ export function lineupStrength(
     }
   });
 
+  // Captain's armband: a steadying presence, doubled for natural Leaders.
+  const cap = state.captainId != null && lineup.includes(state.captainId) ? state.players[state.captainId] : null;
+  if (cap) {
+    const capBonus = traitsFor(cap).some((t) => t.name === 'Leader') ? 1 : 0.5;
+    traitAtt += capBonus * 0.4;
+    traitMid += capBonus * 0.4;
+    traitDef += capBonus * 0.4;
+  }
+
   const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 30);
   const gk = avg(groups.GK);
   const def = avg(groups.DEF);

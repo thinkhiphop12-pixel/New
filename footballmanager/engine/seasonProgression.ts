@@ -1,13 +1,14 @@
 import type {
   Board, Club, Division, Fixture, GameData, GameState, JobOffer, Knockout, MatchReport, Player,
-  Position, SeasonSummary, TableRow,
+  Position, SeasonSummary, Staff, TableRow,
 } from './types';
 import {
   ACADEMY_UPGRADE_COST, CONTINENTAL_PRIZES, CONTINENTAL_SPOTS, CONTINENTAL_WEEKS, CUP_PRIZES,
-  CUP_WEEKS, GATE_BASE, MAX_SQUAD_SIZE, MORALE_DRAW, MORALE_LOSS, MORALE_MAX, MORALE_MIN,
-  MORALE_START, MORALE_WIN, PROMOTION_SPOTS, SEASON_ROUNDS, STARTING_BUDGET, getFormation, prizeMoney,
+  CUP_WEEKS, GATE_BASE, MAX_SQUAD_SIZE, MORALE_DRAW, MORALE_LOSS, MORALE_MAX,
+  MORALE_MIN, MORALE_START, MORALE_WIN, PROMOTION_SPOTS, SEASON_ROUNDS, STADIUM_UPGRADE_COST,
+  STAFF_MAX_LEVEL, STAFF_UPGRADE_COST, STAFF_WEEKLY_WAGE, STARTING_BUDGET, getFormation, prizeMoney,
 } from './gameRules';
-import { simulateMatch } from './matchSimulation';
+import { matchRatings, simulateMatch } from './matchSimulation';
 import { autoPickLineup, getSquad, isLineupValid, isOnLoan, squadAvgRating } from './teamManagement';
 import { clamp, marketValue, pickRandom, weeklyWage } from './utils';
 import { aiWeeklyTransfers, generateWeeklyOffers } from './transferMarket';
@@ -156,6 +157,8 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
       apps: 0,
       goals: 0,
       career: [],
+      seasonRatingSum: 0,
+      seasonRatingCount: 0,
     };
   }
 
@@ -176,6 +179,9 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
     board: { objective: '', minPosition: 17, confidence: 60 },
     manager: { name: managerName, reputation: userClub.division === 1 ? 50 : userClub.division === 2 ? 40 : 30, wins: 0, draws: 0, losses: 0, seasons: 0, trophies: [] },
     academyLevel: 1,
+    captainId: null,
+    staff: { coach: 0, physio: 0, scout: 0 },
+    stadiumLevel: 1,
     ledger: [],
     cup: { name: '', weeks: [], rounds: [], byes: [], round: 0, winnerId: null },
     continental: { name: '', weeks: [], rounds: [], byes: [], round: 0, winnerId: null },
@@ -252,11 +258,21 @@ export function seasonOver(state: GameState): boolean {
   return state.week > SEASON_ROUNDS;
 }
 
-/** Weekly matchday income: division base scaled by league position and fan mood. */
+/** Backroom staff with defaults for saves from before staff existed. */
+export function getStaff(state: GameState): Staff {
+  return state.staff ?? { coach: 0, physio: 0, scout: 0 };
+}
+
+export function getStadiumLevel(state: GameState): number {
+  return state.stadiumLevel ?? 1;
+}
+
+/** Weekly matchday income: division base scaled by position, fans and stadium. */
 export function gateIncome(state: GameState): number {
   const div = userDivision(state);
   const pos = Math.max(userPosition(state), 1);
-  const raw = GATE_BASE[div] * (0.55 + state.fanConfidence / 250 + (21 - pos) / 50);
+  const stadiumMult = 1 + 0.25 * (getStadiumLevel(state) - 1);
+  const raw = GATE_BASE[div] * (0.55 + state.fanConfidence / 250 + (21 - pos) / 50) * stadiumMult;
   return Math.round(raw / 10_000) * 10_000;
 }
 
@@ -267,11 +283,25 @@ export function weeklyWageBill(state: GameState): number {
     .reduce((s, p) => s + p.wage, 0);
 }
 
-/** Credit apps + goals from a match report onto the players involved. */
+/** Weekly staff wages (per level, per role). */
+export function staffWageBill(state: GameState): number {
+  const st = getStaff(state);
+  return (st.coach + st.physio + st.scout) * STAFF_WEEKLY_WAGE;
+}
+
+/** Credit apps, goals and match ratings from a report onto the players involved. */
 function applyReportStats(s: GameState, report: MatchReport): void {
+  const ratings = matchRatings(report);
   for (const id of [...report.homeLineup, ...report.awayLineup]) {
     const p = s.players[id];
-    if (p) p.apps++;
+    if (!p) continue;
+    p.apps++;
+    p.seasonRatingSum = (p.seasonRatingSum ?? 0) + (ratings[id] ?? 6.5);
+    p.seasonRatingCount = (p.seasonRatingCount ?? 0) + 1;
+    // Strong or weak showings nudge form.
+    const r = ratings[id] ?? 6.5;
+    if (r >= 8) p.form = clamp(p.form + 0.02, 0.85, 1.15);
+    else if (r <= 6) p.form = clamp(p.form - 0.02, 0.85, 1.15);
   }
   for (const e of report.events) {
     if (e.type === 'goal' && e.playerId !== undefined) {
@@ -389,6 +419,25 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
     if (p.injuryWeeks > 0) p.injuryWeeks--;
   }
 
+  // Squad happiness: good players left out of the XI week after week grow
+  // unhappy and start attracting transfer interest; starters settle back down.
+  for (const id of userClub.playerIds) {
+    const p = s.players[id];
+    if (!p || p.rating < 74 || p.injuryWeeks > 0 || isOnLoan(p)) continue;
+    const starting = s.lineup.includes(id);
+    if (!starting && !p.unhappy && Math.random() < 0.05) {
+      p.unhappy = true;
+      s.news.unshift(`${p.name} is unhappy with his lack of game time.`);
+    } else if (starting && p.unhappy && Math.random() < 0.3) {
+      p.unhappy = false;
+    }
+  }
+
+  // Backroom staff: a good coach sharpens training, a good physio speeds healing.
+  const staff = getStaff(s);
+  const coachMult = 1 + staff.coach * 0.35;
+  const physioHealChance = 0.5 + staff.physio * 0.15;
+
   // Training: focused development for the user's younger players.
   if (s.training !== 'fitness') {
     for (const id of userClub.playerIds) {
@@ -398,7 +447,7 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
         s.training === 'attack' ? p.pos === 'MID' || p.pos === 'FWD'
         : s.training === 'defense' ? p.pos === 'GK' || p.pos === 'DEF'
         : true;
-      const chance = s.training === 'balanced' ? 0.02 : matches ? 0.05 : 0;
+      const chance = (s.training === 'balanced' ? 0.02 : matches ? 0.05 : 0) * coachMult;
       if (Math.random() < chance) {
         p.rating++;
         p.value = marketValue(p.rating, p.age);
@@ -412,9 +461,18 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
       if (p && p.injuryWeeks > 0 && Math.random() < 0.5) p.injuryWeeks = Math.max(0, p.injuryWeeks - 1);
     }
   }
+  // A physio helps recovery regardless of training focus.
+  if (staff.physio > 0) {
+    for (const id of userClub.playerIds) {
+      const p = s.players[id];
+      if (p && p.injuryWeeks > 0 && Math.random() < physioHealChance * 0.5) {
+        p.injuryWeeks = Math.max(0, p.injuryWeeks - 1);
+      }
+    }
+  }
 
   // Injury risk for the user's starters (keeps the squad decision interesting).
-  const injuryChance = fitnessFocus ? 0.015 : 0.025;
+  const injuryChance = (fitnessFocus ? 0.015 : 0.025) * (1 - staff.physio * 0.1);
   for (const id of s.lineup) {
     if (id === null) continue;
     const p = s.players[id];
@@ -424,12 +482,14 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
     }
   }
 
-  // Finances: gate receipts in, wages out.
+  // Finances: gate receipts in, player and staff wages out.
   const gate = gateIncome(s);
   const wages = weeklyWageBill(s);
-  s.budget += gate - wages;
+  const staffWages = staffWageBill(s);
+  s.budget += gate - wages - staffWages;
   s.ledger.unshift({ week: round, desc: 'Gate receipts', amount: gate });
   s.ledger.unshift({ week: round, desc: 'Player wages', amount: -wages });
+  if (staffWages > 0) s.ledger.unshift({ week: round, desc: 'Staff wages', amount: -staffWages });
   if (s.budget < 0) {
     s.board.confidence = clamp(s.board.confidence - 2, 1, 99);
     if (round % 3 === 0) s.news.unshift('The club is in the red — the board is uneasy about the finances.');
@@ -491,6 +551,56 @@ export function upgradeAcademy(state: GameState): GameState {
   return s;
 }
 
+const STAFF_ROLE_LABEL: Record<keyof Staff, string> = {
+  coach: 'Assistant coach',
+  physio: 'Physio',
+  scout: 'Chief scout',
+};
+
+/** Hire the next level of a backroom staff role (coach / physio / scout). */
+export function upgradeStaff(state: GameState, role: keyof Staff): GameState {
+  const current = getStaff(state)[role];
+  if (current >= STAFF_MAX_LEVEL) return state;
+  const cost = STAFF_UPGRADE_COST[current + 1];
+  if (cost > state.budget) return state;
+  const s: GameState = structuredClone(state);
+  s.staff = { ...getStaff(s), [role]: current + 1 };
+  s.budget -= cost;
+  s.ledger.unshift({ week: s.week, desc: `${STAFF_ROLE_LABEL[role]} hired (level ${current + 1})`, amount: -cost });
+  s.news.unshift(`${STAFF_ROLE_LABEL[role]} upgraded to level ${current + 1}.`);
+  return s;
+}
+
+/** Expand the stadium (level 2, then 3) — permanently boosts gate income. */
+export function upgradeStadium(state: GameState): GameState {
+  const level = getStadiumLevel(state);
+  const cost = STADIUM_UPGRADE_COST[level + 1];
+  if (!cost || cost > state.budget) return state;
+  const s: GameState = structuredClone(state);
+  s.stadiumLevel = level + 1;
+  s.budget -= cost;
+  s.ledger.unshift({ week: s.week, desc: `Stadium expansion (level ${s.stadiumLevel})`, amount: -cost });
+  s.news.unshift(`Stadium expanded to level ${s.stadiumLevel} — matchday income will rise.`);
+  return s;
+}
+
+/** Appoint the squad captain. */
+export function setCaptain(state: GameState, playerId: number | null): GameState {
+  const s: GameState = structuredClone(state);
+  s.captainId = playerId;
+  const p = playerId !== null ? s.players[playerId] : null;
+  if (p) s.news.unshift(`${p.name} is named club captain.`);
+  return s;
+}
+
+/** Mark a player as unhappy (fewer minutes than they want) or settled. */
+export function setPlayerHappiness(state: GameState, playerId: number, unhappy: boolean): GameState {
+  const s: GameState = structuredClone(state);
+  const p = s.players[playerId];
+  if (p) p.unhappy = unhappy;
+  return s;
+}
+
 /** Take a job at another club (from a season-end offer). */
 export function switchJob(state: GameState, clubId: number): GameState {
   const s: GameState = structuredClone(state);
@@ -502,6 +612,9 @@ export function switchJob(state: GameState, clubId: number): GameState {
   s.morale = MORALE_START;
   s.fanConfidence = 60;
   s.academyLevel = 1;
+  s.staff = { coach: 0, physio: 0, scout: 0 };
+  s.stadiumLevel = 1;
+  s.captainId = null;
   s.legacy = {};
   s.records = { biggestWin: null, bestFinish: null, topSeasonScorer: null };
   s.ledger = [];
@@ -561,6 +674,34 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     s.legacy[id] = entry;
   }
 
+  // League-wide season awards, judged across every club in the user's division.
+  const awards: string[] = [];
+  const divPlayers = s.clubs
+    .filter((c) => c.division === div)
+    .flatMap((c) => c.playerIds.map((id) => s.players[id]))
+    .filter((p) => p && p.apps > 0);
+  const goldenBoot = [...divPlayers].sort((a, b) => b.goals - a.goals)[0];
+  if (goldenBoot && goldenBoot.goals > 0) {
+    const club = s.clubs.find((c) => c.playerIds.includes(goldenBoot.id));
+    awards.push(`Golden Boot: ${goldenBoot.name} (${club?.name ?? '—'}, ${goldenBoot.goals} goals)`);
+  }
+  const rated = divPlayers.filter((p) => (p.seasonRatingCount ?? 0) >= 8);
+  const potsRank = [...rated].sort(
+    (a, b) => (b.seasonRatingSum! / b.seasonRatingCount!) - (a.seasonRatingSum! / a.seasonRatingCount!)
+  );
+  const pots = potsRank[0];
+  if (pots) {
+    const club = s.clubs.find((c) => c.playerIds.includes(pots.id));
+    const avg = Math.round((pots.seasonRatingSum! / pots.seasonRatingCount!) * 10) / 10;
+    awards.push(`Player of the Season: ${pots.name} (${club?.name ?? '—'}, ${avg} avg rating)`);
+  }
+  const yotsRank = potsRank.filter((p) => p.age <= 21);
+  const yots = yotsRank[0];
+  if (yots) {
+    const club = s.clubs.find((c) => c.playerIds.includes(yots.id));
+    awards.push(`Young Player of the Season: ${yots.name} (${club?.name ?? '—'}, age ${yots.age})`);
+  }
+
   const summary: SeasonSummary = {
     year: s.seasonYear,
     division: div,
@@ -575,6 +716,7 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     sacked,
     cupRun: clubRunName(s.cup, s.userClubId),
     continentalRun: clubRunName(s.continental, s.userClubId),
+    awards,
   };
   s.history.push(summary);
   s.budget += prize;
@@ -598,6 +740,8 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     if (p.career.length > 12) p.career = p.career.slice(-12);
     p.apps = 0;
     p.goals = 0;
+    p.seasonRatingSum = 0;
+    p.seasonRatingCount = 0;
   }
 
   // Loans end: players return, youngsters come back sharper.
@@ -694,6 +838,7 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
         : summary.relegated
           ? `Relegated to Division ${userClub.division}. Time to rebuild.`
           : `Season over — finished ${position}${ordinal(position)}. New season begins.`,
+    ...awards,
     `Board objective: ${s.board.objective}.`,
   ];
   return { state: s, summary };

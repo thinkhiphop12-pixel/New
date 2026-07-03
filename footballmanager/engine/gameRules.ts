@@ -35,6 +35,17 @@ export const GATE_BASE: Record<Division, number> = { 1: 550_000, 2: 180_000, 3: 
 /** Cost to upgrade the youth academy to level 2 / level 3. */
 export const ACADEMY_UPGRADE_COST: Record<number, number> = { 2: 5_000_000, 3: 12_000_000 };
 
+/** Backroom staff: cost to reach each level (index = new level) and weekly wage per level. */
+export const STAFF_UPGRADE_COST = [0, 500_000, 1_500_000, 4_000_000];
+export const STAFF_WEEKLY_WAGE = 10_000; // per level, per role
+export const STAFF_MAX_LEVEL = 3;
+
+/** Stadium expansion: gate income multiplier is 1 + 0.25 × (level − 1). */
+export const STADIUM_UPGRADE_COST: Record<number, number> = { 2: 8_000_000, 3: 20_000_000 };
+
+/** In-match substitutions allowed at half time. */
+export const MAX_SUBS = 3;
+
 export const HOME_ADVANTAGE = 1.18;
 export const BASE_GOALS = 1.32; // league-average goals per team per match
 

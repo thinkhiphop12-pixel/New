@@ -21,16 +21,18 @@ export interface SaveMeta {
 
 type RawSave = Omit<GameState, 'version'> & { version: number };
 
-/** Upgrade a version-1 save in place to the current shape. */
+/** Upgrade any older save in place to the current shape (idempotent). */
 function migrate(raw: RawSave): GameState {
   const s = raw as unknown as GameState;
-  if (raw.version === 2) return s;
+  const wasV1 = raw.version !== 2;
   for (const p of Object.values(s.players) as Player[]) {
     p.wage = p.wage ?? weeklyWage(p.value, p.rating);
     p.contractYears = p.contractYears ?? 2;
     p.apps = p.apps ?? 0;
     p.goals = p.goals ?? 0;
     p.career = p.career ?? [];
+    p.seasonRatingSum = p.seasonRatingSum ?? 0;
+    p.seasonRatingCount = p.seasonRatingCount ?? 0;
   }
   const t = s.tactics as GameState['tactics'];
   t.tempo = t.tempo ?? 'normal';
@@ -43,6 +45,9 @@ function migrate(raw: RawSave): GameState {
     seasons: s.history?.length ?? 0, trophies: [],
   };
   s.academyLevel = s.academyLevel ?? 1;
+  s.staff = s.staff ?? { coach: 0, physio: 0, scout: 0 };
+  s.stadiumLevel = s.stadiumLevel ?? 1;
+  s.captainId = s.captainId ?? null;
   s.ledger = s.ledger ?? [];
   s.jobOffers = s.jobOffers ?? [];
   s.records = s.records ?? { biggestWin: null, bestFinish: null, topSeasonScorer: null };
@@ -57,7 +62,7 @@ function migrate(raw: RawSave): GameState {
       .map((c) => c.id);
     s.continental = makeContinental(d1);
   }
-  s.version = 2;
+  if (wasV1) s.version = 2;
   return s;
 }
 

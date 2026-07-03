@@ -36,6 +36,11 @@ export interface Player {
   /** Season year the loan ends; while set the player is away on loan. */
   onLoanUntil?: number;
   career: CareerEntry[];
+  /** Sum/count of match ratings this season (average = sum/count). */
+  seasonRatingSum?: number;
+  seasonRatingCount?: number;
+  /** Wants more minutes or a move — attracts extra transfer interest. */
+  unhappy?: boolean;
 }
 
 export interface Club {
@@ -203,6 +208,15 @@ export interface SeasonSummary {
   sacked: boolean;
   cupRun: string | null;
   continentalRun: string | null;
+  /** End-of-season award headlines (golden boot, player of the season …). */
+  awards?: string[];
+}
+
+/** Backroom staff levels (0 = vacant, 1–3). */
+export interface Staff {
+  coach: number;
+  physio: number;
+  scout: number;
 }
 
 export interface GameState {
@@ -223,6 +237,10 @@ export interface GameState {
   board: Board;
   manager: Manager;
   academyLevel: number; // 1–3
+  /** Squad captain (player id). Leaders make better captains. */
+  captainId?: number | null;
+  staff?: Staff;
+  stadiumLevel?: number; // 1–3, scales gate income
   ledger: LedgerEntry[];
   cup: Knockout;
   continental: Knockout;

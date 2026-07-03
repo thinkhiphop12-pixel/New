@@ -16,9 +16,15 @@ function lastName(name: string): string {
 function formTag(p: Player): React.ReactNode {
   if (isOnLoan(p)) return <span className="cold">On loan</span>;
   if (p.injuryWeeks > 0) return <span className="inj">INJ {p.injuryWeeks}w</span>;
+  if (p.unhappy) return <span className="inj">Unhappy</span>;
   if (p.form >= 1.06) return <span className="hot">In form</span>;
   if (p.form <= 0.94) return <span className="cold">Poor form</span>;
   return null;
+}
+
+function avgRating(p: Player): number | null {
+  if (!p.seasonRatingCount) return null;
+  return Math.round((p.seasonRatingSum! / p.seasonRatingCount) * 10) / 10;
 }
 
 export default function SquadScreen({
@@ -197,6 +203,8 @@ export default function SquadScreen({
           <p className="fm-club-line">
             {detail.rating} OVR · value {formatMoney(detail.value)} · {formatMoney(detail.wage)}/w ·{' '}
             {detail.contractYears}y contract · {detail.apps} apps, {detail.goals} goals this season
+            {avgRating(detail) !== null ? ` · ${avgRating(detail)} avg rating` : ''}
+            {detail.unhappy ? ' · ⚠ unhappy with game time' : ''}
           </p>
           {traitNames(detail).length > 0 && (
             <div className="fm-pills" style={{ marginBottom: 8 }}>

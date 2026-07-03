@@ -72,27 +72,41 @@ const CHANCE_TEXT = [
   'curls one inches over the bar.',
 ];
 
-/** Simulate one match. Does NOT mutate state — apply results via seasonProgression. */
-export function simulateMatch(state: GameState, homeId: number, awayId: number): MatchReport {
-  const home = setupFor(state, homeId, awayId);
-  const away = setupFor(state, awayId, homeId);
+/** Half-time team talks: small, risky nudges to the second half. */
+export type TeamTalk = 'calm' | 'encourage' | 'hairdryer';
 
-  const hs = lineupStrength(state, home.lineup, home.formation, home.tactics, home.morale, home.chemistry);
-  const as = lineupStrength(state, away.lineup, away.formation, away.tactics, away.morale, away.chemistry);
+const TALK_MODS: Record<TeamTalk, { att: number; concede: number }> = {
+  calm: { att: 0.98, concede: 0.93 },
+  encourage: { att: 1.04, concede: 1 },
+  hairdryer: { att: 1.08, concede: 1.05 },
+};
 
-  const homeXG = expectedGoals(hs.attack, as.defense, home.tactics, true) * concedeMult(away.tactics);
-  const awayXG = expectedGoals(as.attack, hs.defense, away.tactics, false) * concedeMult(home.tactics);
+export interface HalfOptions {
+  /** Override the user's lineup (half-time substitutions). */
+  userLineup?: (number | null)[];
+  /** Half-time team talk (applies to the user's side, half 2 only). */
+  talk?: TeamTalk;
+}
 
+function buildReport(
+  state: GameState,
+  home: SideSetup,
+  away: SideSetup,
+  homeXG: number,
+  awayXG: number,
+  minMinute: number,
+  maxMinute: number,
+  closing: string
+): MatchReport {
   const homeGoals = poisson(homeXG);
   const awayGoals = poisson(awayXG);
-
   const clubName = (id: number) => state.clubs.find((c) => c.id === id)?.name ?? '???';
-
-  const events: MatchEvent[] = [{ minute: 1, type: 'info', clubId: 0, text: 'Kick-off!' }];
+  const span = maxMinute - minMinute;
+  const events: MatchEvent[] = [];
 
   const addGoals = (side: SideSetup, count: number) => {
     for (let i = 0; i < count; i++) {
-      const minute = 2 + Math.floor(Math.random() * 89);
+      const minute = minMinute + Math.floor(Math.random() * span);
       const scorer = pickScorer(state, side);
       events.push({
         minute,
@@ -109,18 +123,18 @@ export function simulateMatch(state: GameState, homeId: number, awayId: number):
   // Near-miss chances proportional to xG, plus a card or two for flavour.
   for (const side of [home, away]) {
     const xg = side === home ? homeXG : awayXG;
-    const chances = poisson(Math.max(xg * 1.1, 0.6));
+    const chances = poisson(Math.max(xg * 1.1, 0.3));
     for (let i = 0; i < chances; i++) {
       events.push({
-        minute: 2 + Math.floor(Math.random() * 89),
+        minute: minMinute + Math.floor(Math.random() * span),
         type: 'chance',
         clubId: side.clubId,
         text: `${pickScorer(state, side)?.name ?? 'A player'} ${CHANCE_TEXT[Math.floor(Math.random() * CHANCE_TEXT.length)]}`,
       });
     }
-    if (Math.random() < 0.55) {
+    if (Math.random() < 0.3) {
       events.push({
-        minute: 20 + Math.floor(Math.random() * 70),
+        minute: minMinute + Math.floor(Math.random() * span),
         type: 'card',
         clubId: side.clubId,
         text: `Yellow card for ${clubName(side.clubId)} after a late challenge.`,
@@ -128,12 +142,12 @@ export function simulateMatch(state: GameState, homeId: number, awayId: number):
     }
   }
 
-  events.push({ minute: 90, type: 'info', clubId: 0, text: 'Full time.' });
+  events.push({ minute: maxMinute + 1, type: 'info', clubId: 0, text: closing });
   events.sort((a, b) => a.minute - b.minute);
 
   return {
-    homeId,
-    awayId,
+    homeId: home.clubId,
+    awayId: away.clubId,
     homeGoals,
     awayGoals,
     homeXG: Math.round(homeXG * 100) / 100,
@@ -142,4 +156,98 @@ export function simulateMatch(state: GameState, homeId: number, awayId: number):
     homeLineup: home.lineup.filter((id): id is number => id !== null),
     awayLineup: away.lineup.filter((id): id is number => id !== null),
   };
+}
+
+function computeXG(state: GameState, home: SideSetup, away: SideSetup): { homeXG: number; awayXG: number } {
+  const hs = lineupStrength(state, home.lineup, home.formation, home.tactics, home.morale, home.chemistry);
+  const as = lineupStrength(state, away.lineup, away.formation, away.tactics, away.morale, away.chemistry);
+  return {
+    homeXG: expectedGoals(hs.attack, as.defense, home.tactics, true) * concedeMult(away.tactics),
+    awayXG: expectedGoals(as.attack, hs.defense, away.tactics, false) * concedeMult(home.tactics),
+  };
+}
+
+/** Simulate one match. Does NOT mutate state — apply results via seasonProgression. */
+export function simulateMatch(state: GameState, homeId: number, awayId: number): MatchReport {
+  const home = setupFor(state, homeId, awayId);
+  const away = setupFor(state, awayId, homeId);
+  const { homeXG, awayXG } = computeXG(state, home, away);
+  const report = buildReport(state, home, away, homeXG, awayXG, 2, 89, 'Full time.');
+  report.events.unshift({ minute: 1, type: 'info', clubId: 0, text: 'Kick-off!' });
+  return report;
+}
+
+/**
+ * Simulate one half of the user's match (interactive matchday: half-time
+ * substitutions and team talks change the second half).
+ */
+export function simulateHalf(
+  state: GameState,
+  homeId: number,
+  awayId: number,
+  half: 1 | 2,
+  opts: HalfOptions = {}
+): MatchReport {
+  const home = setupFor(state, homeId, awayId);
+  const away = setupFor(state, awayId, homeId);
+  const userSide = home.clubId === state.userClubId ? home : away.clubId === state.userClubId ? away : null;
+  if (userSide && opts.userLineup) userSide.lineup = opts.userLineup;
+  let { homeXG, awayXG } = computeXG(state, home, away);
+  homeXG /= 2;
+  awayXG /= 2;
+  if (half === 2 && userSide && opts.talk) {
+    const mod = TALK_MODS[opts.talk];
+    if (userSide === home) {
+      homeXG *= mod.att;
+      awayXG *= mod.concede;
+    } else {
+      awayXG *= mod.att;
+      homeXG *= mod.concede;
+    }
+  }
+  const report =
+    half === 1
+      ? buildReport(state, home, away, homeXG, awayXG, 2, 44, 'Half time.')
+      : buildReport(state, home, away, homeXG, awayXG, 46, 89, 'Full time.');
+  if (half === 1) report.events.unshift({ minute: 1, type: 'info', clubId: 0, text: 'Kick-off!' });
+  return report;
+}
+
+/** Combine two half-reports into one full-match report. */
+export function mergeReports(h1: MatchReport, h2: MatchReport): MatchReport {
+  const union = (a: number[], b: number[]) => [...new Set([...a, ...b])];
+  return {
+    homeId: h1.homeId,
+    awayId: h1.awayId,
+    homeGoals: h1.homeGoals + h2.homeGoals,
+    awayGoals: h1.awayGoals + h2.awayGoals,
+    homeXG: Math.round((h1.homeXG + h2.homeXG) * 100) / 100,
+    awayXG: Math.round((h1.awayXG + h2.awayXG) * 100) / 100,
+    events: [...h1.events, ...h2.events].sort((a, b) => a.minute - b.minute),
+    homeLineup: union(h1.homeLineup, h2.homeLineup),
+    awayLineup: union(h1.awayLineup, h2.awayLineup),
+  };
+}
+
+/**
+ * Match ratings (6.0–10.0) for everyone involved. Deterministic given the
+ * report, so the UI and the season-stats pass agree without storing them.
+ */
+export function matchRatings(report: MatchReport): Record<number, number> {
+  const ratings: Record<number, number> = {};
+  const goalsBy: Record<number, number> = {};
+  for (const e of report.events) {
+    if (e.type === 'goal' && e.playerId !== undefined) goalsBy[e.playerId] = (goalsBy[e.playerId] ?? 0) + 1;
+  }
+  const score = (id: number, isHome: boolean) => {
+    const gf = isHome ? report.homeGoals : report.awayGoals;
+    const ga = isHome ? report.awayGoals : report.homeGoals;
+    const result = gf > ga ? 0.5 : gf < ga ? -0.5 : 0;
+    const noise = (((id * 2654435761 + gf * 97 + ga * 31) >>> 0) % 100) / 100 - 0.5; // ±0.5, deterministic
+    const raw = 6.6 + result + (goalsBy[id] ?? 0) * 1.1 + noise;
+    return Math.round(Math.min(10, Math.max(5.5, raw)) * 10) / 10;
+  };
+  for (const id of report.homeLineup) ratings[id] = score(id, true);
+  for (const id of report.awayLineup) ratings[id] = score(id, false);
+  return ratings;
 }
