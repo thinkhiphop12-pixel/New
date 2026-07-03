@@ -6,22 +6,12 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://ballknw.com/football-manager/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://ballknw.com/perfect-cup/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://ballknw.com/lineup/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://ballknw.com/boardroom/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://ballknw.com/hub/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>

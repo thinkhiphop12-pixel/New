@@ -16,7 +16,7 @@ const ADSTERRA_DIRECT_LINK = '';          // intentionally off
 // Fanatics partner tags. The homepage affiliate block stays hidden until
 // both are set (see index.html footer script).
 const AFFILIATE_LINKS = {
-  amazon: '',   // e.g. 'https://www.amazon.com/s?k=football+gear&tag=yourtag-20'
+  amazon: 'https://www.amazon.co.uk/s?k=football+shirts&tag=lloydevans01-21',
   fanatics: ''  // e.g. 'https://www.fanatics.com/...?affid=yourid'
 };
 
@@ -69,6 +69,43 @@ function loadAdsterraScript(src, container){
   s.async = true;
   s.onerror = () => { if (container) container.classList.add('ad-load-failed'); };
   (container || document.head).appendChild(s);
+}
+
+// ---- Baseline ad-slot styles ----
+// Injected so pages that don't load the root styles.css (homepage, Next.js
+// game builds) still render slots, the adblock banner and interstitials
+// correctly. Skipped when the page already ships .ad-slot styles.
+function injectBaseAdStyles(){
+  if (document.getElementById('bkAdBaseStyles')) return;
+  const style = document.createElement('style');
+  style.id = 'bkAdBaseStyles';
+  style.textContent = `
+    .ad-slot{margin:20px auto;min-height:90px;max-width:728px;display:flex;align-items:center;
+      justify-content:center;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.14);
+      border-radius:14px;position:relative;overflow:hidden;}
+    .ad-slot-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#8a8a8e;}
+    .ad-slot.is-filled .ad-slot-label{display:none;}
+    .ad-slot ins.adsbygoogle{width:100%;}
+    .ad-slot.ad-load-failed{opacity:.4;}
+    .soft-banner{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:600;
+      max-width:min(92vw,480px);background:#10131a;border:1px solid rgba(255,255,255,.14);
+      border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;
+      font-size:13px;color:#e8e8ea;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+    .soft-banner-dismiss{background:transparent;border:none;cursor:pointer;color:#8a8a8e;font-size:18px;line-height:1;flex-shrink:0;}
+    .interstitial-overlay{position:fixed;inset:0;z-index:900;background:rgba(5,8,6,.88);
+      display:flex;align-items:center;justify-content:center;}
+    .interstitial-box{background:#10131a;border:1px solid rgba(255,255,255,.14);border-radius:14px;
+      padding:18px;width:min(90vw,420px);display:flex;flex-direction:column;gap:14px;}
+    .interstitial-ad-slot{margin:0;min-height:200px;}
+    .interstitial-skip{align-self:flex-end;background:rgba(255,255,255,.06);color:#e8e8ea;cursor:pointer;
+      border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;}
+    .interstitial-skip:disabled{color:#8a8a8e;cursor:not-allowed;}
+    .sticky-footer-ad{position:fixed;left:0;right:0;bottom:0;z-index:500;margin:0;min-height:50px;
+      max-height:90px;border-radius:0;border-width:1px 0 0;max-width:none;}
+    .sticky-ad-close{position:absolute;top:4px;right:6px;width:20px;height:20px;border:none;cursor:pointer;
+      border-radius:50%;background:#050505;color:#8a8a8e;font-size:14px;line-height:1;
+      display:flex;align-items:center;justify-content:center;}`;
+  document.head.appendChild(style);
 }
 
 // ---- Lazy load + viewable refresh for .ad-slot elements ----
@@ -291,6 +328,7 @@ function fireDirectLinkAd(placement){
 
 function initAds(){
   if (adsRemoved() || getConsent() !== 'all') return;
+  injectBaseAdStyles();
   // Capped at 2 ad surfaces per page (one in-content slot + one side surface)
   // per product decision — sticky footer and popunder stay disabled. On wide
   // game screens the second surface is the left side-rail; everywhere else
@@ -304,6 +342,12 @@ function initAds(){
   setTimeout(detectAdblockAndPrompt, 500);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (getConsent() === 'all') initAds();
-});
+function bkAdsBoot(){ if (getConsent() === 'all') initAds(); }
+
+// Run now if the DOM is already parsed (the Next.js games inject this script
+// after DOMContentLoaded); otherwise wait for it.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bkAdsBoot);
+} else {
+  bkAdsBoot();
+}
