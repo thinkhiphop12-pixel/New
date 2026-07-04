@@ -97,7 +97,7 @@ export default function FootballManagerGame() {
         <a className="fm-header__brand" href="https://ballknw.com">
           BALLKNW
         </a>
-        <span className="fm-header__title">Football Manager</span>
+        <span className="fm-header__title">Gaffer</span>
       </header>
       <main className="fm-main">
         {loadError ? (
