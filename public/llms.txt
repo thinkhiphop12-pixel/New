@@ -15,11 +15,11 @@
 - **Features:** Daily streaks, shareable emoji result grids
 - **URL:** https://ballknw.com/scout/
 
-### Name Your Side (8-0-0)
+### Name Your Side (Draft XI)
 - **Type:** Squad draft and tournament simulation
-- **Gameplay:** Draft 11 players (one per squad) from randomly selected real World Cup squads (1930–2026), then guide them through a tournament
-- **Features:** Formation selection, full XI drafting, tactical decisions, tournament play
-- **URL:** https://ballknw.com/perfect-cup/
+- **Gameplay:** Spin for real World Cup squads, draft a full XI (one player per squad) into your formation, guide them through tournament matches
+- **Features:** Formation selection, full XI drafting, tournament play
+- **URL:** https://game-rules-and-stats.vercel.app/
 
 ### Gaffer
 - **Type:** Club management simulation
