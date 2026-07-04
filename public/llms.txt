@@ -9,9 +9,9 @@
 ## Games
 
 ### Daily Scout
-- **Type:** Daily word-puzzle variant (Wordle-style)
-- **Gameplay:** Guess a mystery World Cup player in 6 attempts
-- **Clues:** Nation, position, era, rating, and pace revealed after each guess
+- **Type:** Daily grouping puzzle (Connections-style)
+- **Gameplay:** Sort 16 footballers into 4 sets of 4 by a hidden shared theme (nation, position, rating tier, or World Cup year)
+- **Rules:** 4 wrong guesses allowed before the puzzle ends
 - **Features:** Daily streaks, shareable emoji result grids
 - **URL:** https://ballknw.com/scout/
 
@@ -21,7 +21,7 @@
 - **Features:** Formation selection, full XI drafting, tactical decisions, tournament play
 - **URL:** https://ballknw.com/perfect-cup/
 
-### Football Manager
+### Gaffer
 - **Type:** Club management simulation
 - **Gameplay:** Take charge of a club, select formation and XI, trade on the transfer market, manage a full 38-round season
 - **Features:** League navigation, promotion/relegation, tactical management

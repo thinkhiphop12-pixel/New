@@ -385,6 +385,17 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--gold); }
 }
 .fm-job-offer:first-of-type { border-top: none; }
 
+/* In-match pause overlay */
+.fm-pause-overlay {
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(4, 10, 7, 0.82);
+  display: flex; align-items: flex-start; justify-content: center;
+  overflow-y: auto; padding: 24px 14px;
+}
+.fm-pause-overlay__panel {
+  width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 12px;
+}
+
 @media (max-width: 560px) {
   .fm-hub-stats { margin-left: 0; width: 100%; justify-content: space-between; }
   .fm-stat { min-width: 0; flex: 1; }
