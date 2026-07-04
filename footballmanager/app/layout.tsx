@@ -11,14 +11,14 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://ballknw.com'),
-  title: 'Football Manager — BALLKNW',
+  title: 'Gaffer — BALLKNW',
   description:
-    'Take charge of a real club: pick your formation, work the transfer market, and manage your way through a full league season. Free browser game, no account needed.',
+    'Take charge of a club: pick your formation, work the transfer market, and manage your way through a full league season. Free browser game, no account needed.',
   alternates: { canonical: '/football-manager/' },
   openGraph: {
     siteName: 'BALLKNW',
     url: '/football-manager/',
-    title: 'Football Manager — BALLKNW',
+    title: 'Gaffer — BALLKNW',
     description:
       'Pick your formation, work the transfer market, and manage a full season — promotion, relegation and all.',
     images: ['/assets/og-image.png'],
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Football Manager — BALLKNW',
+    title: 'Gaffer — BALLKNW',
     images: ['/assets/og-image.png'],
   },
   icons: { icon: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/favicon.svg` },

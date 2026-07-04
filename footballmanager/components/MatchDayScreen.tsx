@@ -5,6 +5,7 @@ import type { GameState, MatchReport, Player } from '@/engine/types';
 import { mergeReports, simulateHalf, type TeamTalk } from '@/engine/matchSimulation';
 import { nextUserFixture } from '@/engine/seasonProgression';
 import { availableSquad } from '@/engine/teamManagement';
+import { formatMoney } from '@/engine/utils';
 
 type Phase = 'half1' | 'halftime' | 'half2' | 'full';
 
@@ -23,6 +24,7 @@ export default function MatchDayScreen({
   const [lineup, setLineup] = useState<(number | null)[]>(state.lineup);
   const [subOut, setSubOut] = useState<number | null>(null);
   const [subsUsed, setSubsUsed] = useState(0);
+  const [paused, setPaused] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fixture = nextUserFixture(state);
@@ -35,7 +37,7 @@ export default function MatchDayScreen({
 
   useEffect(() => {
     const report = phase === 'half1' ? half1Report : phase === 'half2' ? half2Report : null;
-    if (!report || phase === 'halftime' || phase === 'full') return;
+    if (!report || phase === 'halftime' || phase === 'full' || paused) return;
     timer.current = setInterval(() => {
       setMinute((m) => {
         const cap = phase === 'half1' ? 45 : 90;
@@ -49,7 +51,7 @@ export default function MatchDayScreen({
     return () => {
       if (timer.current) clearInterval(timer.current);
     };
-  }, [phase, half1Report, half2Report]);
+  }, [phase, half1Report, half2Report, paused]);
 
   if (!fixture) return null;
 
@@ -119,6 +121,14 @@ export default function MatchDayScreen({
           <span className="code">{away?.code} · AWAY</span>
         </div>
       </div>
+
+      {(phase === 'half1' || phase === 'half2') && !finished && (
+        <div className="fm-actions">
+          <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setPaused(true)}>
+            Pause
+          </button>
+        </div>
+      )}
 
       {phase === 'half1' && minute < 45 && (
         <div className="fm-actions">
@@ -237,6 +247,80 @@ export default function MatchDayScreen({
           </li>
         ))}
       </ul>
+
+      {paused && (
+        <div className="fm-pause-overlay">
+          <div className="fm-pause-overlay__panel">
+            <p className="fm-label" style={{ marginTop: 0 }}>
+              Match paused
+            </p>
+            <p className="fm-hint" style={{ textAlign: 'left', marginBottom: 10 }}>
+              The clock&apos;s stopped — here&apos;s where things stand.
+            </p>
+
+            <div className="fm-panel">
+              <p className="fm-label" style={{ marginTop: 0 }}>
+                Tactics
+              </p>
+              <p className="fm-club-line" style={{ marginBottom: 0 }}>
+                {state.tactics.style} · {state.tactics.pressing} press · {state.tactics.tempo} tempo ·{' '}
+                {state.tactics.width} width
+              </p>
+            </div>
+
+            <div className="fm-panel">
+              <p className="fm-label" style={{ marginTop: 0 }}>
+                On the pitch
+              </p>
+              <div className="fm-player-list">
+                {lineup
+                  .filter((id): id is number => id !== null)
+                  .map((id) => state.players[id])
+                  .filter((p): p is Player => !!p)
+                  .map((p) => (
+                    <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`}>
+                      <span className="fm-player-row__badge">{p.role}</span>
+                      <span className="fm-player-row__name">{p.name}</span>
+                      <span className="fm-player-row__rating">{p.rating}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            <div className="fm-panel">
+              <p className="fm-label" style={{ marginTop: 0 }}>
+                Bench
+              </p>
+              <div className="fm-player-list">
+                {bench.map((p) => (
+                  <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`}>
+                    <span className="fm-player-row__badge">{p.role}</span>
+                    <span className="fm-player-row__name">{p.name}</span>
+                    <span className="fm-player-row__rating">{p.rating}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="fm-panel">
+              <p className="fm-label" style={{ marginTop: 0 }}>
+                Club snapshot
+              </p>
+              <p className="fm-club-line">Budget: {formatMoney(state.budget)}</p>
+              <p className="fm-club-line">Board confidence: {state.board.confidence}</p>
+              <p className="fm-club-line" style={{ marginBottom: 0 }}>
+                Fan confidence: {state.fanConfidence}
+              </p>
+            </div>
+
+            <div className="fm-actions">
+              <button className="fm-btn fm-btn--primary fm-btn--large" onClick={() => setPaused(false)}>
+                Resume match
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

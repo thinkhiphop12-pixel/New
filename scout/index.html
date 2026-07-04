@@ -3,77 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scout • Daily World Cup Player Guess | BALLKNW</title>
-    <meta name="description" content="Guess today's mystery World Cup player in 6 tries. Score on nation, position, era, rating and pace. Daily streaks + shareable emoji grids.">
+    <title>Scout • Daily Football Connections | BALLKNW</title>
+    <meta name="description" content="Group 16 footballers into 4 sets of 4 by a hidden theme — shared nation, position, rating tier or World Cup year. New puzzle daily, 4 mistakes allowed, shareable results.">
     <link rel="canonical" href="https://ballknw.com/scout/">
     <!-- Google AdSense (site verification + library load) -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2741492847457362" crossorigin="anonymous" data-adsense="1"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Anton&amp;display=swap');
-        body { font-family: 'Inter', system_ui, sans-serif; }
-        .font-display { font-family: 'Anton', system_ui, sans-serif; letter-spacing: -1px; }
-        
-        .guess-row {
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Anton&display=swap');
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        .font-display { font-family: 'Anton', system-ui, sans-serif; letter-spacing: -1px; }
+
+        .card-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 8px;
         }
-        
-        .guess-cell {
+
+        .player-card {
             aspect-ratio: 1;
             border: 2px solid #3f3f46;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
+            text-align: center;
+            padding: 6px;
             font-weight: 700;
-            font-size: 0.95rem;
-            transition: all 0.1s ease;
+            font-size: 0.8rem;
+            line-height: 1.15;
+            cursor: pointer;
+            background: #18181b;
+            transition: all 0.12s ease;
+            user-select: none;
         }
-        
-        .guess-cell.exact { background: #166534; border-color: #4ade80; color: white; }
-        .guess-cell.close { background: #854d0e; border-color: #facc15; color: white; }
-        .guess-cell.wrong { background: #27251f; border-color: #52525b; color: #a1a1aa; }
-        
-        .player-option {
-            transition: all 0.1s ease;
-        }
-        
-        .player-option:hover {
-            background-color: #27251f;
-            transform: translateY(-1px);
-        }
-        
-        .player-option.selected {
-            background-color: #166534;
-            border-color: #4ade80;
-        }
+        .player-card:hover { border-color: #71717a; transform: translateY(-1px); }
+        .player-card.selected { background: #3f3f46; border-color: #e4e4e7; color: white; }
+        .player-card.solving { animation: pulse-out 0.4s ease; }
 
-        .streak-flame {
-            animation: flame 1.5s infinite ease-in-out;
+        .solved-row {
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
         }
+        .solved-row .theme { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; }
+        .solved-row .names { font-size: 0.85rem; font-weight: 600; }
+
+        .grp-0 { background: #451a03; border: 2px solid #f59e0b; color: #fde68a; }
+        .grp-1 { background: #052e16; border: 2px solid #22c55e; color: #bbf7d0; }
+        .grp-2 { background: #082f49; border: 2px solid #38bdf8; color: #bae6fd; }
+        .grp-3 { background: #3b0764; border: 2px solid #a855f7; color: #e9d5ff; }
+
+        .mistake-dot { width: 10px; height: 10px; border-radius: 50%; background: #3f3f46; }
+        .mistake-dot.used { background: #f2667a; }
+
+        .streak-flame { animation: flame 1.5s infinite ease-in-out; }
+        @keyframes flame { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+        @keyframes pulse-out { 0%{transform:scale(1)} 50%{transform:scale(0.92);opacity:0.5} 100%{transform:scale(1)} }
     </style>
 </head>
 <body class="bg-zinc-950 text-zinc-200">
     <div class="max-w-lg mx-auto px-5 pt-8 pb-12">
         <!-- Header -->
-        <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-emerald-400 rounded-2xl flex items-center justify-center">
-                    <span class="text-zinc-950 text-3xl">🕵️</span>
+                    <span class="text-zinc-950 text-2xl">🧩</span>
                 </div>
                 <div>
                     <span class="font-display text-4xl tracking-tighter">SCOUT</span>
-                    <div id="puzzle-number" class="text-emerald-400 text-xs font-mono tracking-[2px] -mt-1">SCOUT #247</div>
+                    <div id="puzzle-number" class="text-emerald-400 text-xs font-mono tracking-[2px] -mt-1">SCOUT #—</div>
                 </div>
             </div>
-            
+
             <div class="text-right">
                 <div class="flex items-center justify-end gap-1.5">
                     <i class="fa-solid fa-fire text-orange-400 streak-flame"></i>
-                    <span id="streak-count" class="font-mono text-2xl font-bold text-orange-400">7</span>
+                    <span id="streak-count" class="font-mono text-2xl font-bold text-orange-400">0</span>
                 </div>
                 <div class="text-[10px] text-zinc-500 -mt-1">DAY STREAK</div>
             </div>
@@ -81,37 +90,43 @@
 
         <!-- Instructions -->
         <div class="text-center mb-6">
-            <p class="text-zinc-400 text-sm">Guess the mystery World Cup player.<br>Score on <span class="font-semibold">nation • position • era • rating • pace</span>.</p>
+            <p class="text-zinc-400 text-sm">Group these 16 footballers into <span class="font-semibold">4 sets of 4</span> by a hidden theme.<br>4 wrong guesses and it's over.</p>
         </div>
 
-        <!-- Game Area -->
-        <div id="game-area">
-            <!-- Guesses will be rendered here by JS -->
-            <div id="guesses-container" class="space-y-3 mb-6"></div>
+        <!-- Loading -->
+        <div id="loading" class="text-center text-zinc-500 py-10">Loading player database…</div>
 
-            <!-- Input / Options -->
-            <div class="mb-4">
-                <div class="text-xs uppercase tracking-widest text-zinc-500 mb-2 px-1">YOUR GUESS</div>
-                
-                <!-- Searchable player list (simplified for demo) -->
-                <div class="relative">
-                    <input id="guess-input" 
-                           type="text" 
-                           placeholder="Type player name or click suggestions..."
-                           class="w-full bg-zinc-900 border border-zinc-700 focus:border-emerald-400 rounded-2xl px-5 py-4 text-lg placeholder:text-zinc-500 outline-none"
-                           onkeyup="filterPlayers()">
-                    
-                    <div id="player-suggestions" 
-                         class="absolute z-10 mt-1 w-full max-h-64 overflow-auto bg-zinc-900 border border-zinc-700 rounded-3xl shadow-2xl hidden">
-                        <!-- Populated by JS -->
-                    </div>
-                </div>
+        <!-- Game Area -->
+        <div id="game-area" class="hidden">
+            <!-- Mistakes -->
+            <div class="flex items-center justify-center gap-2 mb-4">
+                <span class="text-xs text-zinc-500 uppercase tracking-widest mr-1">Mistakes</span>
+                <div id="mistakes-row" class="flex gap-1.5"></div>
             </div>
 
-            <button onclick="submitGuess()" 
-                    class="w-full py-4 bg-emerald-400 hover:bg-emerald-300 active:bg-emerald-500 text-emerald-950 font-extrabold text-xl rounded-3xl transition flex items-center justify-center gap-2">
-                SUBMIT GUESS <span class="text-sm">(or press Enter)</span>
-            </button>
+            <!-- Solved groups -->
+            <div id="solved-groups" class="flex flex-col gap-2 mb-3"></div>
+
+            <!-- One away hint -->
+            <div id="one-away" class="hidden text-center text-amber-400 text-sm font-semibold mb-2">One away…</div>
+
+            <!-- Card grid -->
+            <div id="card-grid" class="card-grid mb-4"></div>
+
+            <div class="flex gap-3">
+                <button id="deselect-btn" onclick="deselectAll()"
+                        class="flex-1 py-3 border border-zinc-700 hover:bg-zinc-900 rounded-2xl text-sm font-semibold">
+                    Deselect all
+                </button>
+                <button id="shuffle-btn" onclick="shuffleBoard()"
+                        class="flex-1 py-3 border border-zinc-700 hover:bg-zinc-900 rounded-2xl text-sm font-semibold">
+                    <i class="fa-solid fa-shuffle"></i> Shuffle
+                </button>
+                <button id="submit-btn" onclick="submitGuess()" disabled
+                        class="flex-1 py-3 bg-emerald-400 disabled:bg-zinc-800 disabled:text-zinc-600 hover:bg-emerald-300 active:bg-emerald-500 text-emerald-950 font-extrabold rounded-2xl transition">
+                    Submit
+                </button>
+            </div>
         </div>
 
         <!-- Results / Share -->
@@ -124,8 +139,8 @@
             <!-- Emoji Grid -->
             <div class="mb-6">
                 <div class="text-xs uppercase tracking-[2px] text-center text-zinc-500 mb-2">SHARE YOUR GRID</div>
-                <div id="emoji-grid" 
-                     class="bg-zinc-900 border border-zinc-700 p-4 rounded-3xl font-mono text-3xl tracking-[4px] text-center cursor-pointer hover:bg-zinc-800 transition"
+                <div id="emoji-grid"
+                     class="bg-zinc-900 border border-zinc-700 p-4 rounded-3xl font-mono text-2xl tracking-[4px] text-center cursor-pointer hover:bg-zinc-800 transition"
                      onclick="copyShareText()">
                     <!-- Populated by JS -->
                 </div>
@@ -133,327 +148,372 @@
             </div>
 
             <div class="flex gap-3">
-                <button onclick="copyShareText()" 
+                <button onclick="copyShareText()"
                         class="flex-1 py-3.5 border border-zinc-700 hover:bg-zinc-900 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2">
                     <i class="fa-solid fa-copy"></i> <span>COPY GRID</span>
                 </button>
-                <button onclick="shareNative()" 
+                <button onclick="shareNative()"
                         class="flex-1 py-3.5 bg-emerald-400 text-emerald-950 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2">
                     <i class="fa-solid fa-share-alt"></i> <span>SHARE</span>
                 </button>
             </div>
-
-            <button onclick="resetGame()" 
-                    class="mt-4 w-full py-3 text-sm text-zinc-400 hover:text-white flex items-center justify-center gap-2">
-                <i class="fa-solid fa-redo"></i> <span>Play again tomorrow (new puzzle)</span>
-            </button>
         </div>
 
         <!-- Streak Stats -->
         <div class="mt-10 text-center text-xs text-zinc-500">
             <div class="flex justify-center gap-6">
-                <div>Current streak: <span id="current-streak" class="font-mono text-emerald-400">7</span></div>
-                <div>Best streak: <span id="best-streak" class="font-mono text-emerald-400">14</span></div>
+                <div>Current streak: <span id="current-streak" class="font-mono text-emerald-400">0</span></div>
+                <div>Best streak: <span id="best-streak" class="font-mono text-emerald-400">0</span></div>
             </div>
-            <div class="mt-1">Wins today: <span id="wins-today" class="font-mono">128</span> • Global players: <span class="font-mono">4.2k</span></div>
+            <div class="mt-1">Played: <span id="played-count" class="font-mono">0</span></div>
         </div>
     </div>
 
     <script>
-        // ==================== SCOUT GAME LOGIC (Polished) ====================
-        
-        // Sample player database (expand with real data in production)
-        const PLAYERS = [
-            { name: "Lionel Messi", nation: "Argentina", position: "FW", era: "2010s", rating: 94, pace: 85 },
-            { name: "Cristiano Ronaldo", nation: "Portugal", position: "FW", era: "2010s", rating: 93, pace: 88 },
-            { name: "Kylian Mbappé", nation: "France", position: "FW", era: "2020s", rating: 91, pace: 97 },
-            { name: "Erling Haaland", nation: "Norway", position: "FW", era: "2020s", rating: 90, pace: 89 },
-            { name: "Kevin De Bruyne", nation: "Belgium", position: "MF", era: "2010s", rating: 91, pace: 76 },
-            { name: "Luka Modrić", nation: "Croatia", position: "MF", era: "2010s", rating: 88, pace: 72 },
-            { name: "Virgil van Dijk", nation: "Netherlands", position: "DF", era: "2010s", rating: 89, pace: 75 },
-            { name: "Thibaut Courtois", nation: "Belgium", position: "GK", era: "2010s", rating: 90, pace: 45 },
-            { name: "Mohamed Salah", nation: "Egypt", position: "FW", era: "2010s", rating: 89, pace: 93 },
-            { name: "Harry Kane", nation: "England", position: "FW", era: "2010s", rating: 89, pace: 68 },
-            { name: "Neymar", nation: "Brazil", position: "FW", era: "2010s", rating: 90, pace: 91 },
-            { name: "Sergio Ramos", nation: "Spain", position: "DF", era: "2010s", rating: 88, pace: 70 },
-            { name: "Manuel Neuer", nation: "Germany", position: "GK", era: "2010s", rating: 89, pace: 55 },
-            { name: "Jude Bellingham", nation: "England", position: "MF", era: "2020s", rating: 87, pace: 82 },
-            { name: "Pedri", nation: "Spain", position: "MF", era: "2020s", rating: 85, pace: 78 }
-        ];
+        // ==================== SCOUT: DAILY FOOTBALL CONNECTIONS ====================
 
-        // Today's mystery player (in production: seeded by date)
-        let MYSTERY_PLAYER = null;
-        let currentGuesses = [];
-        let gameOver = false;
+        let POOL = [];
+        let GROUPS = [];       // the 4 hidden groups for today: { label, players: [4 players] }
+        let solvedOrder = [];  // indices into GROUPS, in the order the player solved them
+        let board = [];        // remaining (unsolved) player objects, current display order
+        let selected = [];     // names currently selected on the board
+        let mistakes = 0;
+        let guessHistory = []; // each entry: array of 4 group-indices (or -1) for the emoji share grid
+        let finished = false;
+        let won = false;
+
+        const MAX_MISTAKES = 4;
+        const GROUP_EMOJI = ['🟨', '🟩', '🟦', '🟪'];
 
         function getTodayKey() {
-            const date = new Date();
-            return date.toISOString().split('T')[0]; // YYYY-MM-DD
+            const d = new Date();
+            return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+        }
+
+        function dailyHash() {
+            const key = getTodayKey();
+            let h = 0;
+            for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
+            return Math.abs(h);
         }
 
         function getDayOfYear() {
             const date = new Date();
             const start = new Date(date.getFullYear(), 0, 0);
-            const diff = date - start;
-            const oneDay = 1000 * 60 * 60 * 24;
-            return Math.floor(diff / oneDay);
+            return Math.floor((date - start) / 86400000);
         }
 
-        function updatePuzzleNumber() {
-            const dayNum = getDayOfYear();
-            const el = document.getElementById('puzzle-number');
-            if (el) el.textContent = `SCOUT #${dayNum}`;
+        // Seeded PRNG (mulberry32) so today's puzzle is the same for everyone, all day.
+        function mulberry32(seed) {
+            let a = seed >>> 0;
+            return function () {
+                a |= 0; a = (a + 0x6D2B79F5) | 0;
+                let t = Math.imul(a ^ (a >>> 15), 1 | a);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
         }
-
-        function pickMysteryPlayer() {
-            // Deterministic daily player (simple hash of date)
-            const today = getTodayKey();
-            const hash = today.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-            const index = hash % PLAYERS.length;
-            MYSTERY_PLAYER = PLAYERS[index];
-            
-            // For demo variety, you can override:
-            // MYSTERY_PLAYER = PLAYERS[0]; // Force Messi for testing
-        }
-
-        function calculateScore(guess, mystery) {
-            let exact = 0;
-            let close = 0;
-
-            // Nation
-            if (guess.nation === mystery.nation) exact++;
-            else if (guess.nation && mystery.nation) close++; // simplified
-            
-            // Position
-            if (guess.position === mystery.position) exact++;
-            
-            // Era (rough decade match)
-            if (guess.era === mystery.era) exact++;
-            
-            // Rating (within 3)
-            if (Math.abs(guess.rating - mystery.rating) <= 3) exact++;
-            else if (Math.abs(guess.rating - mystery.rating) <= 8) close++;
-            
-            // Pace (within 5)
-            if (Math.abs(guess.pace - mystery.pace) <= 5) exact++;
-            else if (Math.abs(guess.pace - mystery.pace) <= 12) close++;
-
-            return { exact, close, total: exact + close };
-        }
-
-        function generateEmojiGrid(guesses) {
-            return guesses.map(guess => {
-                const score = calculateScore(guess, MYSTERY_PLAYER);
-                if (score.exact >= 4) return '🟩🟩🟩🟩🟩'; // near perfect
-                if (score.exact >= 3) return '🟩🟩🟩🟨⬜';
-                if (score.exact >= 2 || score.close >= 2) return '🟩🟨🟨⬜⬜';
-                if (score.exact === 1 || score.close >= 1) return '🟨⬜⬜⬜⬜';
-                return '⬜⬜⬜⬜⬜';
-            }).join('\n');
-        }
-
-        function loadStreakStats() {
-            const today = getTodayKey();
-            const streakKey = 'scout_streak';
-            const bestKey = 'scout_best_streak';
-            
-            let current = parseInt(localStorage.getItem(streakKey) || '0');
-            let best = parseInt(localStorage.getItem(bestKey) || '0');
-            
-            // Update UI
-            document.getElementById('streak-count').textContent = current;
-            document.getElementById('current-streak').textContent = current;
-            document.getElementById('best-streak').textContent = best;
-            
-            // Fake global wins for demo
-            document.getElementById('wins-today').textContent = Math.floor(Math.random() * 200) + 80;
-        }
-
-        function recordDailyResult(didWin) {
-            const today = getTodayKey();
-            const key = `scout_daily_${today}`;
-            
-            // Prevent double-recording (the key fix)
-            if (localStorage.getItem(key)) {
-                console.log('%c[Scout] Daily result already recorded for today — skipping duplicate', 'color:#666');
-                return;
+        function seededShuffle(arr, rand) {
+            const a = arr.slice();
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(rand() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
             }
-            
-            localStorage.setItem(key, didWin ? 'win' : 'loss');
-            
-            const streakKey = 'scout_streak';
-            const bestKey = 'scout_best_streak';
-            
-            if (didWin) {
-                let streak = parseInt(localStorage.getItem(streakKey) || '0') + 1;
-                localStorage.setItem(streakKey, streak.toString());
-                
-                let best = parseInt(localStorage.getItem(bestKey) || '0');
-                if (streak > best) {
-                    localStorage.setItem(bestKey, streak.toString());
-                }
-            } else {
-                localStorage.setItem(streakKey, '0');
-            }
-            
-            loadStreakStats();
-            console.log('%c[Scout] recordDailyResult saved — win:', didWin, 'streak updated', 'color:#00ff9d');
+            return a;
         }
 
-        function filterPlayers() {
-            const input = document.getElementById('guess-input').value.toLowerCase().trim();
-            const container = document.getElementById('player-suggestions');
-            
-            if (!input || input.length < 2) {
-                container.classList.add('hidden');
-                return;
-            }
-            
-            const matches = PLAYERS.filter(p => 
-                p.name.toLowerCase().includes(input) ||
-                p.nation.toLowerCase().includes(input)
-            ).slice(0, 6);
-            
-            if (matches.length === 0) {
-                container.classList.add('hidden');
-                return;
-            }
-            
-            container.innerHTML = matches.map(p => `
-                <div onclick="selectPlayer('${p.name}')" 
-                     class="player-option px-5 py-3.5 border-b border-zinc-800 last:border-b-0 cursor-pointer flex justify-between items-center text-sm">
-                    <div>
-                        <span class="font-semibold">${p.name}</span>
-                        <span class="text-xs text-zinc-500 ml-2">${p.nation} • ${p.position}</span>
-                    </div>
-                    <div class="text-xs font-mono text-emerald-400">${p.rating}</div>
-                </div>
-            `).join('');
-            
-            container.classList.remove('hidden');
-        }
-
-        function selectPlayer(name) {
-            document.getElementById('guess-input').value = name;
-            document.getElementById('player-suggestions').classList.add('hidden');
-            submitGuess();
-        }
-
-        function submitGuess() {
-            if (gameOver) return;
-            
-            const input = document.getElementById('guess-input');
-            const name = input.value.trim();
-            
-            if (!name) return;
-            
-            const player = PLAYERS.find(p => p.name.toLowerCase() === name.toLowerCase());
-            if (!player) {
-                alert('Player not found. Try one from the suggestions.');
-                return;
-            }
-            
-            // Prevent duplicate guesses
-            if (currentGuesses.some(g => g.name === player.name)) {
-                alert('Already guessed that player!');
-                return;
-            }
-            
-            currentGuesses.push(player);
-            
-            renderGuesses();
-            input.value = '';
-            document.getElementById('player-suggestions').classList.add('hidden');
-            
-            // Check win condition
-            const score = calculateScore(player, MYSTERY_PLAYER);
-            const isWin = score.exact >= 4 || player.name === MYSTERY_PLAYER.name;
-            
-            if (isWin || currentGuesses.length >= 6) {
-                gameOver = true;
-                showResults(isWin);
-                recordDailyResult(isWin);
-            }
-        }
-
-        function renderGuesses() {
-            const container = document.getElementById('guesses-container');
-            container.innerHTML = '';
-            
-            currentGuesses.forEach((guess, index) => {
-                const score = calculateScore(guess, MYSTERY_PLAYER);
-                const row = document.createElement('div');
-                row.className = 'guess-row';
-                
-                // Create 5 cells representing the 5 attributes
-                const attrs = ['nation', 'position', 'era', 'rating', 'pace'];
-                attrs.forEach(attr => {
-                    const cell = document.createElement('div');
-                    cell.className = 'guess-cell';
-                    
-                    let value = guess[attr];
-                    if (attr === 'rating' || attr === 'pace') value = guess[attr];
-                    
-                    cell.textContent = value;
-                    
-                    // Color coding
-                    if (attr === 'nation' || attr === 'position' || attr === 'era') {
-                        if (guess[attr] === MYSTERY_PLAYER[attr]) {
-                            cell.classList.add('exact');
-                        } else {
-                            cell.classList.add('wrong');
-                        }
-                    } else {
-                        // rating / pace
-                        const diff = Math.abs(guess[attr] - MYSTERY_PLAYER[attr]);
-                        if (diff <= 3) cell.classList.add('exact');
-                        else if (diff <= 8) cell.classList.add('close');
-                        else cell.classList.add('wrong');
-                    }
-                    
-                    row.appendChild(cell);
+        async function init() {
+            try {
+                const res = await fetch('../perfect-cup/data/players.json');
+                const data = await res.json();
+                const all = [...(data.players || []), ...(data.icons || [])];
+                const candidates = all.filter((p) => p && p.n && (p.icon || p.o >= 78));
+                const byName = new Map();
+                candidates.forEach((p) => {
+                    const existing = byName.get(p.n);
+                    if (!existing || (p.o || 0) > (existing.o || 0)) byName.set(p.n, p);
                 });
-                
-                container.appendChild(row);
+                POOL = Array.from(byName.values());
+
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('game-area').classList.remove('hidden');
+                document.getElementById('puzzle-number').textContent = 'SCOUT #' + getDayOfYear();
+
+                loadStreakStats();
+                startDaily();
+            } catch (e) {
+                document.getElementById('loading').textContent = 'Could not load player data. Please refresh.';
+            }
+        }
+
+        function buildPuzzle(seed) {
+            function counts(keyFn) {
+                const m = new Map();
+                POOL.forEach((p) => {
+                    const k = keyFn(p);
+                    if (k === undefined || k === null) return;
+                    m.set(k, (m.get(k) || 0) + 1);
+                });
+                return m;
+            }
+
+            const nationCounts = counts((p) => p.country);
+            const nations = Array.from(nationCounts.keys()).filter((k) => nationCounts.get(k) >= 6).sort();
+
+            const posCounts = counts((p) => p.sp);
+            const positions = Array.from(posCounts.keys()).filter((k) => posCounts.get(k) >= 6).sort();
+
+            const tiers = [
+                { min: 90, max: 100, label: 'Rated 90+ — icon class' },
+                { min: 85, max: 89, label: 'Rated 85–89 — world class' },
+                { min: 80, max: 84, label: 'Rated 80–84 — elite' },
+                { min: 74, max: 79, label: 'Rated 74–79 — very good' },
+            ];
+
+            const yearCounts = counts((p) => (typeof p.year === 'number' ? p.year : null));
+            const years = Array.from(yearCounts.keys()).filter((k) => yearCounts.get(k) >= 6).sort((a, b) => a - b);
+
+            const usedNames = new Set();
+
+            function pickGroup(options, poolFn, labelFn, typeIndex) {
+                for (let attempt = 0; attempt < options.length; attempt++) {
+                    const idx = (seed + typeIndex * 97 + attempt) % options.length;
+                    const opt = options[idx];
+                    const candidatePool = POOL.filter((p) => poolFn(p, opt) && !usedNames.has(p.n));
+                    if (candidatePool.length >= 4) {
+                        const rand = mulberry32(seed + typeIndex * 1000 + attempt);
+                        const picked = seededShuffle(candidatePool, rand).slice(0, 4);
+                        picked.forEach((p) => usedNames.add(p.n));
+                        return { label: labelFn(opt), players: picked };
+                    }
+                }
+                return null;
+            }
+
+            const groups = [
+                pickGroup(nations, (p, c) => p.country === c, (c) => `All played for ${c}`, 0),
+                pickGroup(positions, (p, s) => p.sp === s, (s) => `All play as ${s}`, 1),
+                pickGroup(tiers, (p, t) => p.o >= t.min && p.o <= t.max, (t) => t.label, 2),
+                pickGroup(years, (p, y) => p.year === y, (y) => `Featured at the ${y} World Cup`, 3),
+            ].filter(Boolean);
+
+            return groups;
+        }
+
+        function startDaily() {
+            const seed = dailyHash();
+            GROUPS = buildPuzzle(seed);
+            solvedOrder = [];
+            mistakes = 0;
+            guessHistory = [];
+            finished = false;
+            won = false;
+            selected = [];
+
+            const allPlayers = GROUPS.flatMap((g) => g.players);
+            board = seededShuffle(allPlayers, mulberry32(seed + 777));
+
+            document.getElementById('game-area').classList.remove('hidden');
+            document.getElementById('results-area').classList.add('hidden');
+            renderMistakes();
+            renderSolved();
+            renderBoard();
+            updateSubmitState();
+
+            const key = getTodayKey();
+            const saved = JSON.parse(localStorage.getItem('connect_daily_' + key) || 'null');
+            if (saved && saved.done) {
+                // Replay today's saved outcome (locked, read-only view of the finished puzzle).
+                mistakes = saved.mistakes;
+                guessHistory = saved.guessHistory;
+                won = saved.won;
+                solvedOrder = GROUPS.map((_, i) => i);
+                board = [];
+                finished = true;
+                renderMistakes();
+                renderSolved();
+                renderBoard();
+                showResults(won);
+            }
+        }
+
+        function findGroupIndex(name) {
+            return GROUPS.findIndex((g) => g.players.some((p) => p.n === name));
+        }
+
+        function renderMistakes() {
+            const row = document.getElementById('mistakes-row');
+            row.innerHTML = '';
+            for (let i = 0; i < MAX_MISTAKES; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'mistake-dot' + (i < mistakes ? ' used' : '');
+                row.appendChild(dot);
+            }
+        }
+
+        function renderSolved() {
+            const wrap = document.getElementById('solved-groups');
+            wrap.innerHTML = '';
+            solvedOrder.forEach((gi) => {
+                const g = GROUPS[gi];
+                const row = document.createElement('div');
+                row.className = 'solved-row grp-' + gi;
+                row.innerHTML = `<div class="theme">${g.label}</div><div class="names">${g.players.map((p) => p.n).join(' · ')}</div>`;
+                wrap.appendChild(row);
             });
         }
 
-        function showResults(didWin) {
-            const resultsArea = document.getElementById('results-area');
-            const gameArea = document.getElementById('game-area');
-            
-            gameArea.style.display = 'none';
-            resultsArea.classList.remove('hidden');
-            
-            const titleEl = document.getElementById('result-title');
-            const subEl = document.getElementById('result-subtitle');
-            
-            if (didWin) {
-                titleEl.innerHTML = `🎉 Perfect! It was <span class="text-emerald-400">${MYSTERY_PLAYER.name}</span>`;
-                subEl.textContent = `Solved in ${currentGuesses.length} guess${currentGuesses.length > 1 ? 'es' : ''}. Great ball knowledge!`;
+        function renderBoard() {
+            const grid = document.getElementById('card-grid');
+            grid.innerHTML = '';
+            board.forEach((p) => {
+                const card = document.createElement('div');
+                card.className = 'player-card' + (selected.includes(p.n) ? ' selected' : '');
+                card.textContent = p.n;
+                card.onclick = () => toggleSelect(p.n);
+                grid.appendChild(card);
+            });
+        }
+
+        function toggleSelect(name) {
+            if (finished) return;
+            if (selected.includes(name)) {
+                selected = selected.filter((n) => n !== name);
             } else {
-                titleEl.innerHTML = `Close! The player was <span class="text-emerald-400">${MYSTERY_PLAYER.name}</span>`;
-                subEl.textContent = `Better luck tomorrow. Streak reset.`;
+                if (selected.length >= 4) return;
+                selected.push(name);
             }
-            
-            // Render emoji grid
-            const gridEl = document.getElementById('emoji-grid');
-            gridEl.innerHTML = generateEmojiGrid(currentGuesses).replace(/\n/g, '<br>');
-            
-            // Update streak display immediately
+            renderBoard();
+            updateSubmitState();
+        }
+
+        function deselectAll() {
+            if (finished) return;
+            selected = [];
+            renderBoard();
+            updateSubmitState();
+        }
+
+        function shuffleBoard() {
+            if (finished) return;
+            board = seededShuffle(board, Math.random);
+            renderBoard();
+        }
+
+        function updateSubmitState() {
+            document.getElementById('submit-btn').disabled = selected.length !== 4;
+        }
+
+        function submitGuess() {
+            if (finished || selected.length !== 4) return;
+
+            const groupIdxs = selected.map(findGroupIndex);
+            guessHistory.push(groupIdxs.slice());
+            const oneGroup = groupIdxs[0];
+            const isMatch = oneGroup !== -1 && groupIdxs.every((gi) => gi === oneGroup);
+
+            document.getElementById('one-away').classList.add('hidden');
+
+            if (isMatch) {
+                solvedOrder.push(oneGroup);
+                board = board.filter((p) => !selected.includes(p.n));
+                selected = [];
+                renderSolved();
+                renderBoard();
+                updateSubmitState();
+
+                if (solvedOrder.length === GROUPS.length) {
+                    finish(true);
+                }
+            } else {
+                mistakes++;
+                renderMistakes();
+
+                const counts = {};
+                groupIdxs.forEach((gi) => { counts[gi] = (counts[gi] || 0) + 1; });
+                const maxShared = Math.max(...Object.values(counts));
+                if (maxShared === 3) {
+                    document.getElementById('one-away').classList.remove('hidden');
+                }
+
+                selected = [];
+                renderBoard();
+                updateSubmitState();
+
+                if (mistakes >= MAX_MISTAKES) {
+                    // Reveal remaining groups in their natural order.
+                    for (let gi = 0; gi < GROUPS.length; gi++) {
+                        if (!solvedOrder.includes(gi)) solvedOrder.push(gi);
+                    }
+                    board = [];
+                    renderSolved();
+                    renderBoard();
+                    finish(false);
+                }
+            }
+        }
+
+        function finish(didWin) {
+            finished = true;
+            won = didWin;
+            const key = getTodayKey();
+            localStorage.setItem('connect_daily_' + key, JSON.stringify({ mistakes, guessHistory, won, done: true }));
+            recordDailyResult(didWin);
+            setTimeout(() => showResults(didWin), 350);
+        }
+
+        function loadStreakStats() {
+            document.getElementById('streak-count').textContent = localStorage.getItem('connect_streak') || '0';
+            document.getElementById('current-streak').textContent = localStorage.getItem('connect_streak') || '0';
+            document.getElementById('best-streak').textContent = localStorage.getItem('connect_best_streak') || '0';
+            document.getElementById('played-count').textContent = localStorage.getItem('connect_played') || '0';
+        }
+
+        function recordDailyResult(didWin) {
+            const key = getTodayKey();
+            const lastKey = localStorage.getItem('connect_last_result_date');
+            if (lastKey === key) return; // already recorded today
+
+            localStorage.setItem('connect_last_result_date', key);
+            const played = parseInt(localStorage.getItem('connect_played') || '0', 10) + 1;
+            localStorage.setItem('connect_played', played);
+
+            let streak = parseInt(localStorage.getItem('connect_streak') || '0', 10);
+            streak = didWin ? streak + 1 : 0;
+            localStorage.setItem('connect_streak', streak);
+
+            let best = parseInt(localStorage.getItem('connect_best_streak') || '0', 10);
+            if (streak > best) localStorage.setItem('connect_best_streak', streak);
+
             loadStreakStats();
         }
 
+        function shareGrid() {
+            return guessHistory.map((row) => row.map((gi) => (gi === -1 ? '⬛' : GROUP_EMOJI[gi])).join('')).join('\n');
+        }
+
+        function showResults(didWin) {
+            document.getElementById('game-area').classList.add('hidden');
+            document.getElementById('results-area').classList.remove('hidden');
+
+            const titleEl = document.getElementById('result-title');
+            const subEl = document.getElementById('result-subtitle');
+            if (didWin) {
+                titleEl.innerHTML = `🎉 Solved!`;
+                subEl.textContent = `${MAX_MISTAKES - mistakes} of ${MAX_MISTAKES} lives to spare.`;
+            } else {
+                titleEl.innerHTML = `Next time`;
+                subEl.textContent = `The groups are revealed above. Streak reset.`;
+            }
+            document.getElementById('emoji-grid').innerHTML = shareGrid().replace(/\n/g, '<br>');
+        }
+
         function copyShareText() {
-            const gridText = generateEmojiGrid(currentGuesses);
-            const today = getTodayKey();
             const dayNum = getDayOfYear();
-            
-            const shareText = `Scout #${dayNum} (${today})\n${gridText}\n\nPlay daily at ballknw.com/scout/`;
-            
+            const shareText = `BALLKNW Scout #${dayNum}\n${shareGrid()}\n\nPlay daily at ballknw.com/scout/`;
             navigator.clipboard.writeText(shareText).then(() => {
                 const btns = document.querySelectorAll('#results-area button');
-                btns.forEach(b => {
+                btns.forEach((b) => {
                     if (b.textContent.includes('COPY')) {
                         const orig = b.innerHTML;
                         b.innerHTML = '<i class="fa-solid fa-check"></i> COPIED!';
@@ -461,22 +521,16 @@
                     }
                 });
             }).catch(() => {
-                // Fallback
                 prompt('Copy this text:', shareText);
             });
         }
 
         async function shareNative() {
-            const gridText = generateEmojiGrid(currentGuesses);
             const dayNum = getDayOfYear();
-            const shareText = `Scout #${dayNum} — I scored ${currentGuesses.length}/6!\n\n${gridText}\n\nDaily at ballknw.com/scout/`;
-            
+            const shareText = `BALLKNW Scout #${dayNum}\n${shareGrid()}\n\nPlay daily at ballknw.com/scout/`;
             if (navigator.share) {
                 try {
-                    await navigator.share({
-                        title: `Scout #${dayNum} on BALLKNW`,
-                        text: shareText
-                    });
+                    await navigator.share({ title: 'BALLKNW Scout', text: shareText });
                 } catch (e) {
                     copyShareText();
                 }
@@ -485,44 +539,7 @@
             }
         }
 
-        function resetGame() {
-            // For demo: reload to get new daily puzzle
-            window.location.reload();
-        }
-
-        function initScoutGame() {
-            updatePuzzleNumber();
-            pickMysteryPlayer();
-            loadStreakStats();
-            
-            // Keyboard support
-            const input = document.getElementById('guess-input');
-            input.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    submitGuess();
-                }
-            });
-            
-            // Click outside suggestions to close
-            document.addEventListener('click', function(e) {
-                const suggestions = document.getElementById('player-suggestions');
-                if (!suggestions.contains(e.target) && e.target.id !== 'guess-input') {
-                    suggestions.classList.add('hidden');
-                }
-            });
-            
-            console.log('%c[Scout] Game initialized. Mystery player:', MYSTERY_PLAYER.name, '— fixes applied (daily key, emoji grid, streak guard)', 'color:#00ff9d');
-        }
-
-        // Boot
-        window.onload = function() {
-            initScoutGame();
-            
-            // Show consent reminder if needed (from homepage)
-            if (!localStorage.getItem('ballknw_consent')) {
-                console.log('%c[Scout] Tip: Accept consent on homepage for full analytics + ads', 'color:#666');
-            }
-        };
+        init();
     </script>
     <script src="/shared/consent.js" defer></script>
     <script src="/shared/ads.js" defer></script>
