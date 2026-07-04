@@ -21,7 +21,7 @@
 - **Features:** Formation selection, full XI drafting, tactical decisions, tournament play
 - **URL:** https://ballknw.com/perfect-cup/
 
-### Football Manager
+### Gaffer
 - **Type:** Club management simulation
 - **Gameplay:** Take charge of a club, select formation and XI, trade on the transfer market, manage a full 38-round season
 - **Features:** League navigation, promotion/relegation, tactical management
