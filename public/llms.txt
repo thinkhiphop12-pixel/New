@@ -9,9 +9,9 @@
 ## Games
 
 ### Daily Scout
-- **Type:** Daily word-puzzle variant (Wordle-style)
-- **Gameplay:** Guess a mystery World Cup player in 6 attempts
-- **Clues:** Nation, position, era, rating, and pace revealed after each guess
+- **Type:** Daily grouping puzzle (Connections-style)
+- **Gameplay:** Sort 16 footballers into 4 sets of 4 by a hidden shared theme (nation, position, rating tier, or World Cup year)
+- **Rules:** 4 wrong guesses allowed before the puzzle ends
 - **Features:** Daily streaks, shareable emoji result grids
 - **URL:** https://ballknw.com/scout/
 
