@@ -51,8 +51,12 @@ function loadAdSense(){
 function fillAllAdSlots(){
   if (!ADSENSE_CLIENT_ID || getConsent() !== 'all') return;
   document.querySelectorAll('.ad-slot, .ad-placeholder[data-ad-slot]').forEach(slot => {
-    const adSlotId = slot.dataset.adSlot;
-    if (!adSlotId || slot.classList.contains('is-filled') || slot.offsetParent === null) return;
+    const adSlotId = (slot.dataset.adSlot || '').trim();
+    // Only push a REAL (all-digit) AdSense unit. Placeholder ids like
+    // "XXXXXXXXXXXXXXXX" (no ad unit created yet) must NOT be pushed — an
+    // invalid slot renders an empty box and triggers AdSense policy warnings.
+    // Those slots fall through to the Amazon affiliate fallback in ads.js.
+    if (!/^\d{6,}$/.test(adSlotId) || slot.classList.contains('is-filled') || slot.offsetParent === null) return;
     const ins = document.createElement('ins');
     ins.className = 'adsbygoogle';
     ins.style.display = 'block';
