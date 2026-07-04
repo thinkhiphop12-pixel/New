@@ -1,64 +1,36 @@
-import type { FormationDef, Position } from './types';
-import type { LeagueId } from './leagues';
-import { LEAGUES } from './leagues';
+import type { Division, FormationDef, Position } from './types';
 
 export const SEASON_ROUNDS = 38;
-export const MIN_SQUAD_SIZE = 16;
-export const MAX_SQUAD_SIZE = 30;
+export const CLUBS_PER_DIVISION = 20;
 export const PROMOTION_SPOTS = 3;
 
-/**
- * Starting budget by league. Top 5 European leagues have higher budgets;
- * English pyramid is tiered.
- */
-export function getStartingBudget(leagueId: LeagueId): number {
-  switch (leagueId) {
-    case 'PL': return 40_000_000;
-    case 'LA': return 38_000_000;
-    case 'BL': return 36_000_000;
-    case 'SA': return 34_000_000;
-    case 'L1': return 32_000_000;
-    case 'EFL2': return 12_000_000;
-    case 'EFL3': return 4_000_000;
-    case 'EFL4': return 1_500_000;
-  }
-}
+export const MIN_SQUAD_SIZE = 16;
+export const MAX_SQUAD_SIZE = 30;
 
-/**
- * Prize money by league and final position (1-based).
- */
-export function getPrizeMoney(leagueId: LeagueId, position: number): number {
-  switch (leagueId) {
-    case 'PL': return Math.max(0, 32_000_000 - (position - 1) * 1_200_000);
-    case 'LA': return Math.max(0, 28_000_000 - (position - 1) * 1_100_000);
-    case 'BL': return Math.max(0, 26_000_000 - (position - 1) * 1_050_000);
-    case 'SA': return Math.max(0, 24_000_000 - (position - 1) * 1_000_000);
-    case 'L1': return Math.max(0, 22_000_000 - (position - 1) * 950_000);
-    case 'EFL2': return Math.max(0, 10_000_000 - (position - 1) * 350_000);
-    case 'EFL3': return Math.max(0, 3_000_000 - (position - 1) * 100_000);
-    case 'EFL4': return Math.max(0, 1_000_000 - (position - 1) * 30_000);
-  }
-}
+export const DIVISION_NAMES: Record<Division, string> = {
+  1: 'Premier League',
+  2: 'Championship',
+  3: 'League One',
+};
 
-/**
- * Weekly gate income baseline per league.
- */
-export function getGateBase(leagueId: LeagueId): number {
-  const league = LEAGUES[leagueId];
-  // Top 5 start high; English pyramid scaled down
-  const basePL = 550_000;
-  return Math.round(basePL * league.attendanceMultiplier);
-}
+export const STARTING_BUDGET: Record<Division, number> = {
+  1: 40_000_000,
+  2: 12_000_000,
+  3: 4_000_000,
+};
 
-/** Calendar weeks each domestic cup round is played (6 rounds, ~168 clubs). */
+/** Calendar weeks each domestic cup round is played (6 rounds, 60 clubs). */
 export const CUP_WEEKS = [4, 9, 14, 19, 25, 31];
 /** Prize for winning a tie in each cup round (last = winning the final). */
 export const CUP_PRIZES = [150_000, 300_000, 600_000, 1_200_000, 2_500_000, 6_000_000];
 
-/** Continental Champions Cup: 20 teams, group stage + knockout. */
+/** Continental Champions Cup: 8 teams, QF/SF/Final. */
 export const CONTINENTAL_WEEKS = [7, 17, 29];
 export const CONTINENTAL_PRIZES = [3_000_000, 6_000_000, 15_000_000];
-export const CONTINENTAL_SPOTS = 20;
+export const CONTINENTAL_SPOTS = 8;
+
+/** Weekly gate income baseline per division. */
+export const GATE_BASE: Record<Division, number> = { 1: 550_000, 2: 180_000, 3: 60_000 };
 
 /** Cost to upgrade the youth academy to level 2 / level 3. */
 export const ACADEMY_UPGRADE_COST: Record<number, number> = { 2: 5_000_000, 3: 12_000_000 };
@@ -83,6 +55,13 @@ export const MORALE_DRAW = 1;
 export const MORALE_LOSS = -6;
 export const MORALE_MIN = 30;
 export const MORALE_MAX = 95;
+
+/** Prize money by final league position (1-based). */
+export function prizeMoney(division: Division, position: number): number {
+  if (division === 1) return 32_000_000 - (position - 1) * 1_200_000;
+  if (division === 2) return 10_000_000 - (position - 1) * 350_000;
+  return 3_000_000 - (position - 1) * 100_000;
+}
 
 function line(pos: Position, labels: string[], y: number): { pos: Position; label: string; x: number; y: number }[] {
   const n = labels.length;
