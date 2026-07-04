@@ -31,17 +31,17 @@
 
 - **No Login Required:** Play instantly without accounts or sign-ups
 - **Privacy-First:** All game progress stored locally in browser; no personal data collection
-- **Real Data:** Player ratings and squads sourced from historical World Cup records (1930–2026)
+- **Gameplay-Oriented Data:** Player ratings and squads styled for gameplay and sourced from historical World Cup records (1930–2026)
 - **Cross-Platform:** Works on desktop, tablet, and mobile browsers
 - **Shareable Results:** Emoji grid sharing for Scout puzzle results
-- **Historical Scope:** 192 country squads, 15,000+ real player ratings
+- **Historical Scope:** 192 country squads with stylized player rating approximations
 
 ## Data & Attribution
 
 - Player and squad data sourced from public football datasets
 - Fjelstul World Cup Database (CC-BY-SA 4.0) used for historical squad information
 - Player ratings are styled approximations built for gameplay, not official statistics
-- Site is unofficial and not affiliated with FIFA, Premier League, or any federation/club
+- Site is unofficial and not affiliated with FIFA, Premier League, Sports Interactive, SEGA, EA Sports, or any federation/club
 
 ## Core Sections
 
