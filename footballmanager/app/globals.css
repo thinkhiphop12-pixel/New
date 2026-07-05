@@ -541,6 +541,29 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--gold); }
   .fm-tactics__content { padding: 0 14px 12px 14px; }
 }
 
+/* Live match pitch (2D match dashboard) */
+.fm-pitch--live { margin-bottom: 4px; }
+.fm-slot--live { pointer-events: none; cursor: default; }
+.fm-live-ball {
+  position: absolute; width: 14px; height: 14px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, var(--gold-2) 60%, var(--gold) 100%);
+  box-shadow: 0 0 8px rgba(245, 179, 1, 0.7);
+  transform: translate(-50%, 50%);
+  transition: left 0.6s ease, bottom 0.6s ease;
+}
+
+/* Match highlights reel */
+.fm-highlights__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fm-highlights__item {
+  display: flex; gap: 8px; align-items: baseline;
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+  border-radius: 10px; padding: 8px 12px; font-size: 13px;
+}
+.fm-highlights__icon { flex: 0 0 auto; }
+.fm-highlights__item--goal { border-color: var(--green-600); }
+.fm-highlights__item--card { border-left: 3px solid var(--gold); }
+.fm-highlights__item--injury { border-left: 3px solid var(--red); }
+
 @media (max-width: 560px) {
   .fm-hub-stats { margin-left: 0; width: 100%; justify-content: space-between; }
   .fm-stat { min-width: 0; flex: 1; }
@@ -548,4 +571,5 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--gold); }
   .fm-slot { width: 60px; }
   .fm-slot__chip { width: 36px; height: 36px; font-size: 11px; }
   .fm-slot__name { max-width: 60px; font-size: 9px; }
+  .fm-live-ball { width: 11px; height: 11px; }
 }

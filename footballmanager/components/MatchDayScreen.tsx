@@ -1,11 +1,15 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { GameState, MatchReport, Player } from '@/engine/types';
-import { mergeReports, simulateHalf, type TeamTalk } from '@/engine/matchSimulation';
+import type { GameState, MatchReport, Player, Pressing, TacticStyle, Tactics, Tempo, Width } from '@/engine/types';
+import { mergeReports, simulateHalf, simulateSegment, type TeamTalk } from '@/engine/matchSimulation';
 import { nextUserFixture } from '@/engine/seasonProgression';
 import { availableSquad } from '@/engine/teamManagement';
 import { formatMoney } from '@/engine/utils';
+import { getFormation, MAX_SUBS } from '@/engine/gameRules';
+import { computeHighlights } from '@/engine/highlights';
+import MatchPitchView from './MatchPitchView';
+import MatchHighlights from './MatchHighlights';
 
 type Phase = 'half1' | 'halftime' | 'half2' | 'full';
 
@@ -25,6 +29,8 @@ export default function MatchDayScreen({
   const [subOut, setSubOut] = useState<number | null>(null);
   const [subsUsed, setSubsUsed] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [liveTactics, setLiveTactics] = useState<Tactics>(state.tactics);
+  const [tacticsDirty, setTacticsDirty] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fixture = nextUserFixture(state);
@@ -71,10 +77,52 @@ export default function MatchDayScreen({
   const startHalfTime = () => setPhase('halftime');
 
   const startSecondHalf = (talk?: TeamTalk) => {
-    const rep2 = simulateHalf(state, fixture.homeId, fixture.awayId, 2, { userLineup: lineup, talk });
+    const rep2 = simulateHalf(state, fixture.homeId, fixture.awayId, 2, {
+      userLineup: lineup,
+      talk,
+      userTactics: liveTactics,
+    });
     setHalf2Report(rep2);
+    setTacticsDirty(false);
     setMinute(45);
     setPhase('half2');
+  };
+
+  /** Resume from pause, regenerating the rest of the current half if the manager changed tactics while stopped. */
+  const resumeMatch = () => {
+    if (tacticsDirty && (phase === 'half1' || phase === 'half2')) {
+      const capEnd = phase === 'half1' ? 44 : 89;
+      const halfStart = phase === 'half1' ? 2 : 46;
+      if (minute < capEnd) {
+        const currentReport = phase === 'half1' ? half1Report : half2Report!;
+        const tail = simulateSegment(state, fixture.homeId, fixture.awayId, minute + 1, capEnd, {
+          userLineup: lineup,
+          userTactics: liveTactics,
+        });
+        const keptEvents = currentReport.events.filter((e) => e.minute <= minute);
+        const tailEvents = tail.events.filter((e) => !(e.type === 'info' && e.text === ''));
+        const events = [...keptEvents, ...tailEvents].sort((a, b) => a.minute - b.minute);
+        const homeGoals = events.filter((e) => e.type === 'goal' && e.clubId === fixture.homeId).length;
+        const awayGoals = events.filter((e) => e.type === 'goal' && e.clubId === fixture.awayId).length;
+        const elapsedFraction = Math.max(0, Math.min(1, (minute - halfStart + 1) / (capEnd - halfStart + 1)));
+        const homeXG = currentReport.homeXG * elapsedFraction + tail.homeXG;
+        const awayXG = currentReport.awayXG * elapsedFraction + tail.awayXG;
+        const merged: MatchReport = {
+          ...currentReport,
+          events,
+          homeGoals,
+          awayGoals,
+          homeXG: Math.round(homeXG * 100) / 100,
+          awayXG: Math.round(awayXG * 100) / 100,
+          homeLineup: [...new Set([...currentReport.homeLineup, ...tail.homeLineup])],
+          awayLineup: [...new Set([...currentReport.awayLineup, ...tail.awayLineup])],
+        };
+        if (phase === 'half1') setHalf1Report(merged);
+        else setHalf2Report(merged);
+      }
+    }
+    setTacticsDirty(false);
+    setPaused(false);
   };
 
   const finalReport = half2Report ? mergeReports(half1Report, half2Report) : half1Report;
@@ -90,11 +138,14 @@ export default function MatchDayScreen({
   const bench = availableSquad(state, state.userClubId).filter((p) => !lineup.includes(p.id));
 
   const makeSub = (inId: number) => {
-    if (subOut === null || subsUsed >= 3) return;
+    if (subOut === null || subsUsed >= MAX_SUBS) return;
     setLineup((cur) => cur.map((id) => (id === subOut ? inId : id)));
     setSubsUsed((n) => n + 1);
     setSubOut(null);
   };
+
+  const pitchFormation = getFormation(state.dualFormation?.inPossessionId || state.formationId);
+  const latestEvent = shownEvents[shownEvents.length - 1];
 
   return (
     <div className="fm-screen">
@@ -121,6 +172,16 @@ export default function MatchDayScreen({
           <span className="code">{away?.code} · AWAY</span>
         </div>
       </div>
+
+      {!finished && (
+        <MatchPitchView
+          formation={pitchFormation}
+          lineup={lineup}
+          players={state.players}
+          latestEvent={latestEvent}
+          userClubId={state.userClubId}
+        />
+      )}
 
       {(phase === 'half1' || phase === 'half2') && !finished && (
         <div className="fm-actions">
@@ -166,7 +227,7 @@ export default function MatchDayScreen({
           </div>
 
           <p className="fm-label">
-            Substitutions ({subsUsed}/3 used)
+            Substitutions ({subsUsed}/{MAX_SUBS} used)
           </p>
           <p className="fm-hint" style={{ textAlign: 'left', marginBottom: 8 }}>
             {subOut === null ? 'Tap a starter to bring off, then pick his replacement.' : 'Pick a replacement from the bench below.'}
@@ -180,7 +241,7 @@ export default function MatchDayScreen({
                 <button
                   key={p.id}
                   className={`fm-player-row fm-pos-${p.pos}${subOut === p.id ? ' highlight' : ''}`}
-                  disabled={subsUsed >= 3}
+                  disabled={subsUsed >= MAX_SUBS}
                   onClick={() => setSubOut(subOut === p.id ? null : p.id)}
                 >
                   <span className="fm-player-row__badge">{p.role}</span>
@@ -228,6 +289,9 @@ export default function MatchDayScreen({
         </div>
       )}
 
+      {finished && <MatchHighlights events={computeHighlights(finalReport)} />}
+
+      <p className="fm-label">Full commentary</p>
       <ul className="fm-commentary">
         {shownEvents.map((e, i) => (
           <li
@@ -255,17 +319,74 @@ export default function MatchDayScreen({
               Match paused
             </p>
             <p className="fm-hint" style={{ textAlign: 'left', marginBottom: 10 }}>
-              The clock&apos;s stopped — here&apos;s where things stand.
+              The clock&apos;s stopped — adjust tactics below, they&apos;ll kick in for the rest of the half.
             </p>
 
             <div className="fm-panel">
               <p className="fm-label" style={{ marginTop: 0 }}>
                 Tactics
               </p>
-              <p className="fm-club-line" style={{ marginBottom: 0 }}>
-                {state.tactics.style} · {state.tactics.pressing} press · {state.tactics.tempo} tempo ·{' '}
-                {state.tactics.width} width
-              </p>
+              <div className="fm-pills" style={{ marginBottom: 8 }}>
+                {(['defensive', 'balanced', 'attacking'] as TacticStyle[]).map((s) => (
+                  <button
+                    key={s}
+                    className={`fm-pill${liveTactics.style === s ? ' active' : ''}`}
+                    onClick={() => {
+                      setLiveTactics({ ...liveTactics, style: s });
+                      setTacticsDirty(true);
+                    }}
+                  >
+                    {s[0].toUpperCase() + s.slice(1)}
+                  </button>
+                ))}
+              </div>
+              <div className="fm-pills" style={{ marginBottom: 8 }}>
+                {(['low', 'mid', 'high'] as Pressing[]).map((p) => (
+                  <button
+                    key={p}
+                    className={`fm-pill${liveTactics.pressing === p ? ' active' : ''}`}
+                    onClick={() => {
+                      setLiveTactics({ ...liveTactics, pressing: p });
+                      setTacticsDirty(true);
+                    }}
+                  >
+                    {p === 'low' ? 'Low block' : p === 'mid' ? 'Standard' : 'High press'}
+                  </button>
+                ))}
+              </div>
+              <div className="fm-pills" style={{ marginBottom: 8 }}>
+                {(['slow', 'normal', 'fast'] as Tempo[]).map((t) => (
+                  <button
+                    key={t}
+                    className={`fm-pill${liveTactics.tempo === t ? ' active' : ''}`}
+                    onClick={() => {
+                      setLiveTactics({ ...liveTactics, tempo: t });
+                      setTacticsDirty(true);
+                    }}
+                  >
+                    {t[0].toUpperCase() + t.slice(1)}
+                  </button>
+                ))}
+              </div>
+              <div className="fm-pills">
+                {(['narrow', 'standard', 'wide'] as Width[]).map((w) => (
+                  <button
+                    key={w}
+                    className={`fm-pill${liveTactics.width === w ? ' active' : ''}`}
+                    onClick={() => {
+                      setLiveTactics({ ...liveTactics, width: w });
+                      setTacticsDirty(true);
+                    }}
+                  >
+                    {w[0].toUpperCase() + w.slice(1)}
+                  </button>
+                ))}
+              </div>
+              {tacticsDirty && (
+                <p className="fm-hint" style={{ textAlign: 'left', marginTop: 8, marginBottom: 0 }}>
+                  Changes apply to the rest of this half when you resume.
+                </p>
+              )}
             </div>
 
             <div className="fm-panel">
@@ -314,7 +435,7 @@ export default function MatchDayScreen({
             </div>
 
             <div className="fm-actions">
-              <button className="fm-btn fm-btn--primary fm-btn--large" onClick={() => setPaused(false)}>
+              <button className="fm-btn fm-btn--primary fm-btn--large" onClick={resumeMatch}>
                 Resume match
               </button>
             </div>
