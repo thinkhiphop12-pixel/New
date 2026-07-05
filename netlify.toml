@@ -19,6 +19,11 @@
   status = 301
   force = true
 
+[[redirects]]
+  from = "/DraftXI/*"
+  to = "https://game-rules-and-stats.vercel.app/:splat"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]
