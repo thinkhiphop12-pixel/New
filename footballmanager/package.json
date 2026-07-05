@@ -6,9 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "build-gamedata": "node scripts/build-gamedata.mjs"
+    "build-gamedata": "node scripts/build-gamedata.mjs",
+    "generate:players": "node scripts/generate-player-pages.mjs",
+    "generate:blog": "node scripts/generate-blog-posts.mjs",
+    "generate:sitemap": "node scripts/generate-sitemap.mjs",
+    "generate:all": "npm run build-gamedata && npm run generate:players && npm run generate:blog && npm run generate:sitemap",
+    "reddit:post": "node services/reddit-bot.mjs",
+    "discord:start": "node services/discord-bot.mjs",
+    "generate:og": "node scripts/generate-og-image.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.38.0",
     "next": "16.2.7",
     "react": "19.2.0",
     "react-dom": "19.2.0"

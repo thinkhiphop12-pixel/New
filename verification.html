@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Verify Site Ownership — BALLKNW</title>
+<meta name="description" content="Verify ownership of ballknw.com using AdSense code, Ads.txt, or meta tag verification methods." />
+<meta name="robots" content="noindex, follow" />
+<!-- Google AdSense (site verification + library load) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2741492847457362" crossorigin="anonymous" data-adsense="1"></script>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/assets/favicon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #050505;
+  --surface: rgba(255, 255, 255, 0.04);
+  --glass: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.10);
+  --border-bright: rgba(255, 255, 255, 0.18);
+  --lime: #b8ff3c;
+  --emerald: #00d68f;
+  --white: #ffffff;
+  --muted: #8a8a8e;
+  --cta: linear-gradient(135deg, #b8ff3c 0%, #00d68f 100%);
+  --glow-lime: 0 0 44px rgba(184, 255, 60, 0.22);
+  --radius: 20px;
+  --maxw: 1080px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--white);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.wrap {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 22px;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: -280px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 900px;
+  height: 680px;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(0, 214, 143, 0.16) 0%, rgba(184, 255, 60, 0.06) 40%, transparent 72%);
+  filter: blur(8px);
+}
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(5, 5, 5, 0.72);
+  backdrop-filter: saturate(160%) blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-size: 17px;
+}
+
+.mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--cta);
+  color: #04140b;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 19px;
+  box-shadow: var(--glow-lime);
+}
+
+.brand b {
+  color: var(--lime);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+.nav-links a {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  transition: color 0.15s;
+}
+
+.nav-links a:hover {
+  color: var(--white);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  border-radius: 13px;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.2s, border-color 0.2s;
+  font-size: 14px;
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background: var(--cta);
+  color: #04140b;
+  padding: 11px 20px;
+  box-shadow: 0 0 0 rgba(184, 255, 60, 0);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--glow-lime);
+}
+
+.btn-ghost {
+  background: var(--glass);
+  border-color: var(--border);
+  color: var(--white);
+  padding: 11px 20px;
+}
+
+.btn-ghost:hover {
+  border-color: var(--border-bright);
+}
+
+@media (max-width: 680px) {
+  .nav-links a:not(.btn) {
+    display: none;
+  }
+}
+
+.hero {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 72px 0 28px;
+}
+
+.hero h1 {
+  font-size: clamp(2.5rem, 7.5vw, 4.4rem);
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  margin-bottom: 20px;
+}
+
+.hero h1 .grad {
+  background: var(--cta);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero .lead {
+  max-width: 560px;
+  margin: 0 auto 34px;
+  color: var(--muted);
+  font-size: clamp(1rem, 2.2vw, 1.18rem);
+}
+
+.section {
+  position: relative;
+  z-index: 1;
+  padding: 56px 0;
+}
+
+.section-head {
+  margin-bottom: 26px;
+  text-align: center;
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--lime);
+  text-transform: uppercase;
+}
+
+.section-head h2 {
+  font-size: clamp(1.6rem, 4vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-top: 8px;
+}
+
+.section-head p {
+  color: var(--muted);
+  margin-top: 6px;
+  font-size: 15px;
+}
+
+.verification-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.method-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.method-tab {
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-weight: 600;
+}
+
+.method-tab:hover {
+  border-color: var(--border-bright);
+  transform: translateY(-2px);
+}
+
+.method-tab.active {
+  background: rgba(184, 255, 60, 0.08);
+  border-color: var(--lime);
+}
+
+.method-tab .label {
+  font-size: 14px;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+
+.method-tab .desc {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.method-content {
+  display: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.method-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.method-content h3 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+  color: var(--white);
+}
+
+.method-content p {
+  color: var(--muted);
+  margin-bottom: 20px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.code-block {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--lime);
+  word-break: break-all;
+  position: relative;
+  overflow-x: auto;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  color: var(--white);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--border-bright);
+}
+
+.step-list {
+  list-style: none;
+  margin: 20px 0;
+}
+
+.step-list li {
+  margin-bottom: 16px;
+  padding-left: 28px;
+  position: relative;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.step-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 20px;
+  height: 20px;
+  background: rgba(184, 255, 60, 0.1);
+  border: 2px solid var(--lime);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--lime);
+  counter-increment: step-counter;
+}
+
+.step-list {
+  counter-reset: step-counter;
+}
+
+.step-list li:nth-child(1)::before {
+  content: "1";
+}
+
+.step-list li:nth-child(2)::before {
+  content: "2";
+}
+
+.step-list li:nth-child(3)::before {
+  content: "3";
+}
+
+.step-list li:nth-child(4)::before {
+  content: "4";
+}
+
+.step-list li:nth-child(5)::before {
+  content: "5";
+}
+
+.status-badge {
+  display: inline-block;
+  background: rgba(0, 214, 143, 0.1);
+  border: 1px solid var(--emerald);
+  color: var(--emerald);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.check-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.check-status .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--lime);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+
+.cta-section {
+  text-align: center;
+  margin-top: 40px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
+}
+
+.cta-section p {
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+footer {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+  padding: 34px 0;
+}
+
+.foot-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.foot-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.foot-brand .mark {
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  box-shadow: none;
+}
+
+.foot-links {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.foot-links a {
+  color: var(--muted);
+  font-size: 13.5px;
+  transition: color 0.15s;
+}
+
+.foot-links a:hover {
+  color: var(--white);
+}
+
+.foot-meta {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 18px;
+}
+
+/* AD SLOTS */
+.ad-slot {
+  margin: 20px 0;
+  padding: 0;
+}
+
+.ad-slot[data-ad-status="unfilled"] {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ad-slot[data-ad-status="unfilled"]::before {
+  content: "Advertisement";
+}
+
+@media (max-width: 680px) {
+  .method-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .method-content {
+    padding: 24px;
+  }
+
+  .code-block {
+    font-size: 11px;
+    padding: 16px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a href="/" class="brand"><span class="mark">B</span>BALL<b>KNW</b></a>
+    <nav class="nav-links">
+      <a href="/">Home</a>
+      <a href="/#games">Games</a>
+      <a href="/football-manager/" class="btn btn-primary">Play Gaffer</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <h1>Verify site <span class="grad">ownership</span></h1>
+    <p class="lead">Choose your preferred verification method for ballknw.com</p>
+  </div>
+</section>
+
+<!-- TOP AD BANNER -->
+<section class="section" style="padding:20px 0">
+  <div class="wrap">
+    <ins class="adsbygoogle ad-slot"
+         style="display:block"
+         data-ad-client="ca-pub-2741492847457362"
+         data-ad-slot="XXXXXXXXXXXXXXXX"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+  </div>
+</section>
+
+<!-- MAIN CONTENT -->
+<section class="section">
+  <div class="wrap verification-container">
+
+    <!-- MIDDLE AD BANNER -->
+    <ins class="adsbygoogle ad-slot"
+         style="display:block"
+         data-ad-client="ca-pub-2741492847457362"
+         data-ad-slot="XXXXXXXXXXXXXXXX"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+
+    <!-- METHOD TABS -->
+    <div class="method-tabs" style="margin-top:32px">
+      <div class="method-tab active" data-method="adsense">
+        <div class="label">AdSense Code Snippet</div>
+        <div class="desc">Add a JavaScript snippet to your page header</div>
+      </div>
+      <div class="method-tab" data-method="adstxt">
+        <div class="label">Ads.txt Snippet</div>
+        <div class="desc">Create a file in your root directory</div>
+      </div>
+      <div class="method-tab" data-method="metatag">
+        <div class="label">Meta Tag</div>
+        <div class="desc">Add a meta tag to your page header</div>
+      </div>
+    </div>
+
+    <!-- ADSENSE METHOD -->
+    <div class="method-content active" data-method="adsense">
+      <div class="status-badge">✓ Currently implemented</div>
+      <h3>AdSense Code Snippet</h3>
+      <p>To get your site ready to show ads, copy and paste this code between the &lt;head&gt;&lt;/head&gt; tags on each page of your site.</p>
+
+      <p><strong>What this does:</strong></p>
+      <ul class="step-list">
+        <li>Loads the Google AdSense library on your page</li>
+        <li>Enables Google to verify site ownership and content quality</li>
+        <li>Allows ad slots to display content from the AdSense network</li>
+        <li>Required before ad units will serve on your site</li>
+      </ul>
+
+      <p><strong>Your AdSense code:</strong></p>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyToClipboard(this)">Copy</button>
+&lt;script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2741492847457362"
+     crossorigin="anonymous"&gt;&lt;/script&gt;
+      </div>
+
+      <p><strong>Steps to implement:</strong></p>
+      <ul class="step-list">
+        <li>Copy the code above</li>
+        <li>Paste it in the &lt;head&gt; section of your HTML</li>
+        <li>Make sure it appears before any ad slots</li>
+        <li>Verify the code is live on all pages of your site</li>
+        <li>Wait for Google to verify ownership (can take a few days)</li>
+      </ul>
+
+      <div class="check-status">
+        <span class="dot"></span>
+        Verification in progress — Google is reviewing your site
+      </div>
+
+      <div class="cta-section">
+        <p>After verification, you'll be able to create ad units and configure placements.</p>
+        <a href="https://support.google.com/adsense" target="_blank" class="btn btn-ghost">Learn more about AdSense</a>
+      </div>
+    </div>
+
+    <!-- ADS.TXT METHOD -->
+    <div class="method-content" data-method="adstxt">
+      <h3>Ads.txt File Verification</h3>
+      <p>Ads.txt is a text file placed in your site's root directory that lists authorized digital sellers of your ad inventory. This helps advertisers verify you are the legitimate publisher.</p>
+
+      <p><strong>What this does:</strong></p>
+      <ul class="step-list">
+        <li>Declares which ad networks are authorized to sell your inventory</li>
+        <li>Helps prevent counterfeit inventory from being sold</li>
+        <li>Improves transparency and trust with advertisers</li>
+        <li>Can improve your ad rates and approval chances</li>
+      </ul>
+
+      <p><strong>Ads.txt content for ballknw.com:</strong></p>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyToClipboard(this)">Copy</button>
+google.com, pub-2741492847457362, DIRECT, f08c47fec0942fa0
+adsterra.com, 223876, RESELLER
+amazon-adsystem.com, 3b0db13d-5728-4d0e-81ca-4da1c1410b16, DIRECT
+      </div>
+
+      <p><strong>Steps to implement:</strong></p>
+      <ul class="step-list">
+        <li>Create a new text file named <code>ads.txt</code></li>
+        <li>Copy the content above into the file</li>
+        <li>Upload it to the root directory of your site (e.g., <code>https://ballknw.com/ads.txt</code>)</li>
+        <li>Verify the file is accessible via your web browser</li>
+        <li>Submit the file URL to Google AdSense</li>
+      </ul>
+
+      <p><strong>File location:</strong></p>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyToClipboard(this)">Copy</button>
+https://ballknw.com/ads.txt
+      </div>
+
+      <div class="cta-section">
+        <p>Learn more about the Ads.txt standard and best practices.</p>
+        <a href="https://iabtechlab.com/ads-txt/" target="_blank" class="btn btn-ghost">Visit Ads.txt spec</a>
+      </div>
+    </div>
+
+    <!-- META TAG METHOD -->
+    <div class="method-content" data-method="metatag">
+      <h3>Meta Tag Verification</h3>
+      <p>A meta tag is an HTML tag placed in the &lt;head&gt; section of your page that contains a verification code from Google. This proves you own the site.</p>
+
+      <p><strong>What this does:</strong></p>
+      <ul class="step-list">
+        <li>Provides a unique code that only you have access to</li>
+        <li>Proves to Google that you control the website</li>
+        <li>Alternative to code snippet or file verification</li>
+        <li>Required if other methods fail or aren't possible</li>
+      </ul>
+
+      <p><strong>Your verification meta tag:</strong></p>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyToClipboard(this)">Copy</button>
+&lt;meta name="google-site-verification" content="dGVzdC12ZXJpZmljYXRpb24tY29kZSIgLy8gQWRkIHlvdXIgYWN0dWFsIEdvb2dsZSB2ZXJpZmljYXRpb24gY29kZQ==" /&gt;
+      </div>
+
+      <p><strong>Steps to implement:</strong></p>
+      <ul class="step-list">
+        <li>Go to <a href="https://search.google.com/search-console" target="_blank">Google Search Console</a></li>
+        <li>Add your property (ballknw.com)</li>
+        <li>Choose "HTML tag" as the verification method</li>
+        <li>Copy the meta tag provided by Google</li>
+        <li>Paste it in the &lt;head&gt; section of your homepage</li>
+        <li>Click "Verify" in Search Console</li>
+      </ul>
+
+      <p><strong>Note:</strong> Replace the example content value with the actual verification code from your Google Search Console. Each site gets a unique code.</p>
+
+      <div class="cta-section">
+        <p>This method is often used in conjunction with Search Console verification.</p>
+        <a href="https://support.google.com/webmasters/answer/9008080" target="_blank" class="btn btn-ghost">View Google Search Console help</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="foot-inner">
+      <div class="foot-brand"><span class="mark">B</span> BALLKNW</div>
+      <nav class="foot-links">
+        <a href="/">Home</a>
+        <a href="/scout/">Scout</a>
+        <a href="/football-manager/">Gaffer</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="mailto:thinkhiphop12@gmail.com">Contact</a>
+      </nav>
+    </div>
+    <p class="foot-meta">© BALLKNW · ballknw.com</p>
+  </div>
+</footer>
+
+<script>
+// Tab switching functionality
+document.querySelectorAll('.method-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    const method = this.dataset.method;
+
+    // Update active tab
+    document.querySelectorAll('.method-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+
+    // Update active content
+    document.querySelectorAll('.method-content').forEach(c => c.classList.remove('active'));
+    document.querySelector(`.method-content[data-method="${method}"]`).classList.add('active');
+  });
+});
+
+// Copy to clipboard functionality
+function copyToClipboard(button) {
+  const codeBlock = button.parentElement;
+  const text = codeBlock.innerText.replace('Copy', '').trim();
+
+  navigator.clipboard.writeText(text).then(() => {
+    const originalText = button.innerText;
+    button.innerText = 'Copied!';
+    setTimeout(() => {
+      button.innerText = originalText;
+    }, 2000);
+  }).catch(() => {
+    alert('Failed to copy. Please copy manually.');
+  });
+}
+
+// Initialize AdSense ads immediately
+if (window.adsbygoogle) {
+  (adsbygoogle = window.adsbygoogle || []).push({});
+}
+</script>
+</body>
+</html>
