@@ -44,55 +44,44 @@ export default function HubScreen({
 
   return (
     <div className="fm-screen">
-      {/* Portal Hub (new dashboard) */}
+      <nav className="fm-tabs">
+        <button className={`fm-tab${tab === 'hub' ? ' active' : ''}`} onClick={() => setTab('hub')}>
+          Hub
+        </button>
+        <button className={`fm-tab${tab === 'squad' ? ' active' : ''}`} onClick={() => setTab('squad')}>
+          Squad
+        </button>
+        <button className={`fm-tab${tab === 'tactics' ? ' active' : ''}`} onClick={() => setTab('tactics')}>
+          Tactics
+        </button>
+        <button className={`fm-tab${tab === 'transfers' ? ' active' : ''}`} onClick={() => setTab('transfers')}>
+          Transfers
+          {state.incomingOffers.length > 0 && <span className="fm-tab__badge">{state.incomingOffers.length}</span>}
+        </button>
+        <button className={`fm-tab${tab === 'table' ? ' active' : ''}`} onClick={() => setTab('table')}>
+          Table
+        </button>
+        <button className={`fm-tab${tab === 'fixtures' ? ' active' : ''}`} onClick={() => setTab('fixtures')}>
+          Fixtures
+        </button>
+        <button className={`fm-tab${tab === 'cups' ? ' active' : ''}`} onClick={() => setTab('cups')}>
+          Cups
+        </button>
+        <button className={`fm-tab${tab === 'club' ? ' active' : ''}`} onClick={() => setTab('club')}>
+          Club
+        </button>
+      </nav>
+
       {tab === 'hub' && (
         <PortalHub state={state} onChange={onChange} onPlayMatch={onPlayMatch} onAbandon={onAbandon} />
       )}
-
-      {/* Navigation Tabs */}
-      {tab !== 'hub' && (
-        <>
-          <nav className="fm-tabs">
-            <button className={`fm-tab${tab === 'squad' ? ' active' : ''}`} onClick={() => setTab('squad')}>
-              Squad
-            </button>
-            <button className={`fm-tab${tab === 'tactics' ? ' active' : ''}`} onClick={() => setTab('tactics')}>
-              Tactics
-            </button>
-            <button className={`fm-tab${tab === 'transfers' ? ' active' : ''}`} onClick={() => setTab('transfers')}>
-              Transfers
-              {state.incomingOffers.length > 0 && <span className="fm-tab__badge">{state.incomingOffers.length}</span>}
-            </button>
-            <button className={`fm-tab${tab === 'table' ? ' active' : ''}`} onClick={() => setTab('table')}>
-              Table
-            </button>
-            <button className={`fm-tab${tab === 'fixtures' ? ' active' : ''}`} onClick={() => setTab('fixtures')}>
-              Fixtures
-            </button>
-            <button className={`fm-tab${tab === 'cups' ? ' active' : ''}`} onClick={() => setTab('cups')}>
-              Cups
-            </button>
-            <button className={`fm-tab${tab === 'club' ? ' active' : ''}`} onClick={() => setTab('club')}>
-              Club
-            </button>
-            <button
-              className="fm-tab"
-              onClick={() => setTab('hub')}
-              title="Back to dashboard"
-            >
-              ← Hub
-            </button>
-          </nav>
-
-          {tab === 'squad' && <SquadScreen state={state} onChange={onChange} />}
-          {tab === 'tactics' && <TacticsScreen state={state} onChange={onChange} />}
-          {tab === 'transfers' && <TransfersScreen state={state} onChange={onChange} />}
-          {tab === 'table' && <TableScreen state={state} />}
-          {tab === 'fixtures' && <FixturesScreen state={state} />}
-          {tab === 'cups' && <CupScreen state={state} />}
-          {tab === 'club' && <ClubScreen state={state} onChange={onChange} />}
-        </>
-      )}
+      {tab === 'squad' && <SquadScreen state={state} onChange={onChange} />}
+      {tab === 'tactics' && <TacticsScreen state={state} onChange={onChange} />}
+      {tab === 'transfers' && <TransfersScreen state={state} onChange={onChange} />}
+      {tab === 'table' && <TableScreen state={state} />}
+      {tab === 'fixtures' && <FixturesScreen state={state} />}
+      {tab === 'cups' && <CupScreen state={state} />}
+      {tab === 'club' && <ClubScreen state={state} onChange={onChange} />}
     </div>
   );
 }
