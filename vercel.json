@@ -1,0 +1,7 @@
+{
+  "buildCommand": "cd footballmanager && npm run build",
+  "installCommand": "cd footballmanager && npm install",
+  "env": {
+    "NEXT_PUBLIC_BASE_PATH": "/football-manager"
+  }
+}
