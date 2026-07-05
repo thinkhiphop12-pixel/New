@@ -11,3 +11,10 @@ footballmanager/.next/
 footballmanager/out/
 footballmanager/next-env.d.ts
 footballmanager/tsconfig.tsbuildinfo
+
+# Generated content (output of npm run generate:all)
+footballmanager/public/players/
+footballmanager/public/blog/
+footballmanager/public/squads/
+footballmanager/public/page-metadata.json
+sitemap.xml
