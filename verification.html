@@ -6,6 +6,8 @@
 <title>Verify Site Ownership — BALLKNW</title>
 <meta name="description" content="Verify ownership of ballknw.com using AdSense code, Ads.txt, or meta tag verification methods." />
 <meta name="robots" content="noindex, follow" />
+<!-- Google AdSense (site verification + library load) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2741492847457362" crossorigin="anonymous" data-adsense="1"></script>
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="/assets/favicon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -509,6 +511,30 @@ footer {
   margin-top: 18px;
 }
 
+/* AD SLOTS */
+.ad-slot {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.ad-slot-label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ad-slot ins {
+  display: block !important;
+}
+
 @media (max-width: 680px) {
   .method-tabs {
     grid-template-columns: 1fr;
@@ -547,12 +573,26 @@ footer {
   </div>
 </section>
 
+<!-- TOP AD BANNER -->
+<section class="section" style="padding:20px 0">
+  <div class="wrap">
+    <div class="ad-slot" id="topAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto">
+      <span class="ad-slot-label">Advertisement</span>
+    </div>
+  </div>
+</section>
+
 <!-- MAIN CONTENT -->
 <section class="section">
   <div class="wrap verification-container">
 
+    <!-- MIDDLE AD BANNER -->
+    <div class="ad-slot" id="middleAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto">
+      <span class="ad-slot-label">Advertisement</span>
+    </div>
+
     <!-- METHOD TABS -->
-    <div class="method-tabs">
+    <div class="method-tabs" style="margin-top:32px">
       <div class="method-tab active" data-method="adsense">
         <div class="label">AdSense Code Snippet</div>
         <div class="desc">Add a JavaScript snippet to your page header</div>
@@ -740,5 +780,8 @@ function copyToClipboard(button) {
   });
 }
 </script>
+
+<script src="/shared/consent.js" defer></script>
+<script src="/shared/ads.js" defer></script>
 </body>
 </html>
