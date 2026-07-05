@@ -1,7 +1,12 @@
 {
-  "buildCommand": "cd footballmanager && npm run build",
-  "installCommand": "cd footballmanager && npm install",
-  "env": {
-    "NEXT_PUBLIC_BASE_PATH": "/football-manager"
-  }
+  "framework": null,
+  "buildCommand": null,
+  "installCommand": null,
+  "outputDirectory": ".",
+  "rewrites": [
+    {
+      "source": "/DraftXI/:path*",
+      "destination": "https://game-rules-and-stats.vercel.app/:path*"
+    }
+  ]
 }
