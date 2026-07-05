@@ -17,6 +17,8 @@ export interface Player {
   nat: string;
   pos: Position;
   role: string; // detailed role: GK, CB, LB, RB, CDM, CM, CAM, LM, RM, LW, RW, ST
+  /** Specialized tactical role (e.g., 'cb_playmaker', 'st_poacher'). Overrides basic role if set. */
+  tacticalRole?: string;
   rating: number;
   pac: number;
   sho: number;
@@ -219,6 +221,13 @@ export interface Staff {
   scout: number;
 }
 
+export interface DualFormation {
+  /** Formation when team has possession. */
+  inPossessionId: string;
+  /** Formation when team is defending. */
+  outOfPossessionId: string;
+}
+
 export interface GameState {
   version: 2;
   userClubId: number;
@@ -227,9 +236,11 @@ export interface GameState {
   week: number;
   budget: number;
   morale: number; // 30–95 team morale
-  formationId: string;
+  formationId: string; // legacy, keep for backwards compat
   /** Player id per formation slot (11 entries). null = empty slot. */
   lineup: (number | null)[];
+  /** Dual-formation tactics (IP/OOP shapes). */
+  dualFormation?: DualFormation;
   tactics: Tactics;
   training: TrainingFocus;
   chemistry: number; // 0–100 team chemistry

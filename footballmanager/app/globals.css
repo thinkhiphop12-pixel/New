@@ -396,6 +396,151 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--gold); }
   width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 12px;
 }
 
+/* Tactics Screen */
+.fm-tactics { padding: 0; }
+.fm-tactics__section { border-bottom: 1px solid var(--border-soft); }
+.fm-tactics__section:last-child { border-bottom: none; }
+.fm-tactics__header {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  background: transparent; border: none; cursor: pointer;
+  padding: 14px 16px; color: var(--text); font-weight: 700;
+  transition: background-color 0.15s ease;
+}
+.fm-tactics__header:hover { background: rgba(255,255,255,0.02); }
+.fm-tactics__header[aria-expanded="true"] { background: rgba(255,255,255,0.04); }
+.fm-tactics__title { font-size: 14px; }
+.fm-tactics__indicator { font-size: 18px; color: var(--muted); }
+.fm-tactics__content { padding: 0 16px 14px 16px; }
+.fm-tactics__formation-group { margin-bottom: 12px; }
+.fm-tactics__formation-group:last-child { margin-bottom: 0; }
+.fm-label--sm { display: block; margin: 0 0 8px 0; }
+.fm-pills--mobile { gap: 6px; }
+
+/* Portal Hub */
+.fm-portal { display: flex; flex-direction: column; gap: 14px; }
+.fm-portal__header {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-radius: 14px; padding: 14px;
+}
+.fm-portal__club-badge {
+  font-size: 12px; font-weight: 800; letter-spacing: 1px;
+  padding: 10px 14px; border-radius: 10px; color: #03150b;
+  flex: 0 0 56px; height: 56px; display: flex; align-items: center; justify-content: center;
+}
+.fm-portal__club-info { flex: 1; }
+.fm-portal__club-name { font-size: 18px; font-weight: 900; margin: 0; line-height: 1.1; }
+.fm-portal__club-meta { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
+
+/* Filter Buttons */
+.fm-portal__filters {
+  display: flex; gap: 6px; overflow-x: auto; padding: 0 0 4px 0;
+  -webkit-overflow-scrolling: touch;
+}
+.fm-filter-btn {
+  border: 1.5px solid var(--border-soft); background: var(--panel);
+  color: var(--text); border-radius: 999px; padding: 7px 14px;
+  font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  flex-shrink: 0; position: relative;
+}
+.fm-filter-btn:hover { border-color: var(--border); }
+.fm-filter-btn.active { border-color: var(--gold); background: var(--gold-soft); color: var(--gold); }
+.fm-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; border-radius: 999px;
+  background: var(--gold); color: #1a1403; margin-left: 4px;
+  min-width: 18px; height: 18px;
+}
+.fm-badge--alert { background: var(--red); color: white; }
+.fm-badge--new { background: var(--gold); color: #1a1403; }
+
+/* Cards Grid (Mobile: stacked, Desktop: 2-col) */
+.fm-portal__cards {
+  display: grid; grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 768px) {
+  .fm-portal__cards { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Card Component */
+.fm-card {
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-radius: 14px; overflow: hidden; transition: border-color 0.15s ease;
+}
+.fm-card--clickable { cursor: pointer; }
+.fm-card--clickable:hover { border-color: var(--border); }
+.fm-card__header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px; border-bottom: 1px solid var(--border-soft);
+}
+.fm-card__title { font-size: 14px; font-weight: 800; margin: 0; flex: 1; }
+.fm-card__meta { font-size: 11px; color: var(--muted-dim); white-space: nowrap; margin-left: 8px; }
+.fm-card__indicator { font-size: 14px; color: var(--muted); }
+.fm-card__body { padding: 12px 14px; }
+
+/* Card Content */
+.fm-card__stat-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0; font-size: 13px;
+}
+.fm-card__stat-label { color: var(--muted); }
+.fm-card__stat-value { font-weight: 800; color: var(--green); }
+.fm-gold { color: var(--gold) !important; }
+
+.fm-card__fixture {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  gap: 8px; margin-bottom: 10px;
+}
+.fm-card__team { text-align: center; }
+.fm-card__team-name {
+  display: block; font-weight: 800; font-size: 13px; line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.fm-card__team-name--home { color: var(--gold); }
+.fm-card__team-name--away { color: var(--green); }
+.fm-card__team-label { display: block; font-size: 10px; color: var(--muted-dim); margin-top: 2px; }
+.fm-card__vs { font-weight: 800; color: var(--muted-dim); }
+.fm-card__note { font-size: 11px; color: var(--gold); margin: 0; }
+.fm-card__action { margin-top: 10px; }
+
+.fm-card__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fm-card__list-item { font-size: 13px; color: var(--muted); padding-left: 14px; position: relative; }
+.fm-card__list-item::before { content: '›'; position: absolute; left: 0; color: var(--gold); }
+
+.fm-card__news { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fm-card__news-item { font-size: 12.5px; color: var(--muted); padding-left: 12px; position: relative; }
+.fm-card__news-item::before { content: '›'; position: absolute; left: 0; color: var(--gold); }
+.fm-card__more { font-size: 11px; color: var(--muted-dim); margin: 4px 0 0; font-style: italic; }
+
+.fm-card__hint { font-size: 12px; color: var(--muted-dim); margin: 0; }
+.fm-card__objective { font-size: 13px; color: var(--text); margin: 0 0 8px 0; font-weight: 600; }
+
+.fm-card__advice-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fm-card__advice-list li { font-size: 13px; color: var(--muted); padding-left: 14px; position: relative; }
+.fm-card__advice-list li::before { content: '💡'; position: absolute; left: 0; }
+
+/* Portal Sections */
+.fm-portal__advice { margin-top: 6px; }
+.fm-portal__nav-hint { font-size: 12px; color: var(--muted-dim); text-align: center; margin: 0; }
+.fm-portal__actions { display: flex; gap: 10px; justify-content: center; }
+
+/* Utility */
+.fm-btn--full { width: 100%; }
+
+/* Mobile Optimizations */
+@media (max-width: 560px) {
+  .fm-portal__header { padding: 12px; }
+  .fm-portal__club-badge { flex: 0 0 48px; height: 48px; font-size: 11px; padding: 8px; }
+  .fm-portal__club-name { font-size: 16px; }
+  .fm-portal__filters { gap: 4px; padding: 0 0 4px 0; }
+  .fm-filter-btn { padding: 6px 12px; font-size: 12px; }
+  .fm-card__header { padding: 10px 12px; }
+  .fm-card__body { padding: 10px 12px; }
+  .fm-tactics__header { padding: 12px 14px; }
+  .fm-tactics__content { padding: 0 14px 12px 14px; }
+}
+
 @media (max-width: 560px) {
   .fm-hub-stats { margin-left: 0; width: 100%; justify-content: space-between; }
   .fm-stat { min-width: 0; flex: 1; }
