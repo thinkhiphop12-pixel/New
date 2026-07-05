@@ -14,10 +14,12 @@ interface SideSetup {
 }
 
 function userSetup(state: GameState): SideSetup {
+  // Use dual formation if available, otherwise fall back to single formation
+  const formationId = state.dualFormation?.inPossessionId || state.formationId;
   return {
     clubId: state.userClubId,
     lineup: state.lineup,
-    formation: getFormation(state.formationId),
+    formation: getFormation(formationId),
     tactics: state.tactics,
     morale: state.morale,
     chemistry: state.chemistry,
