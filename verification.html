@@ -513,6 +513,11 @@ footer {
 
 /* AD SLOTS */
 .ad-slot {
+  margin: 20px 0;
+  padding: 0;
+}
+
+.ad-slot[data-ad-status="unfilled"] {
   background: var(--surface);
   border: 1px dashed var(--border);
   border-radius: 16px;
@@ -522,17 +527,12 @@ footer {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 20px 0;
-}
-
-.ad-slot-label {
   color: var(--muted);
   font-size: 13px;
-  font-weight: 600;
 }
 
-.ad-slot ins {
-  display: block !important;
+.ad-slot[data-ad-status="unfilled"]::before {
+  content: "Advertisement";
 }
 
 @media (max-width: 680px) {
@@ -576,9 +576,12 @@ footer {
 <!-- TOP AD BANNER -->
 <section class="section" style="padding:20px 0">
   <div class="wrap">
-    <div class="ad-slot" id="topAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto">
-      <span class="ad-slot-label">Advertisement</span>
-    </div>
+    <ins class="adsbygoogle ad-slot"
+         style="display:block"
+         data-ad-client="ca-pub-2741492847457362"
+         data-ad-slot="XXXXXXXXXXXXXXXX"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
   </div>
 </section>
 
@@ -587,9 +590,12 @@ footer {
   <div class="wrap verification-container">
 
     <!-- MIDDLE AD BANNER -->
-    <div class="ad-slot" id="middleAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto">
-      <span class="ad-slot-label">Advertisement</span>
-    </div>
+    <ins class="adsbygoogle ad-slot"
+         style="display:block"
+         data-ad-client="ca-pub-2741492847457362"
+         data-ad-slot="XXXXXXXXXXXXXXXX"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
 
     <!-- METHOD TABS -->
     <div class="method-tabs" style="margin-top:32px">
@@ -779,9 +785,11 @@ function copyToClipboard(button) {
     alert('Failed to copy. Please copy manually.');
   });
 }
-</script>
 
-<script src="/shared/consent.js" defer></script>
-<script src="/shared/ads.js" defer></script>
+// Initialize AdSense ads immediately
+if (window.adsbygoogle) {
+  (adsbygoogle = window.adsbygoogle || []).push({});
+}
+</script>
 </body>
 </html>
