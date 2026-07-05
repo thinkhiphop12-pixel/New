@@ -76,7 +76,7 @@ export default function HubScreen({
               Club
             </button>
             <button
-              className={`fm-tab${tab === 'hub' ? ' active' : ''}`}
+              className="fm-tab"
               onClick={() => setTab('hub')}
               title="Back to dashboard"
             >

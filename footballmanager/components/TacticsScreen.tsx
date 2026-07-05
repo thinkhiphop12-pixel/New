@@ -25,7 +25,10 @@ export default function TacticsScreen({
     // Only update lineup if we're switching from legacy to dual mode
     const newLineup = state.dualFormation ? state.lineup : autoPickLineup(state, state.userClubId, f);
     update({
-      dualFormation: { ...state.dualFormation, inPossessionId: id },
+      dualFormation: {
+        inPossessionId: id,
+        outOfPossessionId: state.dualFormation?.outOfPossessionId || id,
+      },
       lineup: newLineup,
       formationId: id, // legacy
     });
@@ -33,7 +36,10 @@ export default function TacticsScreen({
 
   const setOOPFormation = (id: string) => {
     update({
-      dualFormation: { ...state.dualFormation, outOfPossessionId: id },
+      dualFormation: {
+        inPossessionId: state.dualFormation?.inPossessionId || state.formationId,
+        outOfPossessionId: id,
+      },
     });
   };
 
