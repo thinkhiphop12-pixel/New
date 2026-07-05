@@ -1,0 +1,31 @@
+'use client';
+
+import type { MatchEvent } from '@/engine/types';
+
+const ICONS: Record<MatchEvent['type'], string> = {
+  goal: '⚽',
+  chance: '🔶',
+  card: '🟨',
+  injury: '🚑',
+  info: 'ℹ️',
+};
+
+export default function MatchHighlights({ events }: { events: MatchEvent[] }) {
+  if (!events.length) return null;
+  return (
+    <div className="fm-panel fm-highlights">
+      <p className="fm-label" style={{ marginTop: 0 }}>
+        Match highlights
+      </p>
+      <ul className="fm-highlights__list">
+        {events.map((e, i) => (
+          <li key={i} className={`fm-highlights__item fm-highlights__item--${e.type}`}>
+            <span className="fm-highlights__icon">{ICONS[e.type]}</span>
+            <span className="min">{e.minute}&apos;</span>
+            <span>{e.text}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

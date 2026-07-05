@@ -14,10 +14,12 @@ interface SideSetup {
 }
 
 function userSetup(state: GameState): SideSetup {
+  // Use dual formation if available, otherwise fall back to single formation
+  const formationId = state.dualFormation?.inPossessionId || state.formationId;
   return {
     clubId: state.userClubId,
     lineup: state.lineup,
-    formation: getFormation(state.formationId),
+    formation: getFormation(formationId),
     tactics: state.tactics,
     morale: state.morale,
     chemistry: state.chemistry,
@@ -86,6 +88,8 @@ export interface HalfOptions {
   userLineup?: (number | null)[];
   /** Half-time team talk (applies to the user's side, half 2 only). */
   talk?: TeamTalk;
+  /** Override the user's tactics (live mid-match tactical adjustment). */
+  userTactics?: Tactics;
 }
 
 function buildReport(
@@ -211,6 +215,42 @@ export function simulateHalf(
       : buildReport(state, home, away, homeXG, awayXG, 46, 89, 'Full time.');
   if (half === 1) report.events.unshift({ minute: 1, type: 'info', clubId: 0, text: 'Kick-off!' });
   return report;
+}
+
+/**
+ * Simulate an arbitrary minute range (not necessarily a whole half). Used to
+ * regenerate the remainder of a half after a live tactical change, so a
+ * mid-match tweak actually affects what happens next instead of only being
+ * cosmetic. xG is scaled to the segment's share of a 90-minute match.
+ */
+export function simulateSegment(
+  state: GameState,
+  homeId: number,
+  awayId: number,
+  minMinute: number,
+  maxMinute: number,
+  opts: HalfOptions & { closingText?: string } = {}
+): MatchReport {
+  const home = setupFor(state, homeId, awayId);
+  const away = setupFor(state, awayId, homeId);
+  const userSide = home.clubId === state.userClubId ? home : away.clubId === state.userClubId ? away : null;
+  if (userSide && opts.userLineup) userSide.lineup = opts.userLineup;
+  if (userSide && opts.userTactics) userSide.tactics = opts.userTactics;
+  let { homeXG, awayXG } = computeXG(state, home, away);
+  const span = Math.max(1, maxMinute - minMinute + 1);
+  homeXG *= span / 90;
+  awayXG *= span / 90;
+  if (userSide && opts.talk) {
+    const mod = TALK_MODS[opts.talk];
+    if (userSide === home) {
+      homeXG *= mod.att;
+      awayXG *= mod.concede;
+    } else {
+      awayXG *= mod.att;
+      homeXG *= mod.concede;
+    }
+  }
+  return buildReport(state, home, away, homeXG, awayXG, minMinute, maxMinute, opts.closingText ?? '');
 }
 
 /** Combine two half-reports into one full-match report. */
