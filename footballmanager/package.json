@@ -10,7 +10,10 @@
     "generate:players": "node scripts/generate-player-pages.mjs",
     "generate:blog": "node scripts/generate-blog-posts.mjs",
     "generate:sitemap": "node scripts/generate-sitemap.mjs",
-    "generate:all": "npm run build-gamedata && npm run generate:players && npm run generate:blog && npm run generate:sitemap"
+    "generate:all": "npm run build-gamedata && npm run generate:players && npm run generate:blog && npm run generate:sitemap",
+    "reddit:post": "node services/reddit-bot.mjs",
+    "discord:start": "node services/discord-bot.mjs",
+    "generate:og": "node scripts/generate-og-image.mjs"
   },
   "dependencies": {
     "next": "16.2.7",
