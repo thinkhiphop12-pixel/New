@@ -1,3 +1,9 @@
-cd /path/to/New
-git pull origin claude/build-vnqqbp
-git push origin claude/build-vnqqbp
+{
+  "outputDirectory": ".",
+  "rewrites": [
+    {
+      "source": "/DraftXI/:path*",
+      "destination": "https://game-rules-and-stats.vercel.app/:path*"
+    }
+  ]
+}
