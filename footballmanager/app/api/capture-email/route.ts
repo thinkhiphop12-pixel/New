@@ -14,6 +14,8 @@
  * Stores in Supabase `emails` table
  */
 
+export const dynamic = 'force-dynamic';
+
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 

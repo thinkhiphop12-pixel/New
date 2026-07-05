@@ -13,6 +13,8 @@
  * Stores in Supabase `user_events` table
  */
 
+export const dynamic = 'force-dynamic';
+
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
