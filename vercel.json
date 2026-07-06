@@ -2,11 +2,5 @@
   "framework": null,
   "buildCommand": null,
   "installCommand": null,
-  "outputDirectory": ".",
-  "rewrites": [
-    {
-      "source": "/DraftXI/:path*",
-      "destination": "https://game-rules-and-stats.vercel.app/:path*"
-    }
-  ]
+  "outputDirectory": "."
 }

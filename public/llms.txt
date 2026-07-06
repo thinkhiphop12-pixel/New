@@ -15,11 +15,11 @@
 - **Features:** Daily streaks, shareable emoji result grids
 - **URL:** https://ballknw.com/scout/
 
-### Name Your Side (Draft XI)
+### Draft XI (Perfect Cup)
 - **Type:** Squad draft and tournament simulation
-- **Gameplay:** Spin for real World Cup squads, draft a full XI (one player per squad) into your formation, guide them through tournament matches
-- **Features:** Formation selection, full XI drafting, tournament play
-- **URL:** https://game-rules-and-stats.vercel.app/
+- **Gameplay:** Spin for real World Cup squads (1930–2026), draft a perfect five (1 GK, 1 DEF, 2 MID, 1 FWD) one player per squad, then simulate a full tournament run and try to go 8-0
+- **Features:** Three squad pools, edition/year rerolls, watch or instant reveal, shareable runs, local run history
+- **URL:** https://ballknw.com/perfect-cup/
 
 ### Gaffer
 - **Type:** Club management simulation

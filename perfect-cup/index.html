@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BALLKNW Draft XI — Draft a Perfect World Cup Five</title>
+<meta name="description" content="Spin for real World Cup squads from 1930–2026 and draft a perfect five — 1 GK, 1 DEF, 2 MID, 1 FWD. Simulate a full tournament run and try to go 8-0. Free, no login." />
+<link rel="canonical" href="https://ballknw.com/perfect-cup/" />
+<meta name="theme-color" content="#050505" />
+
+<meta property="og:site_name" content="BALLKNW" />
+<meta property="og:url" content="https://ballknw.com/perfect-cup/" />
+<meta property="og:title" content="BALLKNW Draft XI — Draft a Perfect World Cup Five" />
+<meta property="og:description" content="Spin real World Cup squads, draft your five, simulate a run, try to go 8-0. Free, no login." />
+<meta property="og:image" content="https://ballknw.com/assets/og-image.png" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="BALLKNW Draft XI" />
+<meta name="twitter:description" content="Draft a perfect World Cup five and simulate a run. Free, no login." />
+<meta name="twitter:image" content="https://ballknw.com/assets/og-image.png" />
+
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/assets/favicon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+<style>
+:root{
+  --bg:#050505;--surface:rgba(255,255,255,0.04);--glass:rgba(255,255,255,0.06);
+  --border:rgba(255,255,255,0.10);--border-bright:rgba(255,255,255,0.18);
+  --lime:#b8ff3c;--emerald:#00d68f;--white:#fff;--muted:#8a8a8e;--gold:#f5b301;
+  --red:#ff5c6c;--cta:linear-gradient(135deg,#b8ff3c 0%,#00d68f 100%);
+  --glow-lime:0 0 44px rgba(184,255,60,0.22);--radius:18px;--maxw:560px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:Inter,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--white);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
+body::before{content:"";position:fixed;top:-280px;left:50%;transform:translateX(-50%);width:900px;height:680px;pointer-events:none;z-index:0;background:radial-gradient(50% 50% at 50% 50%,rgba(0,214,143,0.14) 0%,rgba(184,255,60,0.05) 40%,transparent 72%);filter:blur(8px)}
+a{color:var(--lime);text-decoration:none}
+.hidden{display:none!important}
+
+/* Shell */
+.pc-app{position:relative;z-index:1;max-width:var(--maxw);margin:0 auto;padding:0 18px 60px;min-height:100vh;display:flex;flex-direction:column}
+.pc-header{display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:20;background:rgba(5,5,5,0.72);backdrop-filter:saturate(160%) blur(12px);margin:0 -18px;padding:0 18px;border-bottom:1px solid var(--border)}
+.pc-header__brand{display:flex;align-items:center;gap:8px;font-weight:800;letter-spacing:-0.01em;font-size:15px;color:var(--white)}
+.pc-header__brand .mark{width:28px;height:28px;border-radius:8px;background:var(--cta);color:#04140b;display:grid;place-items:center;font-weight:900;font-size:16px;box-shadow:var(--glow-lime)}
+.pc-header__brand b{color:var(--lime)}
+.pc-header__title{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em}
+.pc-main{flex:1;padding-top:22px}
+
+/* Buttons */
+.pc-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;border-radius:13px;cursor:pointer;transition:transform .12s,box-shadow .2s,border-color .2s,opacity .2s;font-size:14px;border:1px solid transparent;font-family:inherit}
+.pc-btn:disabled{opacity:.4;cursor:not-allowed}
+.pc-btn--primary{background:var(--cta);color:#04140b;padding:12px 22px}
+.pc-btn--primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:var(--glow-lime)}
+.pc-btn--secondary{background:rgba(184,255,60,0.12);border-color:rgba(184,255,60,0.3);color:var(--lime);padding:12px 22px}
+.pc-btn--secondary:hover:not(:disabled){border-color:var(--lime)}
+.pc-btn--ghost{background:var(--glass);border-color:var(--border);color:var(--white);padding:12px 22px}
+.pc-btn--ghost:hover:not(:disabled){border-color:var(--border-bright)}
+.pc-btn--large{padding:15px 26px;font-size:15px;width:100%}
+
+.pc-screen{display:flex;flex-direction:column;gap:20px;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Start */
+.pc-start__title{font-size:clamp(2.2rem,9vw,3.2rem);font-weight:900;letter-spacing:-0.03em;line-height:1;text-align:center;margin-top:8px}
+.pc-start__title-accent{background:var(--cta);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pc-start__tagline{text-align:center;color:var(--muted);max-width:420px;margin:0 auto;font-size:15px}
+.pc-howto{list-style:none;display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.pc-howto__step{display:flex;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+.pc-howto__num{flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(184,255,60,0.12);color:var(--lime);display:grid;place-items:center;font-weight:800;font-size:14px}
+.pc-howto__step h3{font-size:14.5px;font-weight:700}
+.pc-howto__step p{font-size:13px;color:var(--muted);margin-top:2px}
+.pc-config__label{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--lime);margin-bottom:10px}
+.pc-config{margin-top:4px}
+.pc-option-grid{display:grid;grid-template-columns:1fr;gap:10px}
+.pc-option-grid--two{grid-template-columns:1fr 1fr}
+@media(max-width:440px){.pc-option-grid--two{grid-template-columns:1fr}}
+.pc-option{text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;cursor:pointer;transition:border-color .2s,background .2s;font-family:inherit;color:var(--white);display:flex;flex-direction:column;gap:3px}
+.pc-option:hover{border-color:var(--border-bright)}
+.pc-option--active{border-color:var(--lime);background:rgba(184,255,60,0.08);box-shadow:0 0 0 1px var(--lime) inset}
+.pc-option__title{font-weight:700;font-size:15px}
+.pc-option__desc{font-size:12.5px;color:var(--muted)}
+.pc-reveal{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 16px}
+.pc-reveal__label{font-size:13px;color:var(--muted);font-weight:600}
+.pc-toggle{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:3px}
+.pc-toggle__btn{border:none;background:transparent;color:var(--muted);font-weight:700;font-size:13px;padding:6px 16px;border-radius:8px;cursor:pointer;font-family:inherit}
+.pc-toggle__btn--active{background:var(--glass);color:var(--white)}
+
+/* Draft */
+.pc-draft__topbar,.pc-lineup-head,.pc-pick-head{display:flex;align-items:center;justify-content:space-between}
+.pc-wordmark{font-weight:900;letter-spacing:-0.02em;font-size:17px}
+.pc-wordmark__accent{color:var(--lime)}
+.pc-draft__pool{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--glass);border:1px solid var(--border);padding:4px 9px;border-radius:7px}
+.pc-lineup-head,.pc-pick-head{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.pc-lineup{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.pc-slot{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:9px 4px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:78px;justify-content:center}
+.pc-slot--filled{border-color:rgba(184,255,60,0.4);background:rgba(184,255,60,0.06)}
+.pc-slot__pos{font-size:9.5px;font-weight:800;letter-spacing:.06em;color:var(--muted)}
+.pc-slot__flag{font-size:17px;line-height:1}
+.pc-slot__name{font-size:9.5px;font-weight:600;line-height:1.1;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.pc-slot__rating{font-size:12px;font-weight:900;color:var(--lime)}
+.pc-slot__open{font-size:10px;color:var(--muted)}
+.pc-draft__spinner,.pc-simulating,.pc-loading{display:flex;flex-direction:column;align-items:center;gap:14px;padding:34px 0;text-align:center}
+.pc-spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--lime);animation:spin .8s linear infinite}
+.pc-spinner--large{width:48px;height:48px;border-width:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pc-draft__call-to-spin,.pc-draft__complete{display:flex;flex-direction:column;align-items:center;gap:10px;padding:20px 0}
+.pc-draft__lock-hint{font-size:12.5px;color:var(--muted);text-align:center;max-width:300px}
+.pc-draft__complete p{font-weight:600}
+.pc-squad-panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px}
+.pc-squad-panel__head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.pc-spin-pill{font-size:11px;font-weight:800;color:var(--lime);letter-spacing:.04em}
+.pc-squad-panel__label{font-size:10.5px;font-weight:800;letter-spacing:.12em;color:var(--muted)}
+.pc-squad-panel__main{display:flex;align-items:center;gap:14px}
+.pc-squad-panel__flag{font-size:40px;line-height:1}
+.pc-squad-panel__name{font-size:20px;font-weight:800;letter-spacing:-0.01em}
+.pc-squad-panel__meta{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted)}
+.pc-strength{margin-top:14px}
+.pc-strength__row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px}
+.pc-strength__value{color:var(--white);font-weight:800}
+.pc-strength__track{height:7px;background:var(--bg);border-radius:99px;overflow:hidden}
+.pc-strength__fill{height:100%;background:var(--cta);border-radius:99px;transition:width .4s}
+.pc-reroll-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:440px){.pc-reroll-grid{grid-template-columns:1fr}}
+.pc-reroll{text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 13px;cursor:pointer;font-family:inherit;color:var(--white);display:flex;flex-direction:column;gap:3px;transition:border-color .2s}
+.pc-reroll:hover:not(:disabled){border-color:var(--border-bright)}
+.pc-reroll:disabled{opacity:.4;cursor:not-allowed}
+.pc-reroll__label{font-size:12.5px;font-weight:700;color:var(--emerald)}
+.pc-reroll__desc{font-size:11.5px;color:var(--muted)}
+.pc-pick-head__count{color:var(--muted)}
+.pc-player-list{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto;padding-right:2px}
+.pc-player-row{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:9px 12px;cursor:pointer;font-family:inherit;color:var(--white);text-align:left;transition:border-color .15s,background .15s}
+.pc-player-row:hover:not(:disabled){border-color:var(--border-bright);background:var(--glass)}
+.pc-player-row:disabled{opacity:.42;cursor:not-allowed}
+.pc-player-row--picked{opacity:.55;border-color:rgba(184,255,60,0.3)}
+.pc-player-row__badge{flex-shrink:0;width:38px;text-align:center;font-size:10.5px;font-weight:800;letter-spacing:.03em;padding:4px 0;border-radius:6px;background:var(--glass);border:1px solid var(--border)}
+.pc-pos-gk .pc-player-row__badge{color:var(--gold);background:rgba(245,179,1,0.1);border-color:rgba(245,179,1,0.28)}
+.pc-pos-def .pc-player-row__badge{color:#5ac8fa;background:rgba(90,200,250,0.1);border-color:rgba(90,200,250,0.28)}
+.pc-pos-mid .pc-player-row__badge{color:var(--emerald);background:rgba(0,214,143,0.1);border-color:rgba(0,214,143,0.28)}
+.pc-pos-fwd .pc-player-row__badge{color:var(--lime);background:rgba(184,255,60,0.1);border-color:rgba(184,255,60,0.28)}
+.pc-player-row__info{flex:1;display:flex;flex-direction:column;min-width:0}
+.pc-player-row__name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-player-row__sub{font-size:11px;color:var(--muted)}
+.pc-player-row__rating{font-size:17px;font-weight:900;color:var(--white)}
+.pc-player-row__rating--elite{color:var(--lime)}
+.pc-draft__footer-hud{text-align:center;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:12px}
+
+/* Result */
+.pc-result__perfect-banner{text-align:center;font-weight:900;font-size:15px;letter-spacing:.06em;background:var(--cta);color:#04140b;border-radius:12px;padding:12px;box-shadow:var(--glow-lime)}
+.pc-result__title{text-align:center;font-size:24px;font-weight:900;letter-spacing:-0.02em}
+.pc-result__lineup{display:flex;flex-wrap:wrap;gap:7px;justify-content:center}
+.pc-result__pill{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:6px 12px}
+.pc-result__pill-pos{font-size:9.5px;font-weight:800;color:var(--muted)}
+.pc-result__pill-rating{font-weight:900;color:var(--lime)}
+.pc-match-log{list-style:none;display:flex;flex-direction:column;gap:6px}
+.pc-match-log__row{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-left-width:3px;border-radius:10px;padding:10px 13px;font-size:13px}
+.pc-match-log__round{font-weight:700;font-size:12px;color:var(--muted);white-space:nowrap}
+.pc-match-log__opponent{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.pc-match-log__score{font-weight:900;font-size:15px}
+.pc-match-log__outcome{font-size:10px;font-weight:800;letter-spacing:.05em;padding:3px 7px;border-radius:6px}
+.pc-outcome-win{border-left-color:var(--lime)}
+.pc-outcome-win .pc-match-log__outcome{background:rgba(184,255,60,0.14);color:var(--lime)}
+.pc-outcome-draw{border-left-color:var(--gold)}
+.pc-outcome-draw .pc-match-log__outcome{background:rgba(245,179,1,0.14);color:var(--gold)}
+.pc-outcome-loss{border-left-color:var(--red)}
+.pc-outcome-loss .pc-match-log__outcome{background:rgba(255,92,108,0.14);color:var(--red)}
+.pc-result__stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pc-stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px;text-align:center}
+.pc-stat__label{display:block;font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.pc-stat__value{display:block;font-size:20px;font-weight:900;margin-top:3px}
+.pc-result__actions{display:flex;flex-wrap:wrap;gap:9px}
+.pc-result__actions .pc-btn{flex:1;min-width:120px}
+
+/* History */
+.pc-history__title{font-size:24px;font-weight:900}
+.pc-history__source{font-size:12px;color:var(--muted)}
+.pc-history__empty{color:var(--muted);padding:24px 0;text-align:center}
+.pc-history__list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.pc-history__item{width:100%;display:grid;grid-template-columns:auto 1fr auto auto auto;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;cursor:pointer;font-family:inherit;color:var(--white);text-align:left;transition:border-color .2s}
+.pc-history__item:hover{border-color:var(--border-bright)}
+.pc-history__item--perfect{border-color:rgba(184,255,60,0.4)}
+.pc-history__record{font-weight:900;font-size:15px}
+.pc-history__date,.pc-history__goals,.pc-history__strength{font-size:12px;color:var(--muted)}
+.pc-history__badge{font-size:12px;font-weight:900;color:var(--lime)}
+.pc-history__badge--muted{color:var(--muted)}
+.pc-history__actions{display:flex;gap:10px}
+.pc-history__actions .pc-btn{flex:1}
+
+.pc-footer{text-align:center;margin-top:30px;padding-top:18px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+.pc-footer a{color:var(--muted)}
+.pc-footer a:hover{color:var(--white)}
+.pc-error{text-align:center;padding:40px 0;color:var(--muted)}
+</style>
+
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"BALLKNW Draft XI","url":"https://ballknw.com/perfect-cup/","description":"Spin for real World Cup squads from 1930–2026 and draft a perfect five, then simulate a tournament run and try to go 8-0.","genre":"Sports","gamePlatform":"Web Browser","applicationCategory":"Game","playMode":"SinglePlayer","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"publisher":{"@type":"Organization","name":"BALLKNW","url":"https://ballknw.com/"}}</script>
+</head>
+<body>
+<div class="pc-app">
+  <header class="pc-header">
+    <a class="pc-header__brand" href="/" aria-label="BALLKNW home">
+      <span class="mark">B</span> BALL<b>KNW</b>
+    </a>
+    <span class="pc-header__title">Draft XI · Perfect Cup</span>
+  </header>
+  <main class="pc-main" id="root">
+    <div class="pc-loading"><div class="pc-spinner pc-spinner--large"></div><p>Loading World Cup squads…</p></div>
+  </main>
+  <footer class="pc-footer">
+    <a href="/">← All BALLKNW games</a> · Data from public World Cup records, 1930–2026
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Constants (ported from engine/types.ts) ----------
+  var XI_REQUIREMENTS = { GK: 1, DEF: 1, MID: 2, FWD: 1 };
+  var TOTAL_PICKS = 5;
+  var TOTAL_MATCHES = 8;
+  var LEGENDS_COUNT = 34;
+  var POOL_LABEL = { legends: "Classic Legends", history: "Full History", england: "England" };
+  var TIER_LABEL = { legendary: "Legendary", strong: "Strong", medium: "Medium", weak: "Underdog" };
+  var SLOT_POSITIONS = ["GK", "DEF", "MID", "MID", "FWD"];
+  var ROUNDS = [
+    { name: "Group Match 1", stage: "group" },
+    { name: "Group Match 2", stage: "group" },
+    { name: "Group Match 3", stage: "group" },
+    { name: "Round of 32", stage: "knockout" },
+    { name: "Round of 16", stage: "knockout" },
+    { name: "Quarter-final", stage: "knockout" },
+    { name: "Semi-final", stage: "knockout" },
+    { name: "Final", stage: "knockout" }
+  ];
+  var HISTORY_KEY = "ballknw:draftxi:runs";
+
+  // ---------- App state ----------
+  var ALL_SQUADS = [];
+  var view = {
+    screen: "start",
+    pool: "legends",
+    objective: "perfect",
+    revealMode: "watch",
+    draft: null,
+    activeRun: null,
+    fromHistory: false
+  };
+
+  var root = document.getElementById("root");
+
+  // ---------- Data / pools (engine/squads.ts) ----------
+  function squadsForPool(pool) {
+    if (pool === "england") {
+      return ALL_SQUADS.filter(function (s) { return s.countryName === "England"; })
+        .sort(function (a, b) { return a.tournamentYear - b.tournamentYear; });
+    }
+    if (pool === "legends") {
+      return ALL_SQUADS.slice().sort(function (a, b) { return b.strength - a.strength; }).slice(0, LEGENDS_COUNT);
+    }
+    return ALL_SQUADS;
+  }
+
+  // ---------- Draft engine (engine/draft.ts) ----------
+  function createDraftState(pool) {
+    return { pool: pool, currentSquad: null, picks: [], seenSquadIds: [], swapEditionUsed: false, swapSquadUsed: false };
+  }
+  function countByPosition(state, position) {
+    return state.picks.filter(function (p) { return p.player.position === position; }).length;
+  }
+  function isXiComplete(state) { return state.picks.length >= TOTAL_PICKS; }
+  function canPickPosition(state, position) {
+    if (isXiComplete(state)) return false;
+    return countByPosition(state, position) < XI_REQUIREMENTS[position];
+  }
+  function isPlayerPicked(state, player) {
+    return state.picks.some(function (p) { return p.player.id === player.id; });
+  }
+  function canPickPlayer(state, player) {
+    if (isPlayerPicked(state, player)) return false;
+    return canPickPosition(state, player.position);
+  }
+  function isSquadAlreadyUsed(state, squad) {
+    return state.picks.some(function (p) { return p.squadId === squad.id; });
+  }
+  function offersNeededPlayer(state, squad) {
+    if (isSquadAlreadyUsed(state, squad)) return false;
+    return squad.players.some(function (p) { return canPickPosition(state, p.position) && !isPlayerPicked(state, p); });
+  }
+  function spinForSquad(state, pool) {
+    var usable = pool.filter(function (s) { return offersNeededPlayer(state, s); });
+    var usablePool = usable.length > 0 ? usable : pool;
+    var unseen = usablePool.filter(function (s) { return state.seenSquadIds.indexOf(s.id) === -1; });
+    var candidates = unseen.length > 0 ? unseen : usablePool;
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+  function markSquadSeen(state, squad) {
+    state.currentSquad = squad;
+    if (state.seenSquadIds.indexOf(squad.id) === -1) state.seenSquadIds.push(squad.id);
+    return state;
+  }
+  function pickPlayer(state, player, squad) {
+    if (!canPickPlayer(state, player)) return state;
+    state.picks.push({
+      player: player,
+      squadId: squad.id,
+      squadLabel: squad.flag + " " + squad.countryName + " " + squad.tournamentYear
+    });
+    state.currentSquad = null;
+    if (state.seenSquadIds.indexOf(squad.id) === -1) state.seenSquadIds.push(squad.id);
+    return state;
+  }
+  function editionCandidates(state, pool) {
+    if (!state.currentSquad) return [];
+    var cs = state.currentSquad;
+    return pool.filter(function (s) {
+      return s.countryName === cs.countryName && s.id !== cs.id && offersNeededPlayer(state, s);
+    });
+  }
+  function squadCandidates(state, pool) {
+    if (!state.currentSquad) return [];
+    var cs = state.currentSquad;
+    return pool.filter(function (s) {
+      return s.tournamentYear === cs.tournamentYear && s.id !== cs.id && offersNeededPlayer(state, s);
+    });
+  }
+  function canSwapEdition(state, pool) {
+    return !state.swapEditionUsed && state.currentSquad !== null && editionCandidates(state, pool).length > 0;
+  }
+  function canSwapSquad(state, pool) {
+    return !state.swapSquadUsed && state.currentSquad !== null && squadCandidates(state, pool).length > 0;
+  }
+  function swapEdition(state, pool) {
+    if (!canSwapEdition(state, pool)) return state;
+    var c = editionCandidates(state, pool);
+    state.swapEditionUsed = true;
+    return markSquadSeen(state, c[Math.floor(Math.random() * c.length)]);
+  }
+  function swapSquad(state, pool) {
+    if (!canSwapSquad(state, pool)) return state;
+    var c = squadCandidates(state, pool);
+    state.swapSquadUsed = true;
+    return markSquadSeen(state, c[Math.floor(Math.random() * c.length)]);
+  }
+  function draftStrength(state) {
+    if (state.picks.length === 0) return 0;
+    var sum = state.picks.reduce(function (a, p) { return a + p.player.rating; }, 0);
+    return Math.round(sum / state.picks.length);
+  }
+
+  // ---------- Simulation (engine/simulate.ts) ----------
+  function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+  function poissonRandom(lambda) {
+    var limit = Math.exp(-lambda), k = 0, p = 1;
+    do { k += 1; p *= Math.random(); } while (p > limit);
+    return k - 1;
+  }
+  function expectedGoals(attack, defense) { return clamp(1.35 + (attack - defense) / 16, 0.2, 5.5); }
+  function pickOpponent(round, totalRounds, pool) {
+    var targetPct = round / totalRounds;
+    var ranked = pool.slice().sort(function (a, b) {
+      return Math.abs(a.strengthPct - targetPct) - Math.abs(b.strengthPct - targetPct);
+    });
+    var bandSize = Math.max(3, Math.floor(ranked.length * 0.08));
+    var band = ranked.slice(0, bandSize);
+    return band[Math.floor(Math.random() * band.length)] || pool[0];
+  }
+  function outcomeFor(a, b) { return a > b ? "win" : a < b ? "loss" : "draw"; }
+  function simulateRun(teamStrength, allSquads, usedSquadIds) {
+    var pool = allSquads.filter(function (s) { return !usedSquadIds.has(s.id); });
+    var opponentPool = pool.length > 0 ? pool : allSquads;
+    var matches = [], goalsFor = 0, goalsAgainst = 0, wins = 0, draws = 0, losses = 0, knockoutLoss = false;
+    for (var round = 1; round <= TOTAL_MATCHES; round++) {
+      var r = ROUNDS[round - 1];
+      var opponent = pickOpponent(round, TOTAL_MATCHES, opponentPool);
+      var ourGoals = poissonRandom(expectedGoals(teamStrength, opponent.strength));
+      var opponentGoals = poissonRandom(expectedGoals(opponent.strength, teamStrength));
+      if (r.stage === "knockout" && ourGoals === opponentGoals) {
+        if (Math.random() < 0.5) ourGoals += 1; else opponentGoals += 1;
+      }
+      var outcome = outcomeFor(ourGoals, opponentGoals);
+      if (outcome === "win") wins += 1; else if (outcome === "draw") draws += 1; else losses += 1;
+      if (outcome !== "win" && r.stage === "knockout") knockoutLoss = true;
+      goalsFor += ourGoals; goalsAgainst += opponentGoals;
+      matches.push({
+        round: round, roundName: r.name, stage: r.stage,
+        opponent: opponent.flag + " " + opponent.countryName + " " + opponent.tournamentYear,
+        ourGoals: ourGoals, opponentGoals: opponentGoals, outcome: outcome
+      });
+      if (r.stage === "knockout" && outcome !== "win") break;
+    }
+    return {
+      matches: matches, goalsFor: goalsFor, goalsAgainst: goalsAgainst,
+      isPerfect: wins === TOTAL_MATCHES, isChampion: !knockoutLoss,
+      finalRecord: wins + "-" + draws + "-" + losses
+    };
+  }
+  function makeRunId() {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+    return "run-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+  }
+  function buildRun(picks, teamStrength, sim, pool, objective) {
+    return {
+      id: makeRunId(), date: new Date().toISOString(), pool: pool, objective: objective,
+      picks: picks, matches: sim.matches, goalsFor: sim.goalsFor, goalsAgainst: sim.goalsAgainst,
+      isPerfect: sim.isPerfect, isChampion: sim.isChampion,
+      success: objective === "perfect" ? sim.isPerfect : sim.isChampion,
+      finalRecord: sim.finalRecord, teamStrength: teamStrength
+    };
+  }
+
+  // ---------- Run history (localStorage) ----------
+  function loadRuns() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch (e) { return []; }
+  }
+  function saveRun(run) {
+    var runs = loadRuns();
+    runs = runs.filter(function (r) { return r.id !== run.id; });
+    runs.unshift(run);
+    runs = runs.slice(0, 100);
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(runs)); } catch (e) {}
+  }
+  function clearRuns() { try { localStorage.removeItem(HISTORY_KEY); } catch (e) {} }
+
+  // ---------- DOM helpers ----------
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function on(sel, ev, fn) {
+    var el = typeof sel === "string" ? root.querySelector(sel) : sel;
+    if (el) el.addEventListener(ev, fn);
+  }
+  function onAll(sel, ev, fn) {
+    root.querySelectorAll(sel).forEach(function (el) { el.addEventListener(ev, fn); });
+  }
+
+  // ---------- Screens ----------
+  function render() {
+    if (view.screen === "start") return renderStart();
+    if (view.screen === "draft") return renderDraft();
+    if (view.screen === "simulating") return renderSimulating();
+    if (view.screen === "result") return renderResult();
+    if (view.screen === "history") return renderHistory();
+  }
+
+  function renderStart() {
+    var counts = {
+      history: ALL_SQUADS.length,
+      legends: squadsForPool("legends").length,
+      england: squadsForPool("england").length
+    };
+    var hasHistory = loadRuns().length > 0;
+    function opt(pool, title, desc) {
+      return '<button type="button" class="pc-option' + (view.pool === pool ? ' pc-option--active' : '') +
+        '" data-pool="' + pool + '"><span class="pc-option__title">' + title +
+        '</span><span class="pc-option__desc">' + desc + '</span></button>';
+    }
+    function optObj(obj, title, desc) {
+      return '<button type="button" class="pc-option' + (view.objective === obj ? ' pc-option--active' : '') +
+        '" data-obj="' + obj + '"><span class="pc-option__title">' + title +
+        '</span><span class="pc-option__desc">' + desc + '</span></button>';
+    }
+    root.innerHTML =
+      '<div class="pc-screen pc-start">' +
+        '<h1 class="pc-start__title">PERFECT <span class="pc-start__title-accent">CUP</span></h1>' +
+        '<p class="pc-start__tagline">Draft five World Cup legends. Simulate a run. Try to win it all.</p>' +
+        '<ol class="pc-howto">' +
+          '<li class="pc-howto__step"><span class="pc-howto__num">1</span><div><h3>Spin &amp; draft five</h3><p>Each spin offers one World Cup squad. Pick one player for an open slot: 1 GK, 1 DEF, 2 MID, 1 FWD.</p></div></li>' +
+          '<li class="pc-howto__step"><span class="pc-howto__num">2</span><div><h3>Two rerolls</h3><p>Don\'t like a squad? Swap the edition (same country) or the squad (same year). One of each per game.</p></div></li>' +
+          '<li class="pc-howto__step"><span class="pc-howto__num">3</span><div><h3>Win the World Cup</h3><p>Your five are simulated through the group stage and knockouts. A perfect run wins every match.</p></div></li>' +
+        '</ol>' +
+        '<section class="pc-config"><h2 class="pc-config__label">Choose your pool</h2><div class="pc-option-grid">' +
+          opt("legends", "Classic Legends", counts.legends + " strongest, most iconic squads") +
+          opt("history", "Full History", "Every World Cup squad, " + counts.history + " teams") +
+          opt("england", "🏴 England", "All-time England XI, " + counts.england + " editions") +
+        '</div></section>' +
+        '<section class="pc-config"><h2 class="pc-config__label">Objective</h2><div class="pc-option-grid pc-option-grid--two">' +
+          optObj("perfect", "🔥 Go 8-0", "Win every match, group stage included.") +
+          optObj("trophy", "🏆 Win the Cup", "Lift the trophy. Only knockout losses end the run.") +
+        '</div></section>' +
+        '<div class="pc-reveal"><span class="pc-reveal__label">Reveal mode</span><div class="pc-toggle">' +
+          '<button type="button" class="pc-toggle__btn' + (view.revealMode === "watch" ? ' pc-toggle__btn--active' : '') + '" data-reveal="watch">Watch</button>' +
+          '<button type="button" class="pc-toggle__btn' + (view.revealMode === "instant" ? ' pc-toggle__btn--active' : '') + '" data-reveal="instant">Instant</button>' +
+        '</div></div>' +
+        '<button type="button" class="pc-btn pc-btn--primary pc-btn--large" id="startBtn">Start drafting</button>' +
+        (hasHistory ? '<button type="button" class="pc-btn pc-btn--ghost" id="histBtn">View past runs</button>' : '') +
+      '</div>';
+
+    onAll("[data-pool]", "click", function () { view.pool = this.getAttribute("data-pool"); render(); });
+    onAll("[data-obj]", "click", function () { view.objective = this.getAttribute("data-obj"); render(); });
+    onAll("[data-reveal]", "click", function () { view.revealMode = this.getAttribute("data-reveal"); render(); });
+    on("#startBtn", "click", function () {
+      view.draft = createDraftState(view.pool);
+      view.screen = "draft"; render();
+    });
+    on("#histBtn", "click", function () { view.screen = "history"; render(); });
+  }
+
+  function lineupSlots(state) {
+    var used = { GK: 0, DEF: 0, MID: 0, FWD: 0 };
+    return SLOT_POSITIONS.map(function (pos) {
+      var picksOfPos = state.picks.filter(function (p) { return p.player.position === pos; });
+      var pick = picksOfPos[used[pos]];
+      used[pos] += 1;
+      return { pos: pos, pick: pick };
+    });
+  }
+
+  function renderDraft() {
+    var state = view.draft;
+    var activePool = squadsForPool(state.pool);
+    var complete = isXiComplete(state);
+    var squad = state.currentSquad;
+    var spinNumber = Math.min(state.picks.length + 1, 5);
+    var slots = lineupSlots(state);
+
+    var slotsHtml = slots.map(function (s) {
+      if (s.pick) {
+        return '<div class="pc-slot pc-slot--filled"><span class="pc-slot__pos">' + s.pos +
+          '</span><span class="pc-slot__flag">' + s.pick.squadLabel.split(" ")[0] +
+          '</span><span class="pc-slot__name">' + esc(s.pick.player.name) +
+          '</span><span class="pc-slot__rating">' + s.pick.player.rating + '</span></div>';
+      }
+      return '<div class="pc-slot"><span class="pc-slot__pos">' + s.pos + '</span><span class="pc-slot__open">Open</span></div>';
+    }).join("");
+
+    var body = "";
+    if (complete) {
+      body = '<div class="pc-draft__complete"><p>Your five are locked in.</p>' +
+        '<button type="button" class="pc-btn pc-btn--primary pc-btn--large" id="simBtn">Simulate the run</button></div>';
+    } else if (!squad) {
+      body = '<div class="pc-draft__call-to-spin">' +
+        '<button type="button" class="pc-btn pc-btn--primary pc-btn--large" id="spinBtn">' +
+        (state.picks.length === 0 ? "Spin for a squad" : "Spin for the next squad") + '</button>' +
+        '<span class="pc-draft__lock-hint">Reveal a random World Cup squad, then draft one player from it.</span></div>';
+    } else {
+      var eOk = canSwapEdition(state, activePool);
+      var sOk = canSwapSquad(state, activePool);
+      var players = squad.players.map(function (p) {
+        var picked = isPlayerPicked(state, p);
+        var disabled = !canPickPlayer(state, p);
+        var elite = p.rating >= 88;
+        return '<button type="button" class="pc-player-row pc-pos-' + p.position.toLowerCase() +
+          (picked ? ' pc-player-row--picked' : '') + '" data-pid="' + esc(p.id) + '"' +
+          (disabled || picked ? " disabled" : "") + '>' +
+          '<span class="pc-player-row__badge">' + p.position + '</span>' +
+          '<span class="pc-player-row__info"><span class="pc-player-row__name">' + esc(p.name) +
+          '</span><span class="pc-player-row__sub">' + (picked ? "In your XI" : disabled ? "Slot full" : "Available") + '</span></span>' +
+          '<span class="pc-player-row__rating' + (elite ? ' pc-player-row__rating--elite' : '') + '">' + p.rating + '</span></button>';
+      }).join("");
+      body =
+        '<div class="pc-squad-panel"><div class="pc-squad-panel__head">' +
+          '<span class="pc-spin-pill">● Spin ' + spinNumber + ' of 5</span>' +
+          '<span class="pc-squad-panel__label">YOUR SQUAD</span></div>' +
+          '<div class="pc-squad-panel__main"><span class="pc-squad-panel__flag">' + squad.flag + '</span>' +
+          '<div><div class="pc-squad-panel__name">' + esc(squad.countryName) + '</div>' +
+          '<div class="pc-squad-panel__meta"><span>' + squad.tournamentYear + '</span><span>·</span><span>' + TIER_LABEL[squad.tier] + '</span></div></div></div>' +
+          '<div class="pc-strength"><div class="pc-strength__row"><span>Squad strength</span><span class="pc-strength__value">' + squad.strength + '</span></div>' +
+          '<div class="pc-strength__track"><div class="pc-strength__fill" style="width:' + Math.round(squad.strengthPct * 100) + '%"></div></div></div></div>' +
+        '<div class="pc-reroll-grid">' +
+          '<button type="button" class="pc-reroll" id="editionBtn"' + (eOk ? "" : " disabled") + '>' +
+          '<span class="pc-reroll__label">↻ Lineage reroll' + (eOk ? "" : " · none") + '</span>' +
+          '<span class="pc-reroll__desc">Try another ' + esc(squad.countryName) + ' squad</span></button>' +
+          '<button type="button" class="pc-reroll" id="yearBtn"' + (sOk ? "" : " disabled") + '>' +
+          '<span class="pc-reroll__label">⇄ Year reroll' + (sOk ? "" : " · none") + '</span>' +
+          '<span class="pc-reroll__desc">Try another ' + squad.tournamentYear + ' squad</span></button></div>' +
+        '<div class="pc-pick-head"><span>PICK A PLAYER</span><span class="pc-pick-head__count">' + squad.players.length + ' in squad</span></div>' +
+        '<div class="pc-player-list">' + players + '</div>';
+    }
+
+    root.innerHTML =
+      '<div class="pc-screen pc-draft">' +
+        '<div class="pc-draft__topbar"><span class="pc-wordmark">PERFECT <span class="pc-wordmark__accent">CUP</span></span>' +
+        '<span class="pc-draft__pool">' + POOL_LABEL[state.pool] + '</span></div>' +
+        '<div class="pc-lineup-head"><span>YOUR XI</span><span>' + (complete ? "Five complete" : "Pick " + spinNumber + " of 5") + '</span></div>' +
+        '<div class="pc-lineup">' + slotsHtml + '</div>' +
+        body +
+        (complete ? "" : '<div class="pc-draft__footer-hud"><span>Avg strength ' + (draftStrength(state) || "—") + '</span></div>') +
+      '</div>';
+
+    on("#simBtn", "click", startSimulation);
+    on("#spinBtn", "click", function () { withSpinner(function () { markSquadSeen(state, spinForSquad(state, activePool)); }, 550); });
+    on("#editionBtn", "click", function () { withSpinner(function () { swapEdition(state, activePool); }, 400); });
+    on("#yearBtn", "click", function () { withSpinner(function () { swapSquad(state, activePool); }, 400); });
+    onAll("[data-pid]", "click", function () {
+      var pid = this.getAttribute("data-pid");
+      var player = squad.players.filter(function (p) { return p.id === pid; })[0];
+      if (player && state.currentSquad) { pickPlayer(state, player, state.currentSquad); render(); }
+    });
+  }
+
+  var revealing = false;
+  function withSpinner(action, delay) {
+    if (revealing) return;
+    revealing = true;
+    root.innerHTML = '<div class="pc-screen"><div class="pc-draft__spinner"><div class="pc-spinner"></div><p>Spinning the globe…</p></div></div>';
+    window.setTimeout(function () { action(); revealing = false; render(); }, delay);
+  }
+
+  function startSimulation() {
+    view.screen = "simulating"; render();
+    window.setTimeout(function () {
+      var state = view.draft;
+      var usedSquadIds = new Set(state.picks.map(function (p) { return p.squadId; }));
+      var teamStrength = Math.round(state.picks.reduce(function (a, p) { return a + p.player.rating; }, 0) / state.picks.length);
+      var sim = simulateRun(teamStrength, ALL_SQUADS, usedSquadIds);
+      var run = buildRun(state.picks, teamStrength, sim, state.pool, view.objective);
+      saveRun(run);
+      view.activeRun = run; view.fromHistory = false; view.screen = "result"; render();
+    }, 1100);
+  }
+
+  function renderSimulating() {
+    root.innerHTML = '<div class="pc-screen pc-simulating"><div class="pc-spinner pc-spinner--large"></div>' +
+      '<h2>Simulating the run…</h2><p>' +
+      (view.objective === "perfect" ? "Three group games and five knockout rounds. Win all eight." : "Through the group stage to the final. Lift the trophy.") +
+      '</p></div>';
+  }
+
+  function headline(run) {
+    if (run.objective === "perfect") return run.isPerfect ? "Perfect run — " + run.finalRecord : "Run ended";
+    return run.isChampion ? "World Champions" : "Knocked out";
+  }
+  function buildShareText(run) {
+    var head = run.objective === "perfect"
+      ? (run.isPerfect ? "I went 8-0 in BALLKNW Draft XI!" : "BALLKNW Draft XI run: " + run.finalRecord)
+      : (run.isChampion ? "I won the BALLKNW Draft XI Cup! (" + run.finalRecord + ")" : "BALLKNW Draft XI run: " + run.finalRecord);
+    return head + "\nTeam strength: " + run.teamStrength + "\nballknw.com/perfect-cup/";
+  }
+
+  function renderResult() {
+    var run = view.activeRun;
+    var animate = view.revealMode === "watch" && !view.fromHistory;
+    renderResultBody(run, animate ? 0 : run.matches.length);
+    if (animate) {
+      var n = 0;
+      var timer = window.setInterval(function () {
+        n += 1;
+        renderResultBody(run, n);
+        if (n >= run.matches.length) window.clearInterval(timer);
+      }, 550);
+    }
+  }
+
+  function renderResultBody(run, revealed) {
+    if (view.screen !== "result") return;
+    var allRevealed = revealed >= run.matches.length;
+    var success = run.success;
+    var lineup = run.picks.map(function (p) {
+      return '<span class="pc-result__pill"><span class="pc-result__pill-pos">' + p.player.position + '</span>' +
+        esc(p.player.name) + ' <span class="pc-result__pill-rating">' + p.player.rating + '</span></span>';
+    }).join("");
+    var log = run.matches.slice(0, revealed).map(function (m) {
+      return '<li class="pc-match-log__row pc-outcome-' + m.outcome + '">' +
+        '<span class="pc-match-log__round">' + m.roundName + '</span>' +
+        '<span class="pc-match-log__opponent">' + m.opponent + '</span>' +
+        '<span class="pc-match-log__score">' + m.ourGoals + '-' + m.opponentGoals + '</span>' +
+        '<span class="pc-match-log__outcome">' + m.outcome.toUpperCase() + '</span></li>';
+    }).join("");
+
+    var tail = "";
+    if (allRevealed) {
+      tail =
+        '<div class="pc-result__stats">' +
+          '<div class="pc-stat"><span class="pc-stat__label">Record</span><span class="pc-stat__value">' + run.finalRecord + '</span></div>' +
+          '<div class="pc-stat"><span class="pc-stat__label">Goals</span><span class="pc-stat__value">' + run.goalsFor + '-' + run.goalsAgainst + '</span></div>' +
+          '<div class="pc-stat"><span class="pc-stat__label">Strength</span><span class="pc-stat__value">' + run.teamStrength + '</span></div>' +
+        '</div>' +
+        '<div class="pc-result__actions">' +
+          '<button type="button" class="pc-btn pc-btn--secondary" id="shareBtn">Share run</button>' +
+          (view.fromHistory
+            ? '<button type="button" class="pc-btn pc-btn--ghost" id="backHistBtn">Back to history</button>'
+            : '<button type="button" class="pc-btn pc-btn--primary" id="againBtn">Play again</button>' +
+              '<button type="button" class="pc-btn pc-btn--ghost" id="viewHistBtn">View history</button>') +
+        '</div>';
+    }
+
+    root.innerHTML =
+      '<div class="pc-screen pc-result">' +
+        (allRevealed && success ? '<div class="pc-result__perfect-banner">' + (run.objective === "perfect" ? "PERFECT — " + run.finalRecord : "🏆 CHAMPIONS") + '</div>' : "") +
+        '<h2 class="pc-result__title">' + (allRevealed ? headline(run) : "Simulating the run…") + '</h2>' +
+        '<div class="pc-result__lineup">' + lineup + '</div>' +
+        '<ol class="pc-match-log">' + log + '</ol>' +
+        tail +
+      '</div>';
+
+    on("#shareBtn", "click", function () {
+      var text = buildShareText(run);
+      var btn = this;
+      if (navigator.share) { navigator.share({ text: text }).catch(function () {}); }
+      else if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function () {
+          btn.textContent = "Copied!";
+          window.setTimeout(function () { btn.textContent = "Share run"; }, 2000);
+        }).catch(function () {});
+      }
+    });
+    on("#againBtn", "click", function () { view.draft = createDraftState(view.pool); view.screen = "draft"; render(); });
+    on("#viewHistBtn", "click", function () { view.screen = "history"; render(); });
+    on("#backHistBtn", "click", function () { view.screen = "history"; render(); });
+  }
+
+  function renderHistory() {
+    var runs = loadRuns();
+    var list = runs.length === 0
+      ? '<p class="pc-history__empty">No runs yet — go play a Cup.</p>'
+      : '<ul class="pc-history__list">' + runs.map(function (run) {
+          var badge = run.isPerfect ? '<span class="pc-history__badge">8-0</span>'
+            : run.isChampion ? '<span class="pc-history__badge">🏆</span>'
+            : '<span class="pc-history__badge pc-history__badge--muted">—</span>';
+          return '<li><button type="button" class="pc-history__item' + (run.success ? ' pc-history__item--perfect' : '') + '" data-rid="' + esc(run.id) + '">' +
+            '<span class="pc-history__record">' + run.finalRecord + '</span>' +
+            '<span class="pc-history__date">' + new Date(run.date).toLocaleDateString() + '</span>' +
+            '<span class="pc-history__goals">' + run.goalsFor + '-' + run.goalsAgainst + '</span>' +
+            '<span class="pc-history__strength">OVR ' + run.teamStrength + '</span>' + badge + '</button></li>';
+        }).join("") + '</ul>';
+
+    root.innerHTML =
+      '<div class="pc-screen pc-history">' +
+        '<h2 class="pc-history__title">Past Runs</h2>' +
+        '<p class="pc-history__source">Stored on this device</p>' +
+        list +
+        '<div class="pc-history__actions">' +
+          '<button type="button" class="pc-btn pc-btn--ghost" id="backBtn">Back</button>' +
+          (runs.length > 0 ? '<button type="button" class="pc-btn pc-btn--ghost" id="clearBtn">Clear History</button>' : "") +
+        '</div>' +
+      '</div>';
+
+    onAll("[data-rid]", "click", function () {
+      var rid = this.getAttribute("data-rid");
+      var run = loadRuns().filter(function (r) { return r.id === rid; })[0];
+      if (run) { view.activeRun = run; view.fromHistory = true; view.screen = "result"; render(); }
+    });
+    on("#backBtn", "click", function () { view.screen = "start"; render(); });
+    on("#clearBtn", "click", function () { clearRuns(); render(); });
+  }
+
+  // ---------- Boot ----------
+  fetch("data/squads.json")
+    .then(function (res) { if (!res.ok) throw new Error(res.status); return res.json(); })
+    .then(function (data) { ALL_SQUADS = data.squads; render(); })
+    .catch(function (err) {
+      root.innerHTML = '<div class="pc-error"><p>Couldn\'t load squad data.</p><p><a href="/">Back to BALLKNW</a></p></div>';
+    });
+})();
+</script>
+</body>
+</html>
