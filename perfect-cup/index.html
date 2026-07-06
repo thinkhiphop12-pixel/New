@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Draft XI • Spin, Draft & Simulate | BALLKNW</title>
+<meta name="description" content="Spin real club and country squads, draft any player into your XI, then simulate a full season. Premier League, Club and World Cup modes, four difficulties, shareable results." />
+<link rel="canonical" href="https://ballknw.com/perfect-cup/" />
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2741492847457362" crossorigin="anonymous" data-adsense="1"></script>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Anton&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg1:#eafff2; --bg2:#ffffff; --ink:#0d1912; --muted:#5c6b62;
+  --line:#d7e6dc; --card:#ffffff;
+  --lime:#3fbf4f; --emerald:#00b877; --lime-deep:#1c8a3a;
+  --grad:linear-gradient(135deg,#38d66b 0%,#00b877 100%);
+  --pitch1:#3bbd63; --pitch2:#2ea457;
+  --shadow:0 10px 30px -12px rgba(16,64,32,.28);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:Inter,system-ui,-apple-system,sans-serif;color:var(--ink);
+  background:radial-gradient(1100px 620px at 50% -8%,#c9ffdd 0%,var(--bg1) 42%,var(--bg2) 100%);
+  min-height:100vh;-webkit-font-smoothing:antialiased;
+}
+.font-display{font-family:Anton,system-ui,sans-serif;letter-spacing:-.5px}
+.wrap{max-width:560px;margin:0 auto;padding:22px 18px 60px}
+.hidden{display:none!important}
+a{color:var(--lime-deep);text-decoration:none}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.brandtag{font-size:11px;font-weight:800;letter-spacing:.22em;color:var(--emerald);text-transform:uppercase}
+.back{font-size:13px;font-weight:600;color:var(--muted)}
+
+/* ===== START SCREEN ===== */
+.hero{text-align:center;padding:26px 0 8px}
+.hero h1{font-size:clamp(2.8rem,12vw,4.2rem);line-height:.92}
+.hero h1 .g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.tag{margin:14px auto 0;max-width:360px;color:var(--muted);font-size:15px;font-weight:500}
+
+.pick-label{font-size:12px;font-weight:800;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin:26px 4px 12px}
+.modes{display:flex;flex-direction:column;gap:12px}
+.mode{
+  display:flex;align-items:center;gap:14px;text-align:left;cursor:pointer;
+  background:var(--card);border:2px solid var(--line);border-radius:18px;padding:16px 18px;
+  transition:border-color .15s,transform .12s,box-shadow .2s;
+}
+.mode:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.mode.sel{border-color:var(--emerald);box-shadow:0 0 0 3px rgba(0,184,119,.16)}
+.mode .em{font-size:30px;width:40px;text-align:center}
+.mode .t{display:block;font-weight:800;font-size:17px}
+.mode .d{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.mode .tick{margin-left:auto;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;color:#fff;font-size:13px;flex-shrink:0}
+.mode.sel .tick{background:var(--emerald);border-color:var(--emerald)}
+
+.opts{margin-top:18px;border:1px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden}
+.opts>summary{cursor:pointer;list-style:none;padding:14px 18px;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.opts>summary::-webkit-details-marker{display:none}
+.opts>summary::after{content:"▾";color:var(--muted)}
+.opts[open]>summary::after{content:"▴"}
+.opts .body{padding:4px 18px 18px}
+.orow{margin-top:14px}
+.orow .ol{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{
+  border:2px solid var(--line);background:#fff;border-radius:11px;padding:9px 13px;font-size:13px;font-weight:700;
+  cursor:pointer;color:var(--ink);transition:all .12s
+}
+.seg button.on{border-color:var(--emerald);background:#e9fbf2;color:var(--lime-deep)}
+.seg button .sub{display:block;font-size:10.5px;font-weight:600;color:var(--muted)}
+.seg button.on .sub{color:var(--emerald)}
+
+.cta{
+  width:100%;margin-top:22px;border:0;border-radius:16px;cursor:pointer;
+  background:var(--grad);color:#04140b;font-weight:900;font-size:17px;padding:17px;
+  box-shadow:0 12px 26px -10px rgba(0,184,119,.6);transition:transform .12s
+}
+.cta:hover{transform:translateY(-2px)}
+.cta.ghost{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:none;font-size:15px;padding:13px;margin-top:12px}
+
+/* ===== DRAFT SCREEN ===== */
+.hud{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-bottom:12px}
+.hud .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:700}
+.hud .chip b{color:var(--lime-deep)}
+.hud .chip.warn b{color:#c2410c}
+
+.pitch{
+  position:relative;width:100%;aspect-ratio:3/4;border-radius:20px;overflow:hidden;
+  background:
+    repeating-linear-gradient(0deg,var(--pitch1) 0 8.33%,var(--pitch2) 8.33% 16.66%);
+  border:2px solid #2a8f4d;box-shadow:var(--shadow)
+}
+.pitch .lines{position:absolute;inset:0;pointer-events:none}
+.pitch .lines::before{content:"";position:absolute;left:10%;right:10%;top:50%;height:2px;background:rgba(255,255,255,.5)}
+.pitch .lines::after{content:"";position:absolute;left:36%;right:36%;top:calc(50% - 42px);height:84px;border:2px solid rgba(255,255,255,.4);border-radius:50%}
+.slot{
+  position:absolute;transform:translate(-50%,-50%);width:66px;text-align:center;cursor:default;
+}
+.slot .disc{
+  width:52px;height:52px;margin:0 auto;border-radius:50%;display:grid;place-items:center;
+  background:rgba(255,255,255,.16);border:2px dashed rgba(255,255,255,.7);color:#fff;font-weight:800;font-size:12px;
+  transition:all .15s
+}
+.slot.open .disc{cursor:pointer;background:rgba(255,255,255,.28);border-style:solid;box-shadow:0 0 0 3px rgba(255,255,255,.25)}
+.slot.target .disc{background:#fff;border-color:#fff;color:var(--lime-deep);animation:tpulse 1s infinite}
+@keyframes tpulse{0%,100%{box-shadow:0 0 0 3px rgba(255,255,255,.5)}50%{box-shadow:0 0 0 7px rgba(255,255,255,.25)}}
+.slot.filled .disc{background:#fff;border-style:solid;border-color:#fff;color:var(--ink);font-size:15px}
+.slot .nm{margin-top:3px;font-size:10.5px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.45);line-height:1.1}
+.slot .cl{font-size:8.5px;color:rgba(255,255,255,.85);text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.slot .rt{position:absolute;top:-4px;right:6px;background:var(--grad);color:#04140b;font-size:10px;font-weight:900;border-radius:6px;padding:1px 5px}
+
+/* squad reveal panel */
+.spinwrap{margin-top:14px}
+.bigspin{width:100%;border:0;border-radius:16px;cursor:pointer;background:var(--grad);color:#04140b;font-weight:900;font-size:16px;padding:16px;box-shadow:0 10px 24px -12px rgba(0,184,119,.6)}
+.panel{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+.panel .ph{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.panel .badge{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:900;font-size:13px}
+.panel .ph .t{font-weight:800;font-size:16px}
+.panel .ph .s{color:var(--muted);font-size:12.5px}
+.panel .ph .reroll{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 11px;font-size:12px;font-weight:700;cursor:pointer}
+.panel .ph .reroll:disabled{opacity:.4;cursor:not-allowed}
+.plist{display:flex;flex-direction:column}
+.prow{display:flex;align-items:center;gap:10px;padding:11px 16px;border-top:1px solid #eef4f0;text-align:left;background:#fff;cursor:pointer;transition:background .12s}
+.prow:hover:not(:disabled){background:#f2fbf6}
+.prow:disabled{opacity:.4;cursor:not-allowed}
+.prow .pos{width:38px;font-size:11px;font-weight:800;color:var(--lime-deep);flex-shrink:0}
+.prow .pn{font-weight:700;font-size:14px}
+.prow .rr{margin-left:auto;font-weight:900;font-size:14px;color:var(--ink)}
+.prow .rr.hid{color:var(--muted);font-weight:700;font-size:12px}
+.prow .add{margin-left:8px;color:var(--emerald);font-weight:900;font-size:18px}
+.hint{text-align:center;color:var(--muted);font-size:12.5px;margin-top:10px}
+
+/* ===== RESULT SCREEN ===== */
+.verdict{text-align:center;margin:6px 0 18px}
+.verdict .pos{font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--emerald)}
+.verdict h2{font-size:clamp(1.6rem,6vw,2.2rem);margin:6px 0}
+.verdict p{color:var(--muted);font-size:14px;max-width:400px;margin:0 auto}
+.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:8px 0 20px}
+.statgrid .s{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 6px;text-align:center}
+.statgrid .s .n{font-size:20px;font-weight:900}
+.statgrid .s .l{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.sec-h{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:18px 4px 10px}
+.obj{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:8px}
+.obj.hit{border-color:var(--emerald);background:#eafbf2}
+.obj .ic{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:12px;flex-shrink:0}
+.obj.hit .ic{background:var(--emerald);border-color:var(--emerald);color:#fff}
+.obj .ot{font-weight:700;font-size:13.5px}
+.obj .od{color:var(--muted);font-size:12px}
+.table{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.table .tr{display:grid;grid-template-columns:26px 1fr 34px 34px 34px;gap:6px;padding:9px 12px;font-size:13px;border-top:1px solid #eef4f0;align-items:center}
+.table .tr:first-child{border-top:0;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase}
+.table .tr.you{background:#eafbf2;font-weight:800}
+.table .tr .rk{color:var(--muted);font-weight:700}
+.table .num{text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span class="brandtag">BALLKNW · Draft XI</span>
+    <a href="/" class="back">← All games</a>
+  </div>
+
+  <!-- ============ START ============ -->
+  <section id="start">
+    <div class="hero">
+      <h1 class="font-display">DRAFT <span class="g">XI</span></h1>
+      <p class="tag">Spin a real squad, draft any player into an open spot, then simulate a full season.</p>
+    </div>
+
+    <div class="pick-label">Choose your pool</div>
+    <div class="modes" id="modes"></div>
+
+    <details class="opts">
+      <summary>Options</summary>
+      <div class="body">
+        <div class="orow"><div class="ol">Difficulty</div><div class="seg" id="segDiff"></div></div>
+        <div class="orow"><div class="ol">Formation</div><div class="seg" id="segForm"></div></div>
+        <div class="orow"><div class="ol">Rating basis</div><div class="seg" id="segBasis"></div></div>
+      </div>
+    </details>
+
+    <button class="cta" onclick="startDraft()">Start drafting →</button>
+  </section>
+
+  <!-- ============ DRAFT ============ -->
+  <section id="draft" class="hidden">
+    <div class="hud">
+      <span class="chip" id="hudMode"></span>
+      <span class="chip">XI <b id="hudCount">0/11</b></span>
+      <span class="chip" id="hudRerolls">Re-rolls <b>—</b></span>
+    </div>
+    <div class="pitch"><div class="lines"></div><div id="slots"></div></div>
+    <div class="spinwrap">
+      <button class="bigspin" id="spinBtn" onclick="spin(false)">Spin a squad</button>
+      <div id="squadPanel"></div>
+      <p class="hint" id="draftHint">Spin to reveal a squad — then draft any player whose position is still open.</p>
+    </div>
+    <button class="cta hidden" id="simBtn" onclick="runSim()">Simulate the season →</button>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <section id="result" class="hidden">
+    <div class="verdict">
+      <div class="pos" id="rPos"></div>
+      <h2 id="rVerdict"></h2>
+      <p id="rSub"></p>
+    </div>
+    <div class="statgrid" id="rStats"></div>
+    <div class="sec-h">Season objectives</div>
+    <div id="rObjectives"></div>
+    <div class="sec-h">Final table</div>
+    <div class="table" id="rTable"></div>
+    <button class="cta" onclick="shareResult()">Share result</button>
+    <button class="cta ghost" onclick="location.reload()">Play again</button>
+  </section>
+</div>
+
+<script>
+/* ================= GAFFA DRAFT rules (ported from the live game) ================= */
+const MODES = [
+  {id:'pl',    name:'Premier League', tagline:'English top-flight, 1992 → today', em:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+  {id:'club',  name:'Club XI',        tagline:'European & world club greats',      em:'🏆'},
+  {id:'world', name:'World Cup XI',   tagline:'International squads, 1966 → 2026',  em:'🌍'},
+];
+const DIFFS = [
+  {id:'casual',   name:'Casual',   spins:5, ratingsHidden:false, sub:'5 re-rolls · ratings shown'},
+  {id:'standard', name:'Standard', spins:3, ratingsHidden:false, sub:'3 re-rolls · ratings shown'},
+  {id:'pro',      name:'Pro',      spins:1, ratingsHidden:false, sub:'1 re-roll · ratings shown'},
+  {id:'gaffer',   name:'Gaffer',   spins:0, ratingsHidden:true,  sub:'no re-rolls · ratings hidden'},
+];
+const GK = {pos:'GK',label:'GK',x:50,y:8};
+const FORMATIONS = [
+  {id:'442',name:'4-4-2',slots:[GK,{pos:'DEF',label:'LB',x:16,y:30},{pos:'DEF',label:'CB',x:38,y:26},{pos:'DEF',label:'CB',x:62,y:26},{pos:'DEF',label:'RB',x:84,y:30},{pos:'MID',label:'LM',x:16,y:58},{pos:'MID',label:'CM',x:38,y:54},{pos:'MID',label:'CM',x:62,y:54},{pos:'MID',label:'RM',x:84,y:58},{pos:'FWD',label:'ST',x:38,y:84},{pos:'FWD',label:'ST',x:62,y:84}]},
+  {id:'433',name:'4-3-3',slots:[GK,{pos:'DEF',label:'LB',x:16,y:30},{pos:'DEF',label:'CB',x:38,y:26},{pos:'DEF',label:'CB',x:62,y:26},{pos:'DEF',label:'RB',x:84,y:30},{pos:'MID',label:'CM',x:30,y:55},{pos:'MID',label:'CM',x:50,y:50},{pos:'MID',label:'CM',x:70,y:55},{pos:'FWD',label:'LW',x:20,y:83},{pos:'FWD',label:'ST',x:50,y:88},{pos:'FWD',label:'RW',x:80,y:83}]},
+  {id:'352',name:'3-5-2',slots:[GK,{pos:'DEF',label:'CB',x:28,y:26},{pos:'DEF',label:'CB',x:50,y:23},{pos:'DEF',label:'CB',x:72,y:26},{pos:'MID',label:'LWB',x:12,y:52},{pos:'MID',label:'CM',x:36,y:56},{pos:'MID',label:'CM',x:50,y:50},{pos:'MID',label:'CM',x:64,y:56},{pos:'MID',label:'RWB',x:88,y:52},{pos:'FWD',label:'ST',x:38,y:85},{pos:'FWD',label:'ST',x:62,y:85}]},
+];
+const BASES = [{id:'form',name:'Form'},{id:'peak',name:'Peak'}];
+const OBJECTIVES = [
+  {id:'champions',  name:'Champions',      desc:'Win the league (finish 1st).',            test:r=>r.position===1},
+  {id:'invincibles',name:'The Invincibles',desc:'Complete the season unbeaten.',            test:r=>r.unbeaten},
+  {id:'ninety',     name:'Ninety Club',    desc:'Finish on 90 points or more.',            test:r=>r.points>=90},
+  {id:'fortress',   name:'Fortress',       desc:'Keep 18+ clean sheets in the season.',    test:r=>r.cleanSheets>=18},
+  {id:'golden',     name:'Golden Boot',    desc:'Have a player score 25+ goals.',          test:r=>r.topScorerGoals>=25},
+  {id:'hardway',    name:'The Hard Way',   desc:'Win the league on Gaffer difficulty.',    test:r=>r.position===1&&r.difficultyId==='gaffer'},
+  {id:'underdogs',  name:'Underdogs',      desc:'Finish top 4 with a squad rating under 80.',test:r=>r.position<=4&&r.squadRating<80},
+];
+const VERDICT = (pos,unbeaten)=>
+  pos===1&&unbeaten ? 'Immortal. An unbeaten title-winning side for the ages.'
+  : pos===1 ? 'Champions. The trophy is yours.'
+  : pos<=4  ? 'Top four — into the elite cups. A serious side.'
+  : pos<=10 ? 'Solid mid-table. Respectable, but the legends expected more.'
+  : pos<=17 ? 'A relegation scrap survived. Back to the drawing board.'
+  : 'Relegated. Even legends have off seasons.';
+const OPPONENTS = ['Riverside FC','Kingsford','Athletic Vale','Northgate','Port United','Stanmore City',
+  'Elmwood','Harborough','Cavendish','Westbrook Town','Ironside','Ashford Rangers','Fairlow','Duncastle',
+  'Belmarsh','Sovereign FC','Granville','Thornbury','Marsden Athletic'];
+
+/* ================= state ================= */
+let SQUADS = [];
+let settings = {mode:'pl', difficultyId:'standard', formationId:'442', basis:'form'};
+let xi = [];            // per-slot: null or {name,pos,rating,peak,club,season,color}
+let rerolls = 0;
+let current = null;     // currently revealed squad
+let started = false;
+
+/* ================= helpers ================= */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function poisson(l,rng){let t=Math.exp(-l),k=0,p=1;do{k++;p*=rng();}while(p>t);return k-1;}
+function mean(a){return a.length?a.reduce((s,x)=>s+x,0)/a.length:0;}
+function ratingOf(p){return settings.basis==='peak'?(p.peak??p.rating):p.rating;}
+function formation(){return FORMATIONS.find(f=>f.id===settings.formationId);}
+function diff(){return DIFFS.find(d=>d.id===settings.difficultyId);}
+function openSlotFor(pos){return formation().slots.findIndex((s,i)=>s.pos===pos && !xi[i]);}
+function count(){return xi.filter(Boolean).length;}
+
+/* ================= start screen ================= */
+function renderStart(){
+  document.getElementById('modes').innerHTML = MODES.map(m=>`
+    <button class="mode${settings.mode===m.id?' sel':''}" onclick="pickMode('${m.id}')">
+      <span class="em">${m.em}</span>
+      <span><span class="t">${m.name}</span><span class="d">${m.tagline}</span></span>
+      <span class="tick">✓</span>
+    </button>`).join('');
+  document.getElementById('segDiff').innerHTML = DIFFS.map(d=>`
+    <button class="${settings.difficultyId===d.id?'on':''}" onclick="setOpt('difficultyId','${d.id}')">${d.name}<span class="sub">${d.sub}</span></button>`).join('');
+  document.getElementById('segForm').innerHTML = FORMATIONS.map(f=>`
+    <button class="${settings.formationId===f.id?'on':''}" onclick="setOpt('formationId','${f.id}')">${f.name}</button>`).join('');
+  document.getElementById('segBasis').innerHTML = BASES.map(b=>`
+    <button class="${settings.basis===b.id?'on':''}" onclick="setOpt('basis','${b.id}')">${b.name}</button>`).join('');
+}
+function pickMode(id){settings.mode=id;renderStart();}
+function setOpt(k,v){settings[k]=v;renderStart();}
+
+/* ================= draft ================= */
+function startDraft(){
+  started=true;
+  xi = formation().slots.map(()=>null);
+  rerolls = diff().spins;
+  current = null;
+  document.getElementById('start').classList.add('hidden');
+  document.getElementById('draft').classList.remove('hidden');
+  const m = MODES.find(x=>x.id===settings.mode);
+  document.getElementById('hudMode').innerHTML = `${m.em} ${m.name} · ${formation().name}`;
+  document.getElementById('squadPanel').innerHTML='';
+  renderPitch();
+  renderHud();
+}
+function renderHud(){
+  document.getElementById('hudCount').textContent = count()+'/11';
+  const chip = document.getElementById('hudRerolls');
+  chip.classList.toggle('warn', rerolls===0);
+  chip.innerHTML = `Re-rolls <b>${rerolls}</b>`;
+}
+function renderPitch(){
+  const showR = !diff().ratingsHidden;
+  document.getElementById('slots').innerHTML = formation().slots.map((s,i)=>{
+    const p = xi[i];
+    const isTarget = current && !p && s.pos && current.players.some(pl=>pl.pos===s.pos) && openSlotFor(s.pos)===i;
+    let cls='slot', inner;
+    if(p){
+      cls+=' filled';
+      inner = `<div class="disc">${showR?p.rating:'★'}</div>
+               <div class="nm">${p.name}</div><div class="cl">${p.club}</div>`;
+    }else{
+      cls+= isTarget?' target':' open';
+      inner = `<div class="disc">${s.label}</div>`;
+    }
+    return `<div class="${cls}" style="left:${s.x}%;top:${s.y}%">${inner}</div>`;
+  }).join('');
+}
+function poolForMode(){return SQUADS.filter(s=>s.mode===settings.mode);}
+function needyPositions(){ // positions still open in the XI
+  const need=new Set();
+  formation().slots.forEach((s,i)=>{if(!xi[i])need.add(s.pos);});
+  return need;
+}
+function spin(isReroll){
+  if(isReroll){ if(rerolls<=0) return; rerolls--; }
+  const need = needyPositions();
+  let pool = poolForMode().filter(s=>s.players.some(p=>need.has(p.pos)));
+  if(pool.length===0) pool = poolForMode();
+  // prefer a different squad than the one currently shown
+  if(current && pool.length>1) pool = pool.filter(s=>s.id!==current.id);
+  current = pool[Math.floor(Math.random()*pool.length)];
+  document.getElementById('spinBtn').textContent='Spin again';
+  renderPitch();
+  renderPanel();
+  renderHud();
+}
+function renderPanel(){
+  const showR = !diff().ratingsHidden;
+  const s = current;
+  const rr = rerolls>0;
+  const players = s.players.map(p=>{
+    const canPlace = openSlotFor(p.pos)!==-1;
+    const rt = showR ? `<span class="rr">${ratingOf(p)}</span>` : `<span class="rr hid">${p.pos}</span>`;
+    return `<button class="prow" ${canPlace?'':'disabled'} onclick='draft(${JSON.stringify(p).replace(/'/g,"&#39;")})'>
+      <span class="pos">${p.pos}</span><span class="pn">${p.name}</span>${rt}${canPlace?'<span class="add">+</span>':''}
+    </button>`;
+  }).join('');
+  document.getElementById('squadPanel').innerHTML = `
+    <div class="panel">
+      <div class="ph">
+        <span class="badge" style="background:${s.color||'#00b877'}">${s.club.slice(0,3).toUpperCase()}</span>
+        <span><span class="t">${s.club}</span> <span class="s">${s.season}</span></span>
+        <button class="reroll" ${rr?'':'disabled'} onclick="spin(true)">↻ Re-roll${rr?` (${rerolls})`:''}</button>
+      </div>
+      <div class="plist">${players}</div>
+    </div>`;
+  document.getElementById('draftHint').textContent = 'Draft any player whose position is still open. One tap places them in the XI.';
+}
+function draft(p){
+  const i = openSlotFor(p.pos);
+  if(i===-1) return;
+  xi[i] = {name:p.name,pos:p.pos,rating:p.rating,peak:p.peak??p.rating,club:current.club,season:current.season,color:current.color};
+  current = null;
+  document.getElementById('squadPanel').innerHTML='';
+  document.getElementById('spinBtn').textContent = count()<11 ? 'Spin a squad' : 'XI complete';
+  renderPitch();
+  renderHud();
+  if(count()===11){
+    document.getElementById('spinBtn').classList.add('hidden');
+    document.getElementById('draftHint').classList.add('hidden');
+    document.getElementById('simBtn').classList.remove('hidden');
+  }
+}
+
+/* ================= simulation (faithful port) ================= */
+function simulate(){
+  const players = xi.filter(Boolean);
+  const seed = players.reduce((a,p)=>a+31*p.rating+p.name.length,7);
+  const rng = mulberry32(seed);
+  const byPos = pos => players.filter(p=>p.pos===pos).map(ratingOf);
+  const gk=byPos('GK'), def=byPos('DEF'), mid=byPos('MID'), fwd=byPos('FWD');
+  const defence  = Math.round(mean([...gk.map(x=>1.1*x),...def]) || 70);
+  const midfield = Math.round(mean(mid) || 70);
+  const attack   = Math.round(mean(fwd) || 70);
+  const overall  = Math.round(mean(players.map(ratingOf)) || 70);
+
+  let table = [{name:'Your XI',strength:.4*attack+.3*midfield+.3*defence,isYou:true}];
+  OPPONENTS.slice(0,19).forEach(n=>table.push({name:n,strength:74+13*rng()}));
+  table.forEach(t=>Object.assign(t,{played:0,won:0,drawn:0,lost:0,gf:0,ga:0,points:0}));
+
+  let cleanSheets=0, unbeaten=true;
+  for(let e=0;e<table.length;e++)for(let r=e+1;r<table.length;r++)for(let t=0;t<2;t++){
+    const a=table[e],o=table[r];
+    const s=(a.strength-o.strength)/12;
+    const hg=poisson(Math.max(.2,1.35+s+(t===0?.25:-.25)),rng);
+    const ag=poisson(Math.max(.2,1.35-s+(t===0?-.25:.25)),rng);
+    a.gf+=hg;a.ga+=ag;o.gf+=ag;o.ga+=hg;a.played++;o.played++;
+    if(hg>ag){a.won++;o.lost++;a.points+=3;}
+    else if(hg<ag){o.won++;a.lost++;o.points+=3;}
+    else{a.drawn++;o.drawn++;a.points++;o.points++;}
+    if(a.isYou||o.isYou){
+      const conceded=a.isYou?ag:hg, scored=a.isYou?hg:ag;
+      if(conceded===0)cleanSheets++;
+      if(conceded>scored)unbeaten=false;
+    }
+  }
+  table.sort((a,b)=>b.points-a.points || (b.gf-b.ga)-(a.gf-a.ga) || b.gf-a.gf);
+  const position = table.findIndex(t=>t.isYou)+1;
+  const you = table.find(t=>t.isYou);
+
+  // top scorer: weighted share of your goals among MID/FWD
+  const att = players.filter(p=>p.pos==='FWD'||p.pos==='MID');
+  const total = att.reduce((a,p)=>a+(p.pos==='FWD'?2:1)*ratingOf(p),0)||1;
+  let top={name:att[0]?.name||'—',goals:0};
+  for(const p of att){
+    const share=(p.pos==='FWD'?2:1)*ratingOf(p)/total;
+    const g=Math.round(you.gf*share);
+    if(g>top.goals) top={name:p.name,goals:g};
+  }
+  return {
+    squadRating:overall, attack, midfield, defence,
+    position, points:you.points, gf:you.gf, ga:you.ga,
+    unbeaten, cleanSheets, topScorer:top, topScorerGoals:top.goals,
+    difficultyId:settings.difficultyId, verdict:VERDICT(position,unbeaten), table
+  };
+}
+let RESULT=null;
+function runSim(){
+  RESULT = simulate();
+  renderResult(RESULT);
+  document.getElementById('draft').classList.add('hidden');
+  document.getElementById('result').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+function ord(n){const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+function renderResult(r){
+  document.getElementById('rPos').textContent = `Finished ${ord(r.position)} of 20`;
+  document.getElementById('rVerdict').textContent = r.verdict;
+  document.getElementById('rSub').textContent = `${r.topScorer.name} led the line with ${r.topScorer.goals} goals · squad rating ${r.squadRating}.`;
+  document.getElementById('rStats').innerHTML = `
+    <div class="s"><div class="n">${r.points}</div><div class="l">Points</div></div>
+    <div class="s"><div class="n">${r.gf}</div><div class="l">Scored</div></div>
+    <div class="s"><div class="n">${r.ga}</div><div class="l">Conceded</div></div>
+    <div class="s"><div class="n">${r.cleanSheets}</div><div class="l">Clean sheets</div></div>`;
+  document.getElementById('rObjectives').innerHTML = OBJECTIVES.map(o=>{
+    const hit=o.test(r);
+    return `<div class="obj${hit?' hit':''}"><span class="ic">${hit?'✓':''}</span>
+      <span><span class="ot">${o.name}</span> · <span class="od">${o.desc}</span></span></div>`;
+  }).join('');
+  const rows = [];
+  rows.push(`<div class="tr"><span class="rk">#</span><span>Club</span><span class="num">Pl</span><span class="num">GD</span><span class="num">Pts</span></div>`);
+  r.table.forEach((t,i)=>{
+    if(i<5 || t.isYou){
+      const gd=t.gf-t.ga;
+      rows.push(`<div class="tr${t.isYou?' you':''}"><span class="rk">${i+1}</span><span>${t.name}</span><span class="num">${t.played}</span><span class="num">${gd>0?'+':''}${gd}</span><span class="num">${t.points}</span></div>`);
+    }
+  });
+  document.getElementById('rTable').innerHTML = rows.join('');
+}
+function shareResult(){
+  const r=RESULT, m=MODES.find(x=>x.id===settings.mode);
+  const hits=OBJECTIVES.filter(o=>o.test(r)).length;
+  const txt=`BALLKNW Draft XI — ${m.name}\nFinished ${ord(r.position)} · ${r.points} pts · ${r.cleanSheets} clean sheets\n${hits}/${OBJECTIVES.length} objectives · "${r.verdict}"\n\nPlay at ballknw.com/perfect-cup/`;
+  if(navigator.share){navigator.share({title:'BALLKNW Draft XI',text:txt}).catch(()=>copy(txt));}
+  else copy(txt);
+}
+function copy(t){navigator.clipboard.writeText(t).then(()=>alert('Result copied!')).catch(()=>prompt('Copy your result:',t));}
+
+/* ================= boot ================= */
+(async function(){
+  try{
+    const res = await fetch('./data/squads.json');
+    SQUADS = await res.json();
+  }catch(e){
+    document.querySelector('.hero .tag').textContent = 'Could not load squad data. Please refresh.';
+  }
+  renderStart();
+})();
+</script>
+<script src="/shared/consent.js" defer></script>
+<script src="/shared/ads.js" defer></script>
+</body>
+</html>
