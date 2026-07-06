@@ -224,7 +224,7 @@
 
         async function init() {
             try {
-                const res = await fetch('../perfect-cup/data/players.json');
+                const res = await fetch('./data/players.json');
                 const data = await res.json();
                 const all = [...(data.players || []), ...(data.icons || [])];
                 const candidates = all.filter((p) => p && p.n && (p.icon || p.o >= 78));
