@@ -2,5 +2,8 @@
   "framework": null,
   "buildCommand": null,
   "installCommand": null,
-  "outputDirectory": "."
+  "outputDirectory": ".",
+  "redirects": [
+    { "source": "/DraftXI/:path*", "destination": "/perfect-cup/:path*", "permanent": true }
+  ]
 }
