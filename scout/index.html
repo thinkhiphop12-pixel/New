@@ -129,33 +129,11 @@
             </div>
         </div>
 
-        <!-- Results / Share -->
+        <!-- Results -->
         <div id="results-area" class="hidden mt-8">
             <div class="text-center mb-6">
                 <div id="result-title" class="font-display text-4xl tracking-tight mb-1"></div>
                 <div id="result-subtitle" class="text-zinc-400"></div>
-            </div>
-
-            <!-- Emoji Grid -->
-            <div class="mb-6">
-                <div class="text-xs uppercase tracking-[2px] text-center text-zinc-500 mb-2">SHARE YOUR GRID</div>
-                <div id="emoji-grid"
-                     class="bg-zinc-900 border border-zinc-700 p-4 rounded-3xl font-mono text-2xl tracking-[4px] text-center cursor-pointer hover:bg-zinc-800 transition"
-                     onclick="copyShareText()">
-                    <!-- Populated by JS -->
-                </div>
-                <div class="text-center text-[10px] text-emerald-400 mt-1">Tap grid to copy • Works in WhatsApp, X, iMessage</div>
-            </div>
-
-            <div class="flex gap-3">
-                <button onclick="copyShareText()"
-                        class="flex-1 py-3.5 border border-zinc-700 hover:bg-zinc-900 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-copy"></i> <span>COPY GRID</span>
-                </button>
-                <button onclick="shareNative()"
-                        class="flex-1 py-3.5 bg-emerald-400 text-emerald-950 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-share-alt"></i> <span>SHARE</span>
-                </button>
             </div>
         </div>
 
@@ -178,12 +156,11 @@
         let board = [];        // remaining (unsolved) player objects, current display order
         let selected = [];     // names currently selected on the board
         let mistakes = 0;
-        let guessHistory = []; // each entry: array of 4 group-indices (or -1) for the emoji share grid
+        let guessHistory = [];
         let finished = false;
         let won = false;
 
         const MAX_MISTAKES = 4;
-        const GROUP_EMOJI = ['🟨', '🟩', '🟦', '🟪'];
 
         function getTodayKey() {
             const d = new Date();
@@ -488,10 +465,6 @@
             loadStreakStats();
         }
 
-        function shareGrid() {
-            return guessHistory.map((row) => row.map((gi) => (gi === -1 ? '⬛' : GROUP_EMOJI[gi])).join('')).join('\n');
-        }
-
         function showResults(didWin) {
             document.getElementById('game-area').classList.add('hidden');
             document.getElementById('results-area').classList.remove('hidden');
@@ -504,38 +477,6 @@
             } else {
                 titleEl.innerHTML = `Next time`;
                 subEl.textContent = `The groups are revealed above. Streak reset.`;
-            }
-            document.getElementById('emoji-grid').innerHTML = shareGrid().replace(/\n/g, '<br>');
-        }
-
-        function copyShareText() {
-            const dayNum = getDayOfYear();
-            const shareText = `BALLKNW Scout #${dayNum}\n${shareGrid()}\n\nPlay daily at ballknw.com/scout/`;
-            navigator.clipboard.writeText(shareText).then(() => {
-                const btns = document.querySelectorAll('#results-area button');
-                btns.forEach((b) => {
-                    if (b.textContent.includes('COPY')) {
-                        const orig = b.innerHTML;
-                        b.innerHTML = '<i class="fa-solid fa-check"></i> COPIED!';
-                        setTimeout(() => { b.innerHTML = orig; }, 1800);
-                    }
-                });
-            }).catch(() => {
-                prompt('Copy this text:', shareText);
-            });
-        }
-
-        async function shareNative() {
-            const dayNum = getDayOfYear();
-            const shareText = `BALLKNW Scout #${dayNum}\n${shareGrid()}\n\nPlay daily at ballknw.com/scout/`;
-            if (navigator.share) {
-                try {
-                    await navigator.share({ title: 'BALLKNW Scout', text: shareText });
-                } catch (e) {
-                    copyShareText();
-                }
-            } else {
-                copyShareText();
             }
         }
 

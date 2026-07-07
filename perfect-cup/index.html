@@ -238,6 +238,20 @@ const FORMATIONS = [
   {id:'433',name:'4-3-3',slots:[GK,{pos:'DEF',label:'LB',x:16,y:30},{pos:'DEF',label:'CB',x:38,y:26},{pos:'DEF',label:'CB',x:62,y:26},{pos:'DEF',label:'RB',x:84,y:30},{pos:'MID',label:'CM',x:30,y:55},{pos:'MID',label:'CM',x:50,y:50},{pos:'MID',label:'CM',x:70,y:55},{pos:'FWD',label:'LW',x:20,y:83},{pos:'FWD',label:'ST',x:50,y:88},{pos:'FWD',label:'RW',x:80,y:83}]},
   {id:'352',name:'3-5-2',slots:[GK,{pos:'DEF',label:'CB',x:28,y:26},{pos:'DEF',label:'CB',x:50,y:23},{pos:'DEF',label:'CB',x:72,y:26},{pos:'MID',label:'LWB',x:12,y:52},{pos:'MID',label:'CM',x:36,y:56},{pos:'MID',label:'CM',x:50,y:50},{pos:'MID',label:'CM',x:64,y:56},{pos:'MID',label:'RWB',x:88,y:52},{pos:'FWD',label:'ST',x:38,y:85},{pos:'FWD',label:'ST',x:62,y:85}]},
 ];
+const TACTICS = [
+  {id:'balanced',  name:'Balanced',       attMod:0,  defMod:0,  xgMod:0,    desc:'No extremes — solid all round.'},
+  {id:'gegenpress',name:'Gegenpress',     attMod:3,  defMod:-2, xgMod:.15,  desc:'High line, hunt in packs. Scores more, leaks more.'},
+  {id:'tikitaka',  name:'Tiki-Taka',      attMod:1,  defMod:1,  xgMod:.05,  desc:'Possession and patience. Control the tempo.'},
+  {id:'counter',   name:'Counter-Attack', attMod:2,  defMod:0,  xgMod:.10,  desc:'Sit deep, spring forward. Hit on the break.'},
+  {id:'wingplay',  name:'Wing Play',      attMod:2,  defMod:-1, xgMod:.05,  desc:'Hug the touchline. Crosses into the box.'},
+  {id:'parkbus',   name:'Park the Bus',   attMod:-3, defMod:4,  xgMod:-.10, desc:'Bodies behind the ball. Defend for your lives.'},
+];
+const TRAINING = [
+  {id:'balanced',  name:'Balanced',   delta:{GK:1,DEF:1,MID:1,FWD:1}},
+  {id:'attacking', name:'Attacking',  delta:{GK:0,DEF:-1,MID:2,FWD:3}},
+  {id:'defensive', name:'Defensive',  delta:{GK:2,DEF:3,MID:1,FWD:-1}},
+  {id:'technical', name:'Technical',  delta:{GK:0,DEF:1,MID:3,FWD:1}},
+];
 const OBJECTIVES = [
   {id:'champions',  name:'Champions',      desc:'Win the league (finish 1st).',            test:r=>r.position===1},
   {id:'invincibles',name:'The Invincibles',desc:'Complete the season unbeaten.',            test:r=>r.unbeaten},
@@ -260,11 +274,40 @@ const OPPONENTS = ['Riverside FC','Kingsford','Athletic Vale','Northgate','Port 
 
 /* ================= state ================= */
 let SQUADS = [];
-let settings = {mode:'pl', difficultyId:'standard', formationId:'442'};
+let settings = {mode:'pl', difficultyId:'standard', formationId:'442', tacticId:'balanced', trainingId:'balanced'};
 let xi = [];            // per-slot: null or {name,pos,rating,peak,club,season,color}
 let rerolls = 0;
 let current = null;     // currently revealed squad
 let started = false;
+let career = null;      // multi-season career state
+
+function loadCareer(){
+  try { const raw = localStorage.getItem('draftxi_career'); if(raw) return JSON.parse(raw); } catch(e){}
+  return null;
+}
+function saveCareer(){
+  if(!career) return;
+  try { localStorage.setItem('draftxi_career', JSON.stringify(career)); } catch(e){}
+}
+function clearCareer(){
+  career = null;
+  try { localStorage.removeItem('draftxi_career'); } catch(e){}
+}
+function newCareer(){
+  career = {
+    season: 1, maxSeasons: 3,
+    club: { name:'Your XI', color:'#00b877', mode: settings.mode },
+    settings: {...settings},
+    xi: null,        // populated after first draft
+    budget: 50,      // £M starting budget
+    history: [],     // [{season, result}]
+    retrainUsed: false,
+  };
+  saveCareer();
+}
+function valueOf(p){ return Math.max(1, Math.round((p.rating-50)*1.1)); }
+function training(){ return TRAINING.find(t=>t.id===settings.trainingId); }
+function tactic(){ return TACTICS.find(t=>t.id===settings.tacticId); }
 
 /* ================= helpers ================= */
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}

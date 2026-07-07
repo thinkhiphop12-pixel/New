@@ -15,12 +15,19 @@
 const CONFIG = {
   ADSENSE_CLIENT: 'ca-pub-2741492847457362',
   AMAZON_TAG: 'lloydevans01-21',
+  EBAY_CAMPID: '5338345975',   // eBay Partner Network campaign ID
+  AFFILIATE_ROTATE: true,       // alternate Amazon/eBay so both programs earn
   PRELOAD_OFFSET: 200,   // px of preload margin for lazy loading (legit)
   ADBLOCK_NOTICE: true,  // polite, dismissible whitelist prompt only
 };
 
-// Amazon search link built from the Associates tag (no approval needed).
+// Affiliate search links built from each program's tag/campaign ID.
+// These are honest, disclosed affiliate links (rel=sponsored) — the cookie
+// is only set when the user actually clicks through, exactly as the
+// Associates/ePN programs intend. No hidden iframes, no pixel tracking,
+// no auto-redirects — that would be cookie stuffing and gets accounts banned.
 const AMAZON_AFFILIATE_URL = `https://www.amazon.co.uk/s?k=football+shirts&tag=${CONFIG.AMAZON_TAG}`;
+const EBAY_AFFILIATE_URL = `https://www.ebay.co.uk/sch/i.html?_nkw=football+shirts&campid=${CONFIG.EBAY_CAMPID}&customid=ballknw`;
 
 // ========== GLOBALS / SHIMS ==========
 // consent.js normally defines these; shim them so this file is safe to load
@@ -87,16 +94,25 @@ function hasRealSlotId(slot) {
 // actually clicks through, exactly as the Associates program intends.
 function fillSlotWithAffiliate(slot) {
   if (adsRemoved() || getConsent() !== 'all') return false;
-  if (!CONFIG.AMAZON_TAG) return false;
+  if (!CONFIG.AMAZON_TAG && !CONFIG.EBAY_CAMPID) return false;
   if (slot.classList.contains('is-affiliate')) { slot.classList.add('is-filled'); return true; }
+
+  // Rotate between Amazon and eBay so both programs earn commissions.
+  // Alternation is deterministic per-slot so a given slot doesn't flicker
+  // between stores on re-renders.
+  const useEbay = CONFIG.AFFILIATE_ROTATE && CONFIG.EBAY_CAMPID &&
+    (slot.dataset.adSlot || slot.id || '').length % 2 === 1;
+  const store = useEbay ? 'eBay' : 'Amazon';
+  const url = useEbay ? EBAY_AFFILIATE_URL : AMAZON_AFFILIATE_URL;
+
   slot.innerHTML = `
     <div class="aff-card">
       <div class="aff-card-txt">
         <span class="aff-card-kicker">Football gear · sponsored</span>
         <span class="aff-card-title">Shirts, boots &amp; kit</span>
-        <span class="aff-card-sub">Shop the latest football shirts and gear on Amazon.</span>
+        <span class="aff-card-sub">Shop the latest football shirts and gear on ${store}.</span>
       </div>
-      <a class="aff-card-cta" href="${AMAZON_AFFILIATE_URL}" target="_blank" rel="sponsored noopener">Shop now</a>
+      <a class="aff-card-cta" href="${url}" target="_blank" rel="sponsored noopener">Shop now</a>
     </div>`;
   slot.classList.add('is-filled', 'is-affiliate');
   const cta = slot.querySelector('.aff-card-cta');

@@ -314,7 +314,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 <!-- HERO -->
 <section class="hero">
   <div class="wrap">
-    <div class="live-pill"><span class="dot"></span> <b>Thousands</b>&nbsp;playing daily</div>
+    <div class="live-pill"><span class="dot"></span> <b id="liveCount">—</b>&nbsp;playing now</div>
     <h1>Test your <span class="grad">ball knowledge.</span></h1>
     <p class="lead">Fast, free football brain games. Manage a club right here on this page, draft the perfect XI, build a streak.</p>
     <div class="hero-ctas">
@@ -497,6 +497,42 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </footer>
 
+<script>
+/* Daily live-player counter:
+   At midnight a random base (500-1000) is chosen and persisted per-day.
+   One "player" is added per minute since midnight, so the number climbs
+   steadily through the day. Resets at the next midnight. */
+(function () {
+  var el = document.getElementById('liveCount');
+  if (!el) return;
+  function todayKey() {
+    var d = new Date();
+    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  }
+  function baseForToday(key) {
+    var k = 'bk_livebase_' + key;
+    var v = null;
+    try { v = localStorage.getItem(k); } catch (e) {}
+    if (!v) {
+      v = String(500 + Math.floor(Math.random() * 501));
+      try { localStorage.setItem(k, v); } catch (e) {}
+    }
+    return parseInt(v, 10);
+  }
+  function minutesSinceMidnight() {
+    var d = new Date();
+    return d.getHours() * 60 + d.getMinutes();
+  }
+  function update() {
+    var key = todayKey();
+    var base = baseForToday(key);
+    var count = base + minutesSinceMidnight();
+    el.textContent = count.toLocaleString();
+  }
+  update();
+  setInterval(update, 60000);
+})();
+</script>
 <script src="/shared/consent.js" defer></script>
 <script src="/shared/ads.js" defer></script>
 </body>
