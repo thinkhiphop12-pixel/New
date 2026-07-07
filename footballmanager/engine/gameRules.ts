@@ -11,12 +11,22 @@ export const DIVISION_NAMES: Record<Division, string> = {
   1: 'Premier League',
   2: 'Championship',
   3: 'League One',
+  4: 'League Two',
+  5: 'La Liga',
+  6: 'Serie A',
+  7: 'Bundesliga',
+  8: 'Ligue 1',
 };
 
 export const STARTING_BUDGET: Record<Division, number> = {
   1: 40_000_000,
   2: 12_000_000,
   3: 4_000_000,
+  4: 1_500_000,
+  5: 35_000_000,
+  6: 28_000_000,
+  7: 25_000_000,
+  8: 22_000_000,
 };
 
 /** Calendar weeks each domestic cup round is played (6 rounds, 60 clubs). */
@@ -30,7 +40,7 @@ export const CONTINENTAL_PRIZES = [3_000_000, 6_000_000, 15_000_000];
 export const CONTINENTAL_SPOTS = 8;
 
 /** Weekly gate income baseline per division. */
-export const GATE_BASE: Record<Division, number> = { 1: 550_000, 2: 180_000, 3: 60_000 };
+export const GATE_BASE: Record<Division, number> = { 1: 550_000, 2: 180_000, 3: 60_000, 4: 25_000, 5: 480_000, 6: 400_000, 7: 380_000, 8: 340_000 };
 
 /** Cost to upgrade the youth academy to level 2 / level 3. */
 export const ACADEMY_UPGRADE_COST: Record<number, number> = { 2: 5_000_000, 3: 12_000_000 };
@@ -60,7 +70,12 @@ export const MORALE_MAX = 95;
 export function prizeMoney(division: Division, position: number): number {
   if (division === 1) return 32_000_000 - (position - 1) * 1_200_000;
   if (division === 2) return 10_000_000 - (position - 1) * 350_000;
-  return 3_000_000 - (position - 1) * 100_000;
+  if (division === 3) return 3_000_000 - (position - 1) * 100_000;
+  if (division === 4) return 800_000 - (position - 1) * 30_000;
+  if (division === 5) return 28_000_000 - (position - 1) * 1_000_000;
+  if (division === 6) return 22_000_000 - (position - 1) * 800_000;
+  if (division === 7) return 20_000_000 - (position - 1) * 750_000;
+  return 18_000_000 - (position - 1) * 650_000;
 }
 
 function line(pos: Position, labels: string[], y: number): { pos: Position; label: string; x: number; y: number }[] {

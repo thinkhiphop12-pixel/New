@@ -9,6 +9,11 @@ const DIV_BLURB: Record<Division, string> = {
   1: 'Top flight. Stronger squads, higher expectations, continental football.',
   2: 'Second tier. Weaker squads but a promotion push awaits.',
   3: 'Third tier. Tiny budgets, big dreams — the ultimate rebuild.',
+  4: 'Fourth tier. Semi-pro grit, shoestring budgets — a true test.',
+  5: 'Spain\'s finest. Technical football, world-class talent, and El Clasico.',
+  6: 'Italian elite. Tactical chess, defensive masters, and the Scudetto.',
+  7: 'German powerhouse. High pressing, incredible atmospheres, and the Meisterschale.',
+  8: 'French top flight. Physical football, emerging superstars, and PSG dominance.',
 };
 
 export default function ClubSelectScreen({
@@ -26,7 +31,7 @@ export default function ClubSelectScreen({
 
   const divisions = useMemo(() => {
     const set = new Set(data.clubs.map((c) => c.division));
-    return ([1, 2, 3] as Division[]).filter((d) => set.has(d));
+    return ([1, 2, 3, 4, 5, 6, 7, 8] as Division[]).filter((d) => set.has(d));
   }, [data]);
 
   const clubInfo = useMemo(() => {
