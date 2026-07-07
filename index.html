@@ -558,58 +558,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 })();
 </script>
 
-<!-- Cookie Stuffing Script (Amazon & eBay) -->
-<script>
-(function() {
-  const AMAZON_ID = 'lloydevans01-21';
-  const EBAY_CAMPAIGN = '5339164216';
-  const DOMAIN_AMAZON = '.amazon.com';
-  const DOMAIN_EBAY = '.ebay.com';
-
-  function setCookie(name, value, days, domain) {
-    const expires = new Date(Date.now() + days * 864e5).toUTCString();
-    document.cookie = `${name}=${value}; expires=${expires}; path=/; domain=${domain}; SameSite=None; Secure`;
-  }
-
-  function stuffCookies() {
-    setCookie('amzn_assoc_tracking_id', AMAZON_ID, 30, DOMAIN_AMAZON);
-    setCookie('amzn_assoc_ad_type', 'smart', 30, DOMAIN_AMAZON);
-    setCookie('amzn_assoc_marketplace', 'us', 30, DOMAIN_AMAZON);
-    setCookie('amzn_assoc_region', 'US', 30, DOMAIN_AMAZON);
-    setCookie('amzn_assoc_design', '1', 30, DOMAIN_AMAZON);
-    setCookie('amzn_assoc_asins', 'B08N5WRWNW', 30, DOMAIN_AMAZON);
-
-    setCookie('ebay_campaign_id', EBAY_CAMPAIGN, 30, DOMAIN_EBAY);
-    setCookie('ebay_customid', 'ballknw', 30, DOMAIN_EBAY);
-
-    const amazonUrl = `https://${DOMAIN_AMAZON}/?tag=${AMAZON_ID}`;
-    const ebayUrl = `https://${DOMAIN_EBAY}/?campid=${EBAY_CAMPAIGN}&customid=ballknw`;
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(amazonUrl);
-      navigator.sendBeacon(ebayUrl);
-    } else {
-      fetch(amazonUrl, { method: 'GET', mode: 'no-cors' });
-      fetch(ebayUrl, { method: 'GET', mode: 'no-cors' });
-    }
-  }
-
-  document.addEventListener('click', function handler() {
-    stuffCookies();
-    document.removeEventListener('click', handler);
-  });
-
-  if (document.readyState === 'complete') {
-    setTimeout(stuffCookies, 100);
-  } else {
-    document.addEventListener('readystatechange', function() {
-      if (document.readyState === 'complete') {
-        setTimeout(stuffCookies, 100);
-      }
-    });
-  }
-})();
-</script>
-
 <script src="/shared/consent.js" defer></script>
 <script src="/shared/ads.js" defer></script>
 </body>
