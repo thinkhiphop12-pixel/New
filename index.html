@@ -173,6 +173,15 @@ body::before{
 .shop-links a{font-size:13px;color:var(--white);background:var(--glass);border:1px solid var(--border);padding:8px 14px;border-radius:10px;transition:background .2s,border-color .2s}
 .shop-links a:hover{background:rgba(255,255,255,.08);border-color:var(--border-bright)}
 
+/* COLUMN AD RAILS — sticky sidebars flanking the page on wide screens */
+.col-ad-rail{position:fixed;top:90px;bottom:20px;width:160px;display:flex;
+  flex-direction:column;gap:16px;z-index:5;pointer-events:none;}
+.col-ad-rail .ad-slot{pointer-events:auto;margin:0;max-width:160px;min-height:600px;
+  width:160px;position:sticky;top:90px;}
+.col-ad-rail.left{left:calc(50% - 540px - 180px);}
+.col-ad-rail.right{right:calc(50% - 540px - 180px);}
+@media(max-width:1439px){.col-ad-rail{display:none}}
+
 /* FOOTER */
 footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top:40px;padding:34px 0}
 .foot-inner{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
@@ -281,6 +290,14 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 </script>
 </head>
 <body>
+
+<!-- COLUMN AD RAILS (desktop ≥1280px only) -->
+<aside class="col-ad-rail left" aria-label="Advertisement">
+  <div class="ad-slot" id="leftColAd" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="vertical"></div>
+</aside>
+<aside class="col-ad-rail right" aria-label="Advertisement">
+  <div class="ad-slot" id="rightColAd" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="vertical"></div>
+</aside>
 
 <!-- NAV -->
 <header class="nav">
