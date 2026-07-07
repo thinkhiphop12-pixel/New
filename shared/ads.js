@@ -50,23 +50,24 @@ function injectBaseAdStyles() {
   style.id = 'bkAdBaseStyles';
   style.textContent = `
     .ad-slot{margin:20px auto;min-height:90px;max-width:728px;display:flex;align-items:center;
-      justify-content:center;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.14);
-      border-radius:14px;position:relative;overflow:hidden;}
+      justify-content:center;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;position:relative;overflow:hidden;}
     .ad-slot-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#8a8a8e;}
     .ad-slot.is-filled .ad-slot-label{display:none;}
     .ad-slot ins.adsbygoogle{width:100%;}
     .ad-slot .ad-load-error{color:#666;font-size:12px;padding:10px;}
     /* Amazon affiliate fallback card (fills any slot no ad network claimed) */
-    .ad-slot.is-affiliate{background:linear-gradient(135deg,rgba(184,255,60,.06),rgba(0,214,143,.05));
-      border:1px solid rgba(184,255,60,.18);padding:14px 18px;text-align:left;}
-    .aff-card{display:flex;align-items:center;gap:14px;width:100%;justify-content:space-between;flex-wrap:wrap;}
-    .aff-card-txt{display:flex;flex-direction:column;gap:2px;min-width:0;}
-    .aff-card-kicker{font-size:9.5px;letter-spacing:1.4px;text-transform:uppercase;color:#8a8a8e;}
-    .aff-card-title{font-size:15px;font-weight:800;color:#f2f2f4;font-family:Inter,system-ui,sans-serif;line-height:1.2;}
-    .aff-card-sub{font-size:12px;color:#a9adb3;line-height:1.35;}
+    .ad-slot.is-affiliate{background:linear-gradient(135deg,rgba(184,255,60,.08),rgba(0,214,143,.06));
+      border:1px solid rgba(184,255,60,.2);padding:18px 20px;text-align:left;}
+    .aff-card{display:flex;align-items:center;gap:14px;width:100%;justify-content:space-between;flex-wrap:wrap;flex-direction:row;}
+    .aff-card-txt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;}
+    .aff-card-kicker{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#8a8a8e;font-weight:600;}
+    .aff-card-title{font-size:16px;font-weight:800;color:#f2f2f4;font-family:Inter,system-ui,sans-serif;line-height:1.2;margin:2px 0;}
+    .aff-card-sub{font-size:13px;color:#a9adb3;line-height:1.4;margin:4px 0 0;}
     .aff-card-cta{flex-shrink:0;background:linear-gradient(135deg,#b8ff3c,#00d68f);color:#04140b;
-      font-weight:800;font-size:13px;text-decoration:none;border-radius:10px;padding:10px 16px;white-space:nowrap;
-      font-family:Inter,system-ui,sans-serif;}
+      font-weight:800;font-size:14px;text-decoration:none;border-radius:12px;padding:12px 20px;white-space:nowrap;
+      font-family:Inter,system-ui,sans-serif;transition:transform .15s,box-shadow .2s;display:inline-block;margin-left:12px;}
+    .aff-card-cta:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(184,255,60,.3)}
     .soft-banner{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:600;
       max-width:min(92vw,480px);background:#10131a;border:1px solid rgba(255,255,255,.14);
       border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;
