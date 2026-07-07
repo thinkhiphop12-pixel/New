@@ -3,10 +3,7 @@
   "buildCommand": null,
   "installCommand": null,
   "outputDirectory": ".",
-  "rewrites": [
-    {
-      "source": "/DraftXI/:path*",
-      "destination": "https://game-rules-and-stats.vercel.app/:path*"
-    }
+  "redirects": [
+    { "source": "/DraftXI/:path*", "destination": "/perfect-cup/:path*", "permanent": true }
   ]
 }
