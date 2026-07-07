@@ -19,6 +19,8 @@
 .gt-btn{background:#27272a;border:1px solid #3f3f46;color:#fafafa;border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer}
 .gt-btn:hover{background:#3f3f46}
 .gt-btn.pri{background:#22c55e;border-color:#22c55e;color:#052e16;font-weight:600}
+.gt-btn:disabled{opacity:.45;cursor:not-allowed}
+.gt-btn:disabled:hover{background:#27272a}
 .gt-sel,.gt-inp{background:#09090b;border:1px solid #3f3f46;color:#e4e4e7;border-radius:7px;padding:6px 8px;font-size:13px;max-width:100%}
 .gt-tag{display:inline-block;background:#27272a;border-radius:5px;padding:2px 7px;font-size:11px;color:#d4d4d8;margin:2px 3px 2px 0}
 .gt-ok{color:#4ade80}.gt-warn{color:#facc15}.gt-bad{color:#f87171}
