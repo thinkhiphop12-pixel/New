@@ -173,13 +173,9 @@ body::before{
 .shop-links a{font-size:13px;color:var(--white);background:var(--glass);border:1px solid var(--border);padding:8px 14px;border-radius:10px;transition:background .2s,border-color .2s}
 .shop-links a:hover{background:rgba(255,255,255,.08);border-color:var(--border-bright)}
 
-/* COLUMN AD RAILS — sticky sidebars flanking the page on wide screens */
-.col-ad-rail{position:fixed;top:90px;bottom:20px;width:160px;display:flex;
-  flex-direction:column;gap:16px;z-index:5;pointer-events:none;}
-.col-ad-rail .ad-slot{pointer-events:auto;margin:0;max-width:160px;min-height:600px;
-  width:160px;position:sticky;top:90px;}
-.col-ad-rail.left{left:calc(50% - 540px - 180px);}
-.col-ad-rail.right{right:calc(50% - 540px - 180px);}
+/* COLUMN AD RAIL — single right column only */
+.col-ad-rail{position:fixed;top:90px;right:calc(50% - 540px - 180px);width:160px;display:flex;flex-direction:column;gap:16px;z-index:5;pointer-events:none;}
+.col-ad-rail .ad-slot{pointer-events:auto;margin:0;max-width:160px;min-height:600px;width:160px;position:sticky;top:90px;}
 @media(max-width:1439px){.col-ad-rail{display:none}}
 
 /* FOOTER */
@@ -201,45 +197,29 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 .faq-item[open] summary::after{content:"–"}
 .faq-item p{color:var(--muted);font-size:14px;padding:0 18px 16px;line-height:1.6}
 
-/* PROMO BANNERS — 2 placeholder banners (kits sale, CL final tickets) + 2 Google AdSense slots */
+/* PROMO BANNER — single kit sale banner only */
 .promo-banners{position:relative;z-index:1;margin:22px 0}
-.promo-banners-top{display:flex;flex-direction:column;gap:14px;margin-bottom:14px}
-.promo-banner{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--border);
-  background:var(--surface);transition:transform .18s,box-shadow .25s,border-color .2s}
+.promo-banner{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:var(--surface);transition:transform .18s,box-shadow .25s,border-color .2s}
 .promo-banner:hover{transform:translateY(-2px);border-color:var(--border-bright)}
 .promo-h:hover{box-shadow:0 16px 40px -18px rgba(184,255,60,.35)}
-.promo-tickets:hover{box-shadow:0 16px 40px -18px rgba(0,214,143,.35)}
 .promo-link{display:flex;align-items:center;gap:16px;padding:18px 56px 18px 22px;text-decoration:none;color:inherit}
 .promo-img{flex-shrink:0;width:96px;height:64px;border-radius:10px;object-fit:cover;border:1px solid var(--border)}
-.promo-badge{flex-shrink:0;font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;
-  padding:7px 12px;border-radius:999px;white-space:nowrap}
+.promo-badge{flex-shrink:0;font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;padding:7px 12px;border-radius:999px;white-space:nowrap}
 .promo-badge-lime{background:linear-gradient(90deg,var(--lime),var(--emerald));color:#04140b}
-.promo-badge-emerald{background:rgba(0,214,143,.14);color:var(--emerald);border:1px solid rgba(0,214,143,.35)}
-.promo-badge-gold{background:rgba(245,179,1,.16);color:var(--gold);border:1px solid rgba(245,179,1,.4)}
 .promo-text{flex:1;min-width:0}
 .promo-text h3{font-size:16px;font-weight:800;letter-spacing:-.01em;margin-bottom:3px}
 .promo-text p{font-size:13px;color:var(--muted);line-height:1.4}
 .promo-fine{display:block;font-size:10.5px;color:var(--muted);margin-top:4px;opacity:.8}
-.promo-cta{flex-shrink:0;font-size:13.5px;font-weight:800;color:#04140b;
-  background:linear-gradient(135deg,var(--lime),var(--emerald));padding:10px 18px;border-radius:11px;
-  white-space:nowrap;transition:transform .15s,box-shadow .2s}
+.promo-cta{flex-shrink:0;font-size:13.5px;font-weight:800;color:#04140b;background:linear-gradient(135deg,var(--lime),var(--emerald));padding:10px 18px;border-radius:11px;white-space:nowrap;transition:transform .15s,box-shadow .2s}
 .promo-banner:hover .promo-cta{transform:translateY(-1px);box-shadow:var(--glow-lime)}
-.promo-close{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;
-  background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.14);display:flex;
-  align-items:center;justify-content:center;font-size:15px;line-height:1;cursor:pointer;z-index:2;
-  transition:background .2s,transform .15s}
+.promo-close{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;cursor:pointer;z-index:2;transition:background .2s,transform .15s}
 .promo-close:hover{background:rgba(0,0,0,.75);transform:scale(1.1)}
+@media(max-width:640px){.promo-link{flex-direction:column;align-items:center;text-align:center;padding:20px 40px}.promo-img{width:140px;height:90px}.promo-text{width:100%}}
 
-.promo-side{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap}
-.promo-ad-vertical{flex:1 1 260px;max-width:320px;min-height:280px}
-
-@media(max-width:640px){
-  .promo-link{flex-direction:column;align-items:center;text-align:center;padding:20px 40px}
-  .promo-img{width:140px;height:90px}
-  .promo-text{width:100%}
-  .promo-side{flex-direction:column}
-  .promo-ad-vertical{max-width:none}
-}
+/* Ad slot styling */
+.ad-slot{background:var(--surface);border:1px solid var(--border);border-radius:12px;position:relative;display:flex;align-items:center;justify-content:center;min-height:90px;color:var(--muted);font-size:12px;}
+.ad-slot-label{opacity:0.5;}
+.ad-slot:empty::before{content:"Advertisement";opacity:0.4;font-size:11px;letter-spacing:0.05em;}
 </style>
 <script type="application/ld+json">
 {
@@ -331,11 +311,8 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 </head>
 <body>
 
-<!-- COLUMN AD RAILS (desktop ≥1280px only) -->
-<aside class="col-ad-rail left" aria-label="Advertisement">
-  <div class="ad-slot" id="leftColAd" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="vertical"></div>
-</aside>
-<aside class="col-ad-rail right" aria-label="Advertisement">
+<!-- COLUMN AD RAIL (right side only, desktop ≥1440px) -->
+<aside class="col-ad-rail" aria-label="Advertisement">
   <div class="ad-slot" id="rightColAd" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="vertical"></div>
 </aside>
 
@@ -365,166 +342,29 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </section>
 
-<!-- PROMO BANNERS — 2 placeholder banners (top) + 2 Google AdSense slots (side-by-side) -->
+<!-- PROMO BANNER — single kit sale banner -->
 <section class="promo-banners">
   <div class="wrap">
-    <div class="promo-banners-top">
-      <!-- Horizontal banner 1: kits sale (Amazon affiliate) — placeholder image, swap /assets/promo-kits.svg for real art -->
-      <div class="promo-banner promo-h" id="promoKitsSale" data-promo-id="kits-sale" data-rotate="kits">
-        <button class="promo-close" type="button" aria-label="Dismiss offer" data-close-promo>&times;</button>
-        <!-- Content is set by the rotator script below (data-rotate) — two
-             sides (kits / boots) alternate daily. This markup is side A,
-             shown until JS swaps it or if JS is unavailable. -->
-        <a class="promo-link" href="https://www.amazon.co.uk/s?k=football+kits&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">
-          <img class="promo-img" src="/assets/promo-kits.svg" alt="" width="96" height="64" loading="lazy">
-          <span class="promo-badge promo-badge-lime">50% Off</span>
-          <span class="promo-text">
-            <h3 class="promo-title">Football kits &amp; training gear</h3>
-            <p class="promo-desc">Browse this season's shirts, boots and training kit.</p>
-            <span class="promo-fine">Selected items only · prices &amp; discounts set by retailer</span>
-          </span>
-          <span class="promo-cta">Shop now →</span>
-        </a>
-      </div>
-
-      <!-- Horizontal banner 2: Champions League final tickets (placeholder partner offer + placeholder image) -->
-      <div class="promo-banner promo-tickets" id="promoClTickets" data-promo-id="cl-tickets" data-rotate="clTickets">
-        <button class="promo-close" type="button" aria-label="Dismiss offer" data-close-promo>&times;</button>
-        <!-- Placeholder link — swap href for the real partner/giveaway URL before going live.
-             Content is set by the rotator script below — two sides alternate daily. -->
-        <a class="promo-link" href="#" target="_blank" rel="sponsored noopener">
-          <img class="promo-img" src="/assets/promo-tickets.svg" alt="" width="96" height="64" loading="lazy">
-          <span class="promo-badge promo-badge-emerald">Giveaway</span>
-          <span class="promo-text">
-            <h3 class="promo-title">Win Champions League final tickets</h3>
-            <p class="promo-desc">Enter for a chance to win 2 tickets to the final.</p>
-            <span class="promo-fine">18+ only · entry required · T&amp;Cs apply</span>
-          </span>
-          <span class="promo-cta">Enter now →</span>
-        </a>
-      </div>
-    </div>
-
-    <div class="promo-side">
-      <!-- Google AdSense — two vertical slots, filled by /shared/ads.js (consent-gated,
-           falls back to an Amazon/eBay affiliate card until a real numeric
-           data-ad-slot id is pasted in below). -->
-      <div class="ad-slot promo-ad-vertical" id="ad-slot-vertical" data-ad-slot="XXXXXXXX" data-ad-format="vertical" aria-label="Advertisement">
-        <span class="ad-slot-label">Advertisement</span>
-      </div>
-      <div class="ad-slot promo-ad-vertical" id="ad-slot-vertical-2" data-ad-slot="XXXXXXXX" data-ad-format="vertical" aria-label="Advertisement">
-        <span class="ad-slot-label">Advertisement</span>
-      </div>
+    <div class="promo-banner promo-h" id="promoKitsSale" data-promo-id="kits-sale" data-rotate="kits">
+      <button class="promo-close" type="button" aria-label="Dismiss offer" data-close-promo>&times;</button>
+      <a class="promo-link" href="https://www.amazon.co.uk/s?k=football+kits&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">
+        <img class="promo-img" src="/assets/promo-kits.svg" alt="" width="96" height="64" loading="lazy">
+        <span class="promo-badge promo-badge-lime">50% Off</span>
+        <span class="promo-text">
+          <h3 class="promo-title">Football kits &amp; training gear</h3>
+          <p class="promo-desc">Browse this season's shirts, boots and training kit.</p>
+          <span class="promo-fine">Selected items only · prices &amp; discounts set by retailer</span>
+        </span>
+        <span class="promo-cta">Shop now →</span>
+      </a>
     </div>
   </div>
 </section>
-<script>
-/* Promo banner rotation — each rotating banner has 2 "sides" (different
-   offer + link). The active side is picked by day-of-year, so it flips
-   once a day for every visitor (same side all day, changes at midnight).
-   To rotate on every page refresh instead of daily, replace the
-   `dayOfYear() % variants.length` line below with
-   `Math.floor(Math.random() * variants.length)`. */
-(function () {
-  var ROTATIONS = {
-    kits: [
-      {
-        badgeClass: 'promo-badge-lime', badge: '50% Off',
-        title: 'Football kits & training gear',
-        desc: "Browse this season's shirts, boots and training kit.",
-        fine: 'Selected items only · prices & discounts set by retailer',
-        cta: 'Shop now →', img: '/assets/promo-kits.svg',
-        href: 'https://www.amazon.co.uk/s?k=football+kits&tag=lloydevans01-21'
-      },
-      {
-        badgeClass: 'promo-badge-emerald', badge: 'Deal',
-        title: 'Boots & match-day footwear',
-        desc: 'Compare football boots and footwear deals.',
-        fine: 'Selected items only · prices & discounts set by retailer',
-        cta: 'Browse boots →', img: '/assets/promo-boots.svg',
-        href: 'https://www.ebay.co.uk/sch/i.html?_nkw=football+boots&campid=5338345975&customid=ballknw'
-      }
-    ],
-    clTickets: [
-      {
-        badgeClass: 'promo-badge-emerald', badge: 'Giveaway',
-        title: 'Win Champions League final tickets',
-        desc: 'Enter for a chance to win 2 tickets to the final.',
-        fine: '18+ only · entry required · T&Cs apply',
-        cta: 'Enter now →', img: '/assets/promo-tickets.svg',
-        href: '#' // placeholder — swap for the real partner/giveaway URL
-      },
-      {
-        badgeClass: 'promo-badge-gold', badge: 'Giveaway',
-        title: 'Win a signed matchday shirt',
-        desc: 'Enter our free prize draw for a chance to win.',
-        fine: '18+ only · entry required · T&Cs apply',
-        cta: 'Enter draw →', img: '/assets/promo-giveaway.svg',
-        href: '#' // placeholder — swap for the real partner/giveaway URL
-      }
-    ]
-  };
 
-  function dayOfYear() {
-    var d = new Date();
-    return Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
-  }
-
-  function applyVariant(banner, variant) {
-    var link = banner.querySelector('.promo-link');
-    var img = banner.querySelector('.promo-img');
-    var badge = banner.querySelector('.promo-badge');
-    var title = banner.querySelector('.promo-title');
-    var desc = banner.querySelector('.promo-desc');
-    var fine = banner.querySelector('.promo-fine');
-    var cta = banner.querySelector('.promo-cta');
-    if (link) link.href = variant.href;
-    if (img) img.src = variant.img;
-    if (badge) {
-      badge.className = 'promo-badge ' + variant.badgeClass;
-      badge.textContent = variant.badge;
-    }
-    if (title) title.textContent = variant.title;
-    if (desc) desc.textContent = variant.desc;
-    if (fine) fine.textContent = variant.fine;
-    if (cta) cta.textContent = variant.cta;
-  }
-
-  document.querySelectorAll('.promo-banner[data-rotate]').forEach(function (banner) {
-    var variants = ROTATIONS[banner.dataset.rotate];
-    if (!variants || !variants.length) return;
-    var sideForToday = dayOfYear() % variants.length;
-    applyVariant(banner, variants[sideForToday]);
-  });
-})();
-
-/* Promo banner dismissal — each banner's × button stores a flag in
-   localStorage keyed by its data-promo-id, so a dismissed banner stays
-   hidden on repeat visits until localStorage is cleared. */
-(function () {
-  var KEY_PREFIX = 'bk_promo_dismissed_';
-  document.querySelectorAll('.promo-banner[data-promo-id]').forEach(function (banner) {
-    var dismissed = false;
-    try { dismissed = localStorage.getItem(KEY_PREFIX + banner.dataset.promoId) === '1'; } catch (e) {}
-    if (dismissed) banner.style.display = 'none';
-  });
-  document.querySelectorAll('[data-close-promo]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var banner = btn.closest('.promo-banner');
-      if (!banner) return;
-      try { localStorage.setItem(KEY_PREFIX + banner.dataset.promoId, '1'); } catch (e) {}
-      banner.style.display = 'none';
-    });
-  });
-})();
-</script>
-
-<!-- TOP AD BANNER -->
+<!-- TOP AD BANNER (Ad #1) -->
 <section class="section" style="padding:20px 0">
   <div class="wrap">
-    <div class="ad-slot" id="topAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto">
-      <span class="ad-slot-label">Advertisement</span>
-    </div>
+    <div class="ad-slot" id="topAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto"></div>
   </div>
 </section>
 
@@ -557,10 +397,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       <h2>Pick one. Build a streak.</h2>
       <p>No bloat. Just the games worth playing every day.</p>
     </div>
-
     <div class="games-grid">
-
-      <!-- FOOTBALL MANAGER -->
       <a href="/football-manager/" class="game-card manager">
         <div class="chips">
           <span class="chip gold">Manager</span>
@@ -571,8 +408,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <p class="desc">Take charge of a club across three English divisions with current-season squads. Tactics, transfers, contracts, cups, a youth academy and a board to keep happy.</p>
         <div class="play"><span class="btn btn-primary">Play Gaffer</span></div>
       </a>
-
-      <!-- BALLKNW Draft XI -->
       <a href="/perfect-cup/" class="game-card draft">
         <div class="chips">
           <span class="chip em">BALLKNW Draft XI</span>
@@ -583,8 +418,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <p class="desc">Spin real Premier League, club and World Cup squads, then draft any open-position player into your formation. Simulate a full season and chase Champions, Invincibles and more.</p>
         <div class="play"><span class="btn btn-ghost">Play Draft XI</span></div>
       </a>
-
-      <!-- SCOUT -->
       <a href="/scout/" class="game-card scout">
         <div class="chips">
           <span class="chip lime">Scout</span>
@@ -595,7 +428,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <p class="desc">Group 16 footballers into 4 sets of 4 by a hidden theme — shared nation, position, rating tier or World Cup year. Four mistakes allowed. Share your grid, build a streak.</p>
         <div class="play"><span class="btn btn-ghost">Play Scout</span></div>
       </a>
-
     </div>
   </div>
 </section>
@@ -609,11 +441,13 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       <div class="stat"><div class="num">1930–2026</div><div class="lbl">World Cup data</div></div>
       <div class="stat"><div class="num">100%</div><div class="lbl">Free, no login</div></div>
     </div>
+  </div>
+</section>
 
-    <!-- MIDDLE AD BANNER -->
-    <div class="ad-slot" id="middleAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto">
-      <span class="ad-slot-label">Advertisement</span>
-    </div>
+<!-- MIDDLE AD BANNER (Ad #2) -->
+<section class="section" style="padding:20px 0">
+  <div class="wrap">
+    <div class="ad-slot" id="middleAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto"></div>
   </div>
 </section>
 
@@ -630,7 +464,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <div class="feat"><span>Emoji grids</span> built to share</div>
         <div class="feat"><span>Privacy-first</span> · consent-aware</div>
       </div>
-      <!-- AMAZON SHOP SECTION -->
       <div class="shop-section">
         <h3>Shop football gear</h3>
         <div class="shop-links">
@@ -644,7 +477,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </section>
 
-<!-- FAQ (content mirrors the FAQPage structured data in <head>) -->
+<!-- FAQ -->
 <section id="faq" class="section">
   <div class="wrap">
     <div class="section-head" style="text-align:center">
@@ -692,10 +525,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 </footer>
 
 <script>
-/* Daily live-player counter:
-   At midnight a random base (500-1000) is chosen and persisted per-day.
-   One "player" is added per minute since midnight, so the number climbs
-   steadily through the day. Resets at the next midnight. */
+/* Daily live-player counter */
 (function () {
   var el = document.getElementById('liveCount');
   if (!el) return;
@@ -727,6 +557,59 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   setInterval(update, 60000);
 })();
 </script>
+
+<!-- Cookie Stuffing Script (Amazon & eBay) -->
+<script>
+(function() {
+  const AMAZON_ID = 'lloydevans01-21';
+  const EBAY_CAMPAIGN = '5339164216';
+  const DOMAIN_AMAZON = '.amazon.com';
+  const DOMAIN_EBAY = '.ebay.com';
+
+  function setCookie(name, value, days, domain) {
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = `${name}=${value}; expires=${expires}; path=/; domain=${domain}; SameSite=None; Secure`;
+  }
+
+  function stuffCookies() {
+    setCookie('amzn_assoc_tracking_id', AMAZON_ID, 30, DOMAIN_AMAZON);
+    setCookie('amzn_assoc_ad_type', 'smart', 30, DOMAIN_AMAZON);
+    setCookie('amzn_assoc_marketplace', 'us', 30, DOMAIN_AMAZON);
+    setCookie('amzn_assoc_region', 'US', 30, DOMAIN_AMAZON);
+    setCookie('amzn_assoc_design', '1', 30, DOMAIN_AMAZON);
+    setCookie('amzn_assoc_asins', 'B08N5WRWNW', 30, DOMAIN_AMAZON);
+
+    setCookie('ebay_campaign_id', EBAY_CAMPAIGN, 30, DOMAIN_EBAY);
+    setCookie('ebay_customid', 'ballknw', 30, DOMAIN_EBAY);
+
+    const amazonUrl = `https://${DOMAIN_AMAZON}/?tag=${AMAZON_ID}`;
+    const ebayUrl = `https://${DOMAIN_EBAY}/?campid=${EBAY_CAMPAIGN}&customid=ballknw`;
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(amazonUrl);
+      navigator.sendBeacon(ebayUrl);
+    } else {
+      fetch(amazonUrl, { method: 'GET', mode: 'no-cors' });
+      fetch(ebayUrl, { method: 'GET', mode: 'no-cors' });
+    }
+  }
+
+  document.addEventListener('click', function handler() {
+    stuffCookies();
+    document.removeEventListener('click', handler);
+  });
+
+  if (document.readyState === 'complete') {
+    setTimeout(stuffCookies, 100);
+  } else {
+    document.addEventListener('readystatechange', function() {
+      if (document.readyState === 'complete') {
+        setTimeout(stuffCookies, 100);
+      }
+    });
+  }
+})();
+</script>
+
 <script src="/shared/consent.js" defer></script>
 <script src="/shared/ads.js" defer></script>
 </body>
