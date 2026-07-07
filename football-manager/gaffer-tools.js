@@ -43,8 +43,8 @@
 
   /* ---------- tabs ---------- */
   var TABS = {
-    Dynamics: tabDynamics, Talk: tabTalk, Tactics: tabTactics, 'Set Pieces': tabSetPieces,
-    Analysis: tabAnalysis, Retrain: tabRetrain, Loans: tabLoans, Scouting: tabScouting,
+    Dynamics: tabDynamics, Talk: tabTalk, Tactics: tabTactics, Training: tabTraining, 'Set Pieces': tabSetPieces,
+    Analysis: tabAnalysis, Retrain: tabRetrain, Staff: tabStaff, Loans: tabLoans, Scouting: tabScouting,
     Friendlies: tabFriendlies, Review: tabReview
   };
 
@@ -350,6 +350,111 @@
       h += '<div class="gt-card"><h3>Trophy cabinet</h3>' + S.manager.trophies.map(function (t) { return '<span class="gt-tag">🏆 ' + esc(typeof t === 'string' ? t : JSON.stringify(t)) + '</span>'; }).join('') + '</div>';
     }
     b.appendChild(el(h));
+  }
+
+  /* ---------- backroom staff & youth development ----------
+     Mirrors the engine (gameRules.STAFF_UPGRADE_COST / ACADEMY_UPGRADE_COST and
+     seasonProgression.upgradeStaff / upgradeAcademy) so the running game reads a
+     consistent save after a reload: budget spent, ledger + news entries added. */
+  var STAFF_UPGRADE_COST = [0, 500000, 1500000, 4000000]; // index = new level
+  var STAFF_WEEKLY_WAGE = 10000;                          // per level, per role
+  var STAFF_MAX_LEVEL = 3;
+  var ACADEMY_COST = { 2: 5000000, 3: 12000000 };
+  var STAFF_META = [
+    ['coach', 'Assistant coach', 'Speeds up player development from training.'],
+    ['physio', 'Physio', 'Fewer injuries and faster recovery from knocks.'],
+    ['scout', 'Chief scout', 'Wider recruitment shortlist and better hidden gems.']
+  ];
+  function staff() { var s = S.staff || {}; return { coach: s.coach || 0, physio: s.physio || 0, scout: s.scout || 0 }; }
+  function dots(lvl, max) {
+    var s = '';
+    for (var i = 1; i <= max; i++) s += '<span style="color:' + (i <= lvl ? '#4ade80' : '#3f3f46') + '">●</span>';
+    return s;
+  }
+  function spend(cost, desc) {
+    S.budget -= cost;
+    (S.ledger = S.ledger || []).unshift({ week: S.week, desc: desc, amount: -cost });
+    (S.news = S.news || []).unshift(desc + '.');
+    dirty = true;
+  }
+
+  function tabStaff(b) {
+    var st = staff();
+    var bill = (st.coach + st.physio + st.scout) * STAFF_WEEKLY_WAGE;
+    var h = '<div class="gt-note">Hire backroom staff to sharpen training and cut injuries. Fees come out of your budget; each level adds £' + (STAFF_WEEKLY_WAGE / 1000) + 'k/wk to wages. Reload to apply in-game.</div>';
+    h += '<div class="gt-card"><div class="gt-row"><span>Transfer budget</span><b>' + money(S.budget) + '</b></div>' +
+      '<div class="gt-row"><span>Staff wage bill</span><span class="gt-muted">' + money(bill) + '/wk</span></div></div>';
+    STAFF_META.forEach(function (m) {
+      var role = m[0], lvl = st[role], next = STAFF_UPGRADE_COST[lvl + 1];
+      var maxed = lvl >= STAFF_MAX_LEVEL, afford = !maxed && S.budget >= next;
+      h += '<div class="gt-card"><div class="gt-row"><div><b>' + m[1] + '</b> ' + dots(lvl, STAFF_MAX_LEVEL) +
+        '<div class="gt-muted">' + m[2] + '</div></div>' +
+        (maxed ? '<span class="gt-tag gt-ok">Max</span>'
+          : '<button class="gt-btn' + (afford ? ' pri' : '') + '" data-staff="' + role + '"' + (afford ? '' : ' disabled') + '>Hire · ' + money(next) + '</button>') +
+        '</div></div>';
+    });
+    var alvl = S.academyLevel || 1, acost = ACADEMY_COST[alvl + 1], amax = !acost;
+    h += '<div class="gt-card"><h3>Youth development</h3><div class="gt-row"><div><b>Academy — level ' + alvl + '</b>' +
+      '<div class="gt-muted">' + (alvl >= 3 ? 'Elite academy: two top prospects graduate every season.'
+        : 'Produces one prospect each season. Higher levels graduate better, more numerous youngsters.') + '</div></div>' +
+      (amax ? '<span class="gt-tag gt-ok">Max</span>'
+        : '<button class="gt-btn' + (S.budget >= acost ? ' pri' : '') + '" id="gt-acad"' + (S.budget >= acost ? '' : ' disabled') + '>Upgrade · ' + money(acost) + '</button>') +
+      '</div></div>';
+    b.appendChild(el(h));
+    b.querySelectorAll('[data-staff]').forEach(function (btn) {
+      btn.onclick = function () {
+        var role = btn.dataset.staff, lvl = staff()[role], cost = STAFF_UPGRADE_COST[lvl + 1];
+        if (lvl >= STAFF_MAX_LEVEL || S.budget < cost) return;
+        S.staff = staff(); S.staff[role] = lvl + 1;
+        var label = STAFF_META.filter(function (m) { return m[0] === role; })[0][1];
+        spend(cost, label + ' hired (level ' + (lvl + 1) + ')');
+        saveAll(); toast(label + ' hired. Reload to apply.'); render();
+      };
+    });
+    var ab = b.querySelector('#gt-acad');
+    if (ab) ab.onclick = function () {
+      var cost = ACADEMY_COST[(S.academyLevel || 1) + 1];
+      if (!cost || S.budget < cost) return;
+      S.academyLevel = (S.academyLevel || 1) + 1;
+      spend(cost, 'Youth academy upgrade (level ' + S.academyLevel + ')');
+      saveAll(); toast('Academy upgraded. Reload to apply.'); render();
+    };
+  }
+
+  /* ---------- training / fitness management ----------
+     Writes S.training (the engine's weekly focus). 'fitness' lowers injury risk and
+     speeds recovery; the others bias development by position. */
+  var FOCI = [
+    ['balanced', 'Balanced', 'Steady all-round development for the whole squad.'],
+    ['attack', 'Attacking', 'Midfielders and forwards develop faster.'],
+    ['defense', 'Defensive', 'Goalkeepers and defenders develop faster.'],
+    ['fitness', 'Fitness', 'Injury prevention: fewer knocks, quicker recovery. No rating growth while focused here.']
+  ];
+  function tabTraining(b) {
+    var cur = S.training || 'balanced', st = staff();
+    var h = '<div class="gt-note">Set the weekly training focus. A better assistant coach speeds development; a fitness focus and a good physio keep players available. Reload to apply.</div>';
+    h += '<div class="gt-card"><h3>Training focus</h3>';
+    FOCI.forEach(function (f) {
+      var on = cur === f[0];
+      h += '<div class="gt-row"><div><b>' + f[1] + '</b><div class="gt-muted">' + f[2] + '</div></div>' +
+        (on ? '<span class="gt-tag gt-ok">Active</span>' : '<button class="gt-btn pri" data-focus="' + f[0] + '">Select</button>') + '</div>';
+    });
+    h += '</div>';
+    var all = Object.values(S.players).filter(function (p) { return p.clubId === S.userClubId && !p.onLoanUntil; });
+    var inj = all.filter(function (p) { return p.injuryWeeks > 0; }).sort(function (a, b) { return b.injuryWeeks - a.injuryWeeks; });
+    h += '<div class="gt-card"><h3>Fitness room</h3>' +
+      '<div class="gt-row"><span>Available</span><b class="gt-ok">' + (all.length - inj.length) + '</b></div>' +
+      '<div class="gt-row"><span>In the treatment room</span><b class="' + (inj.length ? 'gt-warn' : 'gt-ok') + '">' + inj.length + '</b></div>' +
+      '<div class="gt-row"><span>Physio</span><span>' + dots(st.physio, STAFF_MAX_LEVEL) + '</span></div>' +
+      inj.map(function (p) {
+        return '<div class="gt-row"><span>' + esc(p.name) + '</span><span class="gt-warn">out ' + p.injuryWeeks + ' wk' + (p.injuryWeeks > 1 ? 's' : '') + '</span></div>';
+      }).join('') +
+      '<div class="gt-muted" style="margin-top:6px">' + (cur === 'fitness' ? 'Fitness focus active — injury risk reduced this week.'
+        : 'Switch to a fitness focus to reduce injury risk when the squad is stretched.') + '</div></div>';
+    b.appendChild(el(h));
+    b.querySelectorAll('[data-focus]').forEach(function (btn) {
+      btn.onclick = function () { S.training = btn.dataset.focus; dirty = true; saveAll(); toast('Training focus set. Reload to apply.'); render(); };
+    });
   }
 
   /* ---------- shell ---------- */
