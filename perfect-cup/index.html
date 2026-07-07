@@ -132,6 +132,11 @@ a{color:var(--lime-deep);text-decoration:none}
 .prow .rr{margin-left:auto;font-weight:900;font-size:14px;color:var(--ink)}
 .prow .rr.hid{color:var(--muted);font-weight:700;font-size:12px}
 .prow .add{margin-left:8px;color:var(--emerald);font-weight:900;font-size:18px}
+.prow .pp{width:38px;font-size:11px;font-weight:800;color:var(--lime-deep);flex-shrink:0}
+.prow .pr{font-weight:900;font-size:14px;width:32px}
+.prow .pv{margin-left:auto;font-weight:700;font-size:13px;color:var(--ink)}
+.prow.hot{background:#f0fdf4;border-color:#86efac}
+.prow.hot:hover{background:#dcfce7}
 .hint{text-align:center;color:var(--muted);font-size:12.5px;margin-top:10px}
 
 /* ===== RESULT SCREEN ===== */
@@ -180,9 +185,11 @@ a{color:var(--lime-deep);text-decoration:none}
       <div class="body">
         <div class="orow"><div class="ol">Difficulty</div><div class="seg" id="segDiff"></div></div>
         <div class="orow"><div class="ol">Formation</div><div class="seg" id="segForm"></div></div>
+        <div class="orow"><div class="ol">Tactic</div><div class="seg" id="segTac"></div></div>
       </div>
     </details>
 
+    <div id="continueCareer"></div>
     <button class="cta" onclick="startDraft()">Start drafting →</button>
   </section>
 
@@ -214,8 +221,12 @@ a{color:var(--lime-deep);text-decoration:none}
     <div id="rObjectives"></div>
     <div class="sec-h">Final table</div>
     <div class="table" id="rTable"></div>
-    <button class="cta" onclick="shareResult()">Share result</button>
-    <button class="cta ghost" onclick="location.reload()">Play again</button>
+    <div id="resultActions"></div>
+  </section>
+
+  <!-- ============ OFFSEASON ============ -->
+  <section id="offseason" class="hidden">
+    <div id="offContent"></div>
   </section>
 </div>
 
@@ -331,20 +342,37 @@ function renderStart(){
     <button class="${settings.difficultyId===d.id?'on':''}" onclick="setOpt('difficultyId','${d.id}')">${d.name}<span class="sub">${d.sub}</span></button>`).join('');
   document.getElementById('segForm').innerHTML = FORMATIONS.map(f=>`
     <button class="${settings.formationId===f.id?'on':''}" onclick="setOpt('formationId','${f.id}')">${f.name}</button>`).join('');
+  document.getElementById('segTac').innerHTML = TACTICS.map(t=>`
+    <button class="${settings.tacticId===t.id?'on':''}" onclick="setOpt('tacticId','${t.id}')">${t.name}<span class="sub">${t.desc}</span></button>`).join('');
+  const cc = document.getElementById('continueCareer');
+  const saved = loadCareer();
+  if(saved && saved.history && saved.history.length>0 && saved.season<=saved.maxSeasons){
+    cc.innerHTML = `<button class="cta" style="margin-top:12px;background:#0ea5e9" onclick="resumeCareer()">Continue career — Season ${saved.season}/${saved.maxSeasons} →</button>`;
+  } else { cc.innerHTML=''; }
 }
 function pickMode(id){settings.mode=id;renderStart();}
 function setOpt(k,v){settings[k]=v;renderStart();}
+function resumeCareer(){
+  career = loadCareer();
+  if(!career){ alert('No saved career found.'); return; }
+  settings = {...career.settings};
+  xi = career.xi ? career.xi.map(p=>p?{...p}:null) : [];
+  goOffseason();
+}
 
 /* ================= draft ================= */
 function startDraft(){
   started=true;
+  if(!career) newCareer();
+  settings.tacticId = settings.tacticId || 'balanced';
+  career.settings = {...settings};
   xi = formation().slots.map(()=>null);
   rerolls = diff().spins;
   current = null;
   document.getElementById('start').classList.add('hidden');
   document.getElementById('draft').classList.remove('hidden');
   const m = MODES.find(x=>x.id===settings.mode);
-  document.getElementById('hudMode').innerHTML = `${m.em} ${m.name} · ${formation().name}`;
+  document.getElementById('hudMode').innerHTML = `${m.em} ${m.name} · ${formation().name} · ${tactic().name}`;
   document.getElementById('squadPanel').innerHTML='';
   renderPitch();
   renderHud();
@@ -442,29 +470,37 @@ function simulate(){
   const rng = mulberry32(seed);
   const byPos = pos => players.filter(p=>p.pos===pos).map(ratingOf);
   const gk=byPos('GK'), def=byPos('DEF'), mid=byPos('MID'), fwd=byPos('FWD');
-  const defence  = Math.round(mean([...gk.map(x=>1.1*x),...def]) || 70);
+  const tac = tactic();
+  const defence  = Math.round(mean([...gk.map(x=>1.1*x),...def]) || 70) + tac.defMod;
   const midfield = Math.round(mean(mid) || 70);
-  const attack   = Math.round(mean(fwd) || 70);
+  const attack   = Math.round(mean(fwd) || 70) + tac.attMod;
   const overall  = Math.round(mean(players.map(ratingOf)) || 70);
 
-  let table = [{name:'Your XI',strength:.4*attack+.3*midfield+.3*defence,isYou:true}];
+  let table = [{name:career?career.club.name:'Your XI',strength:.4*attack+.3*midfield+.3*defence,isYou:true}];
   OPPONENTS.slice(0,19).forEach(n=>table.push({name:n,strength:74+13*rng()}));
   table.forEach(t=>Object.assign(t,{played:0,won:0,drawn:0,lost:0,gf:0,ga:0,points:0}));
 
   let cleanSheets=0, unbeaten=true;
+  let yourMatches=[], totalXGf=0, totalXGa=0;
   for(let e=0;e<table.length;e++)for(let r=e+1;r<table.length;r++)for(let t=0;t<2;t++){
     const a=table[e],o=table[r];
     const s=(a.strength-o.strength)/12;
-    const hg=poisson(Math.max(.2,1.35+s+(t===0?.25:-.25)),rng);
-    const ag=poisson(Math.max(.2,1.35-s+(t===0?-.25:.25)),rng);
+    const xgA=Math.max(.2,1.35+s+(t===0?.25:-.25)+(a.isYou?tac.xgMod:0));
+    const xgO=Math.max(.2,1.35-s+(t===0?-.25:.25)+(o.isYou?tac.xgMod:0));
+    const hg=poisson(xgA,rng);
+    const ag=poisson(xgO,rng);
     a.gf+=hg;a.ga+=ag;o.gf+=ag;o.ga+=hg;a.played++;o.played++;
     if(hg>ag){a.won++;o.lost++;a.points+=3;}
     else if(hg<ag){o.won++;a.lost++;o.points+=3;}
     else{a.drawn++;o.drawn++;a.points++;o.points++;}
     if(a.isYou||o.isYou){
-      const conceded=a.isYou?ag:hg, scored=a.isYou?hg:ag;
+      const youHome=a.isYou;
+      const conceded=youHome?ag:hg, scored=youHome?hg:ag;
       if(conceded===0)cleanSheets++;
       if(conceded>scored)unbeaten=false;
+      totalXGf+=youHome?xgA:xgO;
+      totalXGa+=youHome?xgO:xgA;
+      yourMatches.push({opp:youHome?o.name:a.name,home:youHome,xgF:+(youHome?xgA:xgO).toFixed(1),xgA:+(youHome?xgO:xgA).toFixed(1),gf:scored,ga:conceded});
     }
   }
   table.sort((a,b)=>b.points-a.points || (b.gf-b.ga)-(a.gf-a.ga) || b.gf-a.gf);
@@ -480,16 +516,24 @@ function simulate(){
     const g=Math.round(you.gf*share);
     if(g>top.goals) top={name:p.name,goals:g};
   }
+  const xgDiff = Math.round(you.gf - totalXGf);
   return {
     squadRating:overall, attack, midfield, defence,
     position, points:you.points, gf:you.gf, ga:you.ga,
     unbeaten, cleanSheets, topScorer:top, topScorerGoals:top.goals,
-    difficultyId:settings.difficultyId, verdict:VERDICT(position,unbeaten), table
+    difficultyId:settings.difficultyId, verdict:VERDICT(position,unbeaten), table,
+    xgFor:+totalXGf.toFixed(1), xgAgainst:+totalXGa.toFixed(1), xgDiff,
+    matches:yourMatches, tacticName:tac.name,
   };
 }
 let RESULT=null;
 function runSim(){
   RESULT = simulate();
+  if(career){
+    career.history.push({season:career.season, result:RESULT});
+    career.xi = xi.map(p=>p?{...p}:null);
+    saveCareer();
+  }
   renderResult(RESULT);
   document.getElementById('draft').classList.add('hidden');
   document.getElementById('result').classList.remove('hidden');
@@ -519,13 +563,179 @@ function renderResult(r){
     }
   });
   document.getElementById('rTable').innerHTML = rows.join('');
+
+  // xG analysis block
+  const xgSign = r.xgDiff>0 ? 'clinical (scored above expected)' : r.xgDiff<0 ? 'wasteful (scored below expected)' : 'finished as expected';
+  const xgHtml = `
+    <div class="panel" style="margin-top:16px">
+      <div class="badge">xG</div>
+      <div class="ttl">Expected Goals — ${r.tacticName}</div>
+      <div class="statgrid" id="xgStats"></div>
+      <div class="obj"><span class="ic"></span><span><span class="ot">Finishing</span> · <span class="od">${xgSign} — xG diff ${r.xgDiff>0?'+':''}${r.xgDiff}</span></span></div>
+      <div style="margin-top:10px;font-size:13px;color:#888;max-height:180px;overflow-y:auto">
+        ${r.matches.slice(-8).reverse().map(m=>`<div class="obj" style="margin-bottom:4px"><span class="ic"></span><span><span class="ot">${m.home?'H':'A'} vs ${m.opp}</span> · <span class="od">xG ${m.xgF}–${m.xgA} · actual ${m.gf}–${m.ga}</span></span></div>`).join('')}
+      </div>
+    </div>`;
+  document.getElementById('rStats').parentElement.insertAdjacentHTML('afterend', xgHtml);
+  document.getElementById('xgStats').innerHTML = `
+    <div class="s"><div class="n">${r.xgFor}</div><div class="l">xG For</div></div>
+    <div class="s"><div class="n">${r.xgAgainst}</div><div class="l">xG Against</div></div>
+    <div class="s"><div class="n">${r.xgDiff>0?'+':''}${r.xgDiff}</div><div class="l">xG Diff</div></div>
+    <div class="s"><div class="n">${r.tacticName.slice(0,4)}</div><div class="l">Tactic</div></div>`;
+
+  // multi-season buttons
+  const btnArea = document.getElementById('resultActions');
+  if(career && career.season < career.maxSeasons){
+    btnArea.innerHTML = `<button class="cta" onclick="goOffseason()">Continue to offseason →</button>`;
+  } else if(career && career.season >= career.maxSeasons){
+    btnArea.innerHTML = `<button class="cta" onclick="renderCareerSummary()">Career summary →</button>`;
+  } else {
+    btnArea.innerHTML = `<button class="cta ghost" onclick="location.reload()">Play again</button>`;
+  }
 }
-function shareResult(){
-  const r=RESULT, m=MODES.find(x=>x.id===settings.mode);
-  const hits=OBJECTIVES.filter(o=>o.test(r)).length;
-  const txt=`BALLKNW Draft XI — ${m.name}\nFinished ${ord(r.position)} · ${r.points} pts · ${r.cleanSheets} clean sheets\n${hits}/${OBJECTIVES.length} objectives · "${r.verdict}"\n\nPlay at ballknw.com/perfect-cup/`;
-  if(navigator.share){navigator.share({title:'BALLKNW Draft XI',text:txt}).catch(()=>copy(txt));}
-  else copy(txt);
+function goOffseason(){
+  const off = document.getElementById('offseason');
+  if(!off) return;
+  document.getElementById('result').classList.add('hidden');
+  document.getElementById('start').classList.add('hidden');
+  off.classList.remove('hidden');
+  window.scrollTo(0,0);
+  renderOffseason();
+}
+function renderOffseason(){
+  if(!career) return;
+  const r = career.history[career.history.length-1].result;
+  const PRIZE = {1:150,4:100,10:60,17:30,20:15};
+  const pos = r.position;
+  const prize = pos<=1?150:pos<=4?100:pos<=10?60:pos<=17?30:15;
+  career.budget += prize;
+
+  // training
+  const tr = TRAINING.find(t=>t.id===settings.trainingId) || TRAINING[0];
+
+  document.getElementById('offContent').innerHTML = `
+    <div class="panel">
+      <div class="badge">Offseason</div>
+      <div class="ttl">Season ${career.season} review — ${career.club.name}</div>
+      <div class="obj"><span class="ic">£</span><span><span class="ot">Prize money</span> · <span class="od">+£${prize}M for ${ord(pos)} place · Budget: £${career.budget}M</span></span></div>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <div class="ttl">Training focus</div>
+      <div class="seg" id="segTrain">${TRAINING.map(t=>`<button class="${settings.trainingId===t.id?'on':''}" onclick="setOpt('trainingId','${t.id}');renderOffseason()">${t.name}<span class="sub">${Object.entries(t.delta).map(([k,v])=>k+':'+(v>0?'+':'')+v).join(' ')}</span></button>`).join('')}</div>
+      <div class="obj" style="margin-top:8px"><span class="ic"></span><span><span class="od">Develops your squad between seasons. Below-peak players grow; at-peak players hold or decline.</span></span></div>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <div class="ttl">Move clubs</div>
+      <div class="seg" id="segMove">
+        <button class="on">Stay at ${career.club.name}</button>
+        <button onclick="moveClub()">Accept a new job →</button>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <div class="ttl">Transfers — Budget £${career.budget}M</div>
+      <div id="transferArea"></div>
+    </div>
+    <button class="cta" style="margin-top:18px" onclick="startNextSeason()">Start Season ${career.season+1} →</button>
+  `;
+  renderTransferArea();
+}
+function renderTransferArea(){
+  const area = document.getElementById('transferArea');
+  if(!area) return;
+  const weak = ['DEF','MID','FWD'].map(pos=>{
+    const ps = xi.filter(p=>p&&p.pos===pos);
+    const avg = ps.length ? ps.reduce((a,p)=>a+ratingOf(p),0)/ps.length : 0;
+    return {pos, avg};
+  }).sort((a,b)=>a.avg-b.avg)[0];
+
+  let html = `<div class="obj" style="margin-bottom:8px"><span class="ic"></span><span><span class="od">Weakest line: ${weak.pos} (avg ${Math.round(weak.avg||0)}). Sign players below to upgrade.</span></span></div>`;
+  html += `<div class="seg" style="margin-bottom:8px"><button onclick="spinTransfer()" id="spinBtn">Scout players (${3-(window._scoutsUsed||0)} left)</button></div>`;
+  html += `<div id="scoutResults"></div>`;
+  area.innerHTML = html;
+}
+function spinTransfer(){
+  if((window._scoutsUsed||0)>=3){ alert('No more scouts this window.'); return; }
+  window._scoutsUsed = (window._scoutsUsed||0)+1;
+  document.getElementById('spinBtn').textContent = `Scout players (${3-window._scoutsUsed} left)`;
+  const pool = poolForMode(settings.mode);
+  const picks = [...pool].sort(()=>Math.random()-.5).slice(0,5);
+  const weak = ['DEF','MID','FWD'].map(pos=>{
+    const ps = xi.filter(p=>p&&p.pos===pos);
+    const avg = ps.length ? ps.reduce((a,p)=>a+ratingOf(p),0)/ps.length : 0;
+    return {pos, avg};
+  }).sort((a,b)=>a.avg-b.avg)[0];
+  document.getElementById('scoutResults').innerHTML = picks.map(p=>{
+    const val = valueOf(p);
+    const fits = p.pos===weak.pos;
+    return `<div class="prow${fits?' hot':''}" onclick="signPlayer('${p.name.replace(/'/g,"\\'")}')">
+      <span class="pn">${p.name}</span>
+      <span class="pp">${p.pos}</span>
+      <span class="pr">${p.rating}</span>
+      <span class="pv">£${val}M${fits?' ⚡':''}</span>
+    </div>`;
+  }).join('');
+}
+function signPlayer(name){
+  const pool = poolForMode(settings.mode);
+  const p = pool.find(x=>x.name===name);
+  if(!p) return;
+  const val = valueOf(p);
+  if(career.budget < val){ alert('Not enough budget.'); return; }
+  // pick a player to release
+  const releaseList = xi.map((x,i)=>({x,i})).filter(o=>o.x).sort((a,b)=>ratingOf(a.x)-ratingOf(b.x));
+  const sellIdx = releaseList[0].i;
+  const sellVal = valueOf(xi[sellIdx]);
+  career.budget += sellVal - val;
+  xi[sellIdx] = {...p};
+  saveCareer();
+  renderTransferArea();
+}
+function moveClub(){
+  const names = ['Real Victoria','Athletico Norte','Sporting Lusitana','FC Metropolis','Olympia Harbour','United Republic'];
+  const colors = ['#dc2626','#0891b2','#7c3aed','#ea580c','#0d9488','#be123c'];
+  const idx = Math.floor(Math.random()*names.length);
+  career.club = {name:names[idx], color:colors[idx], mode:settings.mode};
+  saveCareer();
+  renderOffseason();
+}
+function startNextSeason(){
+  // apply training
+  const tr = training();
+  xi.forEach(p=>{
+    if(!p) return;
+    const d = tr.delta[p.pos] || 0;
+    if(p.rating < (p.peak||90)) p.rating = Math.min(p.peak||90, p.rating + Math.max(1,d));
+    else if(d<0) p.rating = Math.max(60, p.rating - 1);
+  });
+  career.xi = xi.map(p=>p?{...p}:null);
+  career.season++;
+  career.settings = {...settings};
+  window._scoutsUsed = 0;
+  saveCareer();
+  document.getElementById('offseason').classList.add('hidden');
+  runSim();
+}
+function renderCareerSummary(){
+  const off = document.getElementById('offseason');
+  if(off) off.classList.add('hidden');
+  document.getElementById('result').classList.remove('hidden');
+  const h = career.history;
+  const totalPts = h.reduce((a,s)=>a+s.result.points,0);
+  const bestPos = Math.min(...h.map(s=>s.result.position));
+  const totalGF = h.reduce((a,s)=>a+s.result.gf,0);
+  const titles = h.filter(s=>s.result.position===1).length;
+  document.getElementById('rPos').textContent = `Career complete — ${h.length} seasons`;
+  document.getElementById('rVerdict').textContent = titles>0 ? `${titles} title${titles>1?'s':''} won` : 'No titles, but memories made';
+  document.getElementById('rSub').textContent = `Best finish: ${ord(bestPos)} · ${totalPts} total points · ${totalGF} total goals`;
+  document.getElementById('rStats').innerHTML = `
+    <div class="s"><div class="n">${totalPts}</div><div class="l">Total Pts</div></div>
+    <div class="s"><div class="n">${bestPos}</div><div class="l">Best Finish</div></div>
+    <div class="s"><div class="n">${totalGF}</div><div class="l">Total Goals</div></div>
+    <div class="s"><div class="n">${titles}</div><div class="l">Titles</div></div>`;
+  document.getElementById('rObjectives').innerHTML = h.map((s,i)=>`<div class="obj hit"><span class="ic">${s.result.position===1?'🏆':ord(s.result.position)}</span><span><span class="ot">Season ${i+1}</span> · <span class="od">${ord(s.result.position)} · ${s.result.points}pts · ${s.result.tacticName}</span></span></div>`).join('');
+  document.getElementById('rTable').innerHTML = '';
+  const btnArea = document.getElementById('resultActions');
+  btnArea.innerHTML = `<button class="cta ghost" onclick="clearCareer();location.reload()">New career</button>`;
 }
 function copy(t){navigator.clipboard.writeText(t).then(()=>alert('Result copied!')).catch(()=>prompt('Copy your result:',t));}
 
