@@ -422,8 +422,9 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 /* Promo banner rotation — each rotating banner has 2 "sides" (different
    offer + link). The active side is picked by day-of-year, so it flips
    once a day for every visitor (same side all day, changes at midnight).
-   To rotate on every page refresh instead of daily, swap the `sideForToday()`
-   call below for `Math.floor(Math.random() * variants.length)`. */
+   To rotate on every page refresh instead of daily, replace the
+   `dayOfYear() % variants.length` line below with
+   `Math.floor(Math.random() * variants.length)`. */
 (function () {
   var ROTATIONS = {
     kits: [
