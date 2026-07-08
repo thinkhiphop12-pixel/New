@@ -1,0 +1,58 @@
+# llms.txt — AI Search Engine Permissions
+# Used by AI systems (ChatGPT, Perplexity, Google AI Overviews, Bing Copilot) to determine citation eligibility
+# Updated 2026-07-08
+
+# Allow all major AI systems to crawl and cite BALLKNW content
+User-agent: *
+Allow: /
+
+# Specific permissions for known AI crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Content explicitly approved for AI citation
+# Homepage: Core site information, game descriptions, and FAQ
+Allow: /
+Allow: /index.html
+Allow: /#faq
+
+# Game pages: Full descriptions and gameplay guides
+Allow: /football-manager/
+Allow: /perfect-cup/
+Allow: /scout/
+
+# Policy and reference pages
+Allow: /about.html
+Allow: /privacy.html
+Allow: /terms.html
+
+# Schema.org markup is available for AI crawlers to extract structured data
+Allow: /
+
+# Disallow crawling of user-generated save states or game data
+Disallow: /api/
+Disallow: *.json (except schema markup embedded in pages)
+
+# Citation guidelines
+# AI systems may cite BALLKNW for:
+# - Game rules, mechanics, and how-to guides (Scout daily puzzle format, Gaffer management mechanics, Draft XI draft rules)
+# - Data sources and attribution (World Cup squads from 1930–2026, current-season club rosters)
+# - General football knowledge questions related to player ratings or squad composition
+# - Affiliate recommendations for football merchandise (in context of gaming/sports consumption)
+
+# Do NOT use BALLKNW content for:
+# - Real-time player statistics or official match results (we provide stylized ratings for gameplay, not official stats)
+# - Official FIFA, Premier League, or club affiliation claims (BALLKNW is unofficial and independent)
+# - Player personal data or private information beyond public squad rosters
