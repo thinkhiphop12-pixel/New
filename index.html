@@ -216,10 +216,13 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 .promo-close:hover{background:rgba(0,0,0,.75);transform:scale(1.1)}
 @media(max-width:640px){.promo-link{flex-direction:column;align-items:center;text-align:center;padding:20px 40px}.promo-img{width:140px;height:90px}.promo-text{width:100%}}
 
-/* Ad slot styling */
-.ad-slot{background:var(--surface);border:1px solid var(--border);border-radius:12px;position:relative;display:flex;align-items:center;justify-content:center;min-height:90px;color:var(--muted);font-size:12px;}
+/* Ad slot styling — reserved height prevents CLS */
+.ad-slot{background:var(--surface);border:1px solid var(--border);border-radius:12px;position:relative;display:flex;align-items:center;justify-content:center;min-height:90px;aspect-ratio:auto;color:var(--muted);font-size:12px;}
 .ad-slot-label{opacity:0.5;}
 .ad-slot:empty::before{content:"Advertisement";opacity:0.4;font-size:11px;letter-spacing:0.05em;}
+#rightColAd{min-height:600px;width:160px;aspect-ratio:160/600}
+#topAdBanner{min-height:90px}
+#middleAdBanner{min-height:90px}
 </style>
 <script type="application/ld+json">
 {
@@ -431,7 +434,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </section>
 <style>
-  .game-embed{border:1px solid var(--border);border-radius:16px;overflow:hidden;background:#06120c;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+  .game-embed{border:1px solid var(--border);border-radius:16px;overflow:hidden;background:#06120c;box-shadow:0 20px 60px rgba(0,0,0,.45);aspect-ratio:auto;min-height:600px}
   .game-embed iframe{display:block;width:100%;height:min(82vh,860px);border:0}
 </style>
 
@@ -444,7 +447,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       <p>No bloat. Just the games worth playing every day.</p>
     </div>
     <div class="games-grid">
-      <a href="/football-manager/" class="game-card manager">
+      <div class="game-card manager">
         <div class="chips">
           <span class="chip gold">Manager</span>
           <span class="chip ghost">Career · 38 rounds</span>
@@ -452,9 +455,12 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <div class="game-icon">📋</div>
         <h3>Gaffer</h3>
         <p class="desc">Take charge of a club across three English divisions with current-season squads. Tactics, transfers, contracts, cups, a youth academy and a board to keep happy.</p>
-        <div class="play"><span class="btn btn-primary">Play Gaffer</span></div>
-      </a>
-      <a href="/perfect-cup/" class="game-card draft">
+        <div class="play" style="display:flex;gap:8px;flex-direction:column">
+          <a href="/football-manager/" class="btn btn-primary" style="text-align:center">Play Gaffer</a>
+          <a href="/gaffer-guide.html" class="btn btn-ghost" style="text-align:center;font-size:12px">View Strategy Guide</a>
+        </div>
+      </div>
+      <div class="game-card draft">
         <div class="chips">
           <span class="chip em">BALLKNW Draft XI</span>
           <span class="chip ghost">Draft · Full XI · Season sim</span>
@@ -462,9 +468,12 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <div class="game-icon">🏆</div>
         <h3>BALLKNW Draft XI</h3>
         <p class="desc">Spin real Premier League, club and World Cup squads, then draft any open-position player into your formation. Simulate a full season and chase Champions, Invincibles and more.</p>
-        <div class="play"><span class="btn btn-ghost">Play Draft XI</span></div>
-      </a>
-      <a href="/scout/" class="game-card scout">
+        <div class="play" style="display:flex;gap:8px;flex-direction:column">
+          <a href="/perfect-cup/" class="btn btn-primary" style="text-align:center">Play Draft XI</a>
+          <a href="/draft-xi-guide.html" class="btn btn-ghost" style="text-align:center;font-size:12px">View Strategy Guide</a>
+        </div>
+      </div>
+      <div class="game-card scout">
         <div class="chips">
           <span class="chip lime">Scout</span>
           <span class="chip ghost">Daily</span>
@@ -472,7 +481,41 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <div class="game-icon">🧩</div>
         <h3>Scout</h3>
         <p class="desc">Group 16 footballers into 4 sets of 4 by a hidden theme — shared nation, position, rating tier or World Cup year. Four mistakes allowed. Share your grid, build a streak.</p>
-        <div class="play"><span class="btn btn-ghost">Play Scout</span></div>
+        <div class="play" style="display:flex;gap:8px;flex-direction:column">
+          <a href="/scout/" class="btn btn-primary" style="text-align:center">Play Scout</a>
+          <a href="/scout-guide.html" class="btn btn-ghost" style="text-align:center;font-size:12px">View Puzzle Guide</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GUIDES -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head" style="text-align:center">
+      <div class="eyebrow">Learn the Games</div>
+      <h2>Strategy Guides & Tips</h2>
+      <p>Master each game with detailed guides covering tactics, winning strategies, and pro tips.</p>
+    </div>
+    <div class="games-grid">
+      <a href="/gaffer-guide.html" class="game-card manager">
+        <div class="game-icon">📖</div>
+        <h3>Gaffer Guide</h3>
+        <p class="desc">Learn formation tactics, transfer strategy, contract management, youth development, and how to build a championship squad through a full season.</p>
+        <div class="play"><span class="btn btn-ghost">Read Guide →</span></div>
+      </a>
+      <a href="/draft-xi-guide.html" class="game-card draft">
+        <div class="game-icon">📖</div>
+        <h3>Draft XI Guide</h3>
+        <p class="desc">Master squad building, formation selection, balanced lineup construction, seasonal objectives (Champions, Invincibles, The Treble), and simulation tactics.</p>
+        <div class="play"><span class="btn btn-ghost">Read Guide →</span></div>
+      </a>
+      <a href="/scout-guide.html" class="game-card scout">
+        <div class="game-icon">📖</div>
+        <h3>Scout Guide</h3>
+        <p class="desc">Understand theme types (nation, position, rating, World Cup year), winning strategies, daily streak tips, and advanced puzzle recognition techniques.</p>
+        <div class="play"><span class="btn btn-ghost">Read Guide →</span></div>
       </a>
     </div>
   </div>
