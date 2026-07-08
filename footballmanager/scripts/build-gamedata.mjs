@@ -82,8 +82,15 @@ function addPlayer(p, clubId) {
 }
 
 for (const [i, c] of raw.clubs.entries()) {
-  let code = clubCode(c.name);
-  while (seenCodes.has(code)) code = code.slice(0, 2) + String.fromCharCode(65 + (i % 26));
+  const base = clubCode(c.name);
+  let code = base;
+  // Resolve collisions deterministically: cycle the third character through
+  // A–Z then 0–9 until unique (guaranteed to terminate for any club count).
+  const suffixes = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  for (let k = 0; seenCodes.has(code); k++) {
+    code = base.slice(0, 2) + suffixes[k % suffixes.length];
+    if (k >= suffixes.length) code = base.slice(0, 1) + suffixes[Math.floor(k / suffixes.length) % suffixes.length] + suffixes[k % suffixes.length];
+  }
   seenCodes.add(code);
   const club = {
     id: i + 1,
@@ -102,7 +109,7 @@ const out = {
   meta: {
     built: new Date().toISOString().slice(0, 10),
     attribution:
-      'Player and club data: FC 26 player database (EA Sports FC 26 ratings, real squads for the Premier League, Championship and League One).',
+      'Player and club data: FC 26 player database (EA Sports FC 26 ratings). Real squads across 8 leagues — the English pyramid (Premier League, Championship, League One, League Two) plus La Liga, Serie A, Bundesliga and Ligue 1.',
     clubCount: clubs.length,
     playerCount: players.length,
   },

@@ -1,11 +1,11 @@
 'use client';
 
 import type { GameState } from '@/engine/types';
-import { userDivision } from '@/engine/seasonProgression';
+import { divisionFixtures, userDivision } from '@/engine/seasonProgression';
 
 export default function FixturesScreen({ state }: { state: GameState }) {
   const div = userDivision(state);
-  const fixtures = (div === 1 ? state.fixtures.d1 : state.fixtures.d2).filter(
+  const fixtures = divisionFixtures(state, div).filter(
     (f) => f.homeId === state.userClubId || f.awayId === state.userClubId
   );
   const clubName = (id: number) => state.clubs.find((c) => c.id === id)?.name ?? '—';

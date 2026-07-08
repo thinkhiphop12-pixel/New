@@ -68,7 +68,7 @@ export default function MainMenuScreen({
           <span className="fm-howto__num">1</span>
           <div>
             <h3>Choose your club</h3>
-            <p>Real clubs and real FC 26 squads across the Premier League, Championship and League One.</p>
+            <p>Real clubs and real FC 26 squads across eight leagues — the English pyramid plus La Liga, Serie A, Bundesliga and Ligue 1.</p>
           </div>
         </li>
         <li className="fm-howto__step">

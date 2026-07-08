@@ -46,25 +46,32 @@ export function generateFixtures(clubIds: number[]): Fixture[] {
   return fixtures.sort((a, b) => a.round - b.round);
 }
 
+/** Every division the game supports, in order (English pyramid 1–4, then the
+ * top European leagues La Liga, Serie A, Bundesliga, Ligue 1). */
+export const ALL_DIVISIONS: Division[] = [1, 2, 3, 4, 5, 6, 7, 8];
+
 function divisionIds(state: GameState, division: Division): number[] {
   return state.clubs.filter((c) => c.division === division).map((c) => c.id);
 }
 
+/** The league fixture list for any division (1–8). */
+export function divisionFixtures(state: GameState, division: Division): Fixture[] {
+  return state.fixtures[`d${division}` as keyof GameState['fixtures']] ?? [];
+}
+
 export function allFixtures(state: GameState): Fixture[][] {
-  const lists = [state.fixtures.d1, state.fixtures.d2];
-  if (state.fixtures.d3) lists.push(state.fixtures.d3);
-  return lists;
+  return ALL_DIVISIONS.map((d) => divisionFixtures(state, d)).filter((list) => list.length > 0);
 }
 
 function makeSeasonFixtures(state: Pick<GameState, 'clubs'>): GameState['fixtures'] {
-  const byDiv = (d: Division) => state.clubs.filter((c) => c.division === d).map((c) => c.id);
-  const fixtures: GameState['fixtures'] = {
-    d1: generateFixtures(byDiv(1)),
-    d2: generateFixtures(byDiv(2)),
+  const gen = (d: Division) => {
+    const ids = state.clubs.filter((c) => c.division === d).map((c) => c.id);
+    return ids.length >= 2 ? generateFixtures(ids) : [];
   };
-  const d3 = byDiv(3);
-  if (d3.length >= 2) fixtures.d3 = generateFixtures(d3);
-  return fixtures;
+  return {
+    d1: gen(1), d2: gen(2), d3: gen(3), d4: gen(4),
+    d5: gen(5), d6: gen(6), d7: gen(7), d8: gen(8),
+  };
 }
 
 /** Board expectations based on the club's squad rank within its division. */
@@ -98,7 +105,10 @@ export function makeBoardObjective(state: GameState): Board {
 
 /** Domestic cup for one season: all clubs, byes to square the bracket. */
 export function makeDomesticCup(state: Pick<GameState, 'clubs'>): Knockout {
-  const ids = state.clubs.map((c) => c.id);
+  // The BALLKNW Cup is the English knockout — the top three tiers (up to 63
+  // entrants) keep the bracket within the six scheduled CUP_WEEKS. Clubs in the
+  // fourth tier and the European leagues focus on their league campaign.
+  const ids = state.clubs.filter((c) => c.division <= 3).map((c) => c.id);
   // Largest power of two ≤ entrants becomes the round-2 field size.
   let bracket = 2;
   while (bracket * 2 <= ids.length) bracket *= 2;
@@ -191,7 +201,7 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
     nextPlayerId: Math.max(...data.players.map((p) => p.id)) + 1,
     players,
     clubs,
-    fixtures: { d1: [], d2: [] },
+    fixtures: { d1: [], d2: [], d3: [], d4: [], d5: [], d6: [], d7: [], d8: [] },
     incomingOffers: [],
     history: [],
     news: [`Welcome to ${userClub.name}! The board expects a solid season.`],
@@ -214,7 +224,7 @@ export function computeTable(state: GameState, division: Division): TableRow[] {
   const rows = new Map<number, TableRow>(
     clubs.map((c) => [c.id, { clubId: c.id, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, gd: 0, pts: 0 }])
   );
-  const fixtures = division === 1 ? state.fixtures.d1 : division === 2 ? state.fixtures.d2 : state.fixtures.d3 ?? [];
+  const fixtures = divisionFixtures(state, division);
   for (const f of fixtures) {
     if (!f.played) continue;
     const h = rows.get(f.homeId)!;
@@ -241,7 +251,7 @@ export function hasThirdDivision(state: GameState): boolean {
 
 export function nextUserFixture(state: GameState): Fixture | null {
   const div = userDivision(state);
-  const fixtures = div === 1 ? state.fixtures.d1 : div === 2 ? state.fixtures.d2 : state.fixtures.d3 ?? [];
+  const fixtures = divisionFixtures(state, div);
   return (
     fixtures.find(
       (f) => f.round === state.week && (f.homeId === state.userClubId || f.awayId === state.userClubId)

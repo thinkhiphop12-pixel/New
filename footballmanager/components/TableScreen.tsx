@@ -3,14 +3,17 @@
 import { useState } from 'react';
 import type { Division, GameState } from '@/engine/types';
 import { CLUBS_PER_DIVISION, DIVISION_NAMES, PROMOTION_SPOTS } from '@/engine/gameRules';
-import { computeTable, hasThirdDivision, userDivision } from '@/engine/seasonProgression';
+import { ALL_DIVISIONS, computeTable, userDivision } from '@/engine/seasonProgression';
 
 export default function TableScreen({ state }: { state: GameState }) {
   const [division, setDivision] = useState<Division>(userDivision(state));
   const table = computeTable(state, division);
   const clubName = (id: number) => state.clubs.find((c) => c.id === id)?.name ?? '—';
-  const divisions: Division[] = hasThirdDivision(state) ? [1, 2, 3] : [1, 2];
-  const bottomDiv = divisions[divisions.length - 1];
+  const divisions: Division[] = ALL_DIVISIONS.filter((d) => state.clubs.some((c) => c.division === d));
+  // Promotion/relegation only runs inside the English pyramid (divisions 1–3);
+  // the fourth tier and the European leagues are self-contained.
+  const pyramid = divisions.filter((d) => d <= 3);
+  const pyramidBottom = pyramid[pyramid.length - 1];
 
   return (
     <>
@@ -38,8 +41,9 @@ export default function TableScreen({ state }: { state: GameState }) {
           <tbody>
             {table.map((row, i) => {
               const pos = i + 1;
-              const promo = division !== 1 && pos <= PROMOTION_SPOTS;
-              const releg = division !== bottomDiv && pos > CLUBS_PER_DIVISION - PROMOTION_SPOTS;
+              const inPyramid = division <= 3;
+              const promo = inPyramid && division !== 1 && pos <= PROMOTION_SPOTS;
+              const releg = inPyramid && division !== pyramidBottom && pos > CLUBS_PER_DIVISION - PROMOTION_SPOTS;
               const me = row.clubId === state.userClubId;
               return (
                 <tr key={row.clubId} className={`${me ? 'me ' : ''}${promo ? 'promo' : ''}${releg ? 'releg' : ''}`}>
@@ -58,11 +62,13 @@ export default function TableScreen({ state }: { state: GameState }) {
         </table>
       </div>
       <p className="fm-hint">
-        {division === 1
-          ? `Bottom ${PROMOTION_SPOTS} are relegated. Top 8 qualify for the Continental Champions Cup.`
-          : division === bottomDiv
-            ? `Top ${PROMOTION_SPOTS} are promoted to Division ${division - 1}.`
-            : `Top ${PROMOTION_SPOTS} go up, bottom ${PROMOTION_SPOTS} go down.`}
+        {division > 3
+          ? `${DIVISION_NAMES[division]} — a standalone league. Win the title; no promotion or relegation.`
+          : division === 1
+            ? `Bottom ${PROMOTION_SPOTS} are relegated. Top 8 qualify for the Continental Champions Cup.`
+            : division === pyramidBottom
+              ? `Top ${PROMOTION_SPOTS} are promoted to Division ${division - 1}.`
+              : `Top ${PROMOTION_SPOTS} go up, bottom ${PROMOTION_SPOTS} go down.`}
       </p>
     </>
   );
