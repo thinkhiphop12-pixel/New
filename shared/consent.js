@@ -85,6 +85,8 @@ function applyConsent(choice){
    markup (homepage, game pages) get one created here, with scoped styles,
    so adding <script src="/shared/consent.js"> is all a page needs. */
 function ensureConsentBanner(){
+  // Don't create banner in iframes — parent page handles it, and localStorage is shared (same-origin)
+  if (window.self !== window.top) return;
   if (document.getElementById('consentBanner')) return;
   if (!document.getElementById('bkConsentStyles')) {
     const style = document.createElement('style');
