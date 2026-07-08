@@ -1,0 +1,20 @@
+name: Repo Pruner
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repo Pruner
+        uses: arminbro/repo-pruner@v2.1.22
+        with:
+          inactive_days: 7
