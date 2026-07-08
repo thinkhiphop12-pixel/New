@@ -431,9 +431,10 @@ function renderPanel(){
   const rr = rerolls>0;
   const players = s.players.map((p,idx)=>{
     const canPlace = openSlotFor(p.pos)!==-1;
+    const alreadyDrafted = xi.some(slot=>slot && slot.name===p.name);
     const rt = showR ? `<span class="rr">${ratingOf(p)}</span>` : `<span class="rr hid">${p.pos}</span>`;
-    return `<button class="prow" data-i="${idx}" ${canPlace?'':'disabled'}>
-      <span class="pos">${p.pos}</span><span class="pn">${p.name}</span>${rt}${canPlace?'<span class="add">+</span>':''}
+    return `<button class="prow" data-i="${idx}" ${canPlace && !alreadyDrafted?'':'disabled'}>
+      <span class="pos">${p.pos}</span><span class="pn">${p.name}</span>${rt}${canPlace && !alreadyDrafted?'<span class="add">+</span>':''}
     </button>`;
   }).join('');
   document.getElementById('squadPanel').innerHTML = `
