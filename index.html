@@ -79,10 +79,10 @@ body::before{
 .nav-links{display:flex;align-items:center;gap:26px}
 .nav-links a{color:var(--muted);font-size:14px;font-weight:600;transition:color .15s}
 .nav-links a:hover{color:var(--white)}
-.btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;border-radius:13px;cursor:pointer;transition:transform .12s,box-shadow .2s,border-color .2s;font-size:14px;border:1px solid transparent}
-.btn-primary{background:var(--cta);color:#04140b;padding:11px 20px;box-shadow:0 0 0 rgba(184,255,60,0)}
+.btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;border-radius:13px;cursor:pointer;transition:transform .12s,box-shadow .2s,border-color .2s;font-size:14px;border:1px solid transparent;min-height:48px}
+.btn-primary{background:var(--cta);color:#04140b;padding:14px 20px;box-shadow:0 0 0 rgba(184,255,60,0)}
 .btn-primary:hover{transform:translateY(-1px);box-shadow:var(--glow-lime)}
-.btn-ghost{background:var(--glass);border-color:var(--border);color:var(--white);padding:11px 20px}
+.btn-ghost{background:var(--glass);border-color:var(--border);color:var(--white);padding:14px 20px}
 .btn-ghost:hover{border-color:var(--border-bright)}
 @media(max-width:680px){.nav-links a:not(.btn){display:none}}
 
@@ -184,7 +184,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 .foot-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px}
 .foot-brand .mark{width:28px;height:28px;font-size:16px;box-shadow:none}
 .foot-links{display:flex;gap:20px;flex-wrap:wrap}
-.foot-links a{color:var(--muted);font-size:13.5px;transition:color .15s}
+.foot-links a{color:var(--muted);font-size:13.5px;transition:color .15s;padding:12px 8px;display:flex;align-items:center;min-height:48px}
 .foot-links a:hover{color:var(--white)}
 .foot-meta{color:var(--muted);font-size:12px;margin-top:18px}
 
@@ -212,7 +212,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 .promo-fine{display:block;font-size:10.5px;color:var(--muted);margin-top:4px;opacity:.8}
 .promo-cta{flex-shrink:0;font-size:13.5px;font-weight:800;color:#04140b;background:linear-gradient(135deg,var(--lime),var(--emerald));padding:10px 18px;border-radius:11px;white-space:nowrap;transition:transform .15s,box-shadow .2s}
 .promo-banner:hover .promo-cta{transform:translateY(-1px);box-shadow:var(--glow-lime)}
-.promo-close{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;cursor:pointer;z-index:2;transition:background .2s,transform .15s}
+.promo-close{position:absolute;top:10px;right:10px;width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;cursor:pointer;z-index:2;transition:background .2s,transform .15s}
 .promo-close:hover{background:rgba(0,0,0,.75);transform:scale(1.1)}
 @media(max-width:640px){.promo-link{flex-direction:column;align-items:center;text-align:center;padding:20px 40px}.promo-img{width:140px;height:90px}.promo-text{width:100%}}
 
@@ -485,6 +485,15 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <div class="feat"><span>Emoji grids</span> built to share</div>
         <div class="feat"><span>Privacy-first</span> · consent-aware</div>
       </div>
+
+      <h3 style="margin-top:40px;font-size:18px;font-weight:800">How It Works</h3>
+      <p style="margin-top:12px">Each BALLKNW game combines real football data with daily puzzle mechanics. Scout presents a fresh challenge every morning — group 16 current and historical players by a hidden theme (nation, position, rating tier, or World Cup year). Build your streak across consecutive days. Gaffer lets you manage a real English club across three divisions, handling tactics, transfers, player contracts, cups, and a youth academy through a full season. Perfect Cup lets you spin squad pools from the Premier League, international clubs, or World Cups past and present, then draft your perfect XI and simulate a season chasing achievements. All games track your progress permanently in your browser — no account needed, no data stored on our servers.</p>
+
+      <h3 style="margin-top:40px;font-size:18px;font-weight:800">The Data</h3>
+      <p style="margin-top:12px">Player squads and performance data come from public sources: current-season club rosters (for Gaffer and Perfect Cup), and official FIFA records (for World Cup squads from 1930 through 2026). In-game player ratings are stylized approximations designed for gameplay balance, not official figures from any third-party ratings provider. We update squad data seasonally to reflect transfers and international squad changes, ensuring the games stay current while respecting data privacy.</p>
+
+      <h3 style="margin-top:40px;font-size:18px;font-weight:800">Why Free?</h3>
+      <p style="margin-top:12px">We believe the best games should be accessible to everyone. BALLKNW is supported by light, consent-based advertising and affiliate commissions from football merchandise partners. There are no hidden paywalls, energy mechanics, battle passes, or time-gating. If you see an ad, you've opted in to it. If you want to disable them, you can. The games work exactly the same either way.</p>
       <div class="shop-section">
         <h3>Shop football gear</h3>
         <div class="shop-links">

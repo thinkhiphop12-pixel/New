@@ -8,6 +8,50 @@
     <link rel="canonical" href="https://ballknw.com/scout/">
     <!-- Google AdSense (site verification + library load) -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2741492847457362" crossorigin="anonymous" data-adsense="1"></script>
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://ballknw.com/scout/#webpage",
+      "url": "https://ballknw.com/scout/",
+      "name": "Scout — Daily Football Connections",
+      "description": "Group 16 footballers into 4 themed categories daily. Test your football knowledge with new puzzles, build streaks, and share your results.",
+      "isPartOf": { "@id": "https://ballknw.com/#website" },
+      "datePublished": "2024-01-15",
+      "dateModified": "2026-07-08",
+      "primaryImageOfPage": "https://ballknw.com/assets/og-image.png"
+    },
+    {
+      "@type": "VideoGame",
+      "@id": "https://ballknw.com/scout/#game",
+      "name": "Scout",
+      "url": "https://ballknw.com/scout/",
+      "description": "Group 16 footballers into 4 sets of 4 by a hidden shared theme — nation, position, rating tier or World Cup year. Daily puzzle, four mistakes allowed, shareable results.",
+      "genre": "Puzzle",
+      "gamePlatform": "Web Browser",
+      "operatingSystem": "Web",
+      "applicationCategory": "Game",
+      "playMode": "SinglePlayer",
+      "isAccessibleForFree": true,
+      "datePublished": "2024-01-15",
+      "dateModified": "2026-07-08",
+      "image": "https://ballknw.com/assets/og-image.png",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "publisher": { "@id": "https://ballknw.com/#org" }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://ballknw.com/scout/#breadcrumb",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ballknw.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Scout", "item": "https://ballknw.com/scout/" }
+      ]
+    }
+  ]
+}
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -20,6 +64,12 @@
             grid-template-columns: repeat(4, 1fr);
             gap: 8px;
         }
+        @media (max-width: 480px) {
+            .card-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+            }
+        }
 
         .player-card {
             aspect-ratio: 1;
@@ -31,12 +81,18 @@
             text-align: center;
             padding: 6px;
             font-weight: 700;
-            font-size: 0.8rem;
+            font-size: 0.95rem;
             line-height: 1.15;
             cursor: pointer;
             background: #18181b;
             transition: all 0.12s ease;
             user-select: none;
+        }
+        @media (max-width: 480px) {
+            .player-card {
+                font-size: 0.85rem;
+                padding: 4px;
+            }
         }
         .player-card:hover { border-color: #71717a; transform: translateY(-1px); }
         .player-card.selected { background: #3f3f46; border-color: #e4e4e7; color: white; }
