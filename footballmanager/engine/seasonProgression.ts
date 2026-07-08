@@ -827,6 +827,18 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     if (suitor) s.jobOffers.push({ clubId: suitor.id, note: `Division ${suitor.division} — a bigger club wants you.` });
   }
 
+  // Board reinvestment: a club doesn't hoard cash indefinitely. Surplus above a
+  // sensible war chest is spent on wages, facilities and debt over the break, so
+  // the transfer kitty stays believable instead of snowballing season on season
+  // (which quietly broke the market by the second season).
+  const warChest = STARTING_BUDGET[userClub.division] * 1.5;
+  let reinvestNote: string | null = null;
+  if (s.budget > warChest) {
+    const reinvested = Math.round((s.budget - warChest) * 0.75);
+    s.budget -= reinvested;
+    reinvestNote = `The board reinvests ${money(reinvested)} of the season's surplus into wages and facilities.`;
+  }
+
   // New season setup.
   s.seasonYear++;
   s.week = 1;
@@ -849,6 +861,7 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
           ? `Relegated to Division ${userClub.division}. Time to rebuild.`
           : `Season over — finished ${position}${ordinal(position)}. New season begins.`,
     ...awards,
+    ...(reinvestNote ? [reinvestNote] : []),
     `Board objective: ${s.board.objective}.`,
   ];
   return { state: s, summary };
