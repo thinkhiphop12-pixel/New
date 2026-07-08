@@ -13,17 +13,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Anton&display=swap" rel="stylesheet" />
 <style>
 :root{
-  --bg1:#eafff2; --bg2:#ffffff; --ink:#0d1912; --muted:#5c6b62;
-  --line:#d7e6dc; --card:#ffffff;
-  --lime:#3fbf4f; --emerald:#00b877; --lime-deep:#1c8a3a;
-  --grad:linear-gradient(135deg,#38d66b 0%,#00b877 100%);
-  --pitch1:#3bbd63; --pitch2:#2ea457;
-  --shadow:0 10px 30px -12px rgba(16,64,32,.28);
+  --bg1:#0b120e; --bg2:#070b09; --ink:#eaf5ee; --muted:#8fa598;
+  --line:#223228; --card:#101a14;
+  --lime:#a3e635; --emerald:#00d68f; --lime-deep:#7ed321;
+  --grad:linear-gradient(135deg,#a3e635 0%,#00d68f 100%);
+  --pitch1:#1d5c36 ; --pitch2:#17492b;
+  --shadow:0 10px 30px -12px rgba(0,0,0,.6);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{
   font-family:Inter,system-ui,-apple-system,sans-serif;color:var(--ink);
-  background:radial-gradient(1100px 620px at 50% -8%,#c9ffdd 0%,var(--bg1) 42%,var(--bg2) 100%);
+  background:radial-gradient(1100px 620px at 50% -8%,#12241a 0%,var(--bg1) 42%,var(--bg2) 100%);
   min-height:100vh;-webkit-font-smoothing:antialiased;
 }
 .font-display{font-family:Anton,system-ui,sans-serif;letter-spacing:-.5px}
@@ -67,10 +67,10 @@ a{color:var(--lime-deep);text-decoration:none}
 .orow .ol{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
 .seg{display:flex;flex-wrap:wrap;gap:8px}
 .seg button{
-  border:2px solid var(--line);background:#fff;border-radius:11px;padding:9px 13px;font-size:13px;font-weight:700;
+  border:2px solid var(--line);background:var(--card);border-radius:11px;padding:9px 13px;font-size:13px;font-weight:700;
   cursor:pointer;color:var(--ink);transition:all .12s
 }
-.seg button.on{border-color:var(--emerald);background:#e9fbf2;color:var(--lime-deep)}
+.seg button.on{border-color:var(--emerald);background:rgba(0,214,143,.12);color:var(--lime)}
 .seg button .sub{display:block;font-size:10.5px;font-weight:600;color:var(--muted)}
 .seg button.on .sub{color:var(--emerald)}
 
@@ -80,13 +80,13 @@ a{color:var(--lime-deep);text-decoration:none}
   box-shadow:0 12px 26px -10px rgba(0,184,119,.6);transition:transform .12s
 }
 .cta:hover{transform:translateY(-2px)}
-.cta.ghost{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:none;font-size:15px;padding:13px;margin-top:12px}
+.cta.ghost{background:var(--card);color:var(--ink);border:2px solid var(--line);box-shadow:none;font-size:15px;padding:13px;margin-top:12px}
 
 /* ===== DRAFT SCREEN ===== */
 .hud{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-bottom:12px}
 .hud .chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:700}
 .hud .chip b{color:var(--lime-deep)}
-.hud .chip.warn b{color:#c2410c}
+.hud .chip.warn b{color:#fb923c}
 
 .pitch{
   position:relative;width:100%;aspect-ratio:3/4;border-radius:20px;overflow:hidden;
@@ -108,7 +108,7 @@ a{color:var(--lime-deep);text-decoration:none}
 .slot.open .disc{cursor:pointer;background:rgba(255,255,255,.28);border-style:solid;box-shadow:0 0 0 3px rgba(255,255,255,.25)}
 .slot.target .disc{background:#fff;border-color:#fff;color:var(--lime-deep);animation:tpulse 1s infinite}
 @keyframes tpulse{0%,100%{box-shadow:0 0 0 3px rgba(255,255,255,.5)}50%{box-shadow:0 0 0 7px rgba(255,255,255,.25)}}
-.slot.filled .disc{background:#fff;border-style:solid;border-color:#fff;color:var(--ink);font-size:15px}
+.slot.filled .disc{background:#fff;border-style:solid;border-color:#fff;color:#0d1912;font-size:15px}
 .slot .nm{margin-top:3px;font-size:10.5px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.45);line-height:1.1}
 .slot .cl{font-size:8.5px;color:rgba(255,255,255,.85);text-shadow:0 1px 2px rgba(0,0,0,.5)}
 .slot .rt{position:absolute;top:-4px;right:6px;background:var(--grad);color:#04140b;font-size:10px;font-weight:900;border-radius:6px;padding:1px 5px}
@@ -121,11 +121,11 @@ a{color:var(--lime-deep);text-decoration:none}
 .panel .badge{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:900;font-size:13px}
 .panel .ph .t{font-weight:800;font-size:16px}
 .panel .ph .s{color:var(--muted);font-size:12.5px}
-.panel .ph .reroll{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 11px;font-size:12px;font-weight:700;cursor:pointer}
+.panel .ph .reroll{margin-left:auto;border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 11px;font-size:12px;font-weight:700;cursor:pointer}
 .panel .ph .reroll:disabled{opacity:.4;cursor:not-allowed}
 .plist{display:flex;flex-direction:column}
-.prow{display:flex;align-items:center;gap:10px;padding:11px 16px;border-top:1px solid #eef4f0;text-align:left;background:#fff;cursor:pointer;transition:background .12s}
-.prow:hover:not(:disabled){background:#f2fbf6}
+.prow{display:flex;align-items:center;gap:10px;padding:11px 16px;border-top:1px solid var(--line);text-align:left;background:var(--card);cursor:pointer;transition:background .12s}
+.prow:hover:not(:disabled){background:#16241b}
 .prow:disabled{opacity:.4;cursor:not-allowed}
 .prow .pos{width:38px;font-size:11px;font-weight:800;color:var(--lime-deep);flex-shrink:0}
 .prow .pn{font-weight:700;font-size:14px}
@@ -135,8 +135,8 @@ a{color:var(--lime-deep);text-decoration:none}
 .prow .pp{width:38px;font-size:11px;font-weight:800;color:var(--lime-deep);flex-shrink:0}
 .prow .pr{font-weight:900;font-size:14px;width:32px}
 .prow .pv{margin-left:auto;font-weight:700;font-size:13px;color:var(--ink)}
-.prow.hot{background:#f0fdf4;border-color:#86efac}
-.prow.hot:hover{background:#dcfce7}
+.prow.hot{background:#12281a;border-color:#2e7d4f}
+.prow.hot:hover{background:#17331f}
 .hint{text-align:center;color:var(--muted);font-size:12.5px;margin-top:10px}
 
 /* ===== RESULT SCREEN ===== */
@@ -150,15 +150,15 @@ a{color:var(--lime-deep);text-decoration:none}
 .statgrid .s .l{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
 .sec-h{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:18px 4px 10px}
 .obj{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:8px}
-.obj.hit{border-color:var(--emerald);background:#eafbf2}
+.obj.hit{border-color:var(--emerald);background:rgba(0,214,143,.10)}
 .obj .ic{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:12px;flex-shrink:0}
 .obj.hit .ic{background:var(--emerald);border-color:var(--emerald);color:#fff}
 .obj .ot{font-weight:700;font-size:13.5px}
 .obj .od{color:var(--muted);font-size:12px}
 .table{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.table .tr{display:grid;grid-template-columns:26px 1fr 34px 34px 34px;gap:6px;padding:9px 12px;font-size:13px;border-top:1px solid #eef4f0;align-items:center}
+.table .tr{display:grid;grid-template-columns:26px 1fr 34px 34px 34px;gap:6px;padding:9px 12px;font-size:13px;border-top:1px solid var(--line);align-items:center}
 .table .tr:first-child{border-top:0;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase}
-.table .tr.you{background:#eafbf2;font-weight:800}
+.table .tr.you{background:rgba(0,214,143,.12);font-weight:800}
 .table .tr .rk{color:var(--muted);font-weight:700}
 .table .num{text-align:center}
 </style>
@@ -191,6 +191,8 @@ a{color:var(--lime-deep);text-decoration:none}
 
     <div id="continueCareer"></div>
     <button class="cta" onclick="startDraft()">Start drafting →</button>
+
+    <div class="ad-slot" id="startAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto"><span class="ad-slot-label">Advertisement</span></div>
   </section>
 
   <!-- ============ DRAFT ============ -->
@@ -207,6 +209,8 @@ a{color:var(--lime-deep);text-decoration:none}
       <p class="hint" id="draftHint">Spin to reveal a squad — then draft any player whose position is still open.</p>
     </div>
     <button class="cta hidden" id="simBtn" onclick="runSim()">Simulate the season →</button>
+
+    <div class="ad-slot" id="draftAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto"><span class="ad-slot-label">Advertisement</span></div>
   </section>
 
   <!-- ============ RESULT ============ -->
@@ -222,6 +226,8 @@ a{color:var(--lime-deep);text-decoration:none}
     <div class="sec-h">Final table</div>
     <div class="table" id="rTable"></div>
     <div id="resultActions"></div>
+
+    <div class="ad-slot" id="resultAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto"><span class="ad-slot-label">Advertisement</span></div>
   </section>
 
   <!-- ============ OFFSEASON ============ -->
