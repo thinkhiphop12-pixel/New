@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import type { GameState } from '@/engine/types';
-import { DIVISION_NAMES, SEASON_ROUNDS } from '@/engine/gameRules';
+import { SEASON_ROUNDS } from '@/engine/gameRules';
 import { computeTable, nextUserFixture, userDivision } from '@/engine/seasonProgression';
 import { isClubAlive, knockoutRoundDue } from '@/engine/cups';
 import { isLineupValid } from '@/engine/teamManagement';
 import { formatMoney } from '@/engine/utils';
 import { tint } from './visuals';
 
-type Filter = 'all' | 'new' | 'tasks' | 'unread';
+type Filter = 'all' | 'new' | 'tasks';
 
 export default function PortalHub({
   state,
@@ -23,7 +23,6 @@ export default function PortalHub({
   onAbandon: () => void;
 }) {
   const [filter, setFilter] = useState<Filter>('all');
-  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
 
   const club = state.clubs.find((c) => c.id === state.userClubId)!;
   const div = userDivision(state);
@@ -37,34 +36,27 @@ export default function PortalHub({
     (knockoutRoundDue(state.cup, state.week) && isClubAlive(state.cup, state.userClubId)) ||
     (knockoutRoundDue(state.continental, state.week) && isClubAlive(state.continental, state.userClubId));
 
-  // News (for "new" filter)
-  const unreadNews = state.news.length > 0 ? 1 : 0;
-  const newItems = unreadNews + (state.incomingOffers.length > 0 ? 1 : 0);
+  const newCount = (state.news.length > 0 ? 1 : 0) + (state.incomingOffers.length > 0 ? 1 : 0);
 
-  // Tasks (fixture coming up, unstable formation, etc.)
-  const taskItems = [];
-  if (!lineupOk) taskItems.push('Fix your lineup');
-  if (fixture) taskItems.push(`Play Week ${state.week}`);
-  if (state.morale < 40) taskItems.push('Team morale is low');
+  const tasks: string[] = [];
+  if (!lineupOk) tasks.push('Fix your lineup');
+  if (fixture) tasks.push(`Play Week ${state.week}`);
+  if (state.morale < 40) tasks.push('Morale is low');
+  if (state.budget < 0) tasks.push('Club in the red');
 
-  const toggleCard = (cardId: string) => {
-    setExpandedCards({
-      ...expandedCards,
-      [cardId]: !expandedCards[cardId],
-    });
-  };
-
-  const shouldShowCard = (cardType: string) => {
+  const show = (type: string) => {
     if (filter === 'all') return true;
-    if (filter === 'new' && (cardType === 'news' || cardType === 'offers')) return true;
-    if (filter === 'tasks' && cardType === 'tasks') return true;
-    if (filter === 'unread' && (cardType === 'news' || cardType === 'offers')) return true;
+    if (filter === 'new' && (type === 'news' || type === 'offers')) return true;
+    if (filter === 'tasks' && type === 'tasks') return true;
     return false;
   };
 
+  const moraleTone = state.morale >= 60 ? 'var(--green)' : state.morale >= 40 ? 'var(--gold)' : 'var(--red)';
+  const boardTone = state.board.confidence >= 60 ? 'var(--green)' : state.board.confidence >= 30 ? 'var(--gold)' : 'var(--red)';
+
   return (
     <div className="fm-portal">
-      {/* Portal Header */}
+      {/* Club header with badge + week */}
       <div className="fm-portal__header">
         <div className="fm-portal__club-badge" style={{ background: club.color }}>
           {club.code}
@@ -72,165 +64,125 @@ export default function PortalHub({
         <div className="fm-portal__club-info">
           <h1 className="fm-portal__club-name">{club.name}</h1>
           <p className="fm-portal__club-meta">
-            {DIVISION_NAMES[div]} · {state.seasonYear}/{(state.seasonYear + 1) % 100}
+            {state.seasonYear}/{(state.seasonYear + 1) % 100} · {position}{ord(position)} in {div === 1 ? 'Premier League' : div === 2 ? 'Championship' : div === 3 ? 'League One' : div === 4 ? 'League Two' : div === 5 ? 'La Liga' : div === 6 ? 'Serie A' : div === 7 ? 'Bundesliga' : 'Ligue 1'}
           </p>
+        </div>
+        <div className="fm-portal__week-badge">
+          <span className="week-num">{Math.min(state.week, SEASON_ROUNDS)}</span>
+          <span className="week-lbl">Wk {Math.min(state.week, SEASON_ROUNDS)}/{SEASON_ROUNDS}</span>
         </div>
       </div>
 
-      {/* Filter Buttons (Mobile-friendly) */}
+      {/* Stats strip */}
+      <div className="fm-stats-strip">
+        <div className="fm-stat">
+          <span className="fm-stat__label">Budget</span>
+          <span className="fm-stat__value">{formatMoney(state.budget)}</span>
+        </div>
+        <div className="fm-stat">
+          <span className="fm-stat__label">Morale</span>
+          <span className="fm-stat__value" style={{ color: moraleTone }}>{state.morale}</span>
+        </div>
+        <div className="fm-stat">
+          <span className="fm-stat__label">Board</span>
+          <span className="fm-stat__value" style={{ color: boardTone }}>{state.board.confidence}</span>
+        </div>
+        <div className="fm-stat">
+          <span className="fm-stat__label">Fans</span>
+          <span className="fm-stat__value" style={{ color: state.fanConfidence >= 50 ? 'var(--green)' : 'var(--red)' }}>{state.fanConfidence}</span>
+        </div>
+      </div>
+
+      {/* Next match - prominent CTA */}
+      {fixture && (
+        <div className="fm-panel fm-panel--elevated" style={{ background: tint(club.color, '0a'), borderColor: tint(club.color, '30') }}>
+          <div className="fm-card__fixture" style={{ marginBottom: 8 }}>
+            <div className="fm-card__team">
+              <span className="fm-scoreboard__team-badge" style={{ background: fixture.homeId === state.userClubId ? club.color : opponent?.color }}>
+                {fixture.homeId === state.userClubId ? club.code : opponent?.code}
+              </span>
+              <span className="fm-card__team-name fm-card__team-name--home" style={{ fontSize: 13 }}>
+                {fixture.homeId === state.userClubId ? club.name : opponent?.name}
+              </span>
+              <span className="fm-card__team-label">{fixture.homeId === state.userClubId ? 'HOME' : 'AWAY'}</span>
+            </div>
+            <div className="fm-card__vs">VS</div>
+            <div className="fm-card__team">
+              <span className="fm-scoreboard__team-badge" style={{ background: fixture.awayId === state.userClubId ? club.color : opponent?.color }}>
+                {fixture.awayId === state.userClubId ? club.code : opponent?.code}
+              </span>
+              <span className="fm-card__team-name fm-card__team-name--away" style={{ fontSize: 13 }}>
+                {fixture.awayId === state.userClubId ? club.name : opponent?.name}
+              </span>
+              <span className="fm-card__team-label">{fixture.awayId === state.userClubId ? 'AWAY' : 'HOME'}</span>
+            </div>
+          </div>
+          {cupWeek && <p className="fm-card__note">+ Cup tie midweek</p>}
+          <button
+            className="fm-btn fm-btn--primary fm-btn--full"
+            onClick={onPlayMatch}
+            disabled={!lineupOk}
+          >
+            {lineupOk ? `▶ Play Week ${state.week}` : '⚠ Fix your lineup (11 fit players)'}
+          </button>
+        </div>
+      )}
+
+      {/* Filter buttons */}
       <div className="fm-portal__filters">
-        <button
-          className={`fm-filter-btn${filter === 'all' ? ' active' : ''}`}
-          onClick={() => setFilter('all')}
-        >
+        <button className={`fm-filter-btn${filter === 'all' ? ' active' : ''}`} onClick={() => setFilter('all')}>
           All
         </button>
-        <button
-          className={`fm-filter-btn${filter === 'new' ? ' active' : ''}`}
-          onClick={() => setFilter('new')}
-        >
-          New {newItems > 0 && <span className="fm-badge">{newItems}</span>}
+        <button className={`fm-filter-btn${filter === 'new' ? ' active' : ''}`} onClick={() => setFilter('new')}>
+          New {newCount > 0 && <span className="fm-badge fm-badge--new">{newCount}</span>}
         </button>
-        <button
-          className={`fm-filter-btn${filter === 'tasks' ? ' active' : ''}`}
-          onClick={() => setFilter('tasks')}
-        >
-          Tasks {taskItems.length > 0 && <span className="fm-badge">{taskItems.length}</span>}
-        </button>
-        <button
-          className={`fm-filter-btn${filter === 'unread' ? ' active' : ''}`}
-          onClick={() => setFilter('unread')}
-        >
-          Unread {unreadNews > 0 && <span className="fm-badge">{unreadNews}</span>}
+        <button className={`fm-filter-btn${filter === 'tasks' ? ' active' : ''}`} onClick={() => setFilter('tasks')}>
+          Tasks {tasks.length > 0 && <span className="fm-badge fm-badge--alert">{tasks.length}</span>}
         </button>
       </div>
 
-      {/* Cards Grid (Mobile: stacked, Desktop: 2-column) */}
+      {/* Cards grid */}
       <div className="fm-portal__cards">
-        {/* Quick Stats Card */}
-        {shouldShowCard('stats') && (
+        {/* Tasks */}
+        {show('tasks') && tasks.length > 0 && (
           <div className="fm-card">
             <div className="fm-card__header">
-              <h2 className="fm-card__title">Standing</h2>
-            </div>
-            <div className="fm-card__body">
-              <div className="fm-card__stat-row">
-                <span className="fm-card__stat-label">Position</span>
-                <span className="fm-card__stat-value fm-gold">{position}</span>
-              </div>
-              <div className="fm-card__stat-row">
-                <span className="fm-card__stat-label">Budget</span>
-                <span className="fm-card__stat-value">{formatMoney(state.budget)}</span>
-              </div>
-              <div className="fm-card__stat-row">
-                <span className="fm-card__stat-label">Morale</span>
-                <span className="fm-card__stat-value">{state.morale}</span>
-              </div>
-              <div className="fm-card__stat-row">
-                <span className="fm-card__stat-label">Board Confidence</span>
-                <span className="fm-card__stat-value">{state.board.confidence}</span>
-              </div>
-              <div className="fm-card__stat-row">
-                <span className="fm-card__stat-label">Fan Confidence</span>
-                <span className="fm-card__stat-value">{state.fanConfidence}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Upcoming Fixture Card */}
-        {shouldShowCard('fixture') && fixture && (
-          <div className="fm-card" style={{ background: tint(club.color, '14'), borderColor: tint(club.color, '40') }}>
-            <div className="fm-card__header">
-              <h2 className="fm-card__title">Next Match</h2>
-              <span className="fm-card__meta">Week {Math.min(state.week, SEASON_ROUNDS)} of {SEASON_ROUNDS}</span>
-            </div>
-            <div className="fm-card__body">
-              <div className="fm-card__fixture">
-                <div className="fm-card__team">
-                  {fixture.homeId === state.userClubId ? (
-                    <>
-                      <span className="fm-card__team-name fm-card__team-name--home">{club.name}</span>
-                      <span className="fm-card__team-label">Home</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="fm-card__team-name">{opponent?.name || 'Unknown'}</span>
-                      <span className="fm-card__team-label">Away</span>
-                    </>
-                  )}
-                </div>
-                <div className="fm-card__vs">vs</div>
-                <div className="fm-card__team">
-                  {fixture.awayId === state.userClubId ? (
-                    <>
-                      <span className="fm-card__team-name fm-card__team-name--away">{club.name}</span>
-                      <span className="fm-card__team-label">Away</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="fm-card__team-name">{opponent?.name || 'Unknown'}</span>
-                      <span className="fm-card__team-label">Home</span>
-                    </>
-                  )}
-                </div>
-              </div>
-              {cupWeek && <p className="fm-card__note">+ Cup tie midweek</p>}
-              <button
-                className="fm-btn fm-btn--primary fm-btn--full fm-card__action"
-                onClick={onPlayMatch}
-                disabled={!lineupOk}
-              >
-                {lineupOk ? `Play Week ${state.week}` : 'Fix your lineup (11 fit players)'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Tasks Card */}
-        {shouldShowCard('tasks') && taskItems.length > 0 && (
-          <div className="fm-card">
-            <div className="fm-card__header">
-              <h2 className="fm-card__title">Tasks</h2>
-              <span className="fm-badge fm-badge--alert">{taskItems.length}</span>
+              <h2 className="fm-card__title">📋 Tasks</h2>
+              <span className="fm-badge fm-badge--alert">{tasks.length}</span>
             </div>
             <div className="fm-card__body">
               <ul className="fm-card__list">
-                {taskItems.map((task, i) => (
-                  <li key={i} className="fm-card__list-item">
-                    {task}
-                  </li>
+                {tasks.map((t, i) => (
+                  <li key={i} className="fm-card__list-item">{t}</li>
                 ))}
               </ul>
             </div>
           </div>
         )}
 
-        {/* News Card */}
-        {shouldShowCard('news') && state.news.length > 0 && (
+        {/* News */}
+        {show('news') && state.news.length > 0 && (
           <div className="fm-card">
             <div className="fm-card__header">
-              <h2 className="fm-card__title">News</h2>
-              {unreadNews > 0 && <span className="fm-badge fm-badge--new">{unreadNews}</span>}
+              <h2 className="fm-card__title">📰 News</h2>
+              {state.news.length > 0 && <span className="fm-badge fm-badge--new">{Math.min(state.news.length, 9)}</span>}
             </div>
             <div className="fm-card__body">
               <ul className="fm-card__news">
-                {state.news.slice(0, 3).map((n, i) => (
-                  <li key={i} className="fm-card__news-item">
-                    {n}
-                  </li>
+                {state.news.slice(0, 4).map((n, i) => (
+                  <li key={i} className="fm-card__news-item">{n}</li>
                 ))}
               </ul>
-              {state.news.length > 3 && <p className="fm-card__more">+{state.news.length - 3} more</p>}
+              {state.news.length > 4 && <p className="fm-card__more">+{state.news.length - 4} more</p>}
             </div>
           </div>
         )}
 
-        {/* Transfer Offers Card */}
-        {shouldShowCard('offers') && state.incomingOffers.length > 0 && (
+        {/* Transfer offers */}
+        {show('offers') && state.incomingOffers.length > 0 && (
           <div className="fm-card">
             <div className="fm-card__header">
-              <h2 className="fm-card__title">Transfer Offers</h2>
+              <h2 className="fm-card__title">💰 Offers</h2>
               <span className="fm-badge fm-badge--new">{state.incomingOffers.length}</span>
             </div>
             <div className="fm-card__body">
@@ -239,55 +191,34 @@ export default function PortalHub({
           </div>
         )}
 
-        {/* Board Objective Card */}
-        {shouldShowCard('board') && (
+        {/* Board objective */}
+        {show('board') && (
           <div className="fm-card">
             <div className="fm-card__header">
-              <h2 className="fm-card__title">Board Objective</h2>
+              <h2 className="fm-card__title">🎯 Objective</h2>
             </div>
             <div className="fm-card__body">
               <p className="fm-card__objective">{state.board.objective}</p>
-              <p className="fm-card__hint">Finish in top {state.board.minPosition} to satisfy the board.</p>
+              <p className="fm-card__hint">Finish top {state.board.minPosition} to satisfy the board.</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Backroom Advice Section */}
-      <div className="fm-portal__advice">
-        <button
-          className="fm-card fm-card--clickable"
-          onClick={() => toggleCard('advice')}
-        >
-          <div className="fm-card__header">
-            <h2 className="fm-card__title">💬 Backroom Advice</h2>
-            <span className="fm-card__indicator">{expandedCards['advice'] ? '−' : '+'}</span>
-          </div>
-          {expandedCards['advice'] && (
-            <div className="fm-card__body">
-              <ul className="fm-card__advice-list">
-                {state.morale < 50 && <li>⚠️ Morale is low.</li>}
-                {!lineupOk && <li>⚠️ Starting XI has gaps.</li>}
-                {state.budget < 500000 && <li>⚠️ Budget is low.</li>}
-                {state.fanConfidence < 40 && <li>⚠️ Fans losing faith.</li>}
-                {!state.morale && <li>✅ All good.</li>}
-              </ul>
-            </div>
-          )}
-        </button>
-      </div>
-
-      {/* Abandon Button */}
+      {/* Abandon */}
       <div className="fm-portal__actions">
         <button
           className="fm-btn fm-btn--danger fm-btn--small"
-          onClick={() => {
-            if (window.confirm('Abandon this career? Your save will be deleted.')) onAbandon();
-          }}
+          onClick={() => { if (window.confirm('Abandon this career? Your save will be deleted.')) onAbandon(); }}
         >
           Abandon career
         </button>
       </div>
     </div>
   );
+}
+
+function ord(n: number): string {
+  if (n % 100 >= 11 && n % 100 <= 13) return 'th';
+  return ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
 }

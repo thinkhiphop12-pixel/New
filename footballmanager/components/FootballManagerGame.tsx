@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { GameData, GameState, MatchReport, SeasonSummary } from '@/engine/types';
+import type { GameData, GameState, MatchReport, SeasonSummary, GameSettings } from '@/engine/types';
 import { endSeason, newGame, playRound, seasonOver, switchJob } from '@/engine/seasonProgression';
 import { loadGameData } from '@/lib/gamedata';
 import { clearSave, listSaves, loadGame, saveGame, SAVE_SLOTS, type SaveMeta } from '@/lib/storage';
@@ -10,6 +10,7 @@ import ClubSelectScreen from './ClubSelectScreen';
 import HubScreen from './HubScreen';
 import MatchDayScreen from './MatchDayScreen';
 import SeasonEndScreen from './SeasonEndScreen';
+import SettingsPanel, { loadSettings } from './SettingsPanel';
 
 type View = 'menu' | 'clubselect' | 'hub' | 'match' | 'seasonend';
 
@@ -21,12 +22,15 @@ export default function FootballManagerGame() {
   const [view, setView] = useState<View>('menu');
   const [summary, setSummary] = useState<SeasonSummary | null>(null);
   const [saves, setSaves] = useState<(SaveMeta | null)[]>(Array(SAVE_SLOTS).fill(null));
+  const [settings, setSettings] = useState<GameSettings | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     loadGameData()
       .then(setData)
       .catch((e) => setLoadError(String(e)));
     setSaves(listSaves());
+    setSettings(loadSettings());
   }, []);
 
   const apply = (next: GameState, toSlot = slot) => {
@@ -98,6 +102,10 @@ export default function FootballManagerGame() {
           BALLKNW
         </a>
         <span className="fm-header__title">Gaffer</span>
+        <span className="fm-header__spacer" />
+        <button className="fm-header__settings" onClick={() => setShowSettings(true)}>
+          Settings
+        </button>
       </header>
       <main className="fm-main">
         {loadError ? (
@@ -113,8 +121,8 @@ export default function FootballManagerGame() {
           <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} />
         ) : view === 'clubselect' ? (
           <ClubSelectScreen data={data} onPick={handlePickClub} onBack={backToMenu} />
-        ) : view === 'match' && gs ? (
-          <MatchDayScreen state={gs} onDone={handleMatchDone} />
+        ) : view === 'match' && gs && settings ? (
+          <MatchDayScreen state={gs} settings={settings} onDone={handleMatchDone} />
         ) : view === 'seasonend' && gs && summary ? (
           <SeasonEndScreen
             state={gs}
@@ -129,6 +137,14 @@ export default function FootballManagerGame() {
           <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} />
         )}
       </main>
+
+      {showSettings && settings && (
+        <SettingsPanel
+          settings={settings}
+          onChange={setSettings}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
     </div>
   );
 }

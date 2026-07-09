@@ -1,26 +1,33 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { GameState, MatchReport, Player, Pressing, TacticStyle, Tactics, Tempo, Width } from '@/engine/types';
+import type { GameState, MatchReport, Player, Pressing, TacticStyle, Tactics, Tempo, Width, GameSettings, MatchSpeed } from '@/engine/types';
 import { mergeReports, simulateHalf, simulateSegment, type TeamTalk } from '@/engine/matchSimulation';
 import { nextUserFixture } from '@/engine/seasonProgression';
 import { availableSquad } from '@/engine/teamManagement';
-import { formatMoney } from '@/engine/utils';
 import { getFormation, MAX_SUBS } from '@/engine/gameRules';
 import { computeHighlights } from '@/engine/highlights';
-import MatchPitchView from './MatchPitchView';
 import Live2DPitch from './live2d/Live2DPitch';
+import MatchPitchView from './MatchPitchView';
 import MatchHighlights from './MatchHighlights';
 import { StatTile } from './visuals';
 
 type Phase = 'half1' | 'halftime' | 'half2' | 'full';
 
-/** Plays the user's league match in two halves with a half-time break for subs and a team talk. */
+const SPEED_INTERVAL: Record<MatchSpeed, number> = {
+  slow: 140,
+  normal: 80,
+  fast: 40,
+  instant: 0,
+};
+
 export default function MatchDayScreen({
   state,
+  settings,
   onDone,
 }: {
   state: GameState;
+  settings: GameSettings;
   onDone: (report: MatchReport) => void;
 }) {
   const [phase, setPhase] = useState<Phase>('half1');
@@ -34,6 +41,7 @@ export default function MatchDayScreen({
   const [live2dFailed, setLive2dFailed] = useState(false);
   const [liveTactics, setLiveTactics] = useState<Tactics>(state.tactics);
   const [tacticsDirty, setTacticsDirty] = useState(false);
+  const [speed, setSpeed] = useState<MatchSpeed>(settings.matchSpeed);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fixture = nextUserFixture(state);
@@ -41,12 +49,21 @@ export default function MatchDayScreen({
   useEffect(() => {
     if (!fixture) return;
     setHalf1Report(simulateHalf(state, fixture.homeId, fixture.awayId, 1));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fixture]);
+
+  // Auto-sim: skip straight to full time if instant speed
+  useEffect(() => {
+    if (speed === 'instant' && half1Report && phase === 'half1' && fixture) {
+      const rep2 = simulateHalf(state, fixture.homeId, fixture.awayId, 2);
+      setHalf2Report(rep2);
+      setPhase('full');
+    }
+  }, [speed, half1Report, phase, state, fixture]);
 
   useEffect(() => {
     const report = phase === 'half1' ? half1Report : phase === 'half2' ? half2Report : null;
-    if (!report || phase === 'halftime' || phase === 'full' || paused) return;
+    if (!report || phase === 'halftime' || phase === 'full' || paused || speed === 'instant') return;
+    const interval = SPEED_INTERVAL[speed];
     timer.current = setInterval(() => {
       setMinute((m) => {
         const cap = phase === 'half1' ? 45 : 90;
@@ -56,11 +73,11 @@ export default function MatchDayScreen({
         }
         return m + 1;
       });
-    }, 90);
+    }, interval);
     return () => {
       if (timer.current) clearInterval(timer.current);
     };
-  }, [phase, half1Report, half2Report, paused]);
+  }, [phase, half1Report, half2Report, paused, speed]);
 
   if (!fixture) return null;
 
@@ -91,7 +108,6 @@ export default function MatchDayScreen({
     setPhase('half2');
   };
 
-  /** Resume from pause, regenerating the rest of the current half if the manager changed tactics while stopped. */
   const resumeMatch = () => {
     if (tacticsDirty && (phase === 'half1' || phase === 'half2')) {
       const capEnd = phase === 'half1' ? 44 : 89;
@@ -149,34 +165,70 @@ export default function MatchDayScreen({
 
   const pitchFormation = getFormation(state.dualFormation?.inPossessionId || state.formationId);
   const latestEvent = shownEvents[shownEvents.length - 1];
+  const matchProgress = finished ? 100 : (minute / 90) * 100;
+  const minuteLabel = phase === 'halftime' ? 'HALF TIME' : finished ? 'FULL TIME' : `${minute}'`;
+  const minuteClass = phase === 'halftime' ? ' halftime' : finished ? ' fulltime' : '';
+
+  // Auto-advance when timer reaches end of half
+  useEffect(() => {
+    if (phase === 'half1' && minute >= 45) {
+      const t = setTimeout(() => setPhase('halftime'), 300);
+      return () => clearTimeout(t);
+    }
+  }, [phase, minute]);
+
+  // Auto-advance to full when second half completes
+  useEffect(() => {
+    if (phase === 'half2' && minute >= 90) {
+      const t = setTimeout(() => setPhase('full'), 300);
+      return () => clearTimeout(t);
+    }
+  }, [phase, minute]);
 
   return (
     <div className="fm-screen">
+      {/* Enhanced Scoreboard */}
       <div className="fm-scoreboard">
         <div className="fm-scoreboard__team">
-          {home?.name}
-          <span className="code">{home?.code} · HOME</span>
+          {home && (
+            <span className="fm-scoreboard__team-badge" style={{ background: home.color }}>
+              {home.code}
+            </span>
+          )}
+          <div>{home?.name}</div>
+          <span className="code">HOME</span>
         </div>
-        <div>
-          <div className="fm-scoreboard__minute">
-            {phase === 'halftime' ? 'HALF TIME' : finished ? 'FULL TIME' : `${minute}'`}
-          </div>
+        <div className="fm-scoreboard__center">
+          <div className={`fm-scoreboard__minute${minuteClass}`}>{minuteLabel}</div>
           <div className="fm-scoreboard__score">
             {homeGoals} – {awayGoals}
           </div>
           {finished && (
             <div className="fm-scoreboard__xg">
-              xG {finalReport.homeXG.toFixed(2)} – {finalReport.awayXG.toFixed(2)}
+              xG {finalReport.homeXG.toFixed(1)} – {finalReport.awayXG.toFixed(1)}
             </div>
           )}
         </div>
         <div className="fm-scoreboard__team">
-          {away?.name}
-          <span className="code">{away?.code} · AWAY</span>
+          {away && (
+            <span className="fm-scoreboard__team-badge" style={{ background: away.color }}>
+              {away.code}
+            </span>
+          )}
+          <div>{away?.name}</div>
+          <span className="code">AWAY</span>
         </div>
       </div>
 
-      {!finished && !live2dFailed && (
+      {/* Match progress bar */}
+      {!finished && (
+        <div className="fm-match-progress">
+          <div className="fm-match-progress__fill" style={{ width: `${matchProgress}%` }} />
+        </div>
+      )}
+
+      {/* 2D Pitch */}
+      {!finished && settings.show2DPitch && !live2dFailed && (
         <Live2DPitch
           homeFormation={pitchFormation}
           homeLineup={lineup}
@@ -184,11 +236,11 @@ export default function MatchDayScreen({
           awayClub={away}
           players={state.players}
           latestEvent={latestEvent}
-          paused={paused || phase === 'halftime'}
+          paused={paused || phase === 'halftime' || speed === 'instant'}
           onError={() => setLive2dFailed(true)}
         />
       )}
-      {!finished && live2dFailed && (
+      {!finished && settings.show2DPitch && live2dFailed && (
         <MatchPitchView
           formation={pitchFormation}
           lineup={lineup}
@@ -198,273 +250,263 @@ export default function MatchDayScreen({
         />
       )}
 
-      {(phase === 'half1' || phase === 'half2') && !finished && (
-        <div className="fm-actions">
-          <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setPaused(true)}>
-            Pause
-          </button>
+      {/* Live event ticker */}
+      {!finished && latestEvent && latestEvent.type !== 'info' && (
+        <div className={`fm-event-ticker${latestEvent.type === 'goal' ? ' fm-event-ticker--goal' : latestEvent.type === 'card' ? ' fm-event-ticker--card' : latestEvent.type === 'injury' ? ' fm-event-ticker--injury' : ''}`}>
+          <span className="fm-event-ticker__icon">
+            {latestEvent.type === 'goal' ? '⚽' : latestEvent.type === 'card' ? '🟨' : latestEvent.type === 'injury' ? '🚑' : '▶'}
+          </span>
+          <span className="fm-event-ticker__text">{latestEvent.text}</span>
+          <span className="fm-event-ticker__min">{latestEvent.minute}&apos;</span>
         </div>
       )}
 
-      {phase === 'half1' && minute < 45 && (
-        <div className="fm-actions">
-          <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={() => setMinute(45)}>
-            Skip to half time
+      {/* Match controls */}
+      {!finished && phase !== 'halftime' && speed !== 'instant' && (
+        <div className="fm-match-controls">
+          <button
+            className={`fm-speed-btn${speed === 'slow' ? ' active' : ''}`}
+            onClick={() => setSpeed('slow')}
+          >
+            0.5x
           </button>
+          <button
+            className={`fm-speed-btn${speed === 'normal' ? ' active' : ''}`}
+            onClick={() => setSpeed('normal')}
+          >
+            1x
+          </button>
+          <button
+            className={`fm-speed-btn${speed === 'fast' ? ' active' : ''}`}
+            onClick={() => setSpeed('fast')}
+          >
+            2x
+          </button>
+          <button
+            className="fm-speed-btn"
+            onClick={() => setSpeed('instant')}
+          >
+            ⏭ Skip
+          </button>
+          {!paused ? (
+            <button className="fm-skip-btn" onClick={() => setPaused(true)}>⏸ Pause</button>
+          ) : (
+            <button className="fm-skip-btn" onClick={resumeMatch}>▶ Resume</button>
+          )}
         </div>
       )}
-      {phase === 'half1' && minute >= 45 && (
+
+      {/* Half time skip buttons */}
+      {phase === 'half1' && minute >= 45 && !finished && (
         <div className="fm-actions">
           <button className="fm-btn fm-btn--primary fm-btn--large" onClick={startHalfTime}>
-            Go to the dressing room
+            Go to the dressing room →
           </button>
         </div>
       )}
-
-      {phase === 'halftime' && (
-        <div className="fm-panel">
-          <p className="fm-label" style={{ marginTop: 0 }}>
-            Half-time team talk
-          </p>
-          <p className="fm-hint" style={{ textAlign: 'left', marginBottom: 10 }}>Pick your read — the wrong one can backfire.</p>
-          <div className="fm-pills" style={{ marginBottom: 14 }}>
-            <button className="fm-pill" onClick={() => startSecondHalf('calm')}>
-              😌 Stay calm
-            </button>
-            <button className="fm-pill" onClick={() => startSecondHalf('encourage')}>
-              👏 Encourage
-            </button>
-            <button className="fm-pill" onClick={() => startSecondHalf('hairdryer')}>
-              🔥 Hairdryer
-            </button>
-          </div>
-
-          <p className="fm-label">
-            Substitutions ({subsUsed}/{MAX_SUBS} used)
-          </p>
-          <p className="fm-hint" style={{ textAlign: 'left', marginBottom: 8 }}>
-            {subOut === null ? 'Tap a starter to bring off.' : 'Pick his replacement.'}
-          </p>
-          <div className="fm-player-list">
-            {lineup
-              .filter((id): id is number => id !== null)
-              .map((id) => state.players[id])
-              .filter((p): p is Player => !!p)
-              .map((p) => (
-                <button
-                  key={p.id}
-                  className={`fm-player-row fm-pos-${p.pos}${subOut === p.id ? ' highlight' : ''}`}
-                  disabled={subsUsed >= MAX_SUBS}
-                  onClick={() => setSubOut(subOut === p.id ? null : p.id)}
-                >
-                  <span className="fm-player-row__badge">{p.role}</span>
-                  <span className="fm-player-row__name">{p.name}</span>
-                  <span className="fm-player-row__rating">{p.rating}</span>
-                </button>
-              ))}
-          </div>
-
-          {subOut !== null && (
-            <>
-              <p className="fm-label">Bench</p>
-              <div className="fm-player-list">
-                {bench.map((p) => (
-                  <button key={p.id} className={`fm-player-row fm-pos-${p.pos} highlight`} onClick={() => makeSub(p.id)}>
-                    <span className="fm-player-row__badge">{p.role}</span>
-                    <span className="fm-player-row__name">{p.name}</span>
-                    <span className="fm-player-row__rating">{p.rating}</span>
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-
-          <div className="fm-actions" style={{ marginTop: 14 }}>
-            <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => startSecondHalf()}>
-              Skip talk, kick off second half
-            </button>
-          </div>
-        </div>
-      )}
-
-      {phase === 'half2' && minute < 90 && (
+      {phase === 'half2' && minute < 90 && !finished && speed !== 'instant' && (
         <div className="fm-actions">
           <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={() => setMinute(90)}>
             Skip to full time
           </button>
         </div>
       )}
-      {finished && (
-        <div className="fm-actions">
-          <button className="fm-btn fm-btn--primary fm-btn--large" onClick={() => onDone(finalReport)}>
-            Continue
-          </button>
+
+      {/* Half time panel */}
+      {phase === 'halftime' && (
+        <div className="fm-halftime">
+          <div className="fm-halftime__header">
+            <span className="fm-halftime__title">HALF TIME</span>
+            <span className="fm-card__meta">{homeGoals} – {awayGoals}</span>
+          </div>
+          <div className="fm-halftime__body">
+            {settings.showTeamTalks && (
+              <div>
+                <div className="fm-sub-section__title">Team talk</div>
+                <div className="fm-talk-grid">
+                  <button className="fm-talk-card" onClick={() => startSecondHalf('calm')}>
+                    <span className="fm-talk-card__icon">😌</span>
+                    <span className="fm-talk-card__label">Calm</span>
+                    <span className="fm-talk-card__desc">Steady the ship</span>
+                  </button>
+                  <button className="fm-talk-card" onClick={() => startSecondHalf('encourage')}>
+                    <span className="fm-talk-card__icon">👏</span>
+                    <span className="fm-talk-card__label">Encourage</span>
+                    <span className="fm-talk-card__desc">Positive push</span>
+                  </button>
+                  <button className="fm-talk-card" onClick={() => startSecondHalf('hairdryer')}>
+                    <span className="fm-talk-card__icon">🔥</span>
+                    <span className="fm-talk-card__label">Hairdryer</span>
+                    <span className="fm-talk-card__desc">Risky fire-up</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <div className="fm-sub-section__title">
+                Subs ({subsUsed}/{MAX_SUBS}) {subOut !== null && '· Pick replacement'}
+              </div>
+              <div className="fm-sub-grid">
+                <div>
+                  <div className="fm-sub-section__title">On pitch</div>
+                  <div className="fm-player-list">
+                    {lineup
+                      .filter((id): id is number => id !== null)
+                      .map((id) => state.players[id])
+                      .filter((p): p is Player => !!p)
+                      .map((p) => (
+                        <button
+                          key={p.id}
+                          className={`fm-player-row fm-pos-${p.pos}${subOut === p.id ? ' highlight' : ''}`}
+                          disabled={subsUsed >= MAX_SUBS}
+                          onClick={() => setSubOut(subOut === p.id ? null : p.id)}
+                        >
+                          <span className="fm-player-row__badge">{p.role}</span>
+                          <span className="fm-player-row__name">{p.name}</span>
+                          <span className="fm-player-row__rating">{p.rating}</span>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+                {subOut !== null && (
+                  <div>
+                    <div className="fm-sub-section__title">Bench</div>
+                    <div className="fm-player-list">
+                      {bench.map((p) => (
+                        <button key={p.id} className={`fm-player-row fm-pos-${p.pos} highlight`} onClick={() => makeSub(p.id)}>
+                          <span className="fm-player-row__badge">{p.role}</span>
+                          <span className="fm-player-row__name">{p.name}</span>
+                          <span className="fm-player-row__rating">{p.rating}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="fm-actions">
+              <button className="fm-btn fm-btn--primary fm-btn--large" onClick={() => startSecondHalf()}>
+                Start second half →
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
+      {/* Full time */}
       {finished && (
-        <div className="fm-attr-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 14 }}>
-          <StatTile icon="⚽" value={homeGoals + awayGoals} label="Goals" />
-          <StatTile icon="📊" value={(finalReport.homeXG + finalReport.awayXG).toFixed(2)} label="Total xG" />
-          <StatTile
-            icon="🟨"
-            value={shownEvents.filter((e) => e.type === 'card').length}
-            label="Cards"
-          />
-          <StatTile icon="🚑" value={shownEvents.filter((e) => e.type === 'injury').length} label="Injuries" />
-        </div>
+        <>
+          <div className="fm-actions">
+            <button className="fm-btn fm-btn--primary fm-btn--large" onClick={() => onDone(finalReport)}>
+              Continue →
+            </button>
+          </div>
+          <div className="fm-attr-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 10 }}>
+            <StatTile icon="⚽" value={homeGoals + awayGoals} label="Goals" />
+            <StatTile icon="📊" value={(finalReport.homeXG + finalReport.awayXG).toFixed(1)} label="xG" />
+            <StatTile icon="🟨" value={shownEvents.filter((e) => e.type === 'card').length} label="Cards" />
+            <StatTile icon="🚑" value={shownEvents.filter((e) => e.type === 'injury').length} label="Injuries" />
+          </div>
+          <MatchHighlights events={computeHighlights(finalReport)} />
+        </>
       )}
-      {finished && <MatchHighlights events={computeHighlights(finalReport)} />}
 
-      <p className="fm-label">Full commentary</p>
-      <ul className="fm-commentary">
-        {shownEvents.map((e, i) => (
-          <li
-            key={i}
-            className={
-              e.type === 'goal'
-                ? e.clubId === state.userClubId
-                  ? 'goal'
-                  : 'goal goal-opp'
-                : e.type === 'card'
-                  ? 'card'
-                  : ''
-            }
-          >
-            <span className="min">{e.minute}&apos;</span>
-            <span>
-              {e.type === 'goal' ? '⚽ ' : e.type === 'card' ? '🟨 ' : e.type === 'injury' ? '🚑 ' : ''}
-              {e.text}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {/* Commentary feed */}
+      {settings.showCommentary && (
+        <>
+          <p className="fm-label">Commentary</p>
+          <ul className="fm-commentary">
+            {shownEvents.map((e, i) => (
+              <li
+                key={i}
+                className={
+                  e.type === 'goal'
+                    ? e.clubId === state.userClubId
+                      ? 'goal'
+                      : 'goal goal-opp'
+                    : e.type === 'card'
+                      ? 'card'
+                      : ''
+                }
+              >
+                <span className="min">{e.minute}&apos;</span>
+                <span>
+                  {e.type === 'goal' ? '⚽ ' : e.type === 'card' ? '🟨 ' : e.type === 'injury' ? '🚑 ' : ''}
+                  {e.text}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
+      {/* Pause overlay */}
       {paused && (
         <div className="fm-pause-overlay">
           <div className="fm-pause-overlay__panel">
-            <p className="fm-label" style={{ marginTop: 0 }}>
-              Match paused
-            </p>
-            <p className="fm-hint" style={{ textAlign: 'left', marginBottom: 10 }}>
-              Adjust tactics below for the rest of the half.
-            </p>
+            <div className="fm-panel fm-panel--elevated">
+              <p className="fm-label" style={{ marginTop: 0 }}>Match paused</p>
 
-            <div className="fm-panel">
-              <p className="fm-label" style={{ marginTop: 0 }}>
-                Tactics
-              </p>
-              <div className="fm-pills" style={{ marginBottom: 8 }}>
+              <p className="fm-label">Style</p>
+              <div className="fm-pills" style={{ marginBottom: 6 }}>
                 {(['defensive', 'balanced', 'attacking'] as TacticStyle[]).map((s) => (
                   <button
                     key={s}
                     className={`fm-pill${liveTactics.style === s ? ' active' : ''}`}
-                    onClick={() => {
-                      setLiveTactics({ ...liveTactics, style: s });
-                      setTacticsDirty(true);
-                    }}
+                    onClick={() => { setLiveTactics({ ...liveTactics, style: s }); setTacticsDirty(true); }}
                   >
                     {s[0].toUpperCase() + s.slice(1)}
                   </button>
                 ))}
               </div>
-              <div className="fm-pills" style={{ marginBottom: 8 }}>
+              <p className="fm-label">Pressing</p>
+              <div className="fm-pills" style={{ marginBottom: 6 }}>
                 {(['low', 'mid', 'high'] as Pressing[]).map((p) => (
                   <button
                     key={p}
                     className={`fm-pill${liveTactics.pressing === p ? ' active' : ''}`}
-                    onClick={() => {
-                      setLiveTactics({ ...liveTactics, pressing: p });
-                      setTacticsDirty(true);
-                    }}
+                    onClick={() => { setLiveTactics({ ...liveTactics, pressing: p }); setTacticsDirty(true); }}
                   >
                     {p === 'low' ? 'Low block' : p === 'mid' ? 'Standard' : 'High press'}
                   </button>
                 ))}
               </div>
-              <div className="fm-pills" style={{ marginBottom: 8 }}>
+              <p className="fm-label">Tempo</p>
+              <div className="fm-pills" style={{ marginBottom: 6 }}>
                 {(['slow', 'normal', 'fast'] as Tempo[]).map((t) => (
                   <button
                     key={t}
                     className={`fm-pill${liveTactics.tempo === t ? ' active' : ''}`}
-                    onClick={() => {
-                      setLiveTactics({ ...liveTactics, tempo: t });
-                      setTacticsDirty(true);
-                    }}
+                    onClick={() => { setLiveTactics({ ...liveTactics, tempo: t }); setTacticsDirty(true); }}
                   >
                     {t[0].toUpperCase() + t.slice(1)}
                   </button>
                 ))}
               </div>
+              <p className="fm-label">Width</p>
               <div className="fm-pills">
                 {(['narrow', 'standard', 'wide'] as Width[]).map((w) => (
                   <button
                     key={w}
                     className={`fm-pill${liveTactics.width === w ? ' active' : ''}`}
-                    onClick={() => {
-                      setLiveTactics({ ...liveTactics, width: w });
-                      setTacticsDirty(true);
-                    }}
+                    onClick={() => { setLiveTactics({ ...liveTactics, width: w }); setTacticsDirty(true); }}
                   >
                     {w[0].toUpperCase() + w.slice(1)}
                   </button>
                 ))}
               </div>
               {tacticsDirty && (
-                <p className="fm-hint" style={{ textAlign: 'left', marginTop: 8, marginBottom: 0 }}>
-                  Changes apply to the rest of this half when you resume.
+                <p className="fm-hint" style={{ textAlign: 'left', marginTop: 6, marginBottom: 0 }}>
+                  Changes apply to the rest of this half.
                 </p>
               )}
             </div>
 
-            <div className="fm-panel">
-              <p className="fm-label" style={{ marginTop: 0 }}>
-                On the pitch
-              </p>
-              <div className="fm-player-list">
-                {lineup
-                  .filter((id): id is number => id !== null)
-                  .map((id) => state.players[id])
-                  .filter((p): p is Player => !!p)
-                  .map((p) => (
-                    <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`}>
-                      <span className="fm-player-row__badge">{p.role}</span>
-                      <span className="fm-player-row__name">{p.name}</span>
-                      <span className="fm-player-row__rating">{p.rating}</span>
-                    </div>
-                  ))}
-              </div>
-            </div>
-
-            <div className="fm-panel">
-              <p className="fm-label" style={{ marginTop: 0 }}>
-                Bench
-              </p>
-              <div className="fm-player-list">
-                {bench.map((p) => (
-                  <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`}>
-                    <span className="fm-player-row__badge">{p.role}</span>
-                    <span className="fm-player-row__name">{p.name}</span>
-                    <span className="fm-player-row__rating">{p.rating}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="fm-panel">
-              <p className="fm-label" style={{ marginTop: 0 }}>
-                Club snapshot
-              </p>
-              <p className="fm-club-line">Budget: {formatMoney(state.budget)}</p>
-              <p className="fm-club-line">Board confidence: {state.board.confidence}</p>
-              <p className="fm-club-line" style={{ marginBottom: 0 }}>
-                Fan confidence: {state.fanConfidence}
-              </p>
-            </div>
-
             <div className="fm-actions">
               <button className="fm-btn fm-btn--primary fm-btn--large" onClick={resumeMatch}>
-                Resume match
+                ▶ Resume match
               </button>
             </div>
           </div>

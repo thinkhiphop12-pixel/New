@@ -265,6 +265,25 @@ export interface GameState {
   incomingOffers: TransferOffer[];
   history: SeasonSummary[];
   news: string[];
+  /** User display/gameplay preferences. */
+  settings?: GameSettings;
+}
+
+export type MatchSpeed = 'slow' | 'normal' | 'fast' | 'instant';
+
+export interface GameSettings {
+  /** Match clock tick speed. */
+  matchSpeed: MatchSpeed;
+  /** Whether to show the live commentary feed during matches. */
+  showCommentary: boolean;
+  /** Whether to auto-sim AI matches without a play button. */
+  autoSimMatches: boolean;
+  /** Whether to show the 2D pitch canvas during matches. */
+  show2DPitch: boolean;
+  /** Show team talk prompt at half time. */
+  showTeamTalks: boolean;
+  /** AI opponent difficulty multiplier (0.85 = easy, 1.0 = normal, 1.15 = hard). */
+  difficulty: number;
 }
 
 export interface GameData {
