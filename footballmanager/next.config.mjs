@@ -3,8 +3,9 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 const nextConfig = {
   // Game can run fully static on GitHub Pages, but Vercel/production deployments
-  // need server support for API routes (email capture, event tracking)
-  // output: 'export' is NOT used to allow API routes
+  // need server support for API routes (email capture, event tracking), so
+  // 'export' is opt-in via STATIC_EXPORT=1 for the GitHub Pages build only.
+  output: process.env.STATIC_EXPORT === '1' ? 'export' : undefined,
   basePath: basePath || undefined,
   trailingSlash: true,
   images: { unoptimized: true },

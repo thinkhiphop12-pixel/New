@@ -1,6 +1,7 @@
 'use client';
 
 import type { FormationDef, MatchEvent, Player } from '@/engine/types';
+import { PitchMarkings, PlayerToken } from './visuals';
 
 /** Deterministic pseudo-random x position (20–80) seeded from event data, so the ball doesn't jump around on rerender. */
 function seededX(seed: number): number {
@@ -34,12 +35,13 @@ export default function MatchPitchView({
   const ball = ballPosition(latestEvent, userClubId);
   return (
     <div className="fm-pitch fm-pitch--live">
+      <PitchMarkings />
       {formation.slots.map((slot, i) => {
         const id = lineup[i];
         const p = id != null ? players[id] : null;
         return (
           <div key={i} className={`fm-slot fm-slot--live${p ? ' filled' : ''}`} style={{ left: `${slot.x}%`, bottom: `${slot.y}%` }}>
-            <span className="fm-slot__chip">{p ? Math.round(p.rating * p.form) : slot.label}</span>
+            <PlayerToken label={slot.label} rating={p ? p.rating * p.form : undefined} pos={slot.pos} form={p?.form} />
             {p && <span className="fm-slot__name">{p.name}</span>}
           </div>
         );

@@ -7,6 +7,7 @@ import { computeTable, nextUserFixture, userDivision } from '@/engine/seasonProg
 import { isClubAlive, knockoutRoundDue } from '@/engine/cups';
 import { isLineupValid } from '@/engine/teamManagement';
 import { formatMoney } from '@/engine/utils';
+import { tint } from './visuals';
 
 type Filter = 'all' | 'new' | 'tasks' | 'unread';
 
@@ -139,7 +140,7 @@ export default function PortalHub({
 
         {/* Upcoming Fixture Card */}
         {shouldShowCard('fixture') && fixture && (
-          <div className="fm-card">
+          <div className="fm-card" style={{ background: tint(club.color, '14'), borderColor: tint(club.color, '40') }}>
             <div className="fm-card__header">
               <h2 className="fm-card__title">Next Match</h2>
               <span className="fm-card__meta">Week {Math.min(state.week, SEASON_ROUNDS)} of {SEASON_ROUNDS}</span>
@@ -265,21 +266,16 @@ export default function PortalHub({
           {expandedCards['advice'] && (
             <div className="fm-card__body">
               <ul className="fm-card__advice-list">
-                {state.morale < 50 && <li>Team morale is concerning. Consider a confidence boost.</li>}
-                {!lineupOk && <li>Your starting XI has gaps. Fill empty slots with squad players.</li>}
-                {state.budget < 500000 && <li>Transfer budget is low. Monitor squad health carefully.</li>}
-                {state.fanConfidence < 40 && <li>Fans are losing faith. A win will help restore confidence.</li>}
-                {!state.morale && (
-                  <li>Everything looks good. Focus on consistent performance.</li>
-                )}
+                {state.morale < 50 && <li>⚠️ Morale is low.</li>}
+                {!lineupOk && <li>⚠️ Starting XI has gaps.</li>}
+                {state.budget < 500000 && <li>⚠️ Budget is low.</li>}
+                {state.fanConfidence < 40 && <li>⚠️ Fans losing faith.</li>}
+                {!state.morale && <li>✅ All good.</li>}
               </ul>
             </div>
           )}
         </button>
       </div>
-
-      {/* Navigation Hint */}
-      <p className="fm-portal__nav-hint">👉 Use the Squad tab to manage tactics, transfers, and lineups.</p>
 
       {/* Abandon Button */}
       <div className="fm-portal__actions">
