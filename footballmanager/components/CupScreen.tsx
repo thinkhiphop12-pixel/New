@@ -21,10 +21,10 @@ function Bracket({ state, k }: { state: GameState; k: Knockout }) {
       ) : (
         <p className="fm-cup-status">
           {!inComp
-            ? 'Your club did not qualify this season.'
+            ? 'Did not qualify.'
             : alive
-              ? `Still in it — next round (${roundName(k, k.round)}) in week ${k.weeks[k.round] ?? '—'}.`
-              : 'Knocked out this season.'}
+              ? `${roundName(k, k.round)} in week ${k.weeks[k.round] ?? '—'}.`
+              : 'Knocked out.'}
         </p>
       )}
       {[...k.rounds].map((ties, i) => {
@@ -66,10 +66,7 @@ export default function CupScreen({ state }: { state: GameState }) {
     <>
       <Bracket state={state} k={state.cup} />
       <Bracket state={state} k={state.continental} />
-      <p className="fm-hint">
-        Cup rounds are played midweek alongside your league fixtures — results appear in club news.
-        The top eight Division 1 clubs qualify for next season&apos;s Continental Champions Cup.
-      </p>
+      <p className="fm-hint">Cup rounds play midweek. Top 8 in Division 1 qualify for Europe.</p>
     </>
   );
 }

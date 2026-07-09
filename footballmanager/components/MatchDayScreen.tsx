@@ -9,7 +9,9 @@ import { formatMoney } from '@/engine/utils';
 import { getFormation, MAX_SUBS } from '@/engine/gameRules';
 import { computeHighlights } from '@/engine/highlights';
 import MatchPitchView from './MatchPitchView';
+import Live2DPitch from './live2d/Live2DPitch';
 import MatchHighlights from './MatchHighlights';
+import { StatTile } from './visuals';
 
 type Phase = 'half1' | 'halftime' | 'half2' | 'full';
 
@@ -29,6 +31,7 @@ export default function MatchDayScreen({
   const [subOut, setSubOut] = useState<number | null>(null);
   const [subsUsed, setSubsUsed] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [live2dFailed, setLive2dFailed] = useState(false);
   const [liveTactics, setLiveTactics] = useState<Tactics>(state.tactics);
   const [tacticsDirty, setTacticsDirty] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -173,7 +176,19 @@ export default function MatchDayScreen({
         </div>
       </div>
 
-      {!finished && (
+      {!finished && !live2dFailed && (
+        <Live2DPitch
+          homeFormation={pitchFormation}
+          homeLineup={lineup}
+          homeClub={home}
+          awayClub={away}
+          players={state.players}
+          latestEvent={latestEvent}
+          paused={paused || phase === 'halftime'}
+          onError={() => setLive2dFailed(true)}
+        />
+      )}
+      {!finished && live2dFailed && (
         <MatchPitchView
           formation={pitchFormation}
           lineup={lineup}
@@ -211,18 +226,16 @@ export default function MatchDayScreen({
           <p className="fm-label" style={{ marginTop: 0 }}>
             Half-time team talk
           </p>
-          <p className="fm-hint" style={{ textAlign: 'left', marginBottom: 10 }}>
-            Calm things down, encourage the lads, or give them the hairdryer — the wrong read can backfire.
-          </p>
+          <p className="fm-hint" style={{ textAlign: 'left', marginBottom: 10 }}>Pick your read — the wrong one can backfire.</p>
           <div className="fm-pills" style={{ marginBottom: 14 }}>
             <button className="fm-pill" onClick={() => startSecondHalf('calm')}>
-              Stay calm
+              😌 Stay calm
             </button>
             <button className="fm-pill" onClick={() => startSecondHalf('encourage')}>
-              Encourage
+              👏 Encourage
             </button>
             <button className="fm-pill" onClick={() => startSecondHalf('hairdryer')}>
-              Hairdryer
+              🔥 Hairdryer
             </button>
           </div>
 
@@ -230,7 +243,7 @@ export default function MatchDayScreen({
             Substitutions ({subsUsed}/{MAX_SUBS} used)
           </p>
           <p className="fm-hint" style={{ textAlign: 'left', marginBottom: 8 }}>
-            {subOut === null ? 'Tap a starter to bring off, then pick his replacement.' : 'Pick a replacement from the bench below.'}
+            {subOut === null ? 'Tap a starter to bring off.' : 'Pick his replacement.'}
           </p>
           <div className="fm-player-list">
             {lineup
@@ -289,6 +302,18 @@ export default function MatchDayScreen({
         </div>
       )}
 
+      {finished && (
+        <div className="fm-attr-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 14 }}>
+          <StatTile icon="⚽" value={homeGoals + awayGoals} label="Goals" />
+          <StatTile icon="📊" value={(finalReport.homeXG + finalReport.awayXG).toFixed(2)} label="Total xG" />
+          <StatTile
+            icon="🟨"
+            value={shownEvents.filter((e) => e.type === 'card').length}
+            label="Cards"
+          />
+          <StatTile icon="🚑" value={shownEvents.filter((e) => e.type === 'injury').length} label="Injuries" />
+        </div>
+      )}
       {finished && <MatchHighlights events={computeHighlights(finalReport)} />}
 
       <p className="fm-label">Full commentary</p>
@@ -307,7 +332,10 @@ export default function MatchDayScreen({
             }
           >
             <span className="min">{e.minute}&apos;</span>
-            <span>{e.text}</span>
+            <span>
+              {e.type === 'goal' ? '⚽ ' : e.type === 'card' ? '🟨 ' : e.type === 'injury' ? '🚑 ' : ''}
+              {e.text}
+            </span>
           </li>
         ))}
       </ul>
@@ -319,7 +347,7 @@ export default function MatchDayScreen({
               Match paused
             </p>
             <p className="fm-hint" style={{ textAlign: 'left', marginBottom: 10 }}>
-              The clock&apos;s stopped — adjust tactics below, they&apos;ll kick in for the rest of the half.
+              Adjust tactics below for the rest of the half.
             </p>
 
             <div className="fm-panel">

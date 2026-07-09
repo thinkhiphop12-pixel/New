@@ -9,12 +9,13 @@ import {
 import { getSquad } from '@/engine/teamManagement';
 import { traitNames } from '@/engine/traits';
 import { formatMoney } from '@/engine/utils';
+import { StatTile } from './visuals';
 
 const STAFF_LABELS: Record<keyof Staff, string> = { coach: 'Assistant coach', physio: 'Physio', scout: 'Chief scout' };
 const STAFF_BLURB: Record<keyof Staff, string> = {
-  coach: 'Speeds up player development from training.',
-  physio: 'Fewer injuries, faster recovery.',
-  scout: 'More scouting leads, spotted earlier.',
+  coach: 'Faster player development.',
+  physio: 'Fewer injuries.',
+  scout: 'Better scouting leads.',
 };
 
 function Bar({ value, label }: { value: number; label: string }) {
@@ -84,8 +85,7 @@ export default function ClubScreen({
         <Bar value={state.fanConfidence} label="Fans" />
         <Bar value={state.chemistry} label="Chemistry" />
         <p className="fm-hint" style={{ textAlign: 'left', marginBottom: 0 }}>
-          Miss the objective with board confidence under 20 and you&apos;ll be sacked. Chemistry builds
-          with a settled squad and drops after transfers.
+          Board confidence under 20 at season end = sacked.
         </p>
       </div>
 
@@ -121,9 +121,7 @@ export default function ClubScreen({
           Youth academy — level {state.academyLevel}
         </p>
         <p className="fm-club-line">
-          {state.academyLevel >= 3
-            ? 'Elite academy: two top prospects graduate every season.'
-            : `Produces ${state.academyLevel >= 3 ? 'two prospects' : 'one prospect'} each season. Higher levels produce better, more numerous graduates.`}
+          {state.academyLevel >= 3 ? 'Two top prospects graduate each season.' : 'One prospect graduates each season.'}
         </p>
         {upgradeCost && (
           <button
@@ -141,9 +139,7 @@ export default function ClubScreen({
           Captain
         </p>
         <p className="fm-club-line">
-          {captain
-            ? `${captain.name} wears the armband — a steady influence on the pitch, doubled if he's a natural Leader.`
-            : 'No captain appointed. A senior player with the Leader trait makes the strongest choice.'}
+          {captain ? `${captain.name} wears the armband.` : 'No captain appointed — pick a Leader.'}
         </p>
         <div className="fm-pills">
           {squad.slice(0, 8).map((p) => (
@@ -190,9 +186,7 @@ export default function ClubScreen({
           Stadium — level {stadiumLevel}/3
         </p>
         <p className="fm-club-line">
-          {stadiumLevel >= 3
-            ? 'Fully expanded — matchday income is at its peak.'
-            : `Expanding the stadium permanently raises gate income by 25% per level.`}
+          {stadiumLevel >= 3 ? 'Fully expanded.' : 'Each level raises gate income 25%.'}
         </p>
         {stadiumCost && (
           <button
@@ -209,21 +203,19 @@ export default function ClubScreen({
         <p className="fm-label" style={{ marginTop: 0 }}>
           Records & legends
         </p>
-        <ul className="fm-news">
-          <li>Biggest win: {state.records.biggestWin?.text ?? '—'}</li>
-          <li>
-            Best finish:{' '}
-            {state.records.bestFinish
-              ? `${state.records.bestFinish.position}${ord(state.records.bestFinish.position)} in Division ${state.records.bestFinish.division} (${state.records.bestFinish.year})`
-              : '—'}
-          </li>
-          <li>
-            Top season scorer:{' '}
-            {state.records.topSeasonScorer
-              ? `${state.records.topSeasonScorer.name}, ${state.records.topSeasonScorer.goals} goals (${state.records.topSeasonScorer.year})`
-              : '—'}
-          </li>
-        </ul>
+        <div className="fm-attr-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <StatTile icon="🥅" value={state.records.biggestWin?.text ?? '—'} label="Biggest win" />
+          <StatTile
+            icon="🏅"
+            value={state.records.bestFinish ? `${state.records.bestFinish.position}${ord(state.records.bestFinish.position)}` : '—'}
+            label={state.records.bestFinish ? `Div ${state.records.bestFinish.division}, ${state.records.bestFinish.year}` : 'Best finish'}
+          />
+          <StatTile
+            icon="⚽"
+            value={state.records.topSeasonScorer ? state.records.topSeasonScorer.goals : '—'}
+            label={state.records.topSeasonScorer ? `${state.records.topSeasonScorer.name} (${state.records.topSeasonScorer.year})` : 'Top scorer'}
+          />
+        </div>
         {legends.length > 0 && (
           <>
             <p className="fm-label">Club legends</p>

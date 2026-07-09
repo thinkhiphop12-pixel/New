@@ -149,16 +149,14 @@ export default function TransfersScreen({
 
       {tab === 'scout' && (
         <>
-          <p className="fm-hint">
-            Your scouts flag affordable players who would raise your level in each area of the pitch.
-          </p>
+          <p className="fm-hint">Affordable upgrades, by position.</p>
           {scoutRecommendations(state).map((rep) => (
             <div key={rep.pos}>
               <p className="fm-label">
                 {rep.pos} — your average {rep.need}
               </p>
               {rep.picks.length === 0 ? (
-                <p className="fm-hint">No affordable upgrades found. Raise funds or lower your sights.</p>
+                <p className="fm-hint">No affordable upgrades found.</p>
               ) : (
                 <div className="fm-player-list">
                   {rep.picks.map((p) => (
@@ -189,7 +187,7 @@ export default function TransfersScreen({
 
       {tab === 'offers' &&
         (state.incomingOffers.length === 0 ? (
-          <p className="fm-hint">No offers this week. Bids arrive after each match — stars attract the most interest.</p>
+          <p className="fm-hint">No offers this week.</p>
         ) : (
           <div className="fm-player-list">
             {state.incomingOffers.map((o) => {

@@ -7,6 +7,7 @@ import { autoPickLineup, getSquad, isOnLoan, lineupStrength } from '@/engine/tea
 import { canLoanOut, loanOut, renewContract } from '@/engine/transferMarket';
 import { traitNames } from '@/engine/traits';
 import { formatMoney } from '@/engine/utils';
+import { AttrBars, PitchMarkings, PlayerToken } from './visuals';
 
 function lastName(name: string): string {
   const parts = name.split(' ').filter((w) => !/^jr\.?$/i.test(w));
@@ -36,6 +37,7 @@ export default function SquadScreen({
 }) {
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [detailId, setDetailId] = useState<number | null>(null);
+  const [tacticsOpen, setTacticsOpen] = useState(false);
   const formation = getFormation(state.formationId);
   const squad = getSquad(state, state.userClubId).sort((a, b) => b.rating - a.rating);
   const strength = lineupStrength(state, state.lineup, formation, state.tactics, state.morale, state.chemistry);
@@ -79,80 +81,91 @@ export default function SquadScreen({
   return (
     <>
       <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>
-          Formation
-        </p>
-        <div className="fm-pills">
-          {FORMATIONS.map((f) => (
-            <button
-              key={f.id}
-              className={`fm-pill${state.formationId === f.id ? ' active' : ''}`}
-              onClick={() => setFormation(f.id)}
-            >
-              {f.name}
-            </button>
-          ))}
-        </div>
-        <p className="fm-label">Style</p>
-        <div className="fm-pills">
-          {(['defensive', 'balanced', 'attacking'] as TacticStyle[]).map((s) => (
-            <button
-              key={s}
-              className={`fm-pill${state.tactics.style === s ? ' active' : ''}`}
-              onClick={() => update({ tactics: { ...state.tactics, style: s } })}
-            >
-              {s[0].toUpperCase() + s.slice(1)}
-            </button>
-          ))}
-        </div>
-        <p className="fm-label">Pressing</p>
-        <div className="fm-pills">
-          {(['low', 'mid', 'high'] as Pressing[]).map((p) => (
-            <button
-              key={p}
-              className={`fm-pill${state.tactics.pressing === p ? ' active' : ''}`}
-              onClick={() => update({ tactics: { ...state.tactics, pressing: p } })}
-            >
-              {p === 'low' ? 'Low block' : p === 'mid' ? 'Standard' : 'High press'}
-            </button>
-          ))}
-        </div>
-        <p className="fm-label">Tempo</p>
-        <div className="fm-pills">
-          {(['slow', 'normal', 'fast'] as Tempo[]).map((t) => (
-            <button
-              key={t}
-              className={`fm-pill${state.tactics.tempo === t ? ' active' : ''}`}
-              onClick={() => update({ tactics: { ...state.tactics, tempo: t } })}
-            >
-              {t[0].toUpperCase() + t.slice(1)}
-            </button>
-          ))}
-        </div>
-        <p className="fm-label">Width</p>
-        <div className="fm-pills">
-          {(['narrow', 'standard', 'wide'] as Width[]).map((w) => (
-            <button
-              key={w}
-              className={`fm-pill${state.tactics.width === w ? ' active' : ''}`}
-              onClick={() => update({ tactics: { ...state.tactics, width: w } })}
-            >
-              {w[0].toUpperCase() + w.slice(1)}
-            </button>
-          ))}
-        </div>
-        <p className="fm-label">Training focus</p>
-        <div className="fm-pills">
-          {(['balanced', 'attack', 'defense', 'fitness'] as TrainingFocus[]).map((t) => (
-            <button
-              key={t}
-              className={`fm-pill${state.training === t ? ' active' : ''}`}
-              onClick={() => update({ training: t })}
-            >
-              {t[0].toUpperCase() + t.slice(1)}
-            </button>
-          ))}
-        </div>
+        <button
+          className="fm-pill active"
+          style={{ width: '100%', textAlign: 'left' }}
+          onClick={() => setTacticsOpen((v) => !v)}
+        >
+          {formation.name} · {state.tactics.style[0].toUpperCase() + state.tactics.style.slice(1)} ·{' '}
+          {state.tactics.pressing === 'low' ? 'Low block' : state.tactics.pressing === 'mid' ? 'Standard press' : 'High press'}
+          {' '}{tacticsOpen ? '▲' : '▼'}
+        </button>
+        {tacticsOpen && (
+          <>
+            <p className="fm-label">Formation</p>
+            <div className="fm-pills">
+              {FORMATIONS.map((f) => (
+                <button
+                  key={f.id}
+                  className={`fm-pill${state.formationId === f.id ? ' active' : ''}`}
+                  onClick={() => setFormation(f.id)}
+                >
+                  {f.name}
+                </button>
+              ))}
+            </div>
+            <p className="fm-label">Style</p>
+            <div className="fm-pills">
+              {(['defensive', 'balanced', 'attacking'] as TacticStyle[]).map((s) => (
+                <button
+                  key={s}
+                  className={`fm-pill${state.tactics.style === s ? ' active' : ''}`}
+                  onClick={() => update({ tactics: { ...state.tactics, style: s } })}
+                >
+                  {s[0].toUpperCase() + s.slice(1)}
+                </button>
+              ))}
+            </div>
+            <p className="fm-label">Pressing</p>
+            <div className="fm-pills">
+              {(['low', 'mid', 'high'] as Pressing[]).map((p) => (
+                <button
+                  key={p}
+                  className={`fm-pill${state.tactics.pressing === p ? ' active' : ''}`}
+                  onClick={() => update({ tactics: { ...state.tactics, pressing: p } })}
+                >
+                  {p === 'low' ? 'Low block' : p === 'mid' ? 'Standard' : 'High press'}
+                </button>
+              ))}
+            </div>
+            <p className="fm-label">Tempo</p>
+            <div className="fm-pills">
+              {(['slow', 'normal', 'fast'] as Tempo[]).map((t) => (
+                <button
+                  key={t}
+                  className={`fm-pill${state.tactics.tempo === t ? ' active' : ''}`}
+                  onClick={() => update({ tactics: { ...state.tactics, tempo: t } })}
+                >
+                  {t[0].toUpperCase() + t.slice(1)}
+                </button>
+              ))}
+            </div>
+            <p className="fm-label">Width</p>
+            <div className="fm-pills">
+              {(['narrow', 'standard', 'wide'] as Width[]).map((w) => (
+                <button
+                  key={w}
+                  className={`fm-pill${state.tactics.width === w ? ' active' : ''}`}
+                  onClick={() => update({ tactics: { ...state.tactics, width: w } })}
+                >
+                  {w[0].toUpperCase() + w.slice(1)}
+                </button>
+              ))}
+            </div>
+            <p className="fm-label">Training focus</p>
+            <div className="fm-pills">
+              {(['balanced', 'attack', 'defense', 'fitness'] as TrainingFocus[]).map((t) => (
+                <button
+                  key={t}
+                  className={`fm-pill${state.training === t ? ' active' : ''}`}
+                  onClick={() => update({ training: t })}
+                >
+                  {t[0].toUpperCase() + t.slice(1)}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         <p className="fm-hint" style={{ marginBottom: 0, marginTop: 12 }}>
           Attack {Math.round(strength.attack)} · Midfield {Math.round(strength.midfield)} · Defense{' '}
           {Math.round(strength.defense)} · Chemistry {state.chemistry}
@@ -160,6 +173,7 @@ export default function SquadScreen({
       </div>
 
       <div className="fm-pitch">
+        <PitchMarkings />
         {formation.slots.map((slot, i) => {
           const p = slotPlayer(i);
           return (
@@ -169,8 +183,7 @@ export default function SquadScreen({
               style={{ left: `${slot.x}%`, bottom: `${slot.y}%` }}
               onClick={() => setSelectedSlot(selectedSlot === i ? null : i)}
             >
-              <span className="fm-slot__chip">{p ? Math.round(p.rating * p.form) : slot.label}</span>
-              <span className="fm-slot__pos">{slot.label}</span>
+              <PlayerToken label={slot.label} rating={p ? p.rating * p.form : undefined} pos={slot.pos} form={p?.form} />
               {p && <span className="fm-slot__name">{lastName(p.name)}</span>}
             </button>
           );
@@ -190,9 +203,7 @@ export default function SquadScreen({
       </div>
 
       <p className="fm-hint">
-        {selectedSlot !== null
-          ? `Pick a player for the ${formation.slots[selectedSlot].label} slot below.`
-          : 'Tap a slot on the pitch to change the XI, or tap a player for details, contracts and loans.'}
+        {selectedSlot !== null ? `Pick a ${formation.slots[selectedSlot].label}.` : 'Tap a slot to change it, tap a player for details.'}
       </p>
 
       {detail && selectedSlot === null && (
@@ -201,11 +212,12 @@ export default function SquadScreen({
             {detail.name} — {detail.role}, {detail.age}y
           </p>
           <p className="fm-club-line">
-            {detail.rating} OVR · value {formatMoney(detail.value)} · {formatMoney(detail.wage)}/w ·{' '}
-            {detail.contractYears}y contract · {detail.apps} apps, {detail.goals} goals this season
-            {avgRating(detail) !== null ? ` · ${avgRating(detail)} avg rating` : ''}
-            {detail.unhappy ? ' · ⚠ unhappy with game time' : ''}
+            {detail.nat} · {detail.rating} OVR · {formatMoney(detail.value)} · {formatMoney(detail.wage)}/w ·{' '}
+            {detail.contractYears}y contract · {detail.apps} apps, {detail.goals} goals
+            {avgRating(detail) !== null ? ` · ${avgRating(detail)} avg` : ''}
+            {detail.unhappy ? ' · ⚠ unhappy' : ''}
           </p>
+          <AttrBars pac={detail.pac} sho={detail.sho} pas={detail.pas} dri={detail.dri} def={detail.def} phy={detail.phy} />
           {traitNames(detail).length > 0 && (
             <div className="fm-pills" style={{ marginBottom: 8 }}>
               {traitNames(detail).map((t) => (
@@ -251,9 +263,9 @@ export default function SquadScreen({
             </button>
           </div>
           {detail.contractYears <= 1 && (
-            <p className="fm-hint" style={{ textAlign: 'left', marginBottom: 0 }}>
-              ⚠ Contract expiring — renew or he walks for free at the end of the season.
-            </p>
+            <span className="fm-trait" style={{ display: 'inline-block', marginTop: 8 }}>
+              ⚠ Contract expiring
+            </span>
           )}
         </div>
       )}
@@ -275,8 +287,7 @@ export default function SquadScreen({
               <span className="fm-player-row__name">
                 {p.name}
                 <span className="fm-player-row__sub">
-                  {p.nat} · {p.age}y · {p.contractYears}y deal · {formatMoney(p.wage)}/w
-                  {inLineup ? ' · Starting XI' : ''}
+                  {p.age}y{inLineup ? ' · XI' : ''}
                   {p.contractYears <= 1 ? ' · ⚠ expiring' : ''}
                 </span>
               </span>

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { GameState, Pressing, TacticStyle, Tempo, Width } from '@/engine/types';
 import { FORMATIONS, getFormation } from '@/engine/gameRules';
 import { autoPickLineup } from '@/engine/teamManagement';
+import { PitchMarkings, PlayerToken } from './visuals';
 
 export default function TacticsScreen({
   state,
@@ -13,6 +14,7 @@ export default function TacticsScreen({
   onChange: (next: GameState) => void;
 }) {
   const [expandedSection, setExpandedSection] = useState<string>('formations');
+  const [previewShape, setPreviewShape] = useState<'ip' | 'oop'>('ip');
 
   const update = (patch: Partial<GameState>) => onChange({ ...state, ...patch });
 
@@ -63,8 +65,27 @@ export default function TacticsScreen({
     setExpandedSection(expandedSection === section ? '' : section);
   };
 
+  const previewFormation = getFormation(previewShape === 'ip' ? currentIPFormation : currentOOPFormation);
+
   return (
     <div className="fm-panel fm-tactics">
+      <div className="fm-pills" style={{ marginBottom: 8 }}>
+        <button className={`fm-pill${previewShape === 'ip' ? ' active' : ''}`} onClick={() => setPreviewShape('ip')}>
+          In possession
+        </button>
+        <button className={`fm-pill${previewShape === 'oop' ? ' active' : ''}`} onClick={() => setPreviewShape('oop')}>
+          Out of possession
+        </button>
+      </div>
+      <div className="fm-pitch" style={{ marginBottom: 14 }}>
+        <PitchMarkings />
+        {previewFormation.slots.map((slot, i) => (
+          <div key={i} className="fm-slot fm-slot--live filled" style={{ left: `${slot.x}%`, bottom: `${slot.y}%` }}>
+            <PlayerToken label={slot.label} pos={slot.pos} />
+          </div>
+        ))}
+      </div>
+
       {/* Dual Formations Section */}
       <div className="fm-tactics__section">
         <button
@@ -106,7 +127,7 @@ export default function TacticsScreen({
                   </button>
                 ))}
               </div>
-              <p className="fm-hint">Switch when defending to adjust shape and positioning.</p>
+              <p className="fm-hint">Used only while defending.</p>
             </div>
           </div>
         )}

@@ -121,14 +121,11 @@ export default function SeasonEndScreen({
         </div>
       )}
 
-      <p className="fm-hint">
-        Players have aged a year, contracts have ticked down, loans have ended and the academy class
-        has graduated. Prize money added to your budget.
-      </p>
+      <p className="fm-hint">Squad aged a year, contracts ticked down, academy graduated.</p>
       {summary.sacked ? (
         <>
           <p className="fm-error-text">
-            The board have lost patience — you&apos;re out at {club.name}.
+            You&apos;re out at {club.name}.
             {state.jobOffers.length > 0 ? ' Take a rescue job above, or walk away.' : ''}
           </p>
           <button className="fm-btn fm-btn--danger fm-btn--large" onClick={onRetire}>
