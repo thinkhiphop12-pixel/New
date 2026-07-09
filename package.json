@@ -1,11 +1,18 @@
 {
-  "name": "nextjs-app",
+  "name": "ballknw-monorepo",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "src/games/football-manager"
+  ],
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3000",
-    "build": "next build",
-    "start": "next start"
+    "build": "next build && npm run postbuild",
+    "postbuild": "mkdir -p out && cp -r src/shared out/shared && cp -r src/assets out/assets && cp -r src/public/* out/",
+    "start": "next start",
+    "dev:game": "npm -w src/games/football-manager run dev",
+    "build:game": "npm -w src/games/football-manager run build",
+    "build:all": "npm run build && npm run build:game"
   },
   "dependencies": {
     "@blinkdotnew/sdk": "^2.6.2",
