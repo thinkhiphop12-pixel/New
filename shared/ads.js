@@ -57,17 +57,17 @@ function injectBaseAdStyles() {
     .ad-slot ins.adsbygoogle{width:100%;}
     .ad-slot .ad-load-error{color:#666;font-size:12px;padding:10px;}
     /* Amazon affiliate fallback card (fills any slot no ad network claimed) */
-    .ad-slot.is-affiliate{background:linear-gradient(135deg,rgba(184,255,60,.08),rgba(0,214,143,.06));
-      border:1px solid rgba(184,255,60,.2);padding:18px 20px;text-align:left;}
+    .ad-slot.is-affiliate{background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.08);padding:16px 18px;text-align:left;}
     .aff-card{display:flex;align-items:center;gap:14px;width:100%;justify-content:space-between;flex-wrap:wrap;flex-direction:row;}
     .aff-card-txt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;}
     .aff-card-kicker{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#8a8a8e;font-weight:600;}
-    .aff-card-title{font-size:16px;font-weight:800;color:#f2f2f4;font-family:Inter,system-ui,sans-serif;line-height:1.2;margin:2px 0;}
-    .aff-card-sub{font-size:13px;color:#a9adb3;line-height:1.4;margin:4px 0 0;}
-    .aff-card-cta{flex-shrink:0;background:linear-gradient(135deg,#b8ff3c,#00d68f);color:#04140b;
-      font-weight:800;font-size:14px;text-decoration:none;border-radius:12px;padding:12px 20px;white-space:nowrap;
-      font-family:Inter,system-ui,sans-serif;transition:transform .15s,box-shadow .2s;display:inline-block;margin-left:12px;}
-    .aff-card-cta:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(184,255,60,.3)}
+    .aff-card-title{font-size:14px;font-weight:700;color:#e8e8ea;font-family:Inter,system-ui,sans-serif;line-height:1.2;margin:2px 0;}
+    .aff-card-sub{font-size:12.5px;color:#8a8a8e;line-height:1.4;margin:4px 0 0;}
+    .aff-card-cta{flex-shrink:0;background:none;color:#b8ff3c;
+      font-weight:700;font-size:13px;text-decoration:none;border-radius:0;padding:8px 4px;white-space:nowrap;
+      font-family:Inter,system-ui,sans-serif;display:inline-block;margin-left:12px;}
+    .aff-card-cta:hover{text-decoration:underline}
     .soft-banner{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:600;
       max-width:min(92vw,480px);background:#10131a;border:1px solid rgba(255,255,255,.14);
       border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;
@@ -113,7 +113,7 @@ function fillSlotWithAffiliate(slot) {
         <span class="aff-card-title">Shirts, boots &amp; kit</span>
         <span class="aff-card-sub">Shop the latest football shirts and gear on ${store}.</span>
       </div>
-      <a class="aff-card-cta" href="${url}" target="_blank" rel="sponsored noopener">Shop now</a>
+      <a class="aff-card-cta" href="${url}" target="_blank" rel="sponsored noopener">Browse →</a>
     </div>`;
   slot.classList.add('is-filled', 'is-affiliate');
   const cta = slot.querySelector('.aff-card-cta');

@@ -140,6 +140,27 @@ body::before{
 .game-card .play{margin-top:22px;position:relative;z-index:1}
 .play .btn{width:100%;justify-content:center;padding:13px}
 
+/* FEATURE TILES — one benefit each, no prose */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:760px){.feat-grid{grid-template-columns:1fr}}
+.feat-tile{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px 22px;text-align:center}
+.feat-tile .fi{font-size:28px;margin-bottom:12px}
+.feat-tile h3{font-size:15.5px;font-weight:800;letter-spacing:-0.01em}
+
+/* COMING SOON — muted, not promoted */
+.soon-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(max-width:680px){.soon-grid{grid-template-columns:1fr}}
+.soon-card{position:relative;display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px 18px;opacity:.72;transition:opacity .2s}
+.soon-card:hover{opacity:1}
+.soon-thumb{flex-shrink:0;width:64px;height:52px;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.soon-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.soon-body h3{font-size:14.5px;font-weight:800}
+.soon-body p{font-size:12.5px;color:var(--muted);margin-top:2px}
+.soon-chip{margin-left:auto;flex-shrink:0;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--glass);border:1px solid var(--border);padding:5px 9px;border-radius:999px;white-space:nowrap}
+
+/* SPONSORED kicker — clear content/ad separation */
+.sponsored-kicker{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+
 /* STATS / TRUST STRIP */
 .trust{
   position:relative;z-index:1;
@@ -203,15 +224,15 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 .promo-banner:hover{transform:translateY(-2px);border-color:var(--border-bright)}
 .promo-h:hover{box-shadow:0 16px 40px -18px rgba(184,255,60,.35)}
 .promo-link{display:flex;align-items:center;gap:16px;padding:18px 56px 18px 22px;text-decoration:none;color:inherit}
-.promo-img{flex-shrink:0;width:96px;height:64px;border-radius:10px;object-fit:cover;border:1px solid var(--border)}
-.promo-badge{flex-shrink:0;font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;padding:7px 12px;border-radius:999px;white-space:nowrap}
-.promo-badge-lime{background:linear-gradient(90deg,var(--lime),var(--emerald));color:#04140b}
+.promo-img{flex-shrink:0;width:72px;height:52px;border-radius:8px;object-fit:cover;border:1px solid var(--border);opacity:.85}
+.promo-badge{flex-shrink:0;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:999px;white-space:nowrap;color:var(--muted);background:var(--glass);border:1px solid var(--border)}
+.promo-badge-lime{color:var(--muted);background:var(--glass);border:1px solid var(--border)}
 .promo-text{flex:1;min-width:0}
-.promo-text h3{font-size:16px;font-weight:800;letter-spacing:-.01em;margin-bottom:3px}
-.promo-text p{font-size:13px;color:var(--muted);line-height:1.4}
+.promo-text h3{font-size:14.5px;font-weight:700;letter-spacing:-.01em;margin-bottom:3px}
+.promo-text p{font-size:12.5px;color:var(--muted);line-height:1.4}
 .promo-fine{display:block;font-size:10.5px;color:var(--muted);margin-top:4px;opacity:.8}
-.promo-cta{flex-shrink:0;font-size:13.5px;font-weight:800;color:#04140b;background:linear-gradient(135deg,var(--lime),var(--emerald));padding:10px 18px;border-radius:11px;white-space:nowrap;transition:transform .15s,box-shadow .2s}
-.promo-banner:hover .promo-cta{transform:translateY(-1px);box-shadow:var(--glow-lime)}
+.promo-cta{flex-shrink:0;font-size:12.5px;font-weight:700;color:var(--lime);background:none;padding:8px 4px;border-radius:0;white-space:nowrap}
+.promo-banner:hover .promo-cta{text-decoration:underline}
 .promo-close{position:absolute;top:10px;right:10px;width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;cursor:pointer;z-index:2;transition:background .2s,transform .15s}
 .promo-close:hover{background:rgba(0,0,0,.75);transform:scale(1.1)}
 @media(max-width:640px){.promo-link{flex-direction:column;align-items:center;text-align:center;padding:20px 40px}.promo-img{width:140px;height:90px}.promo-text{width:100%}}
@@ -319,33 +340,13 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         },
         {
           "@type": "Question",
-          "name": "How does the daily Scout puzzle work?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Every day you get 16 footballers to sort into 4 groups of 4 by a hidden shared theme — nation, position, rating tier or World Cup year. You can be wrong up to 4 times before the puzzle ends. Solve it to extend your streak and share your result." }
+          "name": "What can I do in Gaffer?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Pick a real English league club and manage it for a full season — tactics, transfers, contracts, cups and a youth academy. Your save lives in your browser." }
         },
         {
           "@type": "Question",
           "name": "Where does the player and squad data come from?",
           "acceptedAnswer": { "@type": "Answer", "text": "BALLKNW builds its squads from public football datasets — current-season club squads and every World Cup squad from 1930 through 2026. In-game ratings are our own stylized approximations for gameplay, not official figures from any ratings provider." }
-        },
-        {
-          "@type": "Question",
-          "name": "What browsers and devices does BALLKNW work on?",
-          "acceptedAnswer": { "@type": "Answer", "text": "BALLKNW works on any modern web browser — Chrome, Firefox, Safari, Edge — on desktop, tablet and mobile. Everything runs in your browser; no app download needed. Games work best on a 480px+ screen; Scout and Gaffer are playable on smaller phones but Draft XI benefits from a larger viewport." }
-        },
-        {
-          "@type": "Question",
-          "name": "Can I play BALLKNW on mobile?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes. All three games are mobile-responsive and work on phones, tablets and desktops. Gaffer and Scout are fully playable on mobile. Draft XI roster selection and formation editing work best on a larger screen, though simulation results display cleanly on any size." }
-        },
-        {
-          "@type": "Question",
-          "name": "What's the difference between Gaffer, Scout and Draft XI?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Scout is a daily mystery-player puzzle — group 16 footballers by a hidden theme, build your streak. Gaffer is a club management sim — pick a real English league club and manage tactics, transfers, contracts, cups and a youth academy through a full season. Draft XI is a squad builder and season simulator — spin real squads (Premier League, clubs or World Cups) and draft your perfect XI, then simulate a season chasing achievements like Champions or The Invincibles." }
-        },
-        {
-          "@type": "Question",
-          "name": "How often is Scout updated?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Scout has a new puzzle every day at midnight UTC. You get one puzzle per day with the same 16 players for 24 hours. Your streak counter tracks consecutive days solved. Come back anytime to solve today's puzzle or try again if you run out of guesses." }
         },
         {
           "@type": "Question",
@@ -370,8 +371,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   <div class="wrap nav-inner">
     <a href="/" class="brand"><span class="mark">B</span>BALL<b>KNW</b></a>
     <nav class="nav-links">
-      <a href="#games">Games</a>
-      <a href="/about.html">About</a>
       <a href="/football-manager/" class="btn btn-primary">Play Gaffer</a>
     </nav>
   </div>
@@ -381,55 +380,24 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 <section class="hero">
   <div class="wrap">
     <div class="live-pill"><span class="dot"></span> <b id="liveCount">—</b>&nbsp;playing now</div>
-    <h1>Test your <span class="grad">ball knowledge.</span></h1>
-    <p class="lead">Fast, free football brain games. Manage a club right here on this page, draft the perfect XI, build a streak.</p>
+    <h1>Manage a real club.<br><span class="grad">Right in your browser.</span></h1>
+    <p class="lead">Gaffer is a free football management game. No login, no download — your save lives in your browser.</p>
     <div class="hero-ctas">
       <a href="#play" class="btn btn-primary">Play Gaffer ↓</a>
-      <a href="#games" class="btn btn-ghost">See all games</a>
     </div>
-    <p class="subline">No accounts • No downloads • Instant play • Shareable emoji grids</p>
-  </div>
-</section>
-
-<!-- PROMO BANNER — single kit sale banner -->
-<section class="promo-banners">
-  <div class="wrap">
-    <div class="promo-banner promo-h" id="promoKitsSale" data-promo-id="kits-sale" data-rotate="kits">
-      <button class="promo-close" type="button" aria-label="Dismiss offer" data-close-promo>&times;</button>
-      <a class="promo-link" href="https://www.amazon.co.uk/s?k=football+kits&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">
-        <img class="promo-img" src="/assets/promo-kits.svg" alt="Football kits and training gear" width="96" height="64" loading="lazy" decoding="async">
-        <span class="promo-badge promo-badge-lime">50% Off</span>
-        <span class="promo-text">
-          <h3 class="promo-title">Football kits &amp; training gear</h3>
-          <p class="promo-desc">Browse this season's shirts, boots and training kit.</p>
-          <span class="promo-fine">Selected items only · prices &amp; discounts set by retailer</span>
-        </span>
-        <span class="promo-cta">Shop now →</span>
-      </a>
-    </div>
-  </div>
-</section>
-
-<!-- TOP AD BANNER (Ad #1) -->
-<section class="section" style="padding:20px 0">
-  <div class="wrap">
-    <div class="ad-slot" id="topAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto"></div>
+    <p class="subline">Free · no account · saves automatically</p>
   </div>
 </section>
 
 <!-- FOOTBALL MANAGER — PLAY ON THE FRONT PAGE -->
 <section id="play" class="section" style="padding-top:10px">
   <div class="wrap">
-    <div class="section-head">
-      <div class="eyebrow">Featured game</div>
-      <h2>Gaffer</h2>
-      <p>Manage a club with current-season squads — three English divisions, cups, transfers, contracts and a youth academy. Play the full game right here; your save lives in your browser.</p>
-    </div>
     <div class="game-embed">
       <iframe src="/football-manager/" title="BALLKNW Gaffer" loading="lazy" allow="fullscreen"></iframe>
     </div>
     <p style="text-align:center;margin-top:12px">
       <a href="/football-manager/" class="btn btn-ghost">Open full screen ↗</a>
+      <a href="/gaffer-guide.html" class="btn btn-ghost">Strategy guide</a>
     </p>
   </div>
 </section>
@@ -438,174 +406,76 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   .game-embed iframe{display:block;width:100%;height:min(82vh,860px);border:0}
 </style>
 
-<!-- GAMES -->
-<section id="games" class="section">
+<!-- FEATURES -->
+<section class="section" style="padding-top:36px">
   <div class="wrap">
-    <div class="section-head">
-      <div class="eyebrow">The games</div>
-      <h2>Pick one. Build a streak.</h2>
-      <p>No bloat. Just the games worth playing every day.</p>
-    </div>
-    <div class="games-grid">
-      <div class="game-card manager">
-        <div class="chips">
-          <span class="chip gold">Manager</span>
-          <span class="chip ghost">Career · 38 rounds</span>
-        </div>
-        <div class="game-icon">📋</div>
-        <h3>Gaffer</h3>
-        <p class="desc">Take charge of a club across three English divisions with current-season squads. Tactics, transfers, contracts, cups, a youth academy and a board to keep happy.</p>
-        <div class="play" style="display:flex;gap:8px;flex-direction:column">
-          <a href="/football-manager/" class="btn btn-primary" style="text-align:center">Play Gaffer</a>
-          <a href="/gaffer-guide.html" class="btn btn-ghost" style="text-align:center;font-size:12px">View Strategy Guide</a>
-        </div>
-      </div>
-      <div class="game-card draft">
-        <div class="chips">
-          <span class="chip em">BALLKNW Draft XI</span>
-          <span class="chip ghost">Draft · Full XI · Season sim</span>
-        </div>
-        <div class="game-icon">🏆</div>
-        <h3>BALLKNW Draft XI</h3>
-        <p class="desc">Spin real Premier League, club and World Cup squads, then draft any open-position player into your formation. Simulate a full season and chase Champions, Invincibles and more.</p>
-        <div class="play" style="display:flex;gap:8px;flex-direction:column">
-          <a href="/perfect-cup/" class="btn btn-primary" style="text-align:center">Play Draft XI</a>
-          <a href="/draft-xi-guide.html" class="btn btn-ghost" style="text-align:center;font-size:12px">View Strategy Guide</a>
-        </div>
-      </div>
-      <div class="game-card scout">
-        <div class="chips">
-          <span class="chip lime">Scout</span>
-          <span class="chip ghost">Daily</span>
-        </div>
-        <div class="game-icon">🧩</div>
-        <h3>Scout</h3>
-        <p class="desc">Group 16 footballers into 4 sets of 4 by a hidden theme — shared nation, position, rating tier or World Cup year. Four mistakes allowed. Share your grid, build a streak.</p>
-        <div class="play" style="display:flex;gap:8px;flex-direction:column">
-          <a href="/scout/" class="btn btn-primary" style="text-align:center">Play Scout</a>
-          <a href="/scout-guide.html" class="btn btn-ghost" style="text-align:center;font-size:12px">View Puzzle Guide</a>
-        </div>
-      </div>
+    <div class="feat-grid">
+      <div class="feat-tile"><div class="fi">📋</div><h3>Real current-season squads</h3></div>
+      <div class="feat-tile"><div class="fi">🔁</div><h3>Transfers, tactics, cups, academy</h3></div>
+      <div class="feat-tile"><div class="fi">💾</div><h3>Full season, saved in your browser</h3></div>
     </div>
   </div>
 </section>
 
-<!-- GUIDES -->
-<section class="section" style="padding-top:0">
-  <div class="wrap">
-    <div class="section-head" style="text-align:center">
-      <div class="eyebrow">Learn the Games</div>
-      <h2>Strategy Guides & Tips</h2>
-      <p>Master each game with detailed guides covering tactics, winning strategies, and pro tips.</p>
-    </div>
-    <div class="games-grid">
-      <a href="/gaffer-guide.html" class="game-card manager">
-        <div class="game-icon">📖</div>
-        <h3>Gaffer Guide</h3>
-        <p class="desc">Learn formation tactics, transfer strategy, contract management, youth development, and how to build a championship squad through a full season.</p>
-        <div class="play"><span class="btn btn-ghost">Read Guide →</span></div>
-      </a>
-      <a href="/draft-xi-guide.html" class="game-card draft">
-        <div class="game-icon">📖</div>
-        <h3>Draft XI Guide</h3>
-        <p class="desc">Master squad building, formation selection, balanced lineup construction, seasonal objectives (Champions, Invincibles, The Treble), and simulation tactics.</p>
-        <div class="play"><span class="btn btn-ghost">Read Guide →</span></div>
-      </a>
-      <a href="/scout-guide.html" class="game-card scout">
-        <div class="game-icon">📖</div>
-        <h3>Scout Guide</h3>
-        <p class="desc">Understand theme types (nation, position, rating, World Cup year), winning strategies, daily streak tips, and advanced puzzle recognition techniques.</p>
-        <div class="play"><span class="btn btn-ghost">Read Guide →</span></div>
-      </a>
-    </div>
-  </div>
-</section>
-
-<!-- TRUST STRIP -->
+<!-- TRUST STRIP (social proof) -->
 <section class="section" style="padding-top:0">
   <div class="wrap">
     <div class="trust">
       <div class="stat"><div class="num lime">15,000+</div><div class="lbl">Players rated in-game</div></div>
-      <div class="stat"><div class="num em">192</div><div class="lbl">Country squads</div></div>
-      <div class="stat"><div class="num">1930–2026</div><div class="lbl">World Cup data</div></div>
+      <div class="stat"><div class="num em">3</div><div class="lbl">English divisions</div></div>
+      <div class="stat"><div class="num">38</div><div class="lbl">Rounds per season</div></div>
       <div class="stat"><div class="num">100%</div><div class="lbl">Free, no login</div></div>
     </div>
   </div>
 </section>
 
-<!-- MIDDLE AD BANNER (Ad #2) -->
-<section class="section" style="padding:20px 0">
-  <div class="wrap">
-    <div class="ad-slot" id="middleAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto"></div>
-  </div>
-</section>
-
-<!-- ABOUT -->
-<section id="about" class="section about">
-  <div class="wrap">
-    <div class="about-card">
-      <div class="eyebrow">Built for football obsessives</div>
-      <h2 style="margin-top:10px">Pure ball knowledge. Nothing else.</h2>
-      <p>BALLKNW is a set of browser games designed to test and grow your football knowledge — a daily mystery-player puzzle, a World Cup squad draft, and a full club management sim. No logins, no ads interrupting play, just pure football brain games.</p>
-      <div class="about-feats">
-        <div class="feat"><span>Real data</span> from 1930–2026 World Cups</div>
-        <div class="feat"><span>Daily puzzles</span> with persistent streaks</div>
-        <div class="feat"><span>Emoji grids</span> built to share</div>
-        <div class="feat"><span>Privacy-first</span> · consent-aware</div>
-      </div>
-
-      <h3 style="margin-top:40px;font-size:18px;font-weight:800">How It Works</h3>
-      <p style="margin-top:12px">Each BALLKNW game combines real football data with daily puzzle mechanics. Scout presents a fresh challenge every morning — group 16 current and historical players by a hidden theme (nation, position, rating tier, or World Cup year). Build your streak across consecutive days. Gaffer lets you manage a real English club across three divisions, handling tactics, transfers, player contracts, cups, and a youth academy through a full season. Perfect Cup lets you spin squad pools from the Premier League, international clubs, or World Cups past and present, then draft your perfect XI and simulate a season chasing achievements. All games track your progress permanently in your browser — no account needed, no data stored on our servers.</p>
-
-      <h3 style="margin-top:40px;font-size:18px;font-weight:800">The Data</h3>
-      <p style="margin-top:12px">Player squads and performance data come from public sources: current-season club rosters (for Gaffer and Perfect Cup), and official FIFA records (for World Cup squads from 1930 through 2026). In-game player ratings are stylized approximations designed for gameplay balance, not official figures from any third-party ratings provider. We update squad data seasonally to reflect transfers and international squad changes, ensuring the games stay current while respecting data privacy.</p>
-
-      <h3 style="margin-top:40px;font-size:18px;font-weight:800">Why Free?</h3>
-      <p style="margin-top:12px">We believe the best games should be accessible to everyone. BALLKNW is supported by light, consent-based advertising and affiliate commissions from football merchandise partners. There are no hidden paywalls, energy mechanics, battle passes, or time-gating. If you see an ad, you've opted in to it. If you want to disable them, you can. The games work exactly the same either way.</p>
-      <div class="shop-section">
-        <h3>Shop football gear</h3>
-        <div class="shop-links">
-          <a href="https://www.amazon.com/s?k=football+shirts&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">Football Shirts</a>
-          <a href="https://www.amazon.com/s?k=football+boots&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">Football Boots</a>
-          <a href="https://www.amazon.com/s?k=football+balls&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">Footballs</a>
-          <a href="https://www.amazon.com/s?k=football+games&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">Football Games</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- SOCIAL & SHARING (Issue 10: Brand Presence) -->
-<section class="section" style="padding-top:0">
+<!-- COMING SOON -->
+<section class="section" style="padding-top:10px">
   <div class="wrap">
     <div class="section-head" style="text-align:center">
-      <div class="eyebrow">Share & Build Streaks</div>
-      <h2>Join the Ball Knowledge community</h2>
-      <p>Share your daily Scout puzzle result, Gaffer season recap, or Draft XI achievement. Post your emoji grids on Twitter, TikTok, Reddit, and Discord.</p>
+      <div class="eyebrow">Coming soon</div>
+      <h2>More games on the way</h2>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;max-width:600px;margin:0 auto;text-align:center">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
-        <div style="font-size:28px;margin-bottom:8px">🐦</div>
-        <div style="font-size:13px;font-weight:700">Share on Twitter</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">Post your emoji grid</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
-        <div style="font-size:28px;margin-bottom:8px">🎮</div>
-        <div style="font-size:13px;font-weight:700">Discord Communities</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">Join football gaming groups</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
-        <div style="font-size:28px;margin-bottom:8px">🏆</div>
-        <div style="font-size:13px;font-weight:700">Reddit</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">r/football · r/soccer</div>
-      </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
-        <div style="font-size:28px;margin-bottom:8px">📱</div>
-        <div style="font-size:13px;font-weight:700">TikTok</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">#FootballGames #Scout</div>
+    <div class="soon-grid">
+      <a href="/perfect-cup/" class="soon-card">
+        <div class="soon-thumb"><img src="/assets/thumb-lineup.svg" alt="" width="64" height="52" loading="lazy"></div>
+        <div class="soon-body"><h3>Draft XI</h3><p>Draft your perfect squad and simulate a season.</p></div>
+        <span class="soon-chip">Coming soon</span>
+      </a>
+      <a href="/scout/" class="soon-card">
+        <div class="soon-thumb"><img src="/assets/thumb-boardroom.svg" alt="" width="64" height="52" loading="lazy"></div>
+        <div class="soon-body"><h3>Scout</h3><p>Daily mystery-player puzzle. Build a streak.</p></div>
+        <span class="soon-chip">Coming soon</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- SHOP / SPONSORED (below the game, clearly labelled) -->
+<section class="section" style="padding-top:10px">
+  <div class="wrap">
+    <div class="sponsored-kicker">Sponsored</div>
+    <div class="promo-banners" style="margin:0 0 18px">
+      <div class="promo-banner promo-h" id="promoKitsSale" data-promo-id="kits-sale" data-rotate="kits">
+        <button class="promo-close" type="button" aria-label="Dismiss offer" data-close-promo>&times;</button>
+        <a class="promo-link" href="https://www.amazon.co.uk/s?k=football+kits&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">
+          <img class="promo-img" src="/assets/promo-kits.svg" alt="Football kits and training gear" width="72" height="52" loading="lazy" decoding="async">
+          <span class="promo-text">
+            <h3 class="promo-title">Football kits &amp; training gear</h3>
+            <p class="promo-desc">Shirts, boots and training kit — prices set by retailer.</p>
+          </span>
+          <span class="promo-cta">Browse →</span>
+        </a>
       </div>
     </div>
-    <p style="text-align:center;margin-top:28px;color:var(--muted);font-size:14px">Every puzzle solved, every season won, every draft completed is shareable. Build your streak in public — inspire others to play.</p>
+    <div class="ad-slot" id="middleAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto"></div>
+    <div class="shop-section" style="margin-top:22px">
+      <div class="shop-links">
+        <a href="https://www.amazon.com/s?k=football+shirts&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">Football Shirts</a>
+        <a href="https://www.amazon.com/s?k=football+boots&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">Football Boots</a>
+        <a href="https://www.amazon.com/s?k=football+balls&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">Footballs</a>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -626,28 +496,12 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <p>No. Your Gaffer save, streaks and progress are stored in your browser automatically. Come back on the same device and browser and your game continues.</p>
       </details>
       <details class="faq-item">
-        <summary>How does the daily Scout puzzle work?</summary>
-        <p>Every day you get 16 footballers to sort into 4 groups of 4 by a hidden shared theme — nation, position, rating tier or World Cup year. Four wrong guesses and the puzzle ends. Solve it to extend your streak and share your emoji grid on social media.</p>
+        <summary>What can I do in Gaffer?</summary>
+        <p>Pick a real English league club and manage it for a full season — tactics, transfers, contracts, cups and a youth academy. Your save lives in your browser.</p>
       </details>
       <details class="faq-item">
         <summary>Where does the player and squad data come from?</summary>
         <p>BALLKNW builds its squads from public football datasets — current-season club squads and every World Cup squad from 1930 through 2026. In-game ratings are our own stylized approximations for gameplay, not official figures from any ratings provider.</p>
-      </details>
-      <details class="faq-item">
-        <summary>What browsers and devices does BALLKNW work on?</summary>
-        <p>BALLKNW works on any modern web browser — Chrome, Firefox, Safari, Edge — on desktop, tablet and mobile. Everything runs in your browser; no app download needed. Games work best on a 480px+ screen; Scout and Gaffer are playable on smaller phones but Draft XI benefits from a larger viewport.</p>
-      </details>
-      <details class="faq-item">
-        <summary>Can I play BALLKNW on mobile?</summary>
-        <p>Yes. All three games are mobile-responsive and work on phones, tablets and desktops. Gaffer and Scout are fully playable on mobile. Draft XI roster selection and formation editing work best on a larger screen, though simulation results display cleanly on any size.</p>
-      </details>
-      <details class="faq-item">
-        <summary>What's the difference between Gaffer, Scout and Draft XI?</summary>
-        <p>Scout is a daily mystery-player puzzle — group 16 footballers by a hidden theme, build your streak. Gaffer is a club management sim — pick a real English league club and manage tactics, transfers, contracts, cups and a youth academy through a full season. Draft XI is a squad builder and season simulator — spin real squads (Premier League, clubs or World Cups) and draft your perfect XI, then simulate a season chasing achievements like Champions or The Invincibles.</p>
-      </details>
-      <details class="faq-item">
-        <summary>How often is Scout updated?</summary>
-        <p>Scout has a new puzzle every day at midnight UTC. You get one puzzle per day with the same 16 players for 24 hours. Your streak counter tracks consecutive days solved. Come back anytime to solve today's puzzle or try again if you run out of guesses.</p>
       </details>
       <details class="faq-item">
         <summary>Is BALLKNW affiliated with FIFA, the Premier League or any official sports body?</summary>
