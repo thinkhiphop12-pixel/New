@@ -63,9 +63,15 @@
     .guide-section { margin: 40px 0; }
     .guide-section h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 16px; color: var(--lime); }
     .guide-section h3 { font-size: 1.3rem; font-weight: 700; margin-top: 24px; margin-bottom: 12px; }
-    .strategy-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin: 16px 0; }
-    .strategy-card h4 { color: var(--lime); font-weight: 700; margin-bottom: 8px; }
+    .strategy-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin: 12px 0; display: flex; gap: 14px; align-items: flex-start; }
+    .strategy-card .si { font-size: 22px; flex-shrink: 0; line-height: 1.3; }
+    .strategy-card h4 { color: var(--lime); font-weight: 700; margin-bottom: 4px; }
+    .strategy-card p { margin: 0; }
     .theme-type { background: var(--glass); padding: 3px 10px; border-radius: 6px; display: inline-block; font-size: 12px; color: var(--lime); font-weight: 700; margin: 2px; }
+    .guide-cta-top { text-align: center; margin: -10px 0 30px; }
+    .scout-diagram { display: flex; justify-content: center; margin: 4px 0 26px; }
+    .scout-diagram svg { background: #06120c; border: 1px solid var(--border); border-radius: 10px; }
+    .guide-end-cta { text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 30px 20px; margin-top: 40px; }
   </style>
 </head>
 <body>
@@ -84,92 +90,81 @@
   </header>
 
   <section class="about guide-content">
-    <h2 style="text-align:center;margin:30px 0 40px">Scout Game Guide</h2>
+    <h2 style="text-align:center;margin:30px 0 6px">Scout Guide</h2>
+    <div class="guide-cta-top"><a href="/scout/" class="btn btn-primary">Play Scout →</a></div>
 
     <div class="guide-section">
       <h3>What is Scout?</h3>
-      <p>Scout is a daily football connections puzzle where you group 16 players into 4 themed categories. You have 4 wrong guesses to solve it and build your streak. New puzzle every day at midnight UTC.</p>
+      <p>Group 16 footballers into 4 themed sets of 4. Four wrong guesses allowed. New puzzle daily at midnight UTC.</p>
+    </div>
+
+    <div class="scout-diagram">
+      <svg viewBox="0 0 100 100" width="160" height="160">
+        <rect x="2" y="2" width="96" height="96" rx="6" fill="#06120c" stroke="#ffffff" stroke-opacity=".15" stroke-width="1"/>
+        <g stroke-width="2" fill="none">
+          <rect x="8" y="8" width="38" height="38" rx="4" stroke="#b8ff3c" stroke-opacity=".8"/>
+          <rect x="54" y="8" width="38" height="38" rx="4" stroke="#ffffff" stroke-opacity=".2"/>
+          <rect x="8" y="54" width="38" height="38" rx="4" stroke="#ffffff" stroke-opacity=".2"/>
+          <rect x="54" y="54" width="38" height="38" rx="4" stroke="#ffffff" stroke-opacity=".2"/>
+        </g>
+        <g fill="#b8ff3c"><circle cx="18" cy="18" r="3"/><circle cx="36" cy="18" r="3"/><circle cx="18" cy="36" r="3"/><circle cx="36" cy="36" r="3"/></g>
+        <g fill="#ffffff" fill-opacity=".3"><circle cx="64" cy="18" r="3"/><circle cx="82" cy="18" r="3"/><circle cx="64" cy="36" r="3"/><circle cx="82" cy="36" r="3"/>
+          <circle cx="18" cy="64" r="3"/><circle cx="36" cy="64" r="3"/><circle cx="18" cy="82" r="3"/><circle cx="36" cy="82" r="3"/>
+          <circle cx="64" cy="64" r="3"/><circle cx="82" cy="64" r="3"/><circle cx="64" cy="82" r="3"/><circle cx="82" cy="82" r="3"/></g>
+      </svg>
     </div>
 
     <div class="guide-section">
       <h3>How to Play</h3>
       <ol style="padding-left:20px">
-        <li style="margin-bottom:12px">You'll see 16 footballer names on screen.</li>
-        <li style="margin-bottom:12px">Identify connections between players — usually 4+ players share a hidden theme.</li>
-        <li style="margin-bottom:12px">Tap or click 4 players you think share a theme, then submit.</li>
-        <li style="margin-bottom:12px">If you're wrong, you lose 1 guess (max 4 wrong guesses allowed).</li>
-        <li style="margin-bottom:12px">Solve the puzzle to extend your streak and share your emoji grid result.</li>
+        <li style="margin-bottom:10px">16 footballer names on screen.</li>
+        <li style="margin-bottom:10px">Spot the hidden theme linking groups of 4.</li>
+        <li style="margin-bottom:10px">Select 4 and submit.</li>
+        <li style="margin-bottom:10px">4 wrong guesses ends the puzzle.</li>
+        <li style="margin-bottom:10px">Solve it, share your grid, keep your streak.</li>
       </ol>
     </div>
 
     <div class="guide-section">
       <h3>Theme Types</h3>
-      <p style="margin-bottom:16px">Scout rotates four types of hidden themes:</p>
-      <div class="strategy-card">
-        <h4>🌍 Shared Nation</h4>
-        <p>All 4 players have played international football for the same country. Example: "All played for Brazil" — includes current and historical players.</p>
-      </div>
-      <div class="strategy-card">
-        <h4>⚽ Position</h4>
-        <p>All 4 players share the same position on the field. Examples: Strikers, Midfielders, Defenders, Goalkeepers. Position groups rotate daily.</p>
-      </div>
-      <div class="strategy-card">
-        <h4>📊 Rating Tier</h4>
-        <p>All 4 players fall into the same in-game rating bracket. Examples: Rated 90+ (icon class), 85–89 (world class), 80–84 (elite), 74–79 (very good).</p>
-      </div>
-      <div class="strategy-card">
-        <h4>🏆 World Cup Year</h4>
-        <p>All 4 players featured in the same World Cup. Example: "All featured at the 2022 World Cup" includes squad members from any team.</p>
-      </div>
+      <div class="strategy-card"><span class="si">🌍</span><div><h4>Shared nation</h4><p>All 4 played for the same country.</p></div></div>
+      <div class="strategy-card"><span class="si">⚽</span><div><h4>Position</h4><p>All 4 share a position — strikers, midfielders, etc.</p></div></div>
+      <div class="strategy-card"><span class="si">📊</span><div><h4>Rating tier</h4><p>All 4 fall in the same rating bracket.</p></div></div>
+      <div class="strategy-card"><span class="si">🏆</span><div><h4>World Cup year</h4><p>All 4 featured at the same tournament.</p></div></div>
     </div>
 
     <div class="guide-section">
       <h3>Winning Strategies</h3>
-      <div class="strategy-card">
-        <h4>1. Start with Confident Groups</h4>
-        <p>Identify the group you're most confident about first. If you spot 4 players from the same nation or position clearly, submit that immediately. Getting one right removes confusion and gives you a confidence boost.</p>
-      </div>
-      <div class="strategy-card">
-        <h4>2. Watch for Overlaps</h4>
-        <p>Players can overlap — a midfielder might be rated 90+ AND played for Brazil. If you're unsure which group a player belongs to, note the overlap and use it to deduce themes.</p>
-      </div>
-      <div class="strategy-card">
-        <h4>3. Look for Rare Names</h4>
-        <p>Recognize players from specific eras or competitions. For example, if you see players you associate with a specific World Cup (2022, 2018, 2010), that's a strong signal for a World Cup year theme.</p>
-      </div>
-      <div class="strategy-card">
-        <h4>4. Use the Shuffle</h4>
-        <p>Stuck on a group? Use the Shuffle button to reorder the board. Sometimes a fresh arrangement sparks recognition of a theme you missed.</p>
-      </div>
-      <div class="strategy-card">
-        <h4>5. Build Your Streak Slowly</h4>
-        <p>It's better to use 3 guesses to solve one puzzle than to rush and waste all 4. Each correct puzzle extends your streak by 1 day. Miss a day, and your streak resets.</p>
-      </div>
+      <div class="strategy-card"><span class="si">✅</span><div><h4>Start with confident groups</h4><p>Submit your surest set first to clear confusion.</p></div></div>
+      <div class="strategy-card"><span class="si">🔀</span><div><h4>Watch for overlaps</h4><p>A player can fit two themes — use that to deduce the rest.</p></div></div>
+      <div class="strategy-card"><span class="si">🕰️</span><div><h4>Look for rare names</h4><p>Era-specific players are a strong World Cup year signal.</p></div></div>
+      <div class="strategy-card"><span class="si">🔁</span><div><h4>Use the shuffle</h4><p>Reorder the board to spot a theme you missed.</p></div></div>
+      <div class="strategy-card"><span class="si">🐢</span><div><h4>Go slow</h4><p>Three careful guesses beat four rushed ones.</p></div></div>
     </div>
 
     <div class="guide-section">
       <h3>Daily Streak Tips</h3>
       <ul style="padding-left:20px">
-        <li style="margin-bottom:12px"><strong>Return every day:</strong> You need to solve the puzzle before midnight UTC to extend your streak. Missing one day resets it to 0.</li>
-        <li style="margin-bottom:12px"><strong>Play early:</strong> Solve Scout in the morning to ensure you don't forget before the reset.</li>
-        <li style="margin-bottom:12px"><strong>Mistakes are learning:</strong> Each wrong guess reveals an incorrect connection, ruling it out for future puzzles.</li>
-        <li style="margin-bottom:12px"><strong>Share your result:</strong> After solving, you can share a spoiler-free emoji grid showing your solve path.</li>
+        <li style="margin-bottom:10px"><strong>Return daily:</strong> miss a day and your streak resets.</li>
+        <li style="margin-bottom:10px"><strong>Play early:</strong> solve before you forget.</li>
+        <li style="margin-bottom:10px"><strong>Mistakes teach:</strong> each wrong guess rules something out.</li>
+        <li style="margin-bottom:10px"><strong>Share your result:</strong> a spoiler-free emoji grid.</li>
       </ul>
     </div>
 
     <div class="guide-section">
       <h3>Advanced Tips</h3>
       <ul style="padding-left:20px">
-        <li style="margin-bottom:12px">Scout uses <strong>real player data</strong>: Current-season club rosters and every World Cup from 1930–2026. If you know real football, you have an advantage.</li>
-        <li style="margin-bottom:12px">Ratings are <strong>stylized for gameplay</strong>, not official figures. A player rated 88 in Scout may have a different official rating; focus on the tier, not the exact number.</li>
-        <li style="margin-bottom:12px">Position data includes <strong>primary position only</strong>. A player who can play both midfield and defense will appear as one position.</li>
-        <li style="margin-bottom:12px">If a puzzle feels hard, <strong>note the player names you recognize</strong> and the eras they're from. That's often the key to World Cup year themes.</li>
+        <li style="margin-bottom:10px">Uses <strong>real player data</strong> from 1930–2026.</li>
+        <li style="margin-bottom:10px">Ratings are <strong>stylized</strong>, not official — focus on tier.</li>
+        <li style="margin-bottom:10px">Only a player's <strong>primary position</strong> counts.</li>
+        <li style="margin-bottom:10px">Recognizing an era is often the key to a World Cup theme.</li>
       </ul>
     </div>
 
-    <div class="guide-section">
-      <h3>Ready to Play?</h3>
-      <p><a href="/scout/" class="btn btn-primary" style="display:inline-block;margin-top:16px">Play Scout Now →</a></p>
+    <div class="guide-end-cta">
+      <h3 style="margin-top:0">Ready to play?</h3>
+      <p><a href="/scout/" class="btn btn-primary" style="display:inline-block;margin-top:14px">Play Scout Now →</a></p>
     </div>
   </section>
 
