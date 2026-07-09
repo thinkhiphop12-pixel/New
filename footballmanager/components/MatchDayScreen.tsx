@@ -48,13 +48,13 @@ export default function MatchDayScreen({
 
   useEffect(() => {
     if (!fixture) return;
-    setHalf1Report(simulateHalf(state, fixture.homeId, fixture.awayId, 1));
+    setHalf1Report(simulateHalf(state, fixture.homeId, fixture.awayId, 1, { difficulty: settings.difficulty }));
   }, [fixture]);
 
   // Auto-sim: skip straight to full time if instant speed
   useEffect(() => {
     if (speed === 'instant' && half1Report && phase === 'half1' && fixture) {
-      const rep2 = simulateHalf(state, fixture.homeId, fixture.awayId, 2);
+      const rep2 = simulateHalf(state, fixture.homeId, fixture.awayId, 2, { difficulty: settings.difficulty });
       setHalf2Report(rep2);
       setPhase('full');
     }
@@ -101,6 +101,7 @@ export default function MatchDayScreen({
       userLineup: lineup,
       talk,
       userTactics: liveTactics,
+      difficulty: settings.difficulty,
     });
     setHalf2Report(rep2);
     setTacticsDirty(false);
@@ -117,6 +118,7 @@ export default function MatchDayScreen({
         const tail = simulateSegment(state, fixture.homeId, fixture.awayId, minute + 1, capEnd, {
           userLineup: lineup,
           userTactics: liveTactics,
+          difficulty: settings.difficulty,
         });
         const keptEvents = currentReport.events.filter((e) => e.minute <= minute);
         const tailEvents = tail.events.filter((e) => !(e.type === 'info' && e.text === ''));

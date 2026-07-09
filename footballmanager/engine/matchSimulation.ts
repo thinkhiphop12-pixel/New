@@ -90,6 +90,8 @@ export interface HalfOptions {
   talk?: TeamTalk;
   /** Override the user's tactics (live mid-match tactical adjustment). */
   userTactics?: Tactics;
+  /** AI difficulty multiplier (0.85 easy → 1.2 elite). Scales opponent strength. */
+  difficulty?: number;
 }
 
 function buildReport(
@@ -209,6 +211,16 @@ export function simulateHalf(
       homeXG *= mod.concede;
     }
   }
+  // Difficulty: scales the AI opponent's xG relative to the user's.
+  if (userSide && opts.difficulty && opts.difficulty !== 1) {
+    if (userSide === home) {
+      awayXG *= opts.difficulty;
+      homeXG /= opts.difficulty;
+    } else {
+      homeXG *= opts.difficulty;
+      awayXG /= opts.difficulty;
+    }
+  }
   const report =
     half === 1
       ? buildReport(state, home, away, homeXG, awayXG, 2, 44, 'Half time.')
@@ -248,6 +260,16 @@ export function simulateSegment(
     } else {
       awayXG *= mod.att;
       homeXG *= mod.concede;
+    }
+  }
+  // Difficulty: scales the AI opponent's xG relative to the user's.
+  if (userSide && opts.difficulty && opts.difficulty !== 1) {
+    if (userSide === home) {
+      awayXG *= opts.difficulty;
+      homeXG /= opts.difficulty;
+    } else {
+      homeXG *= opts.difficulty;
+      awayXG /= opts.difficulty;
     }
   }
   return buildReport(state, home, away, homeXG, awayXG, minMinute, maxMinute, opts.closingText ?? '');

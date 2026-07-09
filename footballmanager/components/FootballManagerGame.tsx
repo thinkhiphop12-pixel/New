@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import type { GameData, GameState, MatchReport, SeasonSummary, GameSettings } from '@/engine/types';
-import { endSeason, newGame, playRound, seasonOver, switchJob } from '@/engine/seasonProgression';
+import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/engine/seasonProgression';
+import { simulateHalf, mergeReports } from '@/engine/matchSimulation';
 import { loadGameData } from '@/lib/gamedata';
 import { clearSave, listSaves, loadGame, saveGame, SAVE_SLOTS, type SaveMeta } from '@/lib/storage';
 import MainMenuScreen from './MainMenuScreen';
@@ -95,6 +96,18 @@ export default function FootballManagerGame() {
     backToMenu();
   };
 
+  const handlePlayMatch = () => {
+    if (settings?.autoSimMatches && gs) {
+      const fixture = nextUserFixture(gs);
+      if (!fixture) return;
+      const rep1 = simulateHalf(gs, fixture.homeId, fixture.awayId, 1, { difficulty: settings.difficulty });
+      const rep2 = simulateHalf(gs, fixture.homeId, fixture.awayId, 2, { difficulty: settings.difficulty });
+      handleMatchDone(mergeReports(rep1, rep2));
+    } else {
+      setView('match');
+    }
+  };
+
   return (
     <div className="fm-app">
       <header className="fm-header">
@@ -132,7 +145,7 @@ export default function FootballManagerGame() {
             onRetire={handleAbandon}
           />
         ) : gs ? (
-          <HubScreen state={gs} onChange={apply} onPlayMatch={() => setView('match')} onAbandon={handleAbandon} />
+          <HubScreen state={gs} onChange={apply} onPlayMatch={handlePlayMatch} onAbandon={handleAbandon} />
         ) : (
           <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} />
         )}

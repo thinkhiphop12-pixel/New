@@ -1,6 +1,6 @@
 1:"$Sreact.fragment"
-2:I[59577,["/football-manager/_next/static/chunks/0j6yn06bs6kcx.js","/football-manager/_next/static/chunks/431qaz9pmtyn4.js","/football-manager/_next/static/chunks/0j322bz_gzre8.js"],"default"]
+2:I[59577,["/football-manager/_next/static/chunks/0j6yn06bs6kcx.js","/football-manager/_next/static/chunks/431qaz9pmtyn4.js","/football-manager/_next/static/chunks/1u2r5zpwifcmi.js"],"default"]
 3:I[26435,["/football-manager/_next/static/chunks/0j6yn06bs6kcx.js","/football-manager/_next/static/chunks/431qaz9pmtyn4.js"],"OutletBoundary"]
 4:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],[["$","script","script-0",{"src":"/football-manager/_next/static/chunks/0j322bz_gzre8.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"iWfaS7tOJfpLG5vhIHCGU"}
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],[["$","script","script-0",{"src":"/football-manager/_next/static/chunks/1u2r5zpwifcmi.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"SQoElhjyxB_AbrBIL6TL1"}
 5:null
