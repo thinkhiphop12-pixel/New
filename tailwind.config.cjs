@@ -3,8 +3,8 @@ module.exports = {
   darkMode: ["class"],
   content: [
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
-    // Scan @blinkdotnew/ui so its Tailwind classes aren't purged
-    "./node_modules/@blinkdotnew/ui/dist/index.mjs",
+    // Temporarily disabled: "./node_modules/@blinkdotnew/ui/dist/index.mjs" causes Turbopack timeout
+    // TODO: Re-enable once Turbopack build stabilizes
   ],
   theme: {
     extend: {
