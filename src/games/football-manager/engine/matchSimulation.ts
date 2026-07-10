@@ -198,6 +198,7 @@ export function simulateHalf(
   const away = setupFor(state, awayId, homeId);
   const userSide = home.clubId === state.userClubId ? home : away.clubId === state.userClubId ? away : null;
   if (userSide && opts.userLineup) userSide.lineup = opts.userLineup;
+  if (userSide && opts.userTactics) userSide.tactics = opts.userTactics;
   let { homeXG, awayXG } = computeXG(state, home, away);
   homeXG /= 2;
   awayXG /= 2;
