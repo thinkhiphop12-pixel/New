@@ -20,10 +20,6 @@ const nextConfig: NextConfig = {
     '*.sites.blink.new',
     '*.blink.new',
   ],
-  // Temporarily disable Turbopack due to CSS PostCSS timeout issues
-  experimental: {
-    turbopack: false,
-  },
 }
 
 export default nextConfig

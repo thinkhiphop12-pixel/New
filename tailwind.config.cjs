@@ -2,7 +2,11 @@
 module.exports = {
   darkMode: ["class"],
   content: [
-    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+    // Only the root app (src/app) uses Tailwind. Do NOT widen this to
+    // "./src/**/*" — that glob descends into src/games/*/node_modules
+    // (hundreds of MB), and the CSS content scan hangs the build
+    // (the cause of the Vercel deploy timeouts).
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
     // Temporarily disabled: "./node_modules/@blinkdotnew/ui/dist/index.mjs" causes Turbopack timeout
     // TODO: Re-enable once Turbopack build stabilizes
   ],
