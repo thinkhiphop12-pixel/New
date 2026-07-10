@@ -53,11 +53,17 @@ export default function MatchDayScreen({
 
   // Auto-sim: skip straight to full time if instant speed
   useEffect(() => {
-    if (speed === 'instant' && half1Report && phase === 'half1' && fixture) {
-      const rep2 = simulateHalf(state, fixture.homeId, fixture.awayId, 2, { difficulty: settings.difficulty });
+    if (speed !== 'instant' || !half1Report || !fixture || phase === 'full') return;
+    if (phase === 'half1' || phase === 'halftime') {
+      const rep2 = simulateHalf(state, fixture.homeId, fixture.awayId, 2, {
+        userLineup: lineup,
+        userTactics: liveTactics,
+        difficulty: settings.difficulty,
+      });
       setHalf2Report(rep2);
-      setPhase('full');
     }
+    setMinute(90);
+    setPhase('full');
   }, [speed, half1Report, phase, state, fixture]);
 
   useEffect(() => {
