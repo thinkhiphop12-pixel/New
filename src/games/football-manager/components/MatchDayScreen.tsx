@@ -79,6 +79,22 @@ export default function MatchDayScreen({
     };
   }, [phase, half1Report, half2Report, paused, speed]);
 
+  // Auto-advance when timer reaches end of half
+  useEffect(() => {
+    if (phase === 'half1' && minute >= 45) {
+      const t = setTimeout(() => setPhase('halftime'), 300);
+      return () => clearTimeout(t);
+    }
+  }, [phase, minute]);
+
+  // Auto-advance to full when second half completes
+  useEffect(() => {
+    if (phase === 'half2' && minute >= 90) {
+      const t = setTimeout(() => setPhase('full'), 300);
+      return () => clearTimeout(t);
+    }
+  }, [phase, minute]);
+
   if (!fixture) return null;
 
   if (!half1Report) {
@@ -170,22 +186,6 @@ export default function MatchDayScreen({
   const matchProgress = finished ? 100 : (minute / 90) * 100;
   const minuteLabel = phase === 'halftime' ? 'HALF TIME' : finished ? 'FULL TIME' : `${minute}'`;
   const minuteClass = phase === 'halftime' ? ' halftime' : finished ? ' fulltime' : '';
-
-  // Auto-advance when timer reaches end of half
-  useEffect(() => {
-    if (phase === 'half1' && minute >= 45) {
-      const t = setTimeout(() => setPhase('halftime'), 300);
-      return () => clearTimeout(t);
-    }
-  }, [phase, minute]);
-
-  // Auto-advance to full when second half completes
-  useEffect(() => {
-    if (phase === 'half2' && minute >= 90) {
-      const t = setTimeout(() => setPhase('full'), 300);
-      return () => clearTimeout(t);
-    }
-  }, [phase, minute]);
 
   return (
     <div className="fm-screen">
