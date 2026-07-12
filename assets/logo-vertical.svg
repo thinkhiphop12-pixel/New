@@ -1,0 +1,10 @@
+<svg viewBox="0 0 512 768" xmlns="http://www.w3.org/2000/svg">
+  <path fill-rule="evenodd" fill="#00ff88" d="
+    M 126.000 269.000 A 130.000 130.000 0 1 0 386.000 269.000 A 130.000 130.000 0 1 0 126.000 269.000 Z
+    M 275.065 189.506 Q 283.368 183.474 291.671 189.506 L 330.377 217.627 Q 338.680 223.660 335.508 233.421 L 320.724 278.921 Q 317.553 288.682 307.290 288.682 L 259.447 288.682 Q 249.184 288.682 246.013 278.921 L 231.228 233.421 Q 228.057 223.660 236.360 217.627 Z
+  "/>
+  <g transform="translate(256, 549)">
+    <text x="0" y="-60" text-anchor="middle" dominant-baseline="central" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="80" letter-spacing="2" fill="#00ff88">BALL</text>
+    <text x="0" y="60" text-anchor="middle" dominant-baseline="central" font-family="'Press Start 2P', cursive" font-weight="400" font-size="40" letter-spacing="1" fill="#00ff88">KNOWLEDGE</text>
+  </g>
+</svg>
