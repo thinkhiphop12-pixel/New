@@ -2,7 +2,13 @@
 module.exports = {
   darkMode: ["class"],
   content: [
-    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+    // Scoped to the root app's code only. Do NOT widen to "./src/**": that
+    // pulls in src/games/football-manager (its node_modules and build
+    // output are tens of thousands of files), which hangs the PostCSS
+    // content scan and times out the build.
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/shared/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     // Temporarily disabled: "./node_modules/@blinkdotnew/ui/dist/index.mjs" causes Turbopack timeout
     // TODO: Re-enable once Turbopack build stabilizes
   ],
