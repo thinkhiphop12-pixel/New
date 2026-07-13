@@ -182,7 +182,7 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
     morale: MORALE_START,
     formationId: '4-3-3',
     lineup: [],
-    tactics: { style: 'balanced', pressing: 'mid', tempo: 'normal', width: 'standard' },
+    tactics: { style: 'balanced', pressing: 'mid', tempo: 'normal', width: 'standard', mentality: 'balanced' },
     training: 'balanced',
     chemistry: 50,
     fanConfidence: 60,

@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import type { GameState, Pressing, TacticStyle, Tempo, Width } from '@/engine/types';
-import { FORMATIONS, getFormation } from '@/engine/gameRules';
+import { ALL_FORMATIONS, getFormation } from '@/engine/gameRules';
 import { autoPickLineup } from '@/engine/teamManagement';
+import { MENTALITIES, MENTALITY_ORDER, normalizeMentality, type MentalityId } from '@/engine/tickEngine/tacticsData';
 import { PitchMarkings, PlayerToken } from './visuals';
 
 export default function TacticsScreen({
@@ -43,6 +44,10 @@ export default function TacticsScreen({
         outOfPossessionId: id,
       },
     });
+  };
+
+  const setMentality = (mentality: MentalityId) => {
+    update({ tactics: { ...state.tactics, mentality } });
   };
 
   const setStyle = (style: TacticStyle) => {
@@ -101,14 +106,14 @@ export default function TacticsScreen({
           <div className="fm-tactics__content">
             <div className="fm-tactics__formation-group">
               <label className="fm-label fm-label--sm">In Possession</label>
-              <div className="fm-pills fm-pills--mobile">
-                {FORMATIONS.map((f) => (
+              <div className="fm-formation-grid">
+                {ALL_FORMATIONS.map((f) => (
                   <button
                     key={f.id}
-                    className={`fm-pill${currentIPFormation === f.id ? ' active' : ''}`}
+                    className={`fm-formation-tile${currentIPFormation === f.id ? ' active' : ''}`}
                     onClick={() => setIPFormation(f.id)}
                   >
-                    {f.name}
+                    {f.id}
                   </button>
                 ))}
               </div>
@@ -116,19 +121,48 @@ export default function TacticsScreen({
 
             <div className="fm-tactics__formation-group">
               <label className="fm-label fm-label--sm">Out of Possession</label>
-              <div className="fm-pills fm-pills--mobile">
-                {FORMATIONS.map((f) => (
+              <div className="fm-formation-grid">
+                {ALL_FORMATIONS.map((f) => (
                   <button
                     key={f.id}
-                    className={`fm-pill${currentOOPFormation === f.id ? ' active' : ''}`}
+                    className={`fm-formation-tile${currentOOPFormation === f.id ? ' active' : ''}`}
                     onClick={() => setOOPFormation(f.id)}
                   >
-                    {f.name}
+                    {f.id}
                   </button>
                 ))}
               </div>
               <p className="fm-hint">Used only while defending.</p>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mentality Section */}
+      <div className="fm-tactics__section">
+        <button
+          className="fm-tactics__header"
+          onClick={() => toggleSection('mentality')}
+          aria-expanded={expandedSection === 'mentality'}
+        >
+          <span className="fm-tactics__title">Mentality</span>
+          <span className="fm-tactics__indicator">{expandedSection === 'mentality' ? '−' : '+'}</span>
+        </button>
+
+        {expandedSection === 'mentality' && (
+          <div className="fm-tactics__content">
+            <div className="fm-mentality-row">
+              {MENTALITY_ORDER.map((m) => (
+                <button
+                  key={m}
+                  className={`fm-mentality-card${normalizeMentality(state.tactics.mentality) === m ? ' active' : ''}`}
+                  onClick={() => setMentality(m)}
+                >
+                  {MENTALITIES[m].short}
+                </button>
+              ))}
+            </div>
+            <p className="fm-hint">Sets the default match mentality — you can change it live from the touchline.</p>
           </div>
         )}
       </div>
