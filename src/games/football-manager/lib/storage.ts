@@ -37,6 +37,7 @@ function migrate(raw: RawSave): GameState {
   const t = s.tactics as GameState['tactics'];
   t.tempo = t.tempo ?? 'normal';
   t.width = t.width ?? 'standard';
+  t.mentality = t.mentality ?? 'balanced';
   s.training = s.training ?? 'balanced';
   s.chemistry = s.chemistry ?? 50;
   s.fanConfidence = s.fanConfidence ?? 60;

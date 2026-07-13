@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react';
 import type { GameData, GameState, MatchReport, SeasonSummary, GameSettings } from '@/engine/types';
 import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/engine/seasonProgression';
-import { simulateHalf, mergeReports } from '@/engine/matchSimulation';
+import { simulateTickMatch } from '@/engine/tickEngine/sim';
+import { normalizeMentality } from '@/engine/tickEngine/tacticsData';
 import { loadGameData } from '@/lib/gamedata';
 import { clearSave, listSaves, loadGame, saveGame, SAVE_SLOTS, type SaveMeta } from '@/lib/storage';
 import MainMenuScreen from './MainMenuScreen';
 import ClubSelectScreen from './ClubSelectScreen';
 import HubScreen from './HubScreen';
-import MatchDayScreen from './MatchDayScreen';
+import MatchScreen from './match/MatchScreen';
 import SeasonEndScreen from './SeasonEndScreen';
 import SettingsPanel, { loadSettings } from './SettingsPanel';
 
@@ -100,9 +101,13 @@ export default function FootballManagerGame() {
     if (settings?.autoSimMatches && gs) {
       const fixture = nextUserFixture(gs);
       if (!fixture) return;
-      const rep1 = simulateHalf(gs, fixture.homeId, fixture.awayId, 1, { difficulty: settings.difficulty });
-      const rep2 = simulateHalf(gs, fixture.homeId, fixture.awayId, 2, { difficulty: settings.difficulty });
-      handleMatchDone(mergeReports(rep1, rep2));
+      const { report } = simulateTickMatch(gs, fixture.homeId, fixture.awayId, {
+        headless: true,
+        userLineup: gs.lineup,
+        userMentality: normalizeMentality(gs.tactics.mentality),
+        difficulty: settings.difficulty,
+      });
+      handleMatchDone(report);
     } else {
       setView('match');
     }
@@ -135,7 +140,7 @@ export default function FootballManagerGame() {
         ) : view === 'clubselect' ? (
           <ClubSelectScreen data={data} onPick={handlePickClub} onBack={backToMenu} />
         ) : view === 'match' && gs && settings ? (
-          <MatchDayScreen state={gs} settings={settings} onDone={handleMatchDone} />
+          <MatchScreen state={gs} settings={settings} onDone={handleMatchDone} />
         ) : view === 'seasonend' && gs && summary ? (
           <SeasonEndScreen
             state={gs}

@@ -77,6 +77,8 @@ export interface Tactics {
   pressing: Pressing;
   tempo: Tempo;
   width: Width;
+  /** Team mentality (tick engine). Defaults to 'balanced' for older saves. */
+  mentality?: 'ultra-defensive' | 'defensive' | 'balanced' | 'attacking' | 'ultra-attacking';
 }
 
 export type TrainingFocus = 'balanced' | 'attack' | 'defense' | 'fitness';
@@ -110,6 +112,8 @@ export interface MatchReport {
   events: MatchEvent[];
   homeLineup: number[]; // player ids who took part
   awayLineup: number[];
+  /** Event-weighted match ratings from the tick engine (absent in old saves). */
+  ratings?: Record<number, number>;
 }
 
 export interface TableRow {

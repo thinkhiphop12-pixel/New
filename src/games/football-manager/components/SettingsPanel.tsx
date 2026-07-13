@@ -83,18 +83,6 @@ export default function SettingsPanel({
 
           <div className="fm-settings-row">
             <div>
-              <div className="fm-settings-label">2D match pitch</div>
-              <div className="fm-settings-desc">Live animated pitch view</div>
-            </div>
-            <button
-              className={`fm-toggle${settings.show2DPitch ? ' on' : ''}`}
-              onClick={() => update({ show2DPitch: !settings.show2DPitch })}
-              aria-label="Toggle 2D pitch"
-            />
-          </div>
-
-          <div className="fm-settings-row">
-            <div>
               <div className="fm-settings-label">Commentary feed</div>
               <div className="fm-settings-desc">Show live text commentary</div>
             </div>

@@ -142,6 +142,14 @@ export const FORMATIONS: FormationDef[] = [
   },
 ];
 
+import { EXTENDED_FORMATIONS } from './tickEngine/tacticsData';
+
+/** Full formation catalogue: the classic five plus the tick-engine set. */
+export const ALL_FORMATIONS: FormationDef[] = [
+  ...FORMATIONS,
+  ...EXTENDED_FORMATIONS.filter((f) => !FORMATIONS.some((g) => g.id === f.id)),
+];
+
 export function getFormation(id: string): FormationDef {
-  return FORMATIONS.find((f) => f.id === id) ?? FORMATIONS[1];
+  return ALL_FORMATIONS.find((f) => f.id === id) ?? FORMATIONS[1];
 }
