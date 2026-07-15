@@ -2,11 +2,14 @@
 
 import { useEffect, useRef } from 'react';
 import type { Club } from '@/engine/types';
-import type { MinuteSnapshot } from '@/engine/tickEngine/types';
+import type { MinuteSnapshot, TeamSide } from '@/engine/tickEngine/types';
+import { getFormation } from '@/engine/gameRules';
 
-/** Heatmap grid resolution (landscape pitch: x = along pitch, y = across). */
-const GW = 36;
-const GH = 24;
+/** Deterministic per-player-per-minute jitter so replays look identical. */
+function noise(seed: number): number {
+  const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+  return (x - Math.floor(x)) * 2 - 1; // -1..1
+}
 
 function hexToRgb(hex: string): [number, number, number] {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
@@ -15,10 +18,249 @@ function hexToRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
+function luminance(hex: string): number {
+  const [r, g, b] = hexToRgb(hex);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
+function colorsClash(a: string, b: string): boolean {
+  const [r1, g1, b1] = hexToRgb(a);
+  const [r2, g2, b2] = hexToRgb(b);
+  return Math.abs(r1 - r2) + Math.abs(g1 - g2) + Math.abs(b1 - b2) < 110;
+}
+
+interface Token {
+  key: string;
+  along: number; // 0..1 left → right of the landscape pitch
+  across: number; // 0..1 top → bottom
+  num?: number;
+  kind: 'player' | 'gk' | 'ref' | 'assist' | 'ball';
+  side?: TeamSide;
+  onBall?: boolean;
+}
+
+/** Kit colours: home uses club colour, away flips to an alternate on clash. */
+function kitColors(homeClub: Club | undefined, awayClub: Club | undefined) {
+  const home = homeClub?.color ?? '#ffffff';
+  let away = awayClub?.color ?? '#8c2440';
+  if (colorsClash(home, away)) away = luminance(home) > 0.5 ? '#8c2440' : '#f4f4f4';
+  return { home, away };
+}
+
 /**
- * Landscape pitch with a live accumulating possession heatmap. Home attacks
- * right. Heat is splatted into a low-res buffer per team and upscaled with
- * smoothing, like the reference sim.
+ * Compute where every token should be for the currently revealed minute.
+ * Player targets are their formation anchor pulled toward the ball plus a
+ * deterministic per-minute wander, which reads like FM's top-down match view.
+ */
+function computeTargets(snap: MinuteSnapshot, minute: number): Token[] {
+  const tokens: Token[] = [];
+  const ballAlong = snap.ballY;
+  const ballAcross = snap.ballX;
+
+  for (const side of ['home', 'away'] as TeamSide[]) {
+    const ctx = snap.resume[side];
+    const formation = getFormation(ctx.formationId);
+    // Nearest outfielder of the possession side carries the ball.
+    let carrier = -1;
+    let carrierDist = Infinity;
+    const placed: { i: number; along: number; across: number }[] = [];
+    formation.slots.forEach((slot, i) => {
+      const id = ctx.lineup[i];
+      if (id === null || id === undefined) return; // sent off / empty slot
+      const isGk = slot.pos === 'GK';
+      const mirror = side === 'away';
+      let along: number;
+      let across = 0.1 + (slot.x / 100) * 0.8;
+      if (isGk) {
+        const base = 0.045 + (ballAlong - 0.5) * 0.03 * (mirror ? -1 : 1);
+        along = mirror ? 1 - base : base;
+        across = 0.5 + (ballAcross - 0.5) * 0.1;
+      } else {
+        const anchor = 0.06 + (slot.y / 100) * 0.6;
+        const shifted = anchor + (Math.abs((mirror ? 1 - ballAlong : ballAlong)) - 0.5) * 0.34;
+        along = mirror ? 1 - shifted : shifted;
+        along += noise(minute * 13 + i * 7 + (mirror ? 501 : 0)) * 0.02;
+        across += (ballAcross - 0.5) * 0.22 + noise(minute * 17 + i * 11 + (mirror ? 900 : 0)) * 0.025;
+      }
+      along = Math.min(0.975, Math.max(0.025, along));
+      across = Math.min(0.96, Math.max(0.04, across));
+      if (!isGk && snap.possession === side) {
+        const d = Math.abs(along - ballAlong) + Math.abs(across - ballAcross);
+        if (d < carrierDist) {
+          carrierDist = d;
+          carrier = i;
+        }
+      }
+      placed.push({ i, along, across });
+    });
+    for (const p of placed) {
+      const slot = formation.slots[p.i];
+      const isCarrier = p.i === carrier;
+      tokens.push({
+        key: `${side}${p.i}`,
+        along: isCarrier ? ballAlong + (p.along - ballAlong) * 0.2 : p.along,
+        across: isCarrier ? ballAcross + (p.across - ballAcross) * 0.2 : p.across,
+        num: p.i + 1,
+        kind: slot.pos === 'GK' ? 'gk' : 'player',
+        side,
+        onBall: isCarrier,
+      });
+    }
+  }
+
+  tokens.push({ key: 'ball', along: ballAlong, across: ballAcross, kind: 'ball' });
+  tokens.push({
+    key: 'ref',
+    along: Math.min(0.92, Math.max(0.08, ballAlong - 0.05 + noise(minute * 3) * 0.02)),
+    across: Math.min(0.9, Math.max(0.1, ballAcross + 0.09)),
+    kind: 'ref',
+  });
+  tokens.push({ key: 'a1', along: Math.min(0.95, Math.max(0.55, ballAlong)), across: -0.035, kind: 'assist' });
+  tokens.push({ key: 'a2', along: Math.min(0.45, Math.max(0.05, ballAlong)), across: 1.035, kind: 'assist' });
+  return tokens;
+}
+
+/** Paint the static stadium: stands, ad boards, grass and markings. */
+function paintStadium(ctx: CanvasRenderingContext2D, w: number, h: number, px: number, py: number, pw: number, ph: number) {
+  // Concrete surround.
+  ctx.fillStyle = '#b9bec5';
+  ctx.fillRect(0, 0, w, h);
+
+  // Stands: striped seating blocks on all four sides.
+  const stand = (x: number, y: number, sw: number, sh: number, horizontal: boolean) => {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, sw, sh);
+    ctx.clip();
+    ctx.fillStyle = '#c6cbd1';
+    ctx.fillRect(x, y, sw, sh);
+    ctx.fillStyle = '#d6dade';
+    const step = 7;
+    if (horizontal) {
+      for (let yy = y; yy < y + sh; yy += step) ctx.fillRect(x, yy, sw, 3);
+      // aisles
+      ctx.fillStyle = '#aeb4bb';
+      for (let xx = x + sw * 0.18; xx < x + sw; xx += sw * 0.22) ctx.fillRect(xx, y, 3, sh);
+    } else {
+      for (let xx = x; xx < x + sw; xx += step) ctx.fillRect(xx, y, 3, sh);
+      ctx.fillStyle = '#aeb4bb';
+      for (let yy = y + sh * 0.18; yy < y + sh; yy += sh * 0.22) ctx.fillRect(x, yy, sw, 3);
+    }
+    ctx.restore();
+  };
+  const board = 10; // ad board thickness
+  stand(0, 0, w, py - board, true);
+  stand(0, h - (h - py - ph) + board, w, h - py - ph - board, true);
+  stand(0, 0, px - board, h, false);
+  stand(w - (w - px - pw) + board, 0, w - px - pw - board, h, false);
+
+  // Ad boards hugging the pitch.
+  const segs = ['BALLKNW', 'GAFFER', 'BALLKNW', 'GAFFER'];
+  const drawBoard = (x: number, y: number, bw: number, bh: number, vertical: boolean) => {
+    for (let i = 0; i < 8; i++) {
+      ctx.fillStyle = i % 2 ? '#e8d31f' : '#3b1053';
+      if (vertical) ctx.fillRect(x, y + (bh / 8) * i, bw, bh / 8);
+      else ctx.fillRect(x + (bw / 8) * i, y, bw / 8, bh);
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = '700 6px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i < 8; i++) {
+      if (i % 2 === 0) continue; // text on yellow reads poorly at this size
+      const label = segs[(i >> 1) % segs.length];
+      if (vertical) {
+        ctx.save();
+        ctx.translate(x + bw / 2, y + (bh / 8) * (i + 0.5));
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillStyle = '#3b1053';
+        ctx.fillText(label, 0, 0);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = '#3b1053';
+        ctx.fillText(label, x + (bw / 8) * (i + 0.5), y + bh / 2);
+      }
+    }
+  };
+  drawBoard(px, py - board - 1, pw, board, false);
+  drawBoard(px, py + ph + 1, pw, board, false);
+  drawBoard(px - board - 1, py, board, ph, true);
+  drawBoard(px + pw + 1, py, board, ph, true);
+
+  // Checkered grass.
+  const cols = 16;
+  const rows = 10;
+  for (let cx = 0; cx < cols; cx++) {
+    for (let cy = 0; cy < rows; cy++) {
+      ctx.fillStyle = (cx + cy) % 2 ? '#54923f' : '#4c8a38';
+      ctx.fillRect(px + (pw / cols) * cx, py + (ph / rows) * cy, pw / cols + 1, ph / rows + 1);
+    }
+  }
+  // Stand shadow across the top edge for depth.
+  const grad = ctx.createLinearGradient(0, py, 0, py + ph * 0.45);
+  grad.addColorStop(0, 'rgba(20,30,20,0.30)');
+  grad.addColorStop(1, 'rgba(20,30,20,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(px, py, pw, ph * 0.45);
+
+  // Markings.
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+  ctx.lineWidth = 1.6;
+  ctx.strokeRect(px, py, pw, ph);
+  ctx.beginPath();
+  ctx.moveTo(px + pw / 2, py);
+  ctx.lineTo(px + pw / 2, py + ph);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(px + pw / 2, py + ph / 2, ph * 0.16, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(px + pw / 2, py + ph / 2, 2, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fill();
+
+  const boxH = ph * 0.58;
+  const boxW = pw * 0.135;
+  const sixH = ph * 0.28;
+  const sixW = pw * 0.05;
+  const goalH = ph * 0.12;
+  for (const left of [true, false]) {
+    const bx = left ? px : px + pw - boxW;
+    ctx.strokeRect(bx, py + (ph - boxH) / 2, boxW, boxH);
+    const sx = left ? px : px + pw - sixW;
+    ctx.strokeRect(sx, py + (ph - sixH) / 2, sixW, sixH);
+    // Penalty spot + D.
+    const spotX = left ? px + pw * 0.095 : px + pw - pw * 0.095;
+    ctx.beginPath();
+    ctx.arc(spotX, py + ph / 2, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(spotX, py + ph / 2, ph * 0.13, left ? -0.9 : Math.PI - 0.9, left ? 0.9 : Math.PI + 0.9);
+    ctx.stroke();
+    // Goal + net.
+    const gx = left ? px - 6 : px + pw;
+    ctx.fillStyle = 'rgba(240,240,240,0.85)';
+    ctx.fillRect(gx, py + (ph - goalH) / 2, 6, goalH);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    // Corner arcs.
+    for (const top of [true, false]) {
+      ctx.beginPath();
+      ctx.arc(left ? px : px + pw, top ? py : py + ph, 7, 0, Math.PI * 2);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(px, py, pw, ph);
+      ctx.clip();
+      ctx.beginPath();
+      ctx.arc(left ? px : px + pw, top ? py : py + ph, 7, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
+/**
+ * FM-style top-down live pitch: stadium surround, checkered grass and
+ * numbered kit-coloured tokens easing toward per-minute targets.
  */
 export default function PitchCanvas({
   snapshots,
@@ -34,142 +276,140 @@ export default function PitchCanvas({
   resetKey: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const heat = useRef<{ home: Float32Array; away: Float32Array; upTo: number }>({
-    home: new Float32Array(GW * GH),
-    away: new Float32Array(GW * GH),
-    upTo: 0,
-  });
+  const bgRef = useRef<HTMLCanvasElement | null>(null);
+  const positions = useRef<Map<string, { along: number; across: number }>>(new Map());
+  const frame = useRef<{ snapshots: MinuteSnapshot[]; minute: number }>({ snapshots, minute });
+  frame.current = { snapshots, minute };
 
   useEffect(() => {
-    heat.current = { home: new Float32Array(GW * GH), away: new Float32Array(GW * GH), upTo: 0 };
+    positions.current.clear();
   }, [resetKey]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const parent = canvas.parentElement;
-    if (!parent) return;
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const w = parent.clientWidth;
-    const h = parent.clientHeight;
-    if (canvas.width !== Math.round(w * dpr)) {
-      canvas.width = Math.round(w * dpr);
-      canvas.height = Math.round(h * dpr);
-    }
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    let raf = 0;
+    let bgW = 0;
+    let bgH = 0;
 
-    // Accumulate heat for any newly-revealed minutes.
-    const hm = heat.current;
-    if (hm.upTo > minute) {
-      hm.home.fill(0);
-      hm.away.fill(0);
-      hm.upTo = 0;
-    }
-    for (const snap of snapshots) {
-      if (snap.minute <= hm.upTo || snap.minute > minute) continue;
-      // ballY is 0 at the home goal line → landscape x. ballX is across → y.
-      const gx = Math.min(GW - 1, Math.max(0, Math.floor(snap.ballY * GW)));
-      const gy = Math.min(GH - 1, Math.max(0, Math.floor(snap.ballX * GH)));
-      const grid = snap.possession === 'home' ? hm.home : hm.away;
-      for (let dx = -1; dx <= 1; dx++) {
-        for (let dy = -1; dy <= 1; dy++) {
-          const x = gx + dx;
-          const y = gy + dy;
-          if (x < 0 || x >= GW || y < 0 || y >= GH) continue;
-          grid[y * GW + x] += dx === 0 && dy === 0 ? 1 : 0.35;
-        }
+    const draw = () => {
+      raf = requestAnimationFrame(draw);
+      const parent = canvas.parentElement;
+      if (!parent) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const w = parent.clientWidth;
+      const h = parent.clientHeight;
+      if (w === 0 || h === 0) return;
+      if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+        canvas.width = Math.round(w * dpr);
+        canvas.height = Math.round(h * dpr);
       }
-    }
-    hm.upTo = Math.max(hm.upTo, minute);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // Pitch rect inside the stands.
+      const px = Math.round(w * 0.075);
+      const py = Math.round(h * 0.1);
+      const pw = w - px * 2;
+      const ph = h - py * 2;
 
-    // Pitch base + mow stripes.
-    ctx.fillStyle = '#0e3520';
-    ctx.fillRect(0, 0, w, h);
-    for (let i = 0; i < 12; i++) {
-      if (i % 2) continue;
-      ctx.fillStyle = 'rgba(255,255,255,0.025)';
-      ctx.fillRect((w / 12) * i, 0, w / 12, h);
-    }
+      // Re-render the static stadium only when the size changes.
+      if (!bgRef.current || bgW !== w || bgH !== h) {
+        bgRef.current = document.createElement('canvas');
+        bgRef.current.width = Math.round(w * dpr);
+        bgRef.current.height = Math.round(h * dpr);
+        const bctx = bgRef.current.getContext('2d')!;
+        bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        paintStadium(bctx, w, h, px, py, pw, ph);
+        bgW = w;
+        bgH = h;
+      }
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(bgRef.current, 0, 0);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Heatmaps via a low-res offscreen buffer upscaled with smoothing.
-    const maxHeat = Math.max(4, ...hm.home, ...hm.away);
-    const off = document.createElement('canvas');
-    off.width = GW;
-    off.height = GH;
-    const octx = off.getContext('2d')!;
-    const img = octx.createImageData(GW, GH);
-    const homeRgb = hexToRgb(homeClub?.color ?? '#2fd27a');
-    let awayRgb = hexToRgb(awayClub?.color ?? '#f2667a');
-    if (Math.abs(homeRgb[0] - awayRgb[0]) + Math.abs(homeRgb[1] - awayRgb[1]) + Math.abs(homeRgb[2] - awayRgb[2]) < 90) {
-      awayRgb = [242, 102, 122];
-    }
-    for (let i = 0; i < GW * GH; i++) {
-      const hv = hm.home[i] / maxHeat;
-      const av = hm.away[i] / maxHeat;
-      const t = hv + av;
-      if (t <= 0) continue;
-      img.data[i * 4] = Math.round((homeRgb[0] * hv + awayRgb[0] * av) / t);
-      img.data[i * 4 + 1] = Math.round((homeRgb[1] * hv + awayRgb[1] * av) / t);
-      img.data[i * 4 + 2] = Math.round((homeRgb[2] * hv + awayRgb[2] * av) / t);
-      img.data[i * 4 + 3] = Math.round(Math.min(1, t) * 175);
-    }
-    octx.putImageData(img, 0, 0);
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(off, 8, 8, w - 16, h - 16);
+      const { snapshots: snaps, minute: min } = frame.current;
+      let cur: MinuteSnapshot | undefined;
+      for (const sn of snaps) {
+        if (sn.minute > Math.max(1, min)) break;
+        cur = sn;
+      }
+      if (!cur) return;
 
-    // Markings.
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-    ctx.lineWidth = 1.5;
-    const mx = 10;
-    const my = 10;
-    const pw = w - mx * 2;
-    const ph = h - my * 2;
-    ctx.strokeRect(mx, my, pw, ph);
-    ctx.beginPath();
-    ctx.moveTo(w / 2, my);
-    ctx.lineTo(w / 2, h - my);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(w / 2, h / 2, Math.min(pw, ph) * 0.12, 0, Math.PI * 2);
-    ctx.stroke();
-    const boxH = ph * 0.55;
-    const boxW = pw * 0.14;
-    const sixH = ph * 0.26;
-    const sixW = pw * 0.05;
-    for (const left of [true, false]) {
-      const bx = left ? mx : w - mx - boxW;
-      ctx.strokeRect(bx, (h - boxH) / 2, boxW, boxH);
-      const sx = left ? mx : w - mx - sixW;
-      ctx.strokeRect(sx, (h - sixH) / 2, sixW, sixH);
-    }
+      const targets = computeTargets(cur, cur.minute);
+      const kits = kitColors(homeClub, awayClub);
+      const r = Math.max(8, Math.min(13, pw * 0.016));
 
-    // Ball dot at the latest revealed snapshot.
-    const cur = [...snapshots].reverse().find((sn) => sn.minute <= minute);
-    if (cur) {
-      const bx = mx + cur.ballY * pw;
-      const by = my + cur.ballX * ph;
-      ctx.beginPath();
-      ctx.arc(bx, by, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#fff';
-      ctx.shadowColor = 'rgba(0,0,0,0.6)';
-      ctx.shadowBlur = 4;
-      ctx.fill();
-      ctx.shadowBlur = 0;
-    }
+      // Ease every token toward its target, then paint.
+      for (const t of targets) {
+        let p = positions.current.get(t.key);
+        if (!p) {
+          p = { along: t.along, across: t.across };
+          positions.current.set(t.key, p);
+        }
+        const k = t.kind === 'ball' ? 0.14 : 0.075;
+        p.along += (t.along - p.along) * k;
+        p.across += (t.across - p.across) * k;
+        const x = px + p.along * pw;
+        const y = py + p.across * ph;
 
-    // Attacking direction labels.
-    ctx.font = '700 10px Inter, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.textAlign = 'left';
-    ctx.fillText(`${homeClub?.code ?? 'HOME'} →`, mx + 6, my + 14);
-    ctx.textAlign = 'right';
-    ctx.fillText(`← ${awayClub?.code ?? 'AWAY'}`, w - mx - 6, h - my - 8);
-    ctx.textAlign = 'left';
-  }, [snapshots, minute, homeClub, awayClub, resetKey]);
+        if (t.kind === 'ball') {
+          ctx.beginPath();
+          ctx.arc(x, y - r * 0.9, r * 0.42, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = 'rgba(0,0,0,0.55)';
+          ctx.shadowBlur = 3;
+          ctx.shadowOffsetY = 2;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetY = 0;
+          ctx.beginPath();
+          ctx.arc(x - r * 0.12, y - r * 0.98, r * 0.13, 0, Math.PI * 2);
+          ctx.fillStyle = '#222';
+          ctx.fill();
+          continue;
+        }
+
+        const fill =
+          t.kind === 'ref' || t.kind === 'assist'
+            ? '#111111'
+            : t.kind === 'gk'
+              ? '#1fa055'
+              : t.side === 'home'
+                ? kits.home
+                : kits.away;
+        const label = t.kind === 'ref' ? 'R' : t.kind === 'assist' ? 'A' : String(t.num ?? '');
+
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = fill;
+        ctx.shadowColor = 'rgba(0,0,0,0.45)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetY = 2;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = luminance(fill) > 0.6 ? 'rgba(30,40,80,0.55)' : 'rgba(255,255,255,0.9)';
+        ctx.stroke();
+        if (t.onBall) {
+          ctx.beginPath();
+          ctx.arc(x, y, r + 2.5, 0, Math.PI * 2);
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#ffe23f';
+          ctx.stroke();
+        }
+        ctx.font = `800 ${Math.round(r * 1.02)}px Inter, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = t.kind === 'player' && luminance(fill) > 0.6 ? '#20337a' : '#ffffff';
+        ctx.fillText(label, x, y + 0.5);
+      }
+    };
+
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, [homeClub, awayClub, resetKey]);
 
   return <canvas ref={canvasRef} className="fm-matchx__canvas" />;
 }
