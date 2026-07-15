@@ -53,6 +53,9 @@ function migrate(raw: RawSave): GameState {
   s.jobOffers = s.jobOffers ?? [];
   s.records = s.records ?? { biggestWin: null, bestFinish: null, topSeasonScorer: null };
   s.legacy = s.legacy ?? {};
+  s.inbox = s.inbox ?? [];
+  s.nextInboxId = s.nextInboxId ?? (s.inbox.reduce((m, i) => Math.max(m, i.id), 0) + 1);
+  s.pressWeek = s.pressWeek ?? 0;
   s.nextPlayerId = s.nextPlayerId ?? Math.max(...Object.keys(s.players).map(Number)) + 1;
   s.board = s.board ?? makeBoardObjective(s);
   s.cup = s.cup ?? makeDomesticCup(s);

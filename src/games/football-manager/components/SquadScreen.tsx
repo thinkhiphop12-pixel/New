@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import type { GameState, Player, Pressing, TacticStyle, Tempo, TrainingFocus, Width } from '@/engine/types';
 import { FORMATIONS, getFormation } from '@/engine/gameRules';
-import { autoPickLineup, getSquad, isOnLoan, lineupStrength } from '@/engine/teamManagement';
+import { autoPickLineup, getSquad, isOnLoan, lineupStrength, setPlayerRole } from '@/engine/teamManagement';
 import { canLoanOut, loanOut, renewContract } from '@/engine/transferMarket';
 import { traitNames } from '@/engine/traits';
 import { formatMoney } from '@/engine/utils';
+import { getRole, getRolesByPosition } from '@/lib/playerRoles';
 import { AttrBars, PitchMarkings, PlayerToken } from './visuals';
 
 function lastName(name: string): string {
@@ -185,6 +186,7 @@ export default function SquadScreen({
             >
               <PlayerToken label={slot.label} rating={p ? p.rating * p.form : undefined} pos={slot.pos} form={p?.form} />
               {p && <span className="fm-slot__name">{lastName(p.name)}</span>}
+              {p?.tacticalRole && <span className="fm-slot__role-dot" title={getRole(p.tacticalRole)?.name} />}
             </button>
           );
         })}
@@ -227,6 +229,29 @@ export default function SquadScreen({
               ))}
             </div>
           )}
+          <p className="fm-label">Tactical role</p>
+          <div className="fm-role-grid">
+            <button
+              className={`fm-role-tile${!detail.tacticalRole ? ' active' : ''}`}
+              onClick={() => onChange(setPlayerRole(state, detail.id, null))}
+            >
+              <span className="fm-role-tile__name">Balanced</span>
+              <span className="fm-role-tile__desc">No specialism</span>
+            </button>
+            {getRolesByPosition(detail.pos).map((role) => (
+              <button
+                key={role.id}
+                className={`fm-role-tile${detail.tacticalRole === role.id ? ' active' : ''}`}
+                onClick={() => onChange(setPlayerRole(state, detail.id, role.id))}
+              >
+                <span className="fm-role-tile__name">{role.name}</span>
+                <span className="fm-role-tile__desc">{role.description}</span>
+              </button>
+            ))}
+          </div>
+          <p className="fm-hint" style={{ marginBottom: 0 }}>
+            Playing a player in their assigned role and correct position gives a small strength boost.
+          </p>
           {detail.career.length > 0 && (
             <>
               <p className="fm-label">Career history</p>
@@ -288,6 +313,7 @@ export default function SquadScreen({
                 {p.name}
                 <span className="fm-player-row__sub">
                   {p.age}y{inLineup ? ' · XI' : ''}
+                  {p.tacticalRole ? ` · ${getRole(p.tacticalRole)?.name}` : ''}
                   {p.contractYears <= 1 ? ' · ⚠ expiring' : ''}
                 </span>
               </span>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { GameState } from '@/engine/types';
 import PortalHub from './PortalHub';
+import InboxScreen from './InboxScreen';
 import SquadScreen from './SquadScreen';
 import TacticsScreen from './TacticsScreen';
 import TransfersScreen from './TransfersScreen';
@@ -11,10 +12,11 @@ import FixturesScreen from './FixturesScreen';
 import CupScreen from './CupScreen';
 import ClubScreen from './ClubScreen';
 
-type Tab = 'hub' | 'squad' | 'tactics' | 'transfers' | 'table' | 'fixtures' | 'cups' | 'club';
+type Tab = 'hub' | 'inbox' | 'squad' | 'tactics' | 'transfers' | 'table' | 'fixtures' | 'cups' | 'club';
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'hub', label: 'Hub', icon: '🏠' },
+  { id: 'inbox', label: 'Inbox', icon: '📰' },
   { id: 'squad', label: 'Squad', icon: '👥' },
   { id: 'tactics', label: 'Tactics', icon: '📐' },
   { id: 'transfers', label: 'Transfers', icon: '💰' },
@@ -51,6 +53,9 @@ export default function HubScreen({
             {t.id === 'transfers' && state.incomingOffers.length > 0 && (
               <span className="fm-tab__badge">{state.incomingOffers.length}</span>
             )}
+            {t.id === 'inbox' && state.inbox.some((i) => !i.read) && (
+              <span className="fm-tab__badge">{state.inbox.filter((i) => !i.read).length}</span>
+            )}
           </button>
         ))}
       </nav>
@@ -58,6 +63,7 @@ export default function HubScreen({
       {tab === 'hub' && (
         <PortalHub state={state} onChange={onChange} onPlayMatch={onPlayMatch} onAbandon={onAbandon} />
       )}
+      {tab === 'inbox' && <InboxScreen state={state} onChange={onChange} />}
       {tab === 'squad' && <SquadScreen state={state} onChange={onChange} />}
       {tab === 'tactics' && <TacticsScreen state={state} onChange={onChange} />}
       {tab === 'transfers' && <TransfersScreen state={state} onChange={onChange} />}

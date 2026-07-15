@@ -4,21 +4,24 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameSettings, GameState, MatchReport, Player } from '@/engine/types';
 import { nextUserFixture } from '@/engine/seasonProgression';
 import { availableSquad } from '@/engine/teamManagement';
-import { MAX_SUBS } from '@/engine/gameRules';
+import { DIVISION_NAMES, MAX_SUBS } from '@/engine/gameRules';
 import { computeHighlights } from '@/engine/highlights';
 import { simulateTickMatch } from '@/engine/tickEngine/sim';
 import { MENTALITIES, MENTALITY_ORDER, normalizeMentality, type MentalityId } from '@/engine/tickEngine/tacticsData';
 import { ratingsFromCounts } from '@/engine/tickEngine/ratings';
 import type { MatchTimeline, MinuteSnapshot, ResumeContext, TeamSide, TickMatchEvent } from '@/engine/tickEngine/types';
+import type { TeamTalkOutcome } from '@/engine/teamTalk';
 import MatchHighlights from '../MatchHighlights';
 import { StatTile } from '../visuals';
 import PitchCanvas from './PitchCanvas';
+import LineupScreen from './LineupScreen';
+import StatsOverlay from './StatsOverlay';
 import TacticsModal, { type TacticsSelection } from './TacticsModal';
+import TeamTalkModal from './TeamTalkModal';
 
 const SPEEDS = [1, 2, 4, 8];
 const MS_PER_MINUTE = 640;
-
-type Tab = 'events' | 'stats' | 'squad';
+const HIGHLIGHT_DOTS = 14;
 
 function eventIcon(e: TickMatchEvent): string {
   if (e.type === 'goal') return '⚽';
@@ -42,17 +45,22 @@ export default function MatchScreen({
   const [timeline, setTimeline] = useState<MatchTimeline | null>(null);
   const [minute, setMinute] = useState(0);
   const [speed, setSpeed] = useState(() => (settings.matchSpeed === 'slow' ? 1 : settings.matchSpeed === 'fast' ? 4 : 2));
+  const [kickedOff, setKickedOff] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [tab, setTab] = useState<Tab>('events');
+  const [showMenu, setShowMenu] = useState(false);
+  const [showEvents, setShowEvents] = useState(false);
   const [showTactics, setShowTactics] = useState(false);
   const [showSubs, setShowSubs] = useState(false);
   const [subOut, setSubOut] = useState<number | null>(null);
   const [htShown, setHtShown] = useState(false);
   const [showHt, setShowHt] = useState(false);
+  const [showTeamTalk, setShowTeamTalk] = useState<'pre' | 'ht' | null>(null);
+  const [preTalkDone, setPreTalkDone] = useState(false);
   const feedRef = useRef<HTMLDivElement | null>(null);
 
   const userIsHome = fixture?.homeId === state.userClubId;
   const userSide: TeamSide = userIsHome ? 'home' : 'away';
+  const teamTalksOn = settings.showTeamTalks !== false;
 
   useEffect(() => {
     if (!fixture) return;
@@ -63,19 +71,22 @@ export default function MatchScreen({
       difficulty: settings.difficulty,
     });
     setTimeline(tl);
-    if (settings.matchSpeed === 'instant') setMinute(90);
+    if (settings.matchSpeed === 'instant') {
+      setKickedOff(true);
+      setMinute(90);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const finished = minute >= 90;
-  const overlayOpen = showTactics || showSubs || showHt;
+  const overlayOpen = showTactics || showSubs || showHt || showMenu || showEvents || showTeamTalk !== null;
 
   // Replay clock.
   useEffect(() => {
-    if (!timeline || paused || finished || overlayOpen) return;
+    if (!timeline || !kickedOff || paused || finished || overlayOpen) return;
     const t = setInterval(() => setMinute((m) => Math.min(90, m + 1)), MS_PER_MINUTE / speed);
     return () => clearInterval(t);
-  }, [timeline, paused, finished, overlayOpen, speed]);
+  }, [timeline, kickedOff, paused, finished, overlayOpen, speed]);
 
   // Half-time pause.
   useEffect(() => {
@@ -104,7 +115,7 @@ export default function MatchScreen({
   useEffect(() => {
     const el = feedRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [shownEvents.length]);
+  }, [shownEvents.length, showEvents]);
 
   const liveRatings = useMemo(() => {
     if (!snap) return {};
@@ -144,6 +155,10 @@ export default function MatchScreen({
   const currentFormationId = userCtx?.formationId ?? state.dualFormation?.inPossessionId ?? state.formationId;
   const usedIds = new Set([...(userCtx?.appeared ?? currentLineup.filter((id) => id !== null) as number[]), ...(userCtx?.sentOff ?? [])]);
   const bench = availableSquad(state, state.userClubId).filter((p) => !usedIds.has(p.id));
+
+  const firstSnap = timeline.snapshots[0];
+  const homeStartCtx = firstSnap?.resume.home;
+  const awayStartCtx = firstSnap?.resume.away;
 
   /** Re-simulate the remainder of the match from the current minute. */
   const intervene = (mutate: (ctx: ResumeContext) => void) => {
@@ -205,7 +220,30 @@ export default function MatchScreen({
     });
   };
 
+  const applyHtTalk = (outcome: TeamTalkOutcome) => {
+    const delta = outcome.momentumDelta * (userIsHome ? 1 : -1);
+    intervene((ctx) => {
+      ctx.momentum = Math.max(-1, Math.min(1, ctx.momentum + delta));
+    });
+  };
+
+  const applyPreTalk = (outcome: TeamTalkOutcome) => {
+    if (!fixture) return;
+    setPreTalkDone(true);
+    const delta = outcome.momentumDelta * (userIsHome ? 1 : -1);
+    const tl = simulateTickMatch(state, fixture.homeId, fixture.awayId, {
+      userLineup: state.lineup,
+      userMentality: normalizeMentality(state.tactics.mentality),
+      userTactics: state.tactics,
+      difficulty: settings.difficulty,
+      initialMomentum: delta,
+    });
+    setTimeline(tl);
+  };
+
   const simToEnd = () => {
+    setShowMenu(false);
+    setKickedOff(true);
     setPaused(false);
     setShowHt(false);
     setMinute(90);
@@ -215,67 +253,169 @@ export default function MatchScreen({
     if (finished || window.confirm('Leave the touchline? The result will stand as simulated.')) onDone(timeline.report);
   };
 
-  const minuteLabel = finished ? 'FT' : minute === 45 && showHt ? 'HT' : `${minute}'`;
-  const statRows: [string, number | string, number | string][] = [
-    ['POSS', `${stats.home.possession}%`, `${stats.away.possession}%`],
-    ['SHOTS', stats.home.shots, stats.away.shots],
-    ['XG', stats.home.xg.toFixed(2), stats.away.xg.toFixed(2)],
-    ['ON TGT', stats.home.onTarget, stats.away.onTarget],
-    ['CRN', stats.home.corners, stats.away.corners],
-    ['FOULS', stats.home.fouls, stats.away.fouls],
-  ];
+  const minuteLabel = !kickedOff ? 'KO' : finished ? 'FT' : minute === 45 && showHt ? 'HT' : `${minute}'`;
 
-  const squadRows = (side: TeamSide) => {
-    const ctx = snap?.resume[side];
-    const ids = ctx?.appeared ?? (side === 'home' ? timeline.report.homeLineup : timeline.report.awayLineup);
-    return ids
-      .map((id) => state.players[id])
-      .filter((p): p is Player => !!p)
-      .map((p) => {
-        const off = ctx?.sentOff.includes(p.id) || (ctx && !ctx.lineup.includes(p.id));
-        return { p, rating: liveRatings[p.id] ?? timeline.ratings[p.id], off: !!off };
-      });
+  // Highlight progress dots: key moments already revealed light up in order.
+  const highlights = timeline.events.filter(
+    (e) => e.type === 'goal' || e.type === 'card' || e.kind === 'shot' || e.kind === 'save'
+  );
+  const passedHighlights = highlights.filter((e) => e.minute <= minute).length;
+
+  const latestEvent = shownEvents[shownEvents.length - 1];
+  const commentary = !kickedOff
+    ? `${home?.name} v ${away?.name} — the teams are out at ${home?.name} Stadium`
+    : latestEvent?.text ?? 'The referee gets us underway';
+
+  const teamRating = (side: TeamSide) => {
+    const ids = (snap?.resume[side].lineup ?? []).filter((id): id is number => id !== null);
+    if (ids.length === 0) return 6;
+    const vals = ids.map((id) => liveRatings[id] ?? 6.4);
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
   };
+  const cardCount = (side: TeamSide) => shownEvents.filter((e) => e.type === 'card' && e.side === side).length;
+
+  const showLineups = !kickedOff && !!homeStartCtx && !!awayStartCtx;
+  const showStats = kickedOff && paused && !finished && !overlayOpen;
 
   return (
     <div className="fm-matchx">
-      {/* Scoreboard strip */}
-      <div className="fm-matchx__scoreboard">
-        <div className="fm-matchx__team">
-          <span className="fm-scoreboard__team-badge" style={{ background: home?.color }}>{home?.code}</span>
-          <span className="fm-matchx__team-name">{home?.name}</span>
+      {/* FM-style angled scoreboard bar */}
+      <div className="fm-fmbar">
+        <button className="fm-fmbar__menu" onClick={() => setShowMenu(true)} aria-label="Match menu">
+          <span /><span /><span />
+        </button>
+        <div className="fm-fmbar__seg fm-fmbar__seg--home">
+          <span className="fm-fmbar__badge" style={{ background: home?.color }} />
+          <span className="fm-fmbar__team">{home?.code}</span>
         </div>
-        <div className="fm-matchx__score">
-          <span>{score.home}</span>
-          <span className="fm-matchx__score-sep">–</span>
-          <span>{score.away}</span>
+        <div className="fm-fmbar__seg fm-fmbar__seg--score">
+          {score.home} - {score.away}
         </div>
-        <div className="fm-matchx__team fm-matchx__team--away">
-          <span className="fm-matchx__team-name">{away?.name}</span>
-          <span className="fm-scoreboard__team-badge" style={{ background: away?.color }}>{away?.code}</span>
+        <div className="fm-fmbar__seg fm-fmbar__seg--away">
+          <span className="fm-fmbar__badge" style={{ background: away?.color }} />
+          <span className="fm-fmbar__team">{away?.code}</span>
         </div>
-        <div className="fm-matchx__clock">
-          <span className={`fm-matchx__minute${finished ? ' done' : ''}`}>{minuteLabel}</span>
-          <div className="fm-matchx__momentum">
-            <div className="fm-matchx__momentum-fill" style={{ width: `${50 + (snap?.momentum ?? 0) * 45}%` }} />
-          </div>
+        <div className="fm-fmbar__seg fm-fmbar__seg--clock">{minuteLabel}</div>
+        <div className="fm-fmbar__dots">
+          {Array.from({ length: HIGHLIGHT_DOTS }, (_, i) => (
+            <span
+              key={i}
+              className={`fm-fmbar__dot${i < Math.min(passedHighlights, HIGHLIGHT_DOTS) ? ' lit' : ''}${
+                i === Math.min(passedHighlights, HIGHLIGHT_DOTS - 1) && kickedOff && !finished ? ' now' : ''
+              }`}
+            />
+          ))}
         </div>
+        {teamTalksOn && !kickedOff && (
+          <button className="fm-fmbar__icon" onClick={() => setShowTeamTalk('pre')} disabled={preTalkDone}
+            aria-label="Team talk" title={preTalkDone ? 'Team talk given' : 'Team talk'}>
+            🗣️
+          </button>
+        )}
+        <button className="fm-fmbar__icon" onClick={() => { setSubOut(null); setShowSubs(true); }}
+          disabled={finished || subsUsed >= MAX_SUBS} aria-label="Substitutions" title={`Subs ${subsUsed}/${MAX_SUBS}`}>
+          ⇅
+        </button>
+        <button className="fm-fmbar__icon" onClick={() => setShowTactics(true)} disabled={finished} aria-label="Tactics" title="Tactics">
+          ⚙
+        </button>
+        <button
+          className="fm-fmbar__play"
+          onClick={() => {
+            if (!kickedOff) setKickedOff(true);
+            else setPaused((p) => !p);
+          }}
+          disabled={finished}
+          aria-label={!kickedOff || paused ? 'Play' : 'Pause'}
+        >
+          {!kickedOff || paused ? '▶' : '❚❚'}
+        </button>
       </div>
 
-      {/* Main: pitch + side rail */}
-      <div className="fm-matchx__main">
-        <div className="fm-matchx__pitch">
+      {/* Pitch */}
+      <div className="fm-matchx__stage">
+        {showLineups ? (
+          <LineupScreen
+            homeClub={home}
+            awayClub={away}
+            homeLineup={homeStartCtx.lineup}
+            awayLineup={awayStartCtx.lineup}
+            homeFormationId={homeStartCtx.formationId}
+            awayFormationId={awayStartCtx.formationId}
+            players={state.players}
+            captainId={state.captainId}
+          />
+        ) : (
           <PitchCanvas snapshots={timeline.snapshots} minute={minute} homeClub={home} awayClub={away} resetKey={0} />
-        </div>
-        <div className="fm-matchx__rail">
-          <div className="fm-matchx__tabs">
-            {(['events', 'stats', 'squad'] as Tab[]).map((t) => (
-              <button key={t} className={`fm-matchx__tab${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>
-                {t.toUpperCase()}
+        )}
+        {showStats && (
+          <StatsOverlay
+            homeClub={home}
+            awayClub={away}
+            stats={stats}
+            score={score}
+            momentum={snap?.momentum ?? 0}
+            week={state.week}
+            seasonYear={state.seasonYear}
+            competition={DIVISION_NAMES[home?.division ?? 1]}
+            teamRatings={{ home: teamRating('home'), away: teamRating('away') }}
+            cards={{ home: cardCount('home'), away: cardCount('away') }}
+            corners={{ home: stats.home.corners, away: stats.away.corners }}
+          />
+        )}
+      </div>
+
+      {/* Commentary ticker */}
+      <div className="fm-fmticker">
+        <button className="fm-fmticker__btn" onClick={() => setShowTactics(true)} disabled={finished} aria-label="Tactics">
+          ⚙
+        </button>
+        <button className="fm-fmticker__text" onClick={() => setShowEvents(true)}>
+          {commentary}
+        </button>
+        <button className="fm-fmticker__btn" onClick={() => { setSubOut(null); setShowSubs(true); }}
+          disabled={finished || subsUsed >= MAX_SUBS} aria-label="Substitutions">
+          ⇅
+        </button>
+      </div>
+
+      {/* Match menu */}
+      {showMenu && (
+        <div className="fm-matchx-modal" onClick={() => setShowMenu(false)}>
+          <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
+            <div className="fm-matchx-modal__head">
+              <span className="fm-matchx-modal__title">Match Menu</span>
+              <button className="fm-matchx-modal__close" onClick={() => setShowMenu(false)} aria-label="Close">✕</button>
+            </div>
+            <div className="fm-menu-list">
+              <button className="fm-btn fm-btn--secondary" onClick={() => { setShowMenu(false); cycleMentality(); }} disabled={finished}>
+                Mentality: {MENTALITIES[currentMentality].label} → cycle
               </button>
-            ))}
+              <button className="fm-btn fm-btn--secondary" onClick={() => setSpeed((sp) => SPEEDS[(SPEEDS.indexOf(sp) + 1) % SPEEDS.length])}>
+                Match speed: {speed}x
+              </button>
+              <button className="fm-btn fm-btn--secondary" onClick={() => { setShowMenu(false); setShowEvents(true); }}>
+                Key events
+              </button>
+              <button className="fm-btn fm-btn--secondary" onClick={simToEnd} disabled={finished}>
+                Sim to full time
+              </button>
+              <button className="fm-btn fm-btn--danger" onClick={exitMatch}>
+                {finished ? 'Continue' : 'Exit match'}
+              </button>
+            </div>
           </div>
-          {tab === 'events' && (
+        </div>
+      )}
+
+      {/* Key events sheet */}
+      {showEvents && (
+        <div className="fm-matchx-modal" onClick={() => setShowEvents(false)}>
+          <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
+            <div className="fm-matchx-modal__head">
+              <span className="fm-matchx-modal__title">Match Events</span>
+              <button className="fm-matchx-modal__close" onClick={() => setShowEvents(false)} aria-label="Close">✕</button>
+            </div>
             <div className="fm-matchx__feed" ref={feedRef}>
               {shownEvents.length === 0 && <p className="fm-hint">The teams are out…</p>}
               {shownEvents.map((e, i) => (
@@ -289,98 +429,9 @@ export default function MatchScreen({
                 </div>
               ))}
             </div>
-          )}
-          {tab === 'stats' && (
-            <div className="fm-matchx__stats">
-              {statRows.map(([label, h, a]) => {
-                const hn = parseFloat(String(h));
-                const an = parseFloat(String(a));
-                const total = hn + an || 1;
-                return (
-                  <div key={label} className="fm-matchx__statrow">
-                    <div className="fm-matchx__statvals">
-                      <span>{h}</span>
-                      <span className="fm-matchx__statlabel">{label}</span>
-                      <span>{a}</span>
-                    </div>
-                    <div className="fm-matchx__statbar">
-                      <div className="fm-matchx__statbar-home" style={{ width: `${(100 * hn) / total}%`, background: home?.color }} />
-                      <div className="fm-matchx__statbar-away" style={{ width: `${(100 * an) / total}%`, background: away?.color }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {tab === 'squad' && (
-            <div className="fm-matchx__squads">
-              {(['home', 'away'] as TeamSide[]).map((side) => (
-                <div key={side}>
-                  <p className="fm-label">{side === 'home' ? home?.name : away?.name}</p>
-                  {squadRows(side).map(({ p, rating, off }) => (
-                    <div key={p.id} className={`fm-matchx__squadrow${off ? ' off' : ''}`}>
-                      <span className="fm-matchx__squadrole">{p.role}</span>
-                      <span className="fm-matchx__squadname">{p.name}</span>
-                      {rating !== undefined && (
-                        <span className={`fm-matchx__squadrating${rating >= 7.5 ? ' good' : rating < 6 ? ' poor' : ''}`}>
-                          {rating.toFixed(1)}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Stat bar */}
-      <div className="fm-matchx__statstrip">
-        {statRows.map(([label, h, a]) => (
-          <div key={label} className="fm-matchx__stripitem">
-            <span className="fm-matchx__striphome">{h}</span>
-            <span className="fm-matchx__striplabel">{label}</span>
-            <span className="fm-matchx__stripaway">{a}</span>
           </div>
-        ))}
-      </div>
-
-      {/* Controls */}
-      <div className="fm-matchx__controls">
-        <button className="fm-matchx__ctl" onClick={cycleMentality} disabled={finished}>
-          <span className="fm-matchx__ctl-icon">☆</span>
-          {MENTALITIES[currentMentality].short}
-        </button>
-        <button className="fm-matchx__ctl" onClick={() => { setSubOut(null); setShowSubs(true); }} disabled={finished || subsUsed >= MAX_SUBS}>
-          <span className="fm-matchx__ctl-icon">🔁</span>
-          Sub ({subsUsed}/{MAX_SUBS})
-        </button>
-        <button className="fm-matchx__ctl" onClick={() => setShowTactics(true)} disabled={finished}>
-          <span className="fm-matchx__ctl-icon">📋</span>
-          Tactics
-        </button>
-        <button
-          className="fm-matchx__ctl"
-          onClick={() => setSpeed((sp) => SPEEDS[(SPEEDS.indexOf(sp) + 1) % SPEEDS.length])}
-          disabled={finished}
-        >
-          <span className="fm-matchx__ctl-icon">▶▶</span>
-          {speed}x
-        </button>
-        <button className="fm-matchx__ctl" onClick={simToEnd} disabled={finished}>
-          <span className="fm-matchx__ctl-icon">⏭</span>
-          Sim End
-        </button>
-        <button className="fm-matchx__ctl" onClick={() => setPaused((p) => !p)} disabled={finished}>
-          <span className="fm-matchx__ctl-icon">{paused ? '▶' : '⏸'}</span>
-          {paused ? 'Resume' : 'Pause'}
-        </button>
-        <button className="fm-matchx__ctl fm-matchx__ctl--exit" onClick={exitMatch}>
-          <span className="fm-matchx__ctl-icon">✕</span>
-          {finished ? 'Continue' : 'Exit'}
-        </button>
-      </div>
+        </div>
+      )}
 
       {/* Half-time banner */}
       {showHt && !finished && (
@@ -392,6 +443,9 @@ export default function MatchScreen({
             </div>
             <p className="fm-hint">Adjust your tactics or make substitutions before the restart.</p>
             <div className="fm-actions">
+              {teamTalksOn && (
+                <button className="fm-btn fm-btn--secondary" onClick={() => setShowTeamTalk('ht')}>🗣️ Team Talk</button>
+              )}
               <button className="fm-btn fm-btn--secondary" onClick={() => { setShowHt(false); setShowTactics(true); }}>Tactics</button>
               <button className="fm-btn fm-btn--secondary" onClick={() => { setShowHt(false); setShowSubs(true); }} disabled={subsUsed >= MAX_SUBS}>
                 Subs ({subsUsed}/{MAX_SUBS})
@@ -460,6 +514,16 @@ export default function MatchScreen({
           ratings={liveRatings}
           onApply={applyTactics}
           onClose={() => setShowTactics(false)}
+        />
+      )}
+
+      {/* Team talk modal */}
+      {showTeamTalk && (
+        <TeamTalkModal
+          moment={showTeamTalk}
+          scoreDiff={userIsHome ? score.home - score.away : score.away - score.home}
+          onApply={showTeamTalk === 'pre' ? applyPreTalk : applyHtTalk}
+          onClose={() => setShowTeamTalk(null)}
         />
       )}
 

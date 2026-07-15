@@ -92,6 +92,8 @@ export interface TickSimOptions {
   userTactics?: Tactics;
   /** AI difficulty multiplier applied to the user's opponent. */
   difficulty?: number;
+  /** Seed match momentum (-1..1, home-perspective) — a pre-match team talk. Ignored when resuming via `initial`. */
+  initialMomentum?: number;
   /** Skip snapshots/commentary for cheap AI/auto sims. */
   headless?: boolean;
 }
