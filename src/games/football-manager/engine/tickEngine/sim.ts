@@ -459,7 +459,7 @@ export function simulateTickMatch(state: GameState, homeId: number, awayId: numb
     minute: opts.startMinute ?? 1,
     possession: Math.random() < 0.5 ? 'home' : 'away',
     ballZone: 2,
-    momentum: 0,
+    momentum: Math.max(-1, Math.min(1, opts.initialMomentum ?? 0)),
     events: [],
     snapshots: [],
     headless: !!opts.headless,

@@ -2,6 +2,25 @@ import type { GameState, Player, Position, Tactics, FormationDef } from './types
 import { FORMATIONS, getFormation } from './gameRules';
 import { traitsFor } from './traits';
 import { clamp } from './utils';
+import { getRole } from '@/lib/playerRoles';
+
+/** Assign (or clear with null) a player's tactical role. */
+export function setPlayerRole(state: GameState, playerId: number, roleId: string | null): GameState {
+  const s: GameState = structuredClone(state);
+  const p = s.players[playerId];
+  if (!p) return state;
+  if (roleId) p.tacticalRole = roleId;
+  else delete p.tacticalRole;
+  return s;
+}
+
+/** Small strength bonus for a player deployed in their assigned specialist role. */
+function roleFitBonus(p: Player, slotPos: Position): number {
+  if (!p.tacticalRole) return 1;
+  const role = getRole(p.tacticalRole);
+  if (!role || role.position !== slotPos) return 1;
+  return 1.05;
+}
 
 export function getSquad(state: GameState, clubId: number): Player[] {
   const club = state.clubs.find((c) => c.id === clubId);
@@ -92,7 +111,7 @@ export function lineupStrength(
       return;
     }
     const p = state.players[id];
-    const penalty = p.pos === slot.pos ? 1 : 0.85;
+    const penalty = (p.pos === slot.pos ? 1 : 0.85) * roleFitBonus(p, slot.pos);
     groups[slot.pos].push(effectiveRating(p) * penalty || 30);
     for (const t of traitsFor(p)) {
       traitAtt += t.att;

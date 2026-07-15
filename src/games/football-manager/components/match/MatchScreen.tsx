@@ -10,12 +10,14 @@ import { simulateTickMatch } from '@/engine/tickEngine/sim';
 import { MENTALITIES, MENTALITY_ORDER, normalizeMentality, type MentalityId } from '@/engine/tickEngine/tacticsData';
 import { ratingsFromCounts } from '@/engine/tickEngine/ratings';
 import type { MatchTimeline, MinuteSnapshot, ResumeContext, TeamSide, TickMatchEvent } from '@/engine/tickEngine/types';
+import type { TeamTalkOutcome } from '@/engine/teamTalk';
 import MatchHighlights from '../MatchHighlights';
 import { StatTile } from '../visuals';
 import PitchCanvas from './PitchCanvas';
 import LineupScreen from './LineupScreen';
 import StatsOverlay from './StatsOverlay';
 import TacticsModal, { type TacticsSelection } from './TacticsModal';
+import TeamTalkModal from './TeamTalkModal';
 
 const SPEEDS = [1, 2, 4, 8];
 const MS_PER_MINUTE = 640;
@@ -52,10 +54,13 @@ export default function MatchScreen({
   const [subOut, setSubOut] = useState<number | null>(null);
   const [htShown, setHtShown] = useState(false);
   const [showHt, setShowHt] = useState(false);
+  const [showTeamTalk, setShowTeamTalk] = useState<'pre' | 'ht' | null>(null);
+  const [preTalkDone, setPreTalkDone] = useState(false);
   const feedRef = useRef<HTMLDivElement | null>(null);
 
   const userIsHome = fixture?.homeId === state.userClubId;
   const userSide: TeamSide = userIsHome ? 'home' : 'away';
+  const teamTalksOn = settings.showTeamTalks !== false;
 
   useEffect(() => {
     if (!fixture) return;
@@ -74,7 +79,7 @@ export default function MatchScreen({
   }, []);
 
   const finished = minute >= 90;
-  const overlayOpen = showTactics || showSubs || showHt || showMenu || showEvents;
+  const overlayOpen = showTactics || showSubs || showHt || showMenu || showEvents || showTeamTalk !== null;
 
   // Replay clock.
   useEffect(() => {
@@ -215,6 +220,27 @@ export default function MatchScreen({
     });
   };
 
+  const applyHtTalk = (outcome: TeamTalkOutcome) => {
+    const delta = outcome.momentumDelta * (userIsHome ? 1 : -1);
+    intervene((ctx) => {
+      ctx.momentum = Math.max(-1, Math.min(1, ctx.momentum + delta));
+    });
+  };
+
+  const applyPreTalk = (outcome: TeamTalkOutcome) => {
+    if (!fixture) return;
+    setPreTalkDone(true);
+    const delta = outcome.momentumDelta * (userIsHome ? 1 : -1);
+    const tl = simulateTickMatch(state, fixture.homeId, fixture.awayId, {
+      userLineup: state.lineup,
+      userMentality: normalizeMentality(state.tactics.mentality),
+      userTactics: state.tactics,
+      difficulty: settings.difficulty,
+      initialMomentum: delta,
+    });
+    setTimeline(tl);
+  };
+
   const simToEnd = () => {
     setShowMenu(false);
     setKickedOff(true);
@@ -280,6 +306,12 @@ export default function MatchScreen({
             />
           ))}
         </div>
+        {teamTalksOn && !kickedOff && (
+          <button className="fm-fmbar__icon" onClick={() => setShowTeamTalk('pre')} disabled={preTalkDone}
+            aria-label="Team talk" title={preTalkDone ? 'Team talk given' : 'Team talk'}>
+            🗣️
+          </button>
+        )}
         <button className="fm-fmbar__icon" onClick={() => { setSubOut(null); setShowSubs(true); }}
           disabled={finished || subsUsed >= MAX_SUBS} aria-label="Substitutions" title={`Subs ${subsUsed}/${MAX_SUBS}`}>
           ⇅
@@ -411,6 +443,9 @@ export default function MatchScreen({
             </div>
             <p className="fm-hint">Adjust your tactics or make substitutions before the restart.</p>
             <div className="fm-actions">
+              {teamTalksOn && (
+                <button className="fm-btn fm-btn--secondary" onClick={() => setShowTeamTalk('ht')}>🗣️ Team Talk</button>
+              )}
               <button className="fm-btn fm-btn--secondary" onClick={() => { setShowHt(false); setShowTactics(true); }}>Tactics</button>
               <button className="fm-btn fm-btn--secondary" onClick={() => { setShowHt(false); setShowSubs(true); }} disabled={subsUsed >= MAX_SUBS}>
                 Subs ({subsUsed}/{MAX_SUBS})
@@ -479,6 +514,16 @@ export default function MatchScreen({
           ratings={liveRatings}
           onApply={applyTactics}
           onClose={() => setShowTactics(false)}
+        />
+      )}
+
+      {/* Team talk modal */}
+      {showTeamTalk && (
+        <TeamTalkModal
+          moment={showTeamTalk}
+          scoreDiff={userIsHome ? score.home - score.away : score.away - score.home}
+          onApply={showTeamTalk === 'pre' ? applyPreTalk : applyHtTalk}
+          onClose={() => setShowTeamTalk(null)}
         />
       )}
 

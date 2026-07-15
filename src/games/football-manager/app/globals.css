@@ -1185,3 +1185,23 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-press-option__label { font-weight: 800; font-size: 13px; }
 .fm-press-option__hint { font-size: 11px; color: var(--muted); }
 .fm-press-quote { font-style: italic; font-size: 15px; color: var(--gold-2); margin: 4px 0 10px; }
+
+/* ── Tactical role assignment ── */
+.fm-slot__role-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--gold);
+  box-shadow: 0 0 4px rgba(245,179,1,0.7);
+}
+.fm-role-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px; margin-bottom: 8px; max-height: 220px; overflow-y: auto;
+}
+.fm-role-tile {
+  display: flex; flex-direction: column; gap: 2px; text-align: left;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--r-sm);
+  padding: 7px 9px; cursor: pointer; color: var(--text-2);
+}
+.fm-role-tile:hover { border-color: var(--border-bright); }
+.fm-role-tile.active { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+.fm-role-tile__name { font-size: 11.5px; font-weight: 800; }
+.fm-role-tile__desc { font-size: 10px; color: var(--muted); line-height: 1.3; }
+.fm-role-tile.active .fm-role-tile__desc { color: inherit; opacity: 0.75; }
