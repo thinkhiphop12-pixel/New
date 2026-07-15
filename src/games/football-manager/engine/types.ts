@@ -269,8 +269,27 @@ export interface GameState {
   incomingOffers: TransferOffer[];
   history: SeasonSummary[];
   news: string[];
+  /** Structured inbox items (news you can open into a full article + player card). */
+  inbox: InboxItem[];
+  nextInboxId: number;
+  /** Season week the press conference was last done, so it offers once per fixture. */
+  pressWeek: number;
   /** User display/gameplay preferences. */
   settings?: GameSettings;
+}
+
+export type InboxCategory = 'club' | 'transfer' | 'injury' | 'contract' | 'youth' | 'board' | 'match' | 'press';
+
+export interface InboxItem {
+  id: number;
+  week: number;
+  seasonYear: number;
+  category: InboxCategory;
+  title: string;
+  body: string;
+  /** Player this article is about, shown as a card alongside the text. */
+  playerId?: number;
+  read: boolean;
 }
 
 export type MatchSpeed = 'slow' | 'normal' | 'fast' | 'instant';

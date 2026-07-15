@@ -2,6 +2,7 @@ import type { GameState, Player, Position, TransferOffer } from './types';
 import { MAX_SQUAD_SIZE, MIN_SQUAD_SIZE } from './gameRules';
 import { availableSquad, getSquad, isOnLoan, squadAvgRating } from './teamManagement';
 import { clamp, weeklyWage } from './utils';
+import { pushInbox } from './inbox';
 
 /** What another club (or agent) wants for a player. */
 export function askingPrice(p: Player): number {
@@ -45,6 +46,12 @@ export function buyPlayer(state: GameState, playerId: number): GameState {
   s.chemistry = clamp(s.chemistry - 6, 0, 100); // new faces take time to gel
   s.ledger.unshift({ week: s.week, desc: `Signed ${p.name}`, amount: -price });
   s.news.unshift(`Signed ${p.name} for ${money(price)}.`);
+  pushInbox(s, {
+    category: 'transfer',
+    title: `${p.name} signs for the club`,
+    body: `${p.name} has completed a move to the club for ${money(price)}.\n\nThe new arrival will need time to settle in — expect a short dip in squad chemistry while they bed in.`,
+    playerId: p.id,
+  });
   return s;
 }
 
@@ -78,6 +85,12 @@ export function sellPlayer(state: GameState, playerId: number, offer?: TransferO
   s.incomingOffers = s.incomingOffers.filter((o) => o.playerId !== playerId);
   s.ledger.unshift({ week: s.week, desc: `Sold ${p.name}`, amount });
   s.news.unshift(`Sold ${p.name} for ${money(amount)}.`);
+  pushInbox(s, {
+    category: 'transfer',
+    title: `${p.name} departs the club`,
+    body: `${p.name} has left the club for ${money(amount)}${offer ? ` after a bid from ${s.clubs.find((c) => c.id === offer.fromClubId)?.name ?? 'another club'}` : ' on the open market'}.\n\nThe funds have been added to the transfer budget.`,
+    playerId: p.id,
+  });
   return s;
 }
 
@@ -94,6 +107,12 @@ export function renewContract(state: GameState, playerId: number): GameState {
   s.budget -= bonus;
   s.ledger.unshift({ week: s.week, desc: `${sp.name} contract bonus`, amount: -bonus });
   s.news.unshift(`${sp.name} signs a new deal (${sp.contractYears}y, ${money(sp.wage)}/w).`);
+  pushInbox(s, {
+    category: 'contract',
+    title: `${sp.name} signs a new contract`,
+    body: `${sp.name} has committed their future to the club, signing a new deal until ${s.seasonYear + sp.contractYears}.\n\nNew terms: ${money(sp.wage)} per week.`,
+    playerId: sp.id,
+  });
   return s;
 }
 

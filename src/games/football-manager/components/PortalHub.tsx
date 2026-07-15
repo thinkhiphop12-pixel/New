@@ -8,6 +8,7 @@ import { isClubAlive, knockoutRoundDue } from '@/engine/cups';
 import { isLineupValid } from '@/engine/teamManagement';
 import { formatMoney } from '@/engine/utils';
 import { tint } from './visuals';
+import PressConferenceModal from './PressConferenceModal';
 
 type Filter = 'all' | 'new' | 'tasks';
 
@@ -23,6 +24,7 @@ export default function PortalHub({
   onAbandon: () => void;
 }) {
   const [filter, setFilter] = useState<Filter>('all');
+  const [showPress, setShowPress] = useState(false);
 
   const club = state.clubs.find((c) => c.id === state.userClubId)!;
   const div = userDivision(state);
@@ -36,7 +38,8 @@ export default function PortalHub({
     (knockoutRoundDue(state.cup, state.week) && isClubAlive(state.cup, state.userClubId)) ||
     (knockoutRoundDue(state.continental, state.week) && isClubAlive(state.continental, state.userClubId));
 
-  const newCount = (state.news.length > 0 ? 1 : 0) + (state.incomingOffers.length > 0 ? 1 : 0);
+  const unreadInbox = state.inbox.filter((i) => !i.read).length;
+  const newCount = (state.news.length > 0 ? 1 : 0) + (state.incomingOffers.length > 0 ? 1 : 0) + (unreadInbox > 0 ? 1 : 0);
 
   const tasks: string[] = [];
   if (!lineupOk) tasks.push('Fix your lineup');
@@ -118,14 +121,34 @@ export default function PortalHub({
             </div>
           </div>
           {cupWeek && <p className="fm-card__note">+ Cup tie midweek</p>}
-          <button
-            className="fm-btn fm-btn--primary fm-btn--full"
-            onClick={onPlayMatch}
-            disabled={!lineupOk}
-          >
-            {lineupOk ? `▶ Play Week ${state.week}` : '⚠ Fix your lineup (11 fit players)'}
-          </button>
+          <div className="fm-actions" style={{ marginBottom: 0 }}>
+            {opponent && (
+              <button
+                className="fm-btn fm-btn--secondary"
+                onClick={() => setShowPress(true)}
+                disabled={state.pressWeek === state.week}
+              >
+                🎙️ {state.pressWeek === state.week ? 'Press done' : 'Press Conference'}
+              </button>
+            )}
+            <button
+              className="fm-btn fm-btn--primary fm-btn--full"
+              onClick={onPlayMatch}
+              disabled={!lineupOk}
+            >
+              {lineupOk ? `▶ Play Week ${state.week}` : '⚠ Fix your lineup (11 fit players)'}
+            </button>
+          </div>
         </div>
+      )}
+
+      {showPress && opponent && (
+        <PressConferenceModal
+          state={state}
+          opponentName={opponent.name}
+          onChange={onChange}
+          onClose={() => setShowPress(false)}
+        />
       )}
 
       {/* Filter buttons */}

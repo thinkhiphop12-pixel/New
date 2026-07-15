@@ -13,6 +13,9 @@ import { autoPickLineup, getSquad, isLineupValid, isOnLoan, squadAvgRating } fro
 import { clamp, marketValue, pickRandom, weeklyWage } from './utils';
 import { aiWeeklyTransfers, generateWeeklyOffers } from './transferMarket';
 import { clubRunName, createKnockout, isClubAlive, knockoutRoundDue, playKnockoutRound, roundName, tieWinner, userTieThisRound } from './cups';
+import { pushInbox } from './inbox';
+
+export { markInboxRead, markAllInboxRead } from './inbox';
 
 /** Double round-robin fixtures via the circle method. 20 clubs → 38 rounds. */
 export function generateFixtures(clubIds: number[]): Fixture[] {
@@ -205,6 +208,9 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
     incomingOffers: [],
     history: [],
     news: [`Welcome to ${userClub.name}! The board expects a solid season.`],
+    inbox: [],
+    nextInboxId: 1,
+    pressWeek: 0,
   };
   state.fixtures = makeSeasonFixtures(state);
   state.board = makeBoardObjective(state);
@@ -216,6 +222,11 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
   state.continental = makeContinental(d1ByStrength);
   state.lineup = autoPickLineup(state, userClubId, getFormation(state.formationId));
   state.news.push(`Board objective: ${state.board.objective}.`);
+  pushInbox(state, {
+    category: 'club',
+    title: `Welcome to ${userClub.name}`,
+    body: `You have been appointed manager of ${userClub.name}.\n\nThe board's objective for this season: ${state.board.objective}. Finish ${state.board.minPosition}${ordinal(state.board.minPosition)} or higher to keep their confidence.\n\nGood luck, ${managerName}.`,
+  });
   return state;
 }
 
@@ -352,6 +363,11 @@ function runKnockout(s: GameState, k: Knockout, prizes: number[], trophyLabel: s
         s.manager.reputation = clamp(s.manager.reputation + 8, 0, 100);
         s.board.confidence = clamp(s.board.confidence + 15, 1, 99);
         s.news.unshift(`🏆 ${s.clubs.find((c) => c.id === s.userClubId)!.name} WIN the ${k.name}!`);
+        pushInbox(s, {
+          category: 'match',
+          title: `${trophy} won!`,
+          body: `${s.clubs.find((c) => c.id === s.userClubId)!.name} have won the ${k.name}, beating ${opp} ${score} in the final.\n\nThe board and fans are delighted — your reputation as a manager grows.`,
+        });
       }
     } else {
       s.morale = clamp(s.morale - 3, MORALE_MIN, MORALE_MAX);
@@ -489,6 +505,12 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
     if (p && p.injuryWeeks === 0 && Math.random() < injuryChance) {
       p.injuryWeeks = 1 + Math.floor(Math.random() * 3);
       s.news.unshift(`${p.name} injured — out for ${p.injuryWeeks} week${p.injuryWeeks > 1 ? 's' : ''}.`);
+      pushInbox(s, {
+        category: 'injury',
+        title: `${p.name} picks up an injury`,
+        body: `${p.name} was withdrawn during the match with a knock and has been assessed by the medical staff.\n\nExpect them to be out for ${p.injuryWeeks} week${p.injuryWeeks > 1 ? 's' : ''}. Plan your squad accordingly.`,
+        playerId: p.id,
+      });
     }
   }
 
@@ -531,10 +553,24 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
     const p = s.players[id];
     if (p && (p.goals === 10 || p.goals === 20) && userReport.events.some((e) => e.playerId === p.id && e.type === 'goal')) {
       s.news.unshift(`Milestone: ${p.name} reaches ${p.goals} goals this season!`);
+      pushInbox(s, {
+        category: 'match',
+        title: `${p.name} reaches ${p.goals} goals`,
+        body: `${p.name} has now scored ${p.goals} goals this season, a landmark tally that has fans buzzing.\n\nKeep them firing and silverware could follow.`,
+        playerId: p.id,
+      });
     }
   }
-  if (s.board.confidence < 30) s.news.unshift('⚠ The board is losing patience — results must improve.');
-  else if (s.fanConfidence >= 85 && round % 5 === 0) s.news.unshift('The fans are singing your name — confidence is sky-high.');
+  if (s.board.confidence < 30) {
+    s.news.unshift('⚠ The board is losing patience — results must improve.');
+    if (round % 4 === 0) {
+      pushInbox(s, {
+        category: 'board',
+        title: 'Board confidence is fading',
+        body: `The board have made their frustration known behind closed doors. Confidence stands at just ${s.board.confidence}/100.\n\nA run of results is needed soon, or your position could come under real scrutiny.`,
+      });
+    }
+  } else if (s.fanConfidence >= 85 && round % 5 === 0) s.news.unshift('The fans are singing your name — confidence is sky-high.');
   else if (s.fanConfidence <= 25 && round % 5 === 0) s.news.unshift('Protests in the stands — the fans want change.');
 
   s.week = round + 1;
@@ -594,12 +630,65 @@ export function upgradeStadium(state: GameState): GameState {
   return s;
 }
 
+export type PressTone = 'confident' | 'cautious' | 'bullish';
+
+export interface PressResult {
+  quote: string;
+  reaction: string;
+}
+
+const PRESS_QUOTES: Record<PressTone, (opponent: string) => string> = {
+  confident: (opp) => `"We've prepared well and I'm confident we can get a result against ${opp}."`,
+  cautious: (opp) => `"${opp} are a good side — we'll respect them and focus on our own game."`,
+  bullish: (opp) => `"Frankly, we should be beating a team like ${opp}. I expect three points."`,
+};
+
+/**
+ * Answer the pre-match press question. Confidence plays well with fans but a
+ * bullish line can rattle the board if it doesn't come off, while playing it
+ * safe is low risk, low reward. One shot per fixture week.
+ */
+export function respondPress(state: GameState, tone: PressTone, opponentName: string): { state: GameState; result: PressResult } {
+  const s: GameState = structuredClone(state);
+  s.pressWeek = s.week;
+  let reaction: string;
+  if (tone === 'confident') {
+    s.morale = clamp(s.morale + 2, MORALE_MIN, MORALE_MAX);
+    s.fanConfidence = clamp(s.fanConfidence + 1, 5, 99);
+    reaction = 'The squad likes the vote of confidence — morale ticks up.';
+  } else if (tone === 'cautious') {
+    s.board.confidence = clamp(s.board.confidence + 1, 1, 99);
+    reaction = 'The board approves of the measured tone.';
+  } else {
+    s.morale = clamp(s.morale + 3, MORALE_MIN, MORALE_MAX);
+    s.fanConfidence = clamp(s.fanConfidence + 3, 5, 99);
+    s.board.confidence = clamp(s.board.confidence - 1, 1, 99);
+    reaction = 'Bold words go down well with the fans — but the board hopes you can back it up.';
+  }
+  const quote = PRESS_QUOTES[tone](opponentName);
+  s.news.unshift(`Press: ${quote}`);
+  pushInbox(s, {
+    category: 'press',
+    title: `Press conference: ${opponentName} preview`,
+    body: `Ahead of the match, you were asked about the visit of ${opponentName}.\n\nYour response: ${quote}\n\n${reaction}`,
+  });
+  return { state: s, result: { quote, reaction } };
+}
+
 /** Appoint the squad captain. */
 export function setCaptain(state: GameState, playerId: number | null): GameState {
   const s: GameState = structuredClone(state);
   s.captainId = playerId;
   const p = playerId !== null ? s.players[playerId] : null;
-  if (p) s.news.unshift(`${p.name} is named club captain.`);
+  if (p) {
+    s.news.unshift(`${p.name} is named club captain.`);
+    pushInbox(s, {
+      category: 'club',
+      title: `${p.name} named club captain`,
+      body: `As manager, it is your responsibility to appoint a club captain to lead the team on the pitch.\n\n${p.name} has been given the armband. Leadership and experience made them the standout choice — the squad will look to them in tight moments.`,
+      playerId: p.id,
+    });
+  }
   return s;
 }
 
@@ -632,7 +721,13 @@ export function switchJob(state: GameState, clubId: number): GameState {
   s.incomingOffers = [];
   s.board = makeBoardObjective(s);
   s.lineup = autoPickLineup(s, clubId, getFormation(s.formationId));
+  s.pressWeek = 0;
   s.news.unshift(`${s.manager.name} takes charge of ${club.name}! Objective: ${s.board.objective}.`);
+  pushInbox(s, {
+    category: 'club',
+    title: `${s.manager.name} appointed at ${club.name}`,
+    body: `You have taken charge of ${club.name}.\n\nThe board's objective this season: ${s.board.objective}. Finish ${s.board.minPosition}${ordinal(s.board.minPosition)} or higher to keep their confidence.`,
+  });
   return s;
 }
 
@@ -776,11 +871,23 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
           // Can't afford to lose him with the squad this thin — a grudging 1-year deal.
           p.contractYears = 1;
           s.news.unshift(`${p.name} agrees a short one-year extension.`);
+          pushInbox(s, {
+            category: 'contract',
+            title: `${p.name} signs a new deal`,
+            body: `With the squad already stretched thin, ${p.name}'s contract has been extended for another year.\n\nIt's a short-term fix — expect the conversation to come up again next season.`,
+            playerId: p.id,
+          });
           continue;
         }
         club.playerIds = club.playerIds.filter((id) => id !== p.id);
         p.clubId = 0;
         s.news.unshift(`${p.name} leaves on a free — his contract expired.`);
+        pushInbox(s, {
+          category: 'contract',
+          title: `${p.name} leaves on a free transfer`,
+          body: `${p.name}'s contract has expired and they have left the club as a free agent.\n\nThey are now available for any club to sign.`,
+          playerId: p.id,
+        });
       } else {
         p.contractYears = 2 + Math.floor(Math.random() * 3);
       }
@@ -795,6 +902,12 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     s.players[kid.id] = kid;
     userClub.playerIds.push(kid.id);
     s.news.unshift(`Academy graduate ${kid.name} (${kid.role}, ${kid.rating} OVR) joins the first team.`);
+    pushInbox(s, {
+      category: 'youth',
+      title: `${kid.name} promoted to the first team`,
+      body: `Academy graduate ${kid.name} has impressed the youth coaches enough to earn a first-team squad number.\n\nA raw ${kid.rating} OVR ${kid.role} at ${kid.age} — the kind of prospect worth developing.`,
+      playerId: kid.id,
+    });
   }
 
   // Ageing: youngsters develop, veterans decline, values move with both.
