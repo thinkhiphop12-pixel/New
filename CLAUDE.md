@@ -41,6 +41,42 @@ When I give you a `/goal`, follow this exact loop:
 - By default, execute tasks fully autonomously using the tiers above.
 - If I want a specific tier, I will prefix my command with: `/mode top`, `/mode medium`, `/mode fast`, or `/mode low`.
 
+### Effort Levels
+Every delegated task and every orchestrator turn gets an explicit effort level. Do not default to the highest setting "to be safe" — it costs more and often produces worse output.
+- **Low** — trivial, single-file, no ambiguity (typo fixes, formatting, one-line edits). Route to `low-executor`.
+- **Medium** — the default for standard execution: normal feature work, routine debugging, most of what `fast-worker` and `medium-executor` do day to day.
+- **High** — reserve for hard multi-file debugging, architecture decisions, and orchestrator planning/review passes.
+- **xhigh / max** — do not use by default for any tier. Only invoke explicitly, and only after a High-effort pass has genuinely fallen short on the hardest problem in front of you.
+- Extended thinking: off by default. Turn on only for a specific task that has already failed at High effort without it.
+
+### Context Handoff
+If a session has been running long (roughly 30–60 minutes of active back-and-forth, or the context feels bloated), proactively offer a handoff instead of continuing to burn tokens on resending history:
+1. Summarize under 500 tokens: what was decided, what was built, next steps, constraints to remember.
+2. Suggest the user start a fresh session and paste that summary in.
+This does not apply to the hourly build-bot loop below — that already persists state to disk (`.checkpoint.md`) instead of conversation history, so it never needs a handoff.
+
+## /goal and /loop — how standing work gets specified
+
+Two conventions for writing autonomous work, used together with the hourly
+loop below:
+
+- **`/goal`** — a goal has three parts: the task, the measurable end state,
+  and the constraints. Write it as:
+  `[task] until [measurable end state] without [constraints]`
+  Example: `refactor the auth module until all 47 tests pass without
+  touching the payment service or database schema`.
+  This is exactly the format `goal.md` should be written in — vague goals
+  ("make it better") cannot be checked for completion, so treat an
+  unmeasurable goal as underspecified and ask for a measurable end state
+  before starting.
+- **`/loop`** — how the goal gets run on a schedule without the user
+  babysitting it. In this environment the loop is implemented by the
+  hourly trigger described below (state on disk, not an in-memory timer),
+  which plays the role of `--interval`. There is no built-in `--expires`
+  mechanism here — instead, the loop's own exit condition is `goal.md`'s
+  end state being met (or the user clearing `goal.md`), which is the
+  correct terminal condition anyway.
+
 ## 24h Hourly Build Bot — Stateful Loop Rules
 
 This repo is driven by an hourly trigger that resumes the same session each
@@ -77,7 +113,8 @@ Each hourly firing:
 5. Decompose the next unit of work toward the goal and delegate it via the
    10-80-10 routing rules above (`medium-executor` for reasoning-heavy
    work, `fast-worker` for standard execution, `low-executor` for
-   mechanical work).
+   mechanical work), each at the Effort Level appropriate to the task
+   (see Effort Levels above — default Medium, never xhigh/max).
 6. Run relevant tests/checks on the result.
 7. If it fails, rewrite the fix and re-delegate; if it succeeds, commit
    the change.
