@@ -3,28 +3,43 @@
 ## 10-80-10 Autonomous Routing System
 As the Orchestrator (Top Model), delegate tasks strictly as follows:
 
-1. **Top Model (Orchestrator / Fable 5)**:
-   - ONLY handles initial 10% planning and final 10% review.
-   - Never executes code or does grunt work.
+### Model Routing Table
 
-2. **Medium Model (Deep Reasoning / Opus 4.8)**:
-   - Handles complex debugging, multi-step reasoning, and high-stakes code refactoring.
+**Orchestrator (Fable 5) — planning and review only**
+- Use for: planning, architecture, reviewing final output.
+- Never use for: mechanical tasks, bulk generation, boilerplate.
+- Effort level: high for planning/hard debugging. Never xhigh/max by default — it costs more and often produces worse output.
 
-3. **Low Model (Mechanical / Haiku 4.5)**:
-   - Handles 80% of the execution: boilerplate, linting, basic test scaffolding, formatting, and simple edits.
+**`medium-executor` (Opus 4.8) — deep reasoning**
+- Use for: complex debugging, multi-step reasoning, high-stakes refactoring — real thinking that isn't architecture-level.
+
+**`fast-worker` (Sonnet 5) — standard execution**
+- Use for: code generation, refactoring, standard feature work that's too involved for Haiku but doesn't need Opus.
+
+**`low-executor` (Haiku 4.5) — bulk/mechanical**
+- Use for: boilerplate, linting, formatting, simple edits, basic test scaffolding, rename refactors.
+- Never spawn further subagents from this tier.
+
+Only these four tiers exist in this environment — do not reference or route to models that aren't wired up here (e.g. Codex, Kimi, DeepSeek), even if seen in outside articles or prompts.
 
 ### Autonomous Loop Rules
 When I give you a `/goal`, follow this exact loop:
 1. Decompose the goal into tasks.
-2. If the task requires deep reasoning, delegate to the `medium-executor` agent.
-3. If the task requires mechanical grunt work, delegate to the `low-executor` agent.
-4. Collect the results, run tests/checks.
-5. If it fails, rewrite the fix and re-delegate to the appropriate executor.
-6. Continue until the `/goal` condition is met. Report back to me only when finished or blocked.
+2. If a task needs deep reasoning, delegate to `medium-executor`.
+3. If a task is standard execution (not deep reasoning, not pure boilerplate), delegate to `fast-worker`.
+4. If a task is purely mechanical grunt work, delegate to `low-executor`.
+5. Collect the results, run tests/checks.
+6. If it fails, rewrite the fix and re-delegate to the appropriate executor.
+7. Continue until the `/goal` condition is met. Report back to me only when finished or blocked.
+
+### Context Discipline
+- Keep orchestrator context lean: never re-read files already processed this session.
+- Summarize tool/subagent output before folding it back into context — don't carry raw dumps forward.
+- Ask executors to return concise conclusions you can act on, not full transcripts.
 
 ### User Option / Override
 - By default, execute tasks fully autonomously using the tiers above.
-- If I want a specific tier, I will prefix my command with: `/mode top`, `/mode medium`, or `/mode low`.
+- If I want a specific tier, I will prefix my command with: `/mode top`, `/mode medium`, `/mode fast`, or `/mode low`.
 
 ## 24h Hourly Build Bot — Stateful Loop Rules
 
@@ -61,7 +76,8 @@ Each hourly firing:
 4. Read `.checkpoint.md` to recall prior progress.
 5. Decompose the next unit of work toward the goal and delegate it via the
    10-80-10 routing rules above (`medium-executor` for reasoning-heavy
-   work, `low-executor` for mechanical work).
+   work, `fast-worker` for standard execution, `low-executor` for
+   mechanical work).
 6. Run relevant tests/checks on the result.
 7. If it fails, rewrite the fix and re-delegate; if it succeeds, commit
    the change.
