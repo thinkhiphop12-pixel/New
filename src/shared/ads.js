@@ -52,7 +52,7 @@ function injectBaseAdStyles() {
     .ad-slot{margin:20px auto;min-height:90px;max-width:728px;display:flex;align-items:center;
       justify-content:center;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);
       border-radius:16px;position:relative;overflow:hidden;}
-    .ad-slot-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#8a8a8e;}
+    .ad-slot-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#93a099;}
     .ad-slot.is-filled .ad-slot-label{display:none;}
     .ad-slot ins.adsbygoogle{width:100%;}
     .ad-slot .ad-load-error{color:#666;font-size:12px;padding:10px;}
@@ -61,10 +61,10 @@ function injectBaseAdStyles() {
       border:1px solid rgba(255,255,255,.08);padding:16px 18px;text-align:left;}
     .aff-card{display:flex;align-items:center;gap:14px;width:100%;justify-content:space-between;flex-wrap:wrap;flex-direction:row;}
     .aff-card-txt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;}
-    .aff-card-kicker{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#8a8a8e;font-weight:600;}
+    .aff-card-kicker{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#93a099;font-weight:600;}
     .aff-card-title{font-size:14px;font-weight:700;color:#e8e8ea;font-family:Inter,system-ui,sans-serif;line-height:1.2;margin:2px 0;}
-    .aff-card-sub{font-size:12.5px;color:#8a8a8e;line-height:1.4;margin:4px 0 0;}
-    .aff-card-cta{flex-shrink:0;background:none;color:#b8ff3c;
+    .aff-card-sub{font-size:12.5px;color:#93a099;line-height:1.4;margin:4px 0 0;}
+    .aff-card-cta{flex-shrink:0;background:none;color:#5fd97a;
       font-weight:700;font-size:13px;text-decoration:none;border-radius:0;padding:8px 4px;white-space:nowrap;
       font-family:Inter,system-ui,sans-serif;display:inline-block;margin-left:12px;}
     .aff-card-cta:hover{text-decoration:underline}
@@ -72,7 +72,7 @@ function injectBaseAdStyles() {
       max-width:min(92vw,480px);background:#10131a;border:1px solid rgba(255,255,255,.14);
       border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;
       font-size:13px;color:#e8e8ea;box-shadow:0 8px 24px rgba(0,0,0,.4);}
-    .soft-banner-dismiss{background:transparent;border:none;cursor:pointer;color:#8a8a8e;font-size:18px;line-height:1;flex-shrink:0;}`;
+    .soft-banner-dismiss{background:transparent;border:none;cursor:pointer;color:#93a099;font-size:18px;line-height:1;flex-shrink:0;}`;
   document.head.appendChild(style);
 }
 

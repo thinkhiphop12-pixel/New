@@ -7,6 +7,14 @@
 > names below have been corrected to match what is actually shipped in
 > production today: the `index.html` / `perfect-cup/` design system. Treat
 > this file as the current source of truth again.
+>
+> **Update (2026-07-25, later same day):** the palette below has been
+> revised again — the original near-black/neon-lime combo tested too harsh
+> (16.9:1 contrast on body text, ~4× past the 4.5:1 minimum). The site has
+> moved to **"Under the Floodlights"**: a green-tinted near-black instead of
+> neutral black, and a less-neon, more grass-toned green. Same structure,
+> softer execution. The logo mark is being redesigned separately and isn't
+> reflected here yet — treat the Logo System section below as pending.
 
 ## Brand Identity
 
@@ -17,6 +25,12 @@
 ---
 
 ## Logo System
+
+> **Pending redesign:** the shipped `logo-mark.svg`/`logo-horizontal.svg` files
+> don't actually match the description below (they're colored `#00ff88`, a
+> leftover from the abandoned rebrand, and the live site's nav logo is built
+> from styled text, not these files at all). A real logo concept pass is in
+> progress — this section will be rewritten once a direction is picked.
 
 ### Primary Mark (Logo)
 - **Symbol**: "Punched Pentagon" — a solid ball formed from a single circle with one asymmetric pentagon (the universal football panel shape) cut out using a subtractive negative-space technique. No gradients, grids, or extra strokes — one shape, one cut.
@@ -41,31 +55,36 @@
 
 ---
 
-## Color Palette
+## Color Palette — "Under the Floodlights"
 
 ### Primary Colors
-- **Lime**: `#b8ff3c` (primary CTA gradient start, highlights, active nav)
-  - RGB: 184, 255, 60
-  - Usage: Primary buttons (as gradient with Emerald), glow accents, hover states
+- **Floodlight Green**: `#5fd97a` (primary CTA gradient start, highlights, active nav)
+  - RGB: 95, 217, 122
+  - Usage: Primary buttons (as gradient with Pitch Emerald), glow accents, hover states
+  - Replaces the old neon **Lime** `#b8ff3c` — same role, less retina-searing.
 
-- **Emerald**: `#00d68f` (primary CTA gradient end, secondary highlight)
-  - RGB: 0, 214, 143
-  - Usage: Primary buttons (as gradient with Lime), ambient background glow
+- **Pitch Emerald**: `#12b380` (primary CTA gradient end, secondary highlight)
+  - RGB: 18, 179, 128
+  - Usage: Primary buttons (as gradient with Floodlight Green), ambient background glow
+  - Replaces the old **Emerald** `#00d68f`.
 
-- **Near-Black**: `#050505` (background)
-  - RGB: 5, 5, 5
-  - Usage: Primary background across every page
+- **Under-the-Floodlights Black**: `#0b120d` (background)
+  - RGB: 11, 18, 13
+  - Usage: Primary background across every page. Deliberately carries a faint green cast (a pitch at night), not neutral/true black.
+  - Replaces the old **Near-Black** `#050505`.
 
 ### Secondary Colors
-- **Gold**: `#c9a227` (secondary accent, labels)
-  - RGB: 201, 162, 39
-  - Usage: Secondary labels, stats, ratings accents
+- **Trophy Gold**: `#e0b84a` (secondary accent, labels, "win" states)
+  - RGB: 224, 184, 74
+  - Usage: Secondary labels, stats, ratings accents, season-objective/"Champions" moments
+  - Unifies two previously-inconsistent golds (`#c9a227` and a separate hardcoded `#f5b301`) into one value.
 
 ### Neutral Colors
-- **White**: `#ffffff` (primary text)
-- **Muted**: `#8a8a8e` (secondary text, nav links, labels)
-- **Border**: `rgba(255,255,255,0.10)`, **Border Bright**: `rgba(255,255,255,0.18)` (dividers, outlines)
-- **Surface**: `rgba(255,255,255,0.04)`, **Glass**: `rgba(255,255,255,0.06)` (card/panel backgrounds)
+- **Off-White**: `#f2efe6` (primary text) — replaces pure `#ffffff`; softer against the green-black background.
+- **Muted**: `#93a099` (secondary text, nav links, labels) — replaces `#8a8a8e`, given a slight green bias to match the new background instead of a neutral grey.
+- **On-CTA Text**: `#052411` (dark text sitting on top of the green/emerald gradient buttons) — replaces `#04140b`.
+- **Border**: `rgba(255,255,255,0.10)`, **Border Bright**: `rgba(255,255,255,0.18)` (dividers, outlines — unchanged, still read fine against the new background)
+- **Surface**: `rgba(255,255,255,0.04)`, **Glass**: `rgba(255,255,255,0.06)` (card/panel backgrounds — unchanged)
 
 ### Status Colors
 Not yet formalized site-wide — the games (`Scout`, `Gaffer`, `Draft XI`) each use their own accent color on top of the shared dark base, which is an intentional per-game distinction, not an inconsistency. If a shared status palette is needed later, derive it from this base rather than introducing a new background/text scheme.
