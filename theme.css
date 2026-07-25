@@ -1,0 +1,41 @@
+/* theme.css — BALLKNW design tokens + base resets.
+   Extracted from index.html's inline <style> block (the live, correct
+   design system) so about.html, privacy.html, terms.html, gaffer-guide.html,
+   scout-guide.html and draft-xi-guide.html render with the same look.
+   index.html itself is untouched and keeps its inline styles. */
+
+:root{
+  --bg:#050505;
+  --surface:rgba(255,255,255,0.04);
+  --glass:rgba(255,255,255,0.06);
+  --border:rgba(255,255,255,0.10);
+  --border-bright:rgba(255,255,255,0.18);
+  --lime:#b8ff3c;
+  --emerald:#00d68f;
+  --white:#ffffff;
+  --muted:#8a8a8e;
+  --gold:#c9a227;
+  --cta:linear-gradient(135deg,#b8ff3c 0%,#00d68f 100%);
+  --glow-lime:0 0 44px rgba(184,255,60,0.22);
+  --radius:20px;
+  --maxw:1080px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:Inter,system-ui,-apple-system,sans-serif;
+  background:var(--bg);color:var(--white);
+  line-height:1.5;-webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+a{text-decoration:none;color:inherit}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+
+/* ambient glow behind hero, matches homepage */
+body::before{
+  content:"";position:fixed;top:-280px;left:50%;transform:translateX(-50%);
+  width:900px;height:680px;pointer-events:none;z-index:0;
+  background:radial-gradient(50% 50% at 50% 50%,rgba(0,214,143,0.16) 0%,rgba(184,255,60,0.06) 40%,transparent 72%);
+  filter:blur(8px);
+}

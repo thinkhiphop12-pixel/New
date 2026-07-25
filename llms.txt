@@ -32,6 +32,9 @@ Allow: /#faq
 Allow: /football-manager/
 Allow: /perfect-cup/
 Allow: /scout/
+Allow: /gaffer-guide.html
+Allow: /scout-guide.html
+Allow: /draft-xi-guide.html
 
 # Policy and reference pages
 Allow: /about.html

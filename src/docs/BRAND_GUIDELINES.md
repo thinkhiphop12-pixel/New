@@ -1,8 +1,16 @@
-# Ball Knowledge Brand Guidelines
+# BALLKNW Brand Guidelines
+
+> **Note (2026-07-25):** This document previously described a navy/`#00ff88`
+> rebrand (game names "7-0-0, Boardroom, Lineup, Bracket, Dynasty") that was
+> never finished — the Migration Checklist below was left unchecked and the
+> live homepage (`index.html`) never adopted it. The colors, fonts, and game
+> names below have been corrected to match what is actually shipped in
+> production today: the `index.html` / `perfect-cup/` design system. Treat
+> this file as the current source of truth again.
 
 ## Brand Identity
 
-**Ball Knowledge** is a free hub of football knowledge games — building World Cup teams, identifying players, simulating tournaments, and managing clubs, all in the browser.
+**BALLKNW** (Ball Knowledge) is a free hub of football knowledge games — building World Cup teams, identifying players, simulating tournaments, and managing clubs, all in the browser. Current games: **Scout** (daily connections puzzle), **Gaffer** (full club-management sim, `/football-manager/`), and **Draft XI** (squad draft + season sim, `/perfect-cup/`).
 
 **Brand Promise**: Fast, smart, free football games for obsessives.
 
@@ -36,61 +44,49 @@
 ## Color Palette
 
 ### Primary Colors
-- **Accent Green**: `#00ff88` (games, CTAs, active states)
-  - RGB: 0, 255, 136
-  - HSL: 134°, 100%, 50%
-  - Usage: Primary buttons, highlights, active navigation
+- **Lime**: `#b8ff3c` (primary CTA gradient start, highlights, active nav)
+  - RGB: 184, 255, 60
+  - Usage: Primary buttons (as gradient with Emerald), glow accents, hover states
 
-- **Dark Navy**: `#0a0e14` (background)
-  - RGB: 10, 14, 20
-  - HSL: 215°, 33%, 6%
-  - Usage: Primary background, safe contrast base
+- **Emerald**: `#00d68f` (primary CTA gradient end, secondary highlight)
+  - RGB: 0, 214, 143
+  - Usage: Primary buttons (as gradient with Lime), ambient background glow
+
+- **Near-Black**: `#050505` (background)
+  - RGB: 5, 5, 5
+  - Usage: Primary background across every page
 
 ### Secondary Colors
-- **Gold**: `#ffd700` (secondary action, labels, accents)
-  - RGB: 255, 215, 0
-  - HSL: 51°, 100%, 50%
-  - Usage: Secondary buttons, stats labels, team ratings
-
-- **Cyan**: `#4488ff` (tertiary action, UI elements)
-  - RGB: 68, 136, 255
-  - HSL: 217°, 100%, 63%
-  - Usage: Links, secondary accents, UI borders
+- **Gold**: `#c9a227` (secondary accent, labels)
+  - RGB: 201, 162, 39
+  - Usage: Secondary labels, stats, ratings accents
 
 ### Neutral Colors
-- **Light Text**: `#e8e8e8` (primary text)
-- **Dim Text**: `#8892a0` (secondary text, labels)
-- **Border Color**: `#5a7a94` (UI dividers, outlines)
+- **White**: `#ffffff` (primary text)
+- **Muted**: `#8a8a8e` (secondary text, nav links, labels)
+- **Border**: `rgba(255,255,255,0.10)`, **Border Bright**: `rgba(255,255,255,0.18)` (dividers, outlines)
+- **Surface**: `rgba(255,255,255,0.04)`, **Glass**: `rgba(255,255,255,0.06)` (card/panel backgrounds)
 
 ### Status Colors
-- **Danger**: `#ff4444` (errors, losses, critical states)
-- **Warning**: `#ffaa00` (cautions, injuries)
-- **Success**: `#00cc66` (wins, completions)
+Not yet formalized site-wide — the games (`Scout`, `Gaffer`, `Draft XI`) each use their own accent color on top of the shared dark base, which is an intentional per-game distinction, not an inconsistency. If a shared status palette is needed later, derive it from this base rather than introducing a new background/text scheme.
 
 ---
 
 ## Typography
 
-### Primary Font: System Stack
+### Primary Font: Inter
 ```css
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+font-family: Inter, system-ui, -apple-system, sans-serif;
 ```
+Loaded from Google Fonts (weights 400/500/600/700/800/900), with a system-font fallback stack.
 - **Sans-serif only**, modern and clean
-- **No serifs** (retro aesthetic is minimal/highlights only)
-- **System fonts** for performance (no external font downloads)
+- **No serifs**
 
 ### Font Sizes & Weights
-- **Headline**: 24–32px, 700 weight
+- **Headline**: 24–32px, 700–800 weight
 - **Subheading**: 16–18px, 600 weight
 - **Body**: 13–14px, 400 weight
 - **Small/Label**: 11–12px, 600 weight (uppercase)
-- **Monospace (code)**: `Courier New`, monospace
-
-### Retro Accents (Limited Use)
-- **"Press Start 2P"** (Google Fonts): Used ONLY for game titles and special brand moments
-  - Ball Knowledge wordmark on logo
-  - Game names (7-0-0, Boardroom, etc.)
-  - No body text — readability first
 
 ---
 
@@ -190,24 +186,22 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubun
 - **Discord**: 1200×480px, accent green gradient with logo mark
 
 ### Shared Post Template
-- Size: 1200×628px (Open Graph standard)
+- Size: 1200×628px (Open Graph standard) — see `assets/og-image.png`
 - **Layout**: Dark background + logo mark + headline + URL footer
-- **Font**: System font for body, retro accent for headline
-- **Example**: "Play 7-0-0 · Draft World Cup XI · Free, no account | ballknw.com"
+- **Font**: Inter for body and headline
+- **Example**: "Draft the perfect World Cup XI · Free, no account | ballknw.com"
 
 ---
 
 ## Use Cases & Examples
 
 ### Dark Backgrounds (Primary)
-- Dark navy (`#0a0e14`) + Accent green text/buttons
-- All games use this theme
+- Near-black (`#050505`) + Lime/Emerald gradient CTAs and highlights
+- All games and pages use this theme
 - Logo mark in white or inverted color
 
 ### Light Backgrounds (Rare)
-- Use only on marketing pages or external sites
-- Logo mark in dark navy or accent green
-- Green accent becomes secondary; maintain contrast
+- Not currently used anywhere on the site — if introduced, use the logo mark in near-black and keep Lime/Emerald as accent only
 
 ### Print (Unlikely)
 - Logo mark in black or brand green
@@ -218,24 +212,23 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubun
 
 ## File Inventory
 
-### Logo Files (SVG, PNG, ICO)
+### Logo Files (SVG, PNG)
 - `assets/logo-mark.svg` (primary)
 - `assets/logo-mark-inverted.svg` (white)
 - `assets/logo-mark-mono.svg` (single color)
 - `assets/logo-horizontal.svg` (mark + wordmark)
 - `assets/logo-vertical.svg` (stacked)
-- `assets/favicon.ico` (32×32 + 16×16)
-- `assets/favicon-192.png` (app icon)
-- `assets/apple-touch-icon.png` (iOS)
+- `assets/logo-social.svg`
+- `assets/favicon.svg`, `assets/favicon-192.png` (favicon / app icon)
 
-### Social Assets (PNG)
-- `assets/social-twitter.png` (400×400)
-- `assets/social-og-image.png` (1200×628 Open Graph)
-- `assets/social-discord.png` (512×512)
+### Social Assets
+- `assets/social-twitter.svg`
+- `assets/social-discord.svg`
+- `assets/social-og-image.svg`
+- `assets/og-image.png` (Open Graph image referenced site-wide)
 
 ### Brand Documents
 - `BRAND_GUIDELINES.md` (this file)
-- `COLOR_PALETTE.css` (CSS variables)
 
 ---
 
@@ -248,31 +241,13 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubun
 - **Direct**: Clear CTAs, no marketing speak
 
 ### Language
-- **Game titles**: Short, punchy (7-0-0, Boardroom, Lineup, Bracket, Dynasty)
+- **Game titles**: Short, punchy — current lineup is **Scout**, **Gaffer**, **Draft XI**
 - **Descriptions**: One sentence per game, features in second sentence
 - **Error messages**: Helpful, not condescending ("Select 11 players, not 10")
 - **Success messages**: Affirming, not cheesy ("Squad saved" not "You did it! 🎉")
 
 ---
 
-## Migration Checklist (for implementation)
-
-- [ ] Replace logo mark with new SVG in assets/
-- [ ] Update favicon.ico and favicon-192.png
-- [ ] Add favicon-new.png at 192×192 (iOS standard)
-- [ ] Create social media assets (Twitter, LinkedIn, Discord)
-- [ ] Update homepage hero section with new branding
-- [ ] Test logo on all game pages
-- [ ] Verify accessibility (contrast, color blindness)
-- [ ] Update Open Graph images on all pages
-- [ ] Test on light and dark backgrounds
-- [ ] Update brand colors in CSS variables if needed
-- [ ] Create brand assets folder structure
-
----
-
-**Last Updated**: June 26, 2026
-
-**Next Review**: After initial user feedback on new branding
+**Last Updated**: 2026-07-25
 
 **Contact**: thinkhiphop12@gmail.com for brand inquiries
