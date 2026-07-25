@@ -13,8 +13,8 @@
 > (16.9:1 contrast on body text, ~4× past the 4.5:1 minimum). The site has
 > moved to **"Under the Floodlights"**: a green-tinted near-black instead of
 > neutral black, and a less-neon, more grass-toned green. Same structure,
-> softer execution. The logo mark is being redesigned separately and isn't
-> reflected here yet — treat the Logo System section below as pending.
+> softer execution. The Logo System section has also been rewritten to
+> match the new mark that actually shipped ("The Corner Mark").
 
 ## Brand Identity
 
@@ -26,26 +26,23 @@
 
 ## Logo System
 
-> **Pending redesign:** the shipped `logo-mark.svg`/`logo-horizontal.svg` files
-> don't actually match the description below (they're colored `#00ff88`, a
-> leftover from the abandoned rebrand, and the live site's nav logo is built
-> from styled text, not these files at all). A real logo concept pass is in
-> progress — this section will be rewritten once a direction is picked.
-
-### Primary Mark (Logo)
-- **Symbol**: "Punched Pentagon" — a solid ball formed from a single circle with one asymmetric pentagon (the universal football panel shape) cut out using a subtractive negative-space technique. No gradients, grids, or extra strokes — one shape, one cut.
-- **Style**: Modern, clean, minimal — extreme simplicity with a single focal point
-- **Usage**: App icon, favicon, standalone brand mark, button icon
+### Primary Mark (Logo) — "The Corner Mark"
+- **Symbol**: a rounded-square gradient badge (Floodlight Green → Pitch Emerald) with a bold "B" in `#052411`, plus a small pentagon "seam" notched into the top-right corner — a quiet nod to a football's panel stitching, without resorting to a literal ball icon.
+- **Style**: Modern, clean, minimal — legible down to 16px (a literal ball-and-pentagon icon was tested and rejected: it nearly vanishes into a dark blob at favicon size, where letterforms stay crisp).
+- **Usage**: App icon, favicon, standalone brand mark, button icon.
 - **Versions**:
-  - `logo-mark.svg` (square 1:1, 512×512px minimum)
-  - `logo-mark-inverted.svg` (white for dark backgrounds)
-  - `logo-mark-mono.svg` (single color for accessibility)
+  - `logo-mark.svg` (square 1:1, 512×512 viewBox) — full-color, for dark backgrounds
+  - `logo-mark-inverted.svg` — dark badge + green "B", for light backgrounds
+  - `logo-mark-mono.svg` — single-color outline (set via CSS `color`), for one-color contexts
+  - `favicon.svg` — same mark at browser-tab scale
+- **Game marks** (same badge language, different letter + gradient, per the existing per-game accent convention): `badge-gaffer.svg` (gold, "G"), `badge-scout.svg` (green, "S"), `badge-draftxi.svg` (emerald, "XI").
 
 ### Logo Lockup (Full Logo)
-- **Horizontal**: Mark + "BALL KNOWLEDGE" wordmark (2:1 aspect)
-- **Vertical**: Mark stacked above wordmark (1:1.5 aspect)
+- **Horizontal**: Mark + "BALL**KNW**" wordmark (`logo-horizontal.svg`, 2:1 aspect) — "BALL" in off-white, "KNW" in Floodlight Green, matching the live nav treatment.
+- **Vertical**: Mark stacked above wordmark (`logo-vertical.svg`, 1:1.5 aspect)
 - **Minimum size**: 240px wide for horizontal, 160px for vertical
 - **Clear space**: Minimum 1/4 of mark height on all sides
+- **Not yet cleaned up**: `logo-social.svg` is an older, unrelated OG-image design referencing a retired game name ("7-0-0") and an even earlier palette — it isn't referenced anywhere in the site's HTML. Safe to delete or regenerate later; left alone for this pass.
 
 ### Logo Don'ts
 - ❌ Do not stretch or distort
