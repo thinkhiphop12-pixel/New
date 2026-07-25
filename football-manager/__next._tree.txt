@@ -1,3 +1,3 @@
-:HL["/football-manager/_next/static/chunks/3yo6g0rnt6qit.css","style"]
+:HL["/football-manager/_next/static/chunks/2-vxyecveh0hr.css","style"]
 :HL["/football-manager/_next/static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}},"staleTime":300,"buildId":"gl6BzR1PO11rW6vxjVz_5"}
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}},"staleTime":300,"buildId":"BRTZqUgmgnvBkHi6A739_"}

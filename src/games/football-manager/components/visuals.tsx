@@ -67,6 +67,28 @@ export function PlayerToken({
   );
 }
 
+/** Five-band colour ramp for a 0-99 attribute. Mirrors the attribute chip
+ *  tokens in globals.css. */
+export function attrBand(val: number): string {
+  if (val >= 85) return 'chip-vhigh';
+  if (val >= 72) return 'chip-high';
+  if (val >= 58) return 'chip-mid';
+  if (val >= 45) return 'chip-low';
+  return 'chip-bad';
+}
+
+/** CSS colour for a 1-5 fixture difficulty rating (5 = hardest). */
+export function difficultyColor(rating: number): string {
+  const clamped = Math.max(1, Math.min(5, Math.round(rating)));
+  return clamped >= 5
+    ? 'var(--diff-5)'
+    : clamped === 4
+      ? 'var(--diff-4)'
+      : clamped === 3
+        ? 'var(--diff-3)'
+        : 'var(--diff-2)';
+}
+
 /** Compact PAC/SHO/PAS/DRI/DEF/PHY bar strip. */
 export function AttrBars({
   pac,
@@ -98,7 +120,7 @@ export function AttrBars({
           <span className="fm-attr__label">{label}</span>
           <div className="fm-bar">
             <div
-              className={`fm-bar__fill ${val >= 75 ? 'good' : val >= 55 ? 'mid' : 'bad'}`}
+              className={`fm-bar__fill ${attrBand(val)}`}
               style={{ width: `${Math.min(100, val)}%` }}
             />
           </div>

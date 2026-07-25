@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import type { Division, GameData } from '@/engine/types';
 import { DIVISION_NAMES, STARTING_BUDGET } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
+import { Crest } from './Crest';
 
 const DIV_BLURB: Record<Division, string> = {
   1: 'Top flight. Stronger squads, higher expectations, continental football.',
@@ -76,9 +77,7 @@ export default function ClubSelectScreen({
             className={`fm-club-card${selected === club.id ? ' selected' : ''}`}
             onClick={() => setSelected(club.id)}
           >
-            <span className="fm-club-card__badge" style={{ background: club.color }}>
-              {club.code}
-            </span>
+            <Crest name={club.name} code={club.code} color={club.color} size={40} />
             <span className="fm-club-card__name">{club.name}</span>
             <span className="fm-club-card__meta">
               Squad {avg} · Star: {star?.name ?? '—'}

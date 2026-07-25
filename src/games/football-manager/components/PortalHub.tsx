@@ -8,6 +8,7 @@ import { isClubAlive, knockoutRoundDue } from '@/engine/cups';
 import { isLineupValid } from '@/engine/teamManagement';
 import { formatMoney } from '@/engine/utils';
 import { tint } from './visuals';
+import { Crest } from './Crest';
 import PressConferenceModal from './PressConferenceModal';
 
 type Filter = 'all' | 'new' | 'tasks';
@@ -61,9 +62,7 @@ export default function PortalHub({
     <div className="fm-portal">
       {/* Club header with badge + week */}
       <div className="fm-portal__header">
-        <div className="fm-portal__club-badge" style={{ background: club.color }}>
-          {club.code}
-        </div>
+        <Crest name={club.name} code={club.code} color={club.color} size={48} />
         <div className="fm-portal__club-info">
           <h1 className="fm-portal__club-name">{club.name}</h1>
           <p className="fm-portal__club-meta">
@@ -101,23 +100,25 @@ export default function PortalHub({
         <div className="fm-panel fm-panel--elevated" style={{ background: tint(club.color, '0a'), borderColor: tint(club.color, '30') }}>
           <div className="fm-card__fixture" style={{ marginBottom: 8 }}>
             <div className="fm-card__team">
-              <span className="fm-scoreboard__team-badge" style={{ background: fixture.homeId === state.userClubId ? club.color : opponent?.color }}>
-                {fixture.homeId === state.userClubId ? club.code : opponent?.code}
-              </span>
+              {(() => {
+                const t = fixture.homeId === state.userClubId ? club : opponent;
+                return <Crest name={t?.name} code={t?.code ?? ''} color={t?.color ?? 'var(--panel-3)'} size={28} />;
+              })()}
               <span className="fm-card__team-name fm-card__team-name--home" style={{ fontSize: 13 }}>
                 {fixture.homeId === state.userClubId ? club.name : opponent?.name}
               </span>
-              <span className="fm-card__team-label">{fixture.homeId === state.userClubId ? 'HOME' : 'AWAY'}</span>
+              <span className="fm-card__team-label">HOME</span>
             </div>
             <div className="fm-card__vs">VS</div>
             <div className="fm-card__team">
-              <span className="fm-scoreboard__team-badge" style={{ background: fixture.awayId === state.userClubId ? club.color : opponent?.color }}>
-                {fixture.awayId === state.userClubId ? club.code : opponent?.code}
-              </span>
+              {(() => {
+                const t = fixture.awayId === state.userClubId ? club : opponent;
+                return <Crest name={t?.name} code={t?.code ?? ''} color={t?.color ?? 'var(--panel-3)'} size={28} />;
+              })()}
               <span className="fm-card__team-name fm-card__team-name--away" style={{ fontSize: 13 }}>
                 {fixture.awayId === state.userClubId ? club.name : opponent?.name}
               </span>
-              <span className="fm-card__team-label">{fixture.awayId === state.userClubId ? 'AWAY' : 'HOME'}</span>
+              <span className="fm-card__team-label">AWAY</span>
             </div>
           </div>
           {cupWeek && <p className="fm-card__note">+ Cup tie midweek</p>}

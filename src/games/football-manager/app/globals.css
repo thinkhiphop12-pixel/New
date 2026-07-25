@@ -37,6 +37,20 @@
   --blue-soft: rgba(127, 180, 255, 0.12);
   --cyan: #0ed4c8;
 
+  /* Attribute chip ramp — five bands rather than good/mid/bad, so the
+     difference between a 78 and a 92 is legible at a glance. */
+  --chip-vhigh: #7ccb3f;
+  --chip-high: #4caf50;
+  --chip-mid: #2e5fa8;
+  --chip-low: #e8a93b;
+  --chip-bad: #b23b3b;
+
+  /* Fixture difficulty ramp (hardest -> easiest) */
+  --diff-5: #b23b3b;
+  --diff-4: #c0533b;
+  --diff-3: #e8a93b;
+  --diff-2: #4caf50;
+
   /* Gradients */
   --cta-gradient: linear-gradient(135deg, #34e088 0%, #12a85b 100%);
   --gold-gradient: linear-gradient(135deg, #f5b301 0%, #e09000 100%);
@@ -324,6 +338,8 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-player-row:disabled { opacity: 0.4; cursor: not-allowed; }
 .fm-player-row.highlight { border-color: var(--green); background: var(--green-dim); }
 .fm-player-row.in-lineup { border-color: var(--green-600); }
+/* Squad list rows lead with a player avatar; other player lists don't. */
+.fm-player-row--faced { grid-template-columns: 26px 40px 1fr auto auto; }
 .fm-player-row__badge {
   display: flex; align-items: center; justify-content: center;
   font-size: 9.5px; font-weight: 900; border-radius: 6px;
@@ -583,6 +599,16 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-bar__fill.good { background: var(--green); }
 .fm-bar__fill.mid { background: var(--gold); }
 .fm-bar__fill.bad { background: var(--red); }
+.fm-bar__fill.chip-vhigh { background: var(--chip-vhigh); }
+.fm-bar__fill.chip-high { background: var(--chip-high); }
+.fm-bar__fill.chip-mid { background: var(--chip-mid); }
+.fm-bar__fill.chip-low { background: var(--chip-low); }
+.fm-bar__fill.chip-bad { background: var(--chip-bad); }
+
+/* Club crest (procedural shield or real artwork) and player avatar. */
+.fm-crest { display: block; flex: none; object-fit: contain; }
+.fm-face { display: block; flex: none; border-radius: 999px; }
+.fm-player-detail__head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 
 /* Finance ledger */
 .fm-ledger { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }

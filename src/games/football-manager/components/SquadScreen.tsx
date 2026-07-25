@@ -9,6 +9,7 @@ import { traitNames } from '@/engine/traits';
 import { formatMoney } from '@/engine/utils';
 import { getRole, getRolesByPosition } from '@/lib/playerRoles';
 import { AttrBars, PitchMarkings, PlayerToken } from './visuals';
+import { PlayerFace } from './PlayerFace';
 
 function lastName(name: string): string {
   const parts = name.split(' ').filter((w) => !/^jr\.?$/i.test(w));
@@ -210,9 +211,12 @@ export default function SquadScreen({
 
       {detail && selectedSlot === null && (
         <div className="fm-panel fm-player-detail">
-          <p className="fm-label" style={{ marginTop: 0 }}>
-            {detail.name} — {detail.role}, {detail.age}y
-          </p>
+          <div className="fm-player-detail__head">
+            <PlayerFace playerId={detail.id} size={48} />
+            <p className="fm-label" style={{ margin: 0 }}>
+              {detail.name} — {detail.role}, {detail.age}y
+            </p>
+          </div>
           <p className="fm-club-line">
             {detail.nat} · {detail.rating} OVR · {formatMoney(detail.value)} · {formatMoney(detail.wage)}/w ·{' '}
             {detail.contractYears}y contract · {detail.apps} apps, {detail.goals} goals
@@ -302,12 +306,13 @@ export default function SquadScreen({
           return (
             <button
               key={p.id}
-              className={`fm-player-row fm-pos-${p.pos}${canPick ? ' highlight' : ''}${inLineup ? ' in-lineup' : ''}`}
+              className={`fm-player-row fm-player-row--faced fm-pos-${p.pos}${canPick ? ' highlight' : ''}${inLineup ? ' in-lineup' : ''}`}
               disabled={selectedSlot !== null && !canPick}
               onClick={() =>
                 selectedSlot !== null ? assignToSlot(p.id) : setDetailId(detailId === p.id ? null : p.id)
               }
             >
+              <PlayerFace playerId={p.id} size={26} />
               <span className="fm-player-row__badge">{p.role}</span>
               <span className="fm-player-row__name">
                 {p.name}
