@@ -26,8 +26,38 @@ const CONFIG = {
 // is only set when the user actually clicks through, exactly as the
 // Associates/ePN programs intend. No hidden iframes, no pixel tracking,
 // no auto-redirects — that would be cookie stuffing and gets accounts banned.
-const AMAZON_AFFILIATE_URL = `https://www.amazon.co.uk/s?k=football+shirts&tag=${CONFIG.AMAZON_TAG}`;
-const EBAY_AFFILIATE_URL = `https://www.ebay.co.uk/sch/i.html?_nkw=football+shirts&campid=${CONFIG.EBAY_CAMPID}&customid=ballknw`;
+//
+// Category catalogue: a slot can opt into one via `data-ad-category` (e.g.
+// <div class="ad-slot" data-ad-category="boots">). Untagged slots fall back
+// to a category picked deterministically from the slot's id, so a page with
+// several untagged slots still shows variety instead of the same card N
+// times — real relevance, not a static "football shirts" line everywhere.
+const AD_CATEGORIES = {
+  kits:     { query: 'football shirts',       kicker: 'Football gear · sponsored', title: 'Shirts & replica kits',    sub: (store) => `Shop the latest club and country shirts on ${store}.` },
+  boots:    { query: 'football boots',        kicker: 'Football gear · sponsored', title: 'Boots & footwear',         sub: (store) => `Compare football boots for every position and surface on ${store}.` },
+  training: { query: 'football training gear', kicker: 'Football gear · sponsored', title: 'Training gear',           sub: (store) => `Cones, bibs, rebounders and more on ${store}.` },
+  books:    { query: 'football tactics book',  kicker: 'Football reading · sponsored', title: 'Tactics & strategy books', sub: (store) => `Level up your football knowledge on ${store}.` },
+  tickets:  { query: 'football match tickets', kicker: 'Match day · sponsored',    title: 'Match tickets',            sub: (store) => `Find tickets for upcoming fixtures via ${store}.` },
+};
+const AD_CATEGORY_KEYS = Object.keys(AD_CATEGORIES);
+
+function affiliateUrl(store, category) {
+  const q = encodeURIComponent(category.query);
+  return store === 'eBay'
+    ? `https://www.ebay.co.uk/sch/i.html?_nkw=${q}&campid=${CONFIG.EBAY_CAMPID}&customid=ballknw`
+    : `https://www.amazon.co.uk/s?k=${q}&tag=${CONFIG.AMAZON_TAG}`;
+}
+
+// Deterministic pick so a given slot doesn't flicker between categories on
+// re-renders (same technique as the existing Amazon/eBay store rotation).
+function pickCategory(slot) {
+  const explicit = slot.dataset.adCategory;
+  if (explicit && AD_CATEGORIES[explicit]) return AD_CATEGORIES[explicit];
+  const key = slot.dataset.adSlot || slot.id || 'x';
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  return AD_CATEGORIES[AD_CATEGORY_KEYS[hash % AD_CATEGORY_KEYS.length]];
+}
 
 // ========== GLOBALS / SHIMS ==========
 // consent.js normally defines these; shim them so this file is safe to load
@@ -104,14 +134,15 @@ function fillSlotWithAffiliate(slot) {
   const useEbay = CONFIG.AFFILIATE_ROTATE && CONFIG.EBAY_CAMPID &&
     (slot.dataset.adSlot || slot.id || '').length % 2 === 1;
   const store = useEbay ? 'eBay' : 'Amazon';
-  const url = useEbay ? EBAY_AFFILIATE_URL : AMAZON_AFFILIATE_URL;
+  const category = pickCategory(slot);
+  const url = affiliateUrl(store, category);
 
   slot.innerHTML = `
     <div class="aff-card">
       <div class="aff-card-txt">
-        <span class="aff-card-kicker">Football gear · sponsored</span>
-        <span class="aff-card-title">Shirts, boots &amp; kit</span>
-        <span class="aff-card-sub">Shop the latest football shirts and gear on ${store}.</span>
+        <span class="aff-card-kicker">${category.kicker}</span>
+        <span class="aff-card-title">${category.title}</span>
+        <span class="aff-card-sub">${category.sub(store)}</span>
       </div>
       <a class="aff-card-cta" href="${url}" target="_blank" rel="sponsored noopener">Browse →</a>
     </div>`;
