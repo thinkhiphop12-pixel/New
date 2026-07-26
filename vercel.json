@@ -4,6 +4,7 @@
   "installCommand": null,
   "outputDirectory": ".",
   "redirects": [
-    { "source": "/DraftXI/:path*", "destination": "/perfect-cup/:path*", "permanent": true }
+    { "source": "/DraftXI/:path*", "destination": "/perfect-cup/:path*", "permanent": true },
+    { "source": "/football-manager/:path*", "destination": "/gaffa/:path*", "permanent": true }
   ]
 }

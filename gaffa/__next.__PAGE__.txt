@@ -1,6 +1,6 @@
 1:"$Sreact.fragment"
-2:I[93640,["/gaffa/_next/static/chunks/2qz9wlthfp26g.js","/gaffa/_next/static/chunks/0yky7ydiqa_jr.js","/gaffa/_next/static/chunks/12_xvzxzq771l.js"],"default"]
+2:I[93640,["/gaffa/_next/static/chunks/2qz9wlthfp26g.js","/gaffa/_next/static/chunks/0yky7ydiqa_jr.js","/gaffa/_next/static/chunks/0icmnn6xriv3p.js"],"default"]
 3:I[7857,["/gaffa/_next/static/chunks/2qz9wlthfp26g.js","/gaffa/_next/static/chunks/0yky7ydiqa_jr.js"],"OutletBoundary"]
 4:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],[["$","script","script-0",{"src":"/gaffa/_next/static/chunks/12_xvzxzq771l.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"yBoHFEZlJ4D8acWQKvWxH"}
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],[["$","script","script-0",{"src":"/gaffa/_next/static/chunks/0icmnn6xriv3p.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"ppB1uUx6igWACsvla3uzj"}
 5:null

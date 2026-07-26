@@ -7,7 +7,7 @@
 <meta name="description" content="Fast, free football brain games. Guess the mystery player, draft a perfect World Cup XI, or manage a club through a full season. No accounts, real streaks, shareable grids." />
 <meta name="keywords" content="football games, football management game, world cup games, draft xi, daily football puzzle, guess the footballer, football wordle, scout game, ball knowledge, ballknw" />
 <link rel="canonical" href="https://ballknw.com/" />
-<meta name="theme-color" content="#050505" />
+<meta name="theme-color" content="#0b120d" />
 <meta property="og:site_name" content="BALLKNW" />
 <meta property="og:url" content="https://ballknw.com/" />
 <meta property="og:title" content="BALLKNW — Free Football Games | Gaffa & Draft XI" />
@@ -21,6 +21,8 @@
 <meta name="twitter:image" content="https://ballknw.com/assets/og-image.png" />
 <!-- Google AdSense (site verification + library load) -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2741492847457362" crossorigin="anonymous" data-adsense="1"></script>
+<!-- Monetag (site verification only — no ad units wired in yet) -->
+<meta name="monetag" content="6675004eb2036a506cf516c061791522">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="/assets/favicon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,18 +30,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 <style>
 :root{
-  --bg:#050505;
+  --bg:#0b120d;
   --surface:rgba(255,255,255,0.04);
   --glass:rgba(255,255,255,0.06);
   --border:rgba(255,255,255,0.10);
   --border-bright:rgba(255,255,255,0.18);
-  --lime:#b8ff3c;
-  --emerald:#00d68f;
-  --white:#ffffff;
-  --muted:#8a8a8e;
-  --gold:#c9a227;
-  --cta:linear-gradient(135deg,#b8ff3c 0%,#00d68f 100%);
-  --glow-lime:0 0 44px rgba(184,255,60,0.22);
+  --lime:#2ab248;
+  --emerald:#12b380;
+  --white:#f2efe6;
+  --muted:#93a099;
+  --gold:#e0b84a;
+  --cta:linear-gradient(135deg,#2ab248 0%,#12b380 100%);
+  --glow-lime:0 0 44px rgba(42,178,72,0.22);
   --radius:20px;
   --maxw:1080px;
 }
@@ -58,29 +60,29 @@ a{text-decoration:none;color:inherit}
 body::before{
   content:"";position:fixed;top:-280px;left:50%;transform:translateX(-50%);
   width:900px;height:680px;pointer-events:none;z-index:0;
-  background:radial-gradient(50% 50% at 50% 50%,rgba(0,214,143,0.16) 0%,rgba(184,255,60,0.06) 40%,transparent 72%);
+  background:radial-gradient(50% 50% at 50% 50%,rgba(18,179,128,0.16) 0%,rgba(42,178,72,0.06) 40%,transparent 72%);
   filter:blur(8px);
 }
 
 /* NAV */
 .nav{
   position:sticky;top:0;z-index:50;
-  background:rgba(5,5,5,0.72);backdrop-filter:saturate(160%) blur(14px);
+  background:rgba(11,18,13,0.96);
   border-bottom:1px solid var(--border);
 }
 .nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
-.brand{display:flex;align-items:center;gap:8px;font-weight:800;letter-spacing:-0.01em;font-size:17px}
-.mark{
-  width:34px;height:34px;border-radius:9px;background:var(--cta);color:#04140b;
+.brand{display:flex;align-items:center;font-weight:800;letter-spacing:-0.01em;font-size:17px}
+.mark{margin-right:8px;
+  width:34px;height:34px;border-radius:9px;background:var(--cta);color:#052411;
   display:grid;place-items:center;font-weight:900;font-size:19px;
   box-shadow:var(--glow-lime);
 }
 .brand b{color:var(--lime)}
 .nav-links{display:flex;align-items:center;gap:26px}
-.nav-links a{color:var(--muted);font-size:14px;font-weight:600;transition:color .15s}
-.nav-links a:hover{color:var(--white)}
+.nav-links a:not(.btn){color:var(--muted);font-size:14px;font-weight:600;transition:color .15s}
+.nav-links a:not(.btn):hover{color:var(--white)}
 .btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;border-radius:13px;cursor:pointer;transition:transform .12s,box-shadow .2s,border-color .2s;font-size:14px;border:1px solid transparent;min-height:48px}
-.btn-primary{background:var(--cta);color:#04140b;padding:14px 20px;box-shadow:0 0 0 rgba(184,255,60,0)}
+.btn-primary{background:var(--cta);color:#052411;padding:14px 20px;box-shadow:0 0 0 rgba(42,178,72,0)}
 .btn-primary:hover{transform:translateY(-1px);box-shadow:var(--glow-lime)}
 .btn-ghost{background:var(--glass);border-color:var(--border);color:var(--white);padding:14px 20px}
 .btn-ghost:hover{border-color:var(--border-bright)}
@@ -119,20 +121,20 @@ body::before{
   padding:30px;min-height:280px;overflow:hidden;transition:transform .18s,border-color .2s,box-shadow .25s;
 }
 .game-card:hover{transform:translateY(-3px);border-color:var(--border-bright)}
-.game-card.scout:hover{box-shadow:0 18px 50px -20px rgba(184,255,60,0.35)}
-.game-card.draft:hover{box-shadow:0 18px 50px -20px rgba(0,214,143,0.35)}
+.game-card.scout:hover{box-shadow:0 18px 50px -20px rgba(42,178,72,0.35)}
+.game-card.draft:hover{box-shadow:0 18px 50px -20px rgba(18,179,128,0.35)}
 .game-card::after{
   content:"";position:absolute;inset:0;pointer-events:none;opacity:.55;
-  background:radial-gradient(420px 200px at 100% 0%,var(--gcol,rgba(184,255,60,0.10)),transparent 70%);
+  background:radial-gradient(420px 200px at 100% 0%,var(--gcol,rgba(42,178,72,0.10)),transparent 70%);
 }
-.game-card.draft{--gcol:rgba(0,214,143,0.12)}
-.game-card.manager{--gcol:rgba(245,179,1,0.10)}
-.game-card.manager:hover{box-shadow:0 18px 50px -20px rgba(245,179,1,0.35)}
-.chip.gold{color:#f5b301;background:rgba(245,179,1,0.10);border:1px solid rgba(245,179,1,0.28)}
+.game-card.draft{--gcol:rgba(18,179,128,0.12)}
+.game-card.manager{--gcol:rgba(224,184,74,0.10)}
+.game-card.manager:hover{box-shadow:0 18px 50px -20px rgba(224,184,74,0.35)}
+.chip.gold{color:#e0b84a;background:rgba(224,184,74,0.10);border:1px solid rgba(224,184,74,0.28)}
 .chips{display:flex;gap:8px;margin-bottom:18px;position:relative;z-index:1}
 .chip{font-size:10.5px;font-weight:800;letter-spacing:.12em;padding:5px 10px;border-radius:7px;text-transform:uppercase}
-.chip.lime{color:var(--lime);background:rgba(184,255,60,0.10);border:1px solid rgba(184,255,60,0.25)}
-.chip.em{color:var(--emerald);background:rgba(0,214,143,0.10);border:1px solid rgba(0,214,143,0.28)}
+.chip.lime{color:var(--lime);background:rgba(42,178,72,0.10);border:1px solid rgba(42,178,72,0.25)}
+.chip.em{color:var(--emerald);background:rgba(18,179,128,0.10);border:1px solid rgba(18,179,128,0.28)}
 .chip.ghost{color:var(--muted);background:var(--glass);border:1px solid var(--border)}
 .game-icon{font-size:34px;margin-bottom:14px;position:relative;z-index:1}
 .game-card h3{font-size:1.55rem;font-weight:800;letter-spacing:-0.02em;position:relative;z-index:1}
@@ -144,7 +146,7 @@ body::before{
 .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 @media(max-width:760px){.feat-grid{grid-template-columns:1fr}}
 .feat-tile{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px 22px;text-align:center}
-.feat-tile .fi{font-size:28px;margin-bottom:12px}
+.feat-tile .fi{width:38px;height:38px;border-radius:11px;margin:0 auto 14px;background:linear-gradient(135deg,var(--lime),var(--emerald))}
 .feat-tile h3{font-size:15.5px;font-weight:800;letter-spacing:-0.01em}
 
 /* COMING SOON — muted, not promoted */
@@ -222,7 +224,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 .promo-banners{position:relative;z-index:1;margin:22px 0}
 .promo-banner{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:var(--surface);transition:transform .18s,box-shadow .25s,border-color .2s}
 .promo-banner:hover{transform:translateY(-2px);border-color:var(--border-bright)}
-.promo-h:hover{box-shadow:0 16px 40px -18px rgba(184,255,60,.35)}
+.promo-h:hover{box-shadow:0 16px 40px -18px rgba(42,178,72,.35)}
 .promo-link{display:flex;align-items:center;gap:16px;padding:18px 56px 18px 22px;text-decoration:none;color:inherit}
 .promo-img{flex-shrink:0;width:72px;height:52px;border-radius:8px;object-fit:cover;border:1px solid var(--border);opacity:.85}
 .promo-badge{flex-shrink:0;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:999px;white-space:nowrap;color:var(--muted);background:var(--glass);border:1px solid var(--border)}
@@ -279,7 +281,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       "@type": "VideoGame",
       "name": "BALLKNW Gaffa",
       "url": "https://ballknw.com/gaffa/",
-      "description": "Manage a club across three English divisions with current-season squads — tactics, transfers, contracts, cups and a youth academy in a full career mode.",
+      "description": "Manage a club across ten leagues with current-season squads — tactics, transfers, contracts, cups and a youth academy in a full career mode.",
       "genre": "Sports",
       "gamePlatform": "Web Browser",
       "operatingSystem": "Web",
@@ -406,24 +408,14 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   .game-embed iframe{display:block;width:100%;height:min(82vh,860px);border:0}
 </style>
 
-<!-- FEATURES -->
-<section class="section" style="padding-top:36px">
-  <div class="wrap">
-    <div class="feat-grid">
-      <div class="feat-tile"><div class="fi">📋</div><h3>Real current-season squads</h3></div>
-      <div class="feat-tile"><div class="fi">🔁</div><h3>Transfers, tactics, cups, academy</h3></div>
-      <div class="feat-tile"><div class="fi">💾</div><h3>Full season, saved in your browser</h3></div>
-    </div>
-  </div>
-</section>
 
 <!-- TRUST STRIP (social proof) -->
 <section class="section" style="padding-top:0">
   <div class="wrap">
     <div class="trust">
-      <div class="stat"><div class="num lime">15,000+</div><div class="lbl">Players rated in-game</div></div>
-      <div class="stat"><div class="num em">3</div><div class="lbl">English divisions</div></div>
-      <div class="stat"><div class="num">38</div><div class="lbl">Rounds per season</div></div>
+      <div class="stat"><div class="num lime">5,700+</div><div class="lbl">Players rated in-game</div></div>
+      <div class="stat"><div class="num em">10</div><div class="lbl">Leagues to manage in</div></div>
+      <div class="stat"><div class="num">46</div><div class="lbl">Rounds per season</div></div>
       <div class="stat"><div class="num">100%</div><div class="lbl">Free, no login</div></div>
     </div>
   </div>
@@ -433,29 +425,27 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 <section class="section" style="padding-top:10px">
   <div class="wrap">
     <div class="section-head" style="text-align:center">
-      <div class="eyebrow">Coming soon</div>
-      <h2>More games on the way</h2>
+      <div class="eyebrow">Also free</div>
+      <h2>More ways to play</h2>
     </div>
     <div class="soon-grid">
-      <a href="/perfect-cup/" class="soon-card">
-        <div class="soon-thumb"><img src="/assets/thumb-lineup.svg" alt="" width="64" height="52" loading="lazy"></div>
+      <div class="soon-card" style="opacity:1">
+        <div class="soon-thumb"><img src="/assets/badge-draftxi.svg" alt="" width="64" height="52" loading="lazy"></div>
         <div class="soon-body"><h3>Draft XI</h3><p>Draft your perfect squad and simulate a season.</p></div>
-        <span class="soon-chip">Coming soon</span>
-      </a>
-      <a href="/scout/" class="soon-card">
-        <div class="soon-thumb"><img src="/assets/thumb-boardroom.svg" alt="" width="64" height="52" loading="lazy"></div>
+      </div>
+      <div class="soon-card" style="opacity:1">
+        <div class="soon-thumb"><img src="/assets/badge-scout.svg" alt="" width="64" height="52" loading="lazy"></div>
         <div class="soon-body"><h3>Scout</h3><p>Daily mystery-player puzzle. Build a streak.</p></div>
-        <span class="soon-chip">Coming soon</span>
-      </a>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- SHOP / SPONSORED (below the game, clearly labelled) -->
+<!-- SPONSORED (affiliate) -->
 <section class="section" style="padding-top:10px">
   <div class="wrap">
     <div class="sponsored-kicker">Sponsored</div>
-    <div class="promo-banners" style="margin:0 0 18px">
+    <div class="promo-banners" style="margin:0">
       <div class="promo-banner promo-h" id="promoKitsSale" data-promo-id="kits-sale" data-rotate="kits">
         <button class="promo-close" type="button" aria-label="Dismiss offer" data-close-promo>&times;</button>
         <a class="promo-link" href="https://www.amazon.co.uk/s?k=football+kits&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">
@@ -468,16 +458,17 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         </a>
       </div>
     </div>
-    <div class="ad-slot" id="middleAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto"></div>
-    <div class="shop-section" style="margin-top:22px">
-      <div class="shop-links">
-        <a href="https://www.amazon.com/s?k=football+shirts&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">Football Shirts</a>
-        <a href="https://www.amazon.com/s?k=football+boots&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">Football Boots</a>
-        <a href="https://www.amazon.com/s?k=football+balls&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">Footballs</a>
-      </div>
-    </div>
   </div>
 </section>
+
+<!-- ADVERTISEMENT (separate from sponsored content above) -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="sponsored-kicker">Advertisement</div>
+    <div class="ad-slot" id="middleAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto"><span class="ad-slot-label">Advertisement</span></div>
+  </div>
+</section>
+
 
 <!-- FAQ -->
 <section id="faq" class="section">
@@ -527,6 +518,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       </nav>
     </div>
     <p class="foot-meta">Made for football heads. Data from public sources. © BALLKNW · ballknw.com · Updated July 8, 2026 | <a href="https://www.amazon.com/s?k=football&tag=lloydevans01-21" target="_blank" rel="sponsored noopener noreferrer" style="color:var(--muted)">Shop on Amazon</a></p>
+    <p class="foot-meta" style="margin-top:6px">Guides: <a href="/best-football-manager-games-pc.html" style="color:var(--muted)">Best football manager games on PC</a> · <a href="/best-football-manager-games-android.html" style="color:var(--muted)">Android</a> · <a href="/best-football-manager-games-iphone.html" style="color:var(--muted)">iPhone</a></p>
   </div>
 </footer>
 
@@ -564,6 +556,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 })();
 </script>
 
+<script>window.BK_VIGNETTE_ZONE = '11417067';</script>
 <script src="/shared/consent.js" defer></script>
 <script src="/shared/ads.js" defer></script>
 </body>

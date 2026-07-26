@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 126" preserveAspectRatio="xMidYMid slice">
   <rect width="400" height="126" fill="#0c1710"/>
-  <g fill="none" stroke="#00d68f" stroke-opacity=".6" stroke-width="2.5">
+  <g fill="none" stroke="#12b380" stroke-opacity=".6" stroke-width="2.5">
     <path d="M172,32 Q172,60 200,66 Q228,60 228,32 Z"/>
     <path d="M172,36 Q158,36 158,48 Q158,58 172,56"/>
     <path d="M228,36 Q242,36 242,48 Q242,58 228,56"/>
     <line x1="200" y1="66" x2="200" y2="82"/>
     <path d="M182,82 h36 l6,16 h-48 z"/>
   </g>
-  <circle cx="200" cy="46" r="5" fill="#f5b301" fill-opacity=".85"/>
+  <circle cx="200" cy="46" r="5" fill="#e0b84a" fill-opacity=".85"/>
   <g stroke="#ffffff" stroke-opacity=".35" stroke-width="1.5" stroke-dasharray="3 3">
     <line x1="70" y1="63" x2="140" y2="63"/>
     <line x1="260" y1="63" x2="330" y2="63"/>

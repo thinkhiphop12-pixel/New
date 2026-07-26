@@ -26,8 +26,38 @@ const CONFIG = {
 // is only set when the user actually clicks through, exactly as the
 // Associates/ePN programs intend. No hidden iframes, no pixel tracking,
 // no auto-redirects — that would be cookie stuffing and gets accounts banned.
-const AMAZON_AFFILIATE_URL = `https://www.amazon.co.uk/s?k=football+shirts&tag=${CONFIG.AMAZON_TAG}`;
-const EBAY_AFFILIATE_URL = `https://www.ebay.co.uk/sch/i.html?_nkw=football+shirts&campid=${CONFIG.EBAY_CAMPID}&customid=ballknw`;
+//
+// Category catalogue: a slot can opt into one via `data-ad-category` (e.g.
+// <div class="ad-slot" data-ad-category="boots">). Untagged slots fall back
+// to a category picked deterministically from the slot's id, so a page with
+// several untagged slots still shows variety instead of the same card N
+// times — real relevance, not a static "football shirts" line everywhere.
+const AD_CATEGORIES = {
+  kits:     { query: 'football shirts',       kicker: 'Advertisement', title: 'Shirts & replica kits',    sub: () => `Shop the latest club and country shirts.` },
+  boots:    { query: 'football boots',        kicker: 'Advertisement', title: 'Boots & footwear',         sub: () => `Compare football boots for every position and surface.` },
+  training: { query: 'football training gear', kicker: 'Advertisement', title: 'Training gear',           sub: () => `Cones, bibs, rebounders and more.` },
+  books:    { query: 'football tactics book',  kicker: 'Advertisement', title: 'Tactics & strategy books', sub: () => `Level up your football knowledge.` },
+  tickets:  { query: 'football match tickets', kicker: 'Advertisement', title: 'Match tickets',            sub: () => `Find tickets for upcoming fixtures.` },
+};
+const AD_CATEGORY_KEYS = Object.keys(AD_CATEGORIES);
+
+function affiliateUrl(store, category) {
+  const q = encodeURIComponent(category.query);
+  return store === 'eBay'
+    ? `https://www.ebay.co.uk/sch/i.html?_nkw=${q}&campid=${CONFIG.EBAY_CAMPID}&customid=ballknw`
+    : `https://www.amazon.co.uk/s?k=${q}&tag=${CONFIG.AMAZON_TAG}`;
+}
+
+// Deterministic pick so a given slot doesn't flicker between categories on
+// re-renders (same technique as the existing Amazon/eBay store rotation).
+function pickCategory(slot) {
+  const explicit = slot.dataset.adCategory;
+  if (explicit && AD_CATEGORIES[explicit]) return AD_CATEGORIES[explicit];
+  const key = slot.dataset.adSlot || slot.id || 'x';
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  return AD_CATEGORIES[AD_CATEGORY_KEYS[hash % AD_CATEGORY_KEYS.length]];
+}
 
 // ========== GLOBALS / SHIMS ==========
 // consent.js normally defines these; shim them so this file is safe to load
@@ -52,7 +82,7 @@ function injectBaseAdStyles() {
     .ad-slot{margin:20px auto;min-height:90px;max-width:728px;display:flex;align-items:center;
       justify-content:center;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);
       border-radius:16px;position:relative;overflow:hidden;}
-    .ad-slot-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#8a8a8e;}
+    .ad-slot-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#93a099;}
     .ad-slot.is-filled .ad-slot-label{display:none;}
     .ad-slot ins.adsbygoogle{width:100%;}
     .ad-slot .ad-load-error{color:#666;font-size:12px;padding:10px;}
@@ -61,10 +91,10 @@ function injectBaseAdStyles() {
       border:1px solid rgba(255,255,255,.08);padding:16px 18px;text-align:left;}
     .aff-card{display:flex;align-items:center;gap:14px;width:100%;justify-content:space-between;flex-wrap:wrap;flex-direction:row;}
     .aff-card-txt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;}
-    .aff-card-kicker{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#8a8a8e;font-weight:600;}
+    .aff-card-kicker{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#93a099;font-weight:600;}
     .aff-card-title{font-size:14px;font-weight:700;color:#e8e8ea;font-family:Inter,system-ui,sans-serif;line-height:1.2;margin:2px 0;}
-    .aff-card-sub{font-size:12.5px;color:#8a8a8e;line-height:1.4;margin:4px 0 0;}
-    .aff-card-cta{flex-shrink:0;background:none;color:#b8ff3c;
+    .aff-card-sub{font-size:12.5px;color:#93a099;line-height:1.4;margin:4px 0 0;}
+    .aff-card-cta{flex-shrink:0;background:none;color:#2ab248;
       font-weight:700;font-size:13px;text-decoration:none;border-radius:0;padding:8px 4px;white-space:nowrap;
       font-family:Inter,system-ui,sans-serif;display:inline-block;margin-left:12px;}
     .aff-card-cta:hover{text-decoration:underline}
@@ -72,7 +102,7 @@ function injectBaseAdStyles() {
       max-width:min(92vw,480px);background:#10131a;border:1px solid rgba(255,255,255,.14);
       border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;
       font-size:13px;color:#e8e8ea;box-shadow:0 8px 24px rgba(0,0,0,.4);}
-    .soft-banner-dismiss{background:transparent;border:none;cursor:pointer;color:#8a8a8e;font-size:18px;line-height:1;flex-shrink:0;}`;
+    .soft-banner-dismiss{background:transparent;border:none;cursor:pointer;color:#93a099;font-size:18px;line-height:1;flex-shrink:0;}`;
   document.head.appendChild(style);
 }
 
@@ -104,14 +134,15 @@ function fillSlotWithAffiliate(slot) {
   const useEbay = CONFIG.AFFILIATE_ROTATE && CONFIG.EBAY_CAMPID &&
     (slot.dataset.adSlot || slot.id || '').length % 2 === 1;
   const store = useEbay ? 'eBay' : 'Amazon';
-  const url = useEbay ? EBAY_AFFILIATE_URL : AMAZON_AFFILIATE_URL;
+  const category = pickCategory(slot);
+  const url = affiliateUrl(store, category);
 
   slot.innerHTML = `
     <div class="aff-card">
       <div class="aff-card-txt">
-        <span class="aff-card-kicker">Football gear · sponsored</span>
-        <span class="aff-card-title">Shirts, boots &amp; kit</span>
-        <span class="aff-card-sub">Shop the latest football shirts and gear on ${store}.</span>
+        <span class="aff-card-kicker">${category.kicker}</span>
+        <span class="aff-card-title">${category.title}</span>
+        <span class="aff-card-sub">${category.sub(store)}</span>
       </div>
       <a class="aff-card-cta" href="${url}" target="_blank" rel="sponsored noopener">Browse →</a>
     </div>`;

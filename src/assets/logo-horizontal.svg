@@ -1,10 +1,12 @@
 <svg viewBox="0 0 1024 512" xmlns="http://www.w3.org/2000/svg">
-  <path fill-rule="evenodd" fill="#00ff88" d="
-    M 28.000 256.000 A 100.000 100.000 0 1 0 228.000 256.000 A 100.000 100.000 0 1 0 28.000 256.000 Z
-    M 142.666 194.851 Q 149.053 190.211 155.440 194.851 L 185.213 216.483 Q 191.600 221.123 189.160 228.631 L 177.788 263.632 Q 175.348 271.140 167.454 271.140 L 130.652 271.140 Q 122.757 271.140 120.317 263.632 L 108.945 228.631 Q 106.505 221.123 112.892 216.483 Z
-  "/>
-  <g transform="translate(300, 256)">
-    <text x="0" y="0" text-anchor="start" dominant-baseline="central" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="96" letter-spacing="2" fill="#00ff88">BALL</text>
-    <text x="0" y="80" text-anchor="start" dominant-baseline="central" font-family="'Press Start 2P', cursive" font-weight="400" font-size="48" letter-spacing="1" fill="#00ff88">KNOWLEDGE</text>
-  </g>
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2ab248"/>
+      <stop offset="100%" stop-color="#12b380"/>
+    </linearGradient>
+  </defs>
+  <rect x="49.1" y="149.1" width="213.9" height="213.9" rx="55.7" fill="url(#g)"/>
+  <text x="108" y="296.3" font-family="Inter, system-ui, sans-serif" font-weight="900" font-size="129.6" fill="#052411">B</text>
+  <path d="M 230.3 164.5 L 245.0 175.1 L 239.4 192.3 L 221.3 192.3 L 215.7 175.1 Z" fill="#052411" opacity="0.55"/>
+  <text x="310" y="298" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="108" letter-spacing="-2" fill="#f2efe6">BALL<tspan fill="#2ab248">KNW</tspan></text>
 </svg>

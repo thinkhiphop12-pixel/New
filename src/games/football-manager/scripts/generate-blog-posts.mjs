@@ -143,7 +143,7 @@ function generateBlogPost(date) {
       <p>
         Here are some players you might encounter in football manager games:
         ${playerList}.
-        Each has unique attributes and market value. In our Gaffer game, you can manage entire teams like these players.
+        Each has unique attributes and market value. In our Gaffa game, you can manage entire teams like these players.
       </p>
 
       <h2>Scout Challenge</h2>
@@ -158,7 +158,7 @@ function generateBlogPost(date) {
       <h2>Why Football Trivia Matters</h2>
       <p>
         Understanding player attributes, club structures, and football history
-        makes games like Gaffer and Scout even more enjoyable.
+        makes games like Gaffa and Scout even more enjoyable.
         Whether you're managing a team or solving daily puzzles, knowledge is power!
       </p>
 

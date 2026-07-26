@@ -33,7 +33,7 @@ function slugify(text) {
 function generatePlayerPage(player, club) {
   const slug = `${slugify(player.name)}-${player.id}`;
   const title = `${player.name} - ${club.name} - Ball KnW`;
-  const description = `${player.name}, ${player.pos} for ${club.name}. Rating: ${player.rating}, Age: ${player.age}. Market value: £${(player.value / 1e6).toFixed(1)}M. Play as this player in Gaffer.`;
+  const description = `${player.name}, ${player.pos} for ${club.name}. Rating: ${player.rating}, Age: ${player.age}. Market value: £${(player.value / 1e6).toFixed(1)}M. Play as this player in Gaffa.`;
 
   const attrStr = `PAC: ${player.pac} | SHO: ${player.sho} | PAS: ${player.pas} | DRI: ${player.dri} | DEF: ${player.def} | PHY: ${player.phy}`;
 
@@ -106,7 +106,7 @@ function generatePlayerPage(player, club) {
     <p>${attrStr}</p>
 
     <div style="margin-top: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 8px;">
-      <p><strong>Play Gaffer:</strong> Manage ${escapeHtml(club.name)}, sign ${escapeHtml(player.name)}, and build a championship team. No account needed.</p>
+      <p><strong>Play Gaffa:</strong> Manage ${escapeHtml(club.name)}, sign ${escapeHtml(player.name)}, and build a championship team. No account needed.</p>
       <a href="/footballmanager" style="color: #0066cc; text-decoration: none;">Start Playing →</a>
     </div>
   </div>
@@ -120,7 +120,7 @@ function generatePlayerPage(player, club) {
 function generateSquadPage(club, clubPlayers) {
   const slug = slugify(club.name);
   const title = `${club.name} Squad - Ball KnW`;
-  const description = `${club.name} squad for Gaffer. ${clubPlayers.length} players. Manage this team in our free football manager game.`;
+  const description = `${club.name} squad for Gaffa. ${clubPlayers.length} players. Manage this team in our free football manager game.`;
 
   const playerList = clubPlayers
     .map(p => `<li>${escapeHtml(p.name)} - ${p.pos} (${p.rating})</li>`)
@@ -166,7 +166,7 @@ function generateSquadPage(club, clubPlayers) {
   <div class="container">
     <a href="/" class="back-link">← Back to Ball KnW</a>
     <h1>${escapeHtml(club.name)} Squad</h1>
-    <p>Manage ${escapeHtml(club.name)} and these ${clubPlayers.length} players in Gaffer.</p>
+    <p>Manage ${escapeHtml(club.name)} and these ${clubPlayers.length} players in Gaffa.</p>
 
     <h2>Players</h2>
     <ul class="squad-list">
@@ -174,7 +174,7 @@ function generateSquadPage(club, clubPlayers) {
     </ul>
 
     <div style="margin-top: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 8px;">
-      <p><strong>Play Gaffer:</strong> Choose ${escapeHtml(club.name)}, manage transfers, tactics, and compete for trophies. No account needed.</p>
+      <p><strong>Play Gaffa:</strong> Choose ${escapeHtml(club.name)}, manage transfers, tactics, and compete for trophies. No account needed.</p>
       <a href="/footballmanager" style="color: #0066cc; text-decoration: none;">Start Playing →</a>
     </div>
   </div>

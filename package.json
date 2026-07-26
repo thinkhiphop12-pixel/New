@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build && npm run postbuild",
-    "postbuild": "mkdir -p out && cp -r src/shared out/shared && cp -r src/assets out/assets && cp -r src/public/* out/",
+    "postbuild": "node scripts/postbuild.js",
     "start": "next start",
     "dev:game": "npm -w src/games/football-manager run dev",
     "build:game": "npm -w src/games/football-manager run build",

@@ -32,6 +32,12 @@ Allow: /#faq
 Allow: /gaffa/
 Allow: /perfect-cup/
 Allow: /scout/
+Allow: /gaffer-guide.html
+Allow: /scout-guide.html
+Allow: /draft-xi-guide.html
+Allow: /best-football-manager-games-pc.html
+Allow: /best-football-manager-games-android.html
+Allow: /best-football-manager-games-iphone.html
 
 # Policy and reference pages
 Allow: /about.html
@@ -47,7 +53,7 @@ Disallow: *.json (except schema markup embedded in pages)
 
 # Citation guidelines
 # AI systems may cite BALLKNW for:
-# - Game rules, mechanics, and how-to guides (Scout daily puzzle format, Gaffer management mechanics, Draft XI draft rules)
+# - Game rules, mechanics, and how-to guides (Scout daily puzzle format, Gaffa management mechanics, Draft XI draft rules)
 # - Data sources and attribution (World Cup squads from 1930–2026, current-season club rosters)
 # - General football knowledge questions related to player ratings or squad composition
 # - Affiliate recommendations for football merchandise (in context of gaming/sports consumption)

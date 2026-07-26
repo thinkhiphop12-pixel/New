@@ -71,12 +71,24 @@ function fillAllAdSlots(){
   });
 }
 
+/* Monetag Vignette (impression-based, between-page-navigation banner) —
+   opt-in per page via `window.BK_VIGNETTE_ZONE` set BEFORE this script loads,
+   so it only runs on pages that explicitly want it, not site-wide. */
+function loadMonetagVignette(){
+  if (!window.BK_VIGNETTE_ZONE) return;
+  if (document.querySelector('script[data-zone="' + window.BK_VIGNETTE_ZONE + '"]')) return;
+  const s = document.createElement('script');
+  s.dataset.zone = window.BK_VIGNETTE_ZONE;
+  s.src = 'https://n6wxm.com/vignette.min.js';
+  document.body.appendChild(s);
+}
+
 function applyConsent(choice){
   setConsent(choice);
   const banner = document.getElementById('consentBanner');
   if (banner) banner.classList.add('hidden');
   if (choice === 'all') {
-    loadPostHog(); loadAdSense(); fillAllAdSlots();
+    loadPostHog(); loadAdSense(); fillAllAdSlots(); loadMonetagVignette();
     if (typeof initAds === 'function') initAds();
   }
 }
@@ -101,7 +113,7 @@ function ensureConsentBanner(){
       #consentBanner .consent-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
       #consentBanner button{cursor:pointer;font-weight:700;font-size:13px;border-radius:10px;
         padding:9px 16px;border:1px solid transparent;font-family:inherit;}
-      #consentBanner .btn-primary{background:linear-gradient(135deg,#b8ff3c,#00d68f);color:#04140b;}
+      #consentBanner .btn-primary{background:linear-gradient(135deg,#2ab248,#12b380);color:#052411;}
       #consentBanner .btn-ghost{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:#fff;}`;
     document.head.appendChild(style);
   }
@@ -124,7 +136,7 @@ function initConsent(){
   const banner = document.getElementById('consentBanner');
   if (existing) {
     if (existing === 'all') {
-      loadPostHog(); loadAdSense(); fillAllAdSlots();
+      loadPostHog(); loadAdSense(); fillAllAdSlots(); loadMonetagVignette();
       if (typeof initAds === 'function') initAds();
     }
     return;

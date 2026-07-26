@@ -1,8 +1,27 @@
-# Ball Knowledge Brand Guidelines
+# BALLKNW Brand Guidelines
+
+> **Note (2026-07-25):** This document previously described a navy/`#00ff88`
+> rebrand (game names "7-0-0, Boardroom, Lineup, Bracket, Dynasty") that was
+> never finished — the Migration Checklist below was left unchecked and the
+> live homepage (`index.html`) never adopted it. The colors, fonts, and game
+> names below have been corrected to match what is actually shipped in
+> production today: the `index.html` / `perfect-cup/` design system. Treat
+> this file as the current source of truth again.
+>
+> **Update (2026-07-25, later same day):** the palette below has been
+> revised again — the original near-black/neon-lime combo tested too harsh
+> (16.9:1 contrast on body text, ~4× past the 4.5:1 minimum). The site has
+> moved to **"Under the Floodlights"**: a green-tinted near-black instead of
+> neutral black, and a less-neon, more grass-toned green. Same structure,
+> softer execution. The Logo System section has also been rewritten to
+> match the new mark that actually shipped ("The Corner Mark").
+>
+> **Update (2026-07-26):** Floodlight Green has been deepened from `#5fd97a`
+> to `#2ab248` — the original read as too luminous/glowing.
 
 ## Brand Identity
 
-**Ball Knowledge** is a free hub of football knowledge games — building World Cup teams, identifying players, simulating tournaments, and managing clubs, all in the browser.
+**BALLKNW** (Ball Knowledge) is a free hub of football knowledge games — building World Cup teams, identifying players, simulating tournaments, and managing clubs, all in the browser. Current games: **Scout** (daily connections puzzle), **Gaffer** (full club-management sim, `/football-manager/`), and **Draft XI** (squad draft + season sim, `/perfect-cup/`).
 
 **Brand Promise**: Fast, smart, free football games for obsessives.
 
@@ -10,20 +29,23 @@
 
 ## Logo System
 
-### Primary Mark (Logo)
-- **Symbol**: "Punched Pentagon" — a solid ball formed from a single circle with one asymmetric pentagon (the universal football panel shape) cut out using a subtractive negative-space technique. No gradients, grids, or extra strokes — one shape, one cut.
-- **Style**: Modern, clean, minimal — extreme simplicity with a single focal point
-- **Usage**: App icon, favicon, standalone brand mark, button icon
+### Primary Mark (Logo) — "The Corner Mark"
+- **Symbol**: a rounded-square gradient badge (Floodlight Green → Pitch Emerald) with a bold "B" in `#052411`, plus a small pentagon "seam" notched into the top-right corner — a quiet nod to a football's panel stitching, without resorting to a literal ball icon.
+- **Style**: Modern, clean, minimal — legible down to 16px (a literal ball-and-pentagon icon was tested and rejected: it nearly vanishes into a dark blob at favicon size, where letterforms stay crisp).
+- **Usage**: App icon, favicon, standalone brand mark, button icon.
 - **Versions**:
-  - `logo-mark.svg` (square 1:1, 512×512px minimum)
-  - `logo-mark-inverted.svg` (white for dark backgrounds)
-  - `logo-mark-mono.svg` (single color for accessibility)
+  - `logo-mark.svg` (square 1:1, 512×512 viewBox) — full-color, for dark backgrounds
+  - `logo-mark-inverted.svg` — dark badge + green "B", for light backgrounds
+  - `logo-mark-mono.svg` — single-color outline (set via CSS `color`), for one-color contexts
+  - `favicon.svg` — same mark at browser-tab scale
+- **Game marks** (same badge language, different letter + gradient, per the existing per-game accent convention): `badge-gaffer.svg` (gold, "G"), `badge-scout.svg` (green, "S"), `badge-draftxi.svg` (emerald, "XI").
 
 ### Logo Lockup (Full Logo)
-- **Horizontal**: Mark + "BALL KNOWLEDGE" wordmark (2:1 aspect)
-- **Vertical**: Mark stacked above wordmark (1:1.5 aspect)
+- **Horizontal**: Mark + "BALL**KNW**" wordmark (`logo-horizontal.svg`, 2:1 aspect) — "BALL" in off-white, "KNW" in Floodlight Green, matching the live nav treatment.
+- **Vertical**: Mark stacked above wordmark (`logo-vertical.svg`, 1:1.5 aspect)
 - **Minimum size**: 240px wide for horizontal, 160px for vertical
 - **Clear space**: Minimum 1/4 of mark height on all sides
+- **Not yet cleaned up**: `logo-social.svg` is an older, unrelated OG-image design referencing a retired game name ("7-0-0") and an even earlier palette — it isn't referenced anywhere in the site's HTML. Safe to delete or regenerate later; left alone for this pass.
 
 ### Logo Don'ts
 - ❌ Do not stretch or distort
@@ -33,64 +55,57 @@
 
 ---
 
-## Color Palette
+## Color Palette — "Under the Floodlights"
 
 ### Primary Colors
-- **Accent Green**: `#00ff88` (games, CTAs, active states)
-  - RGB: 0, 255, 136
-  - HSL: 134°, 100%, 50%
-  - Usage: Primary buttons, highlights, active navigation
+- **Floodlight Green**: `#2ab248` (primary CTA gradient start, highlights, active nav)
+  - RGB: 42, 178, 72
+  - Usage: Primary buttons (as gradient with Pitch Emerald), glow accents, hover states
+  - Replaces the old neon **Lime** `#b8ff3c` — same role, less retina-searing.
 
-- **Dark Navy**: `#0a0e14` (background)
-  - RGB: 10, 14, 20
-  - HSL: 215°, 33%, 6%
-  - Usage: Primary background, safe contrast base
+- **Pitch Emerald**: `#12b380` (primary CTA gradient end, secondary highlight)
+  - RGB: 18, 179, 128
+  - Usage: Primary buttons (as gradient with Floodlight Green), ambient background glow
+  - Replaces the old **Emerald** `#00d68f`.
+
+- **Under-the-Floodlights Black**: `#0b120d` (background)
+  - RGB: 11, 18, 13
+  - Usage: Primary background across every page. Deliberately carries a faint green cast (a pitch at night), not neutral/true black.
+  - Replaces the old **Near-Black** `#050505`.
 
 ### Secondary Colors
-- **Gold**: `#ffd700` (secondary action, labels, accents)
-  - RGB: 255, 215, 0
-  - HSL: 51°, 100%, 50%
-  - Usage: Secondary buttons, stats labels, team ratings
-
-- **Cyan**: `#4488ff` (tertiary action, UI elements)
-  - RGB: 68, 136, 255
-  - HSL: 217°, 100%, 63%
-  - Usage: Links, secondary accents, UI borders
+- **Trophy Gold**: `#e0b84a` (secondary accent, labels, "win" states)
+  - RGB: 224, 184, 74
+  - Usage: Secondary labels, stats, ratings accents, season-objective/"Champions" moments
+  - Unifies two previously-inconsistent golds (`#c9a227` and a separate hardcoded `#f5b301`) into one value.
 
 ### Neutral Colors
-- **Light Text**: `#e8e8e8` (primary text)
-- **Dim Text**: `#8892a0` (secondary text, labels)
-- **Border Color**: `#5a7a94` (UI dividers, outlines)
+- **Off-White**: `#f2efe6` (primary text) — replaces pure `#ffffff`; softer against the green-black background.
+- **Muted**: `#93a099` (secondary text, nav links, labels) — replaces `#8a8a8e`, given a slight green bias to match the new background instead of a neutral grey.
+- **On-CTA Text**: `#052411` (dark text sitting on top of the green/emerald gradient buttons) — replaces `#04140b`.
+- **Border**: `rgba(255,255,255,0.10)`, **Border Bright**: `rgba(255,255,255,0.18)` (dividers, outlines — unchanged, still read fine against the new background)
+- **Surface**: `rgba(255,255,255,0.04)`, **Glass**: `rgba(255,255,255,0.06)` (card/panel backgrounds — unchanged)
 
 ### Status Colors
-- **Danger**: `#ff4444` (errors, losses, critical states)
-- **Warning**: `#ffaa00` (cautions, injuries)
-- **Success**: `#00cc66` (wins, completions)
+Not yet formalized site-wide — the games (`Scout`, `Gaffer`, `Draft XI`) each use their own accent color on top of the shared dark base, which is an intentional per-game distinction, not an inconsistency. If a shared status palette is needed later, derive it from this base rather than introducing a new background/text scheme.
 
 ---
 
 ## Typography
 
-### Primary Font: System Stack
+### Primary Font: Inter
 ```css
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+font-family: Inter, system-ui, -apple-system, sans-serif;
 ```
+Loaded from Google Fonts (weights 400/500/600/700/800/900), with a system-font fallback stack.
 - **Sans-serif only**, modern and clean
-- **No serifs** (retro aesthetic is minimal/highlights only)
-- **System fonts** for performance (no external font downloads)
+- **No serifs**
 
 ### Font Sizes & Weights
-- **Headline**: 24–32px, 700 weight
+- **Headline**: 24–32px, 700–800 weight
 - **Subheading**: 16–18px, 600 weight
 - **Body**: 13–14px, 400 weight
 - **Small/Label**: 11–12px, 600 weight (uppercase)
-- **Monospace (code)**: `Courier New`, monospace
-
-### Retro Accents (Limited Use)
-- **"Press Start 2P"** (Google Fonts): Used ONLY for game titles and special brand moments
-  - Ball Knowledge wordmark on logo
-  - Game names (7-0-0, Boardroom, etc.)
-  - No body text — readability first
 
 ---
 
@@ -190,24 +205,22 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubun
 - **Discord**: 1200×480px, accent green gradient with logo mark
 
 ### Shared Post Template
-- Size: 1200×628px (Open Graph standard)
+- Size: 1200×628px (Open Graph standard) — see `assets/og-image.png`
 - **Layout**: Dark background + logo mark + headline + URL footer
-- **Font**: System font for body, retro accent for headline
-- **Example**: "Play 7-0-0 · Draft World Cup XI · Free, no account | ballknw.com"
+- **Font**: Inter for body and headline
+- **Example**: "Draft the perfect World Cup XI · Free, no account | ballknw.com"
 
 ---
 
 ## Use Cases & Examples
 
 ### Dark Backgrounds (Primary)
-- Dark navy (`#0a0e14`) + Accent green text/buttons
-- All games use this theme
+- Near-black (`#050505`) + Lime/Emerald gradient CTAs and highlights
+- All games and pages use this theme
 - Logo mark in white or inverted color
 
 ### Light Backgrounds (Rare)
-- Use only on marketing pages or external sites
-- Logo mark in dark navy or accent green
-- Green accent becomes secondary; maintain contrast
+- Not currently used anywhere on the site — if introduced, use the logo mark in near-black and keep Lime/Emerald as accent only
 
 ### Print (Unlikely)
 - Logo mark in black or brand green
@@ -218,24 +231,23 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubun
 
 ## File Inventory
 
-### Logo Files (SVG, PNG, ICO)
+### Logo Files (SVG, PNG)
 - `assets/logo-mark.svg` (primary)
 - `assets/logo-mark-inverted.svg` (white)
 - `assets/logo-mark-mono.svg` (single color)
 - `assets/logo-horizontal.svg` (mark + wordmark)
 - `assets/logo-vertical.svg` (stacked)
-- `assets/favicon.ico` (32×32 + 16×16)
-- `assets/favicon-192.png` (app icon)
-- `assets/apple-touch-icon.png` (iOS)
+- `assets/logo-social.svg`
+- `assets/favicon.svg`, `assets/favicon-192.png` (favicon / app icon)
 
-### Social Assets (PNG)
-- `assets/social-twitter.png` (400×400)
-- `assets/social-og-image.png` (1200×628 Open Graph)
-- `assets/social-discord.png` (512×512)
+### Social Assets
+- `assets/social-twitter.svg`
+- `assets/social-discord.svg`
+- `assets/social-og-image.svg`
+- `assets/og-image.png` (Open Graph image referenced site-wide)
 
 ### Brand Documents
 - `BRAND_GUIDELINES.md` (this file)
-- `COLOR_PALETTE.css` (CSS variables)
 
 ---
 
@@ -248,31 +260,13 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubun
 - **Direct**: Clear CTAs, no marketing speak
 
 ### Language
-- **Game titles**: Short, punchy (7-0-0, Boardroom, Lineup, Bracket, Dynasty)
+- **Game titles**: Short, punchy — current lineup is **Scout**, **Gaffer**, **Draft XI**
 - **Descriptions**: One sentence per game, features in second sentence
 - **Error messages**: Helpful, not condescending ("Select 11 players, not 10")
 - **Success messages**: Affirming, not cheesy ("Squad saved" not "You did it! 🎉")
 
 ---
 
-## Migration Checklist (for implementation)
-
-- [ ] Replace logo mark with new SVG in assets/
-- [ ] Update favicon.ico and favicon-192.png
-- [ ] Add favicon-new.png at 192×192 (iOS standard)
-- [ ] Create social media assets (Twitter, LinkedIn, Discord)
-- [ ] Update homepage hero section with new branding
-- [ ] Test logo on all game pages
-- [ ] Verify accessibility (contrast, color blindness)
-- [ ] Update Open Graph images on all pages
-- [ ] Test on light and dark backgrounds
-- [ ] Update brand colors in CSS variables if needed
-- [ ] Create brand assets folder structure
-
----
-
-**Last Updated**: June 26, 2026
-
-**Next Review**: After initial user feedback on new branding
+**Last Updated**: 2026-07-25
 
 **Contact**: thinkhiphop12@gmail.com for brand inquiries

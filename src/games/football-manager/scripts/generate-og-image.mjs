@@ -94,7 +94,7 @@ function generateGafferOGImage(club, quote = '') {
 
   <!-- Logo/Branding -->
   <text x="40" y="55" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="#ffffff">
-    Ball KnW Gaffer
+    Ball KnW Gaffa
   </text>
 
   <!-- Club name -->
