@@ -33,11 +33,11 @@ const CONFIG = {
 // several untagged slots still shows variety instead of the same card N
 // times — real relevance, not a static "football shirts" line everywhere.
 const AD_CATEGORIES = {
-  kits:     { query: 'football shirts',       kicker: 'Football gear · sponsored', title: 'Shirts & replica kits',    sub: (store) => `Shop the latest club and country shirts on ${store}.` },
-  boots:    { query: 'football boots',        kicker: 'Football gear · sponsored', title: 'Boots & footwear',         sub: (store) => `Compare football boots for every position and surface on ${store}.` },
-  training: { query: 'football training gear', kicker: 'Football gear · sponsored', title: 'Training gear',           sub: (store) => `Cones, bibs, rebounders and more on ${store}.` },
-  books:    { query: 'football tactics book',  kicker: 'Football reading · sponsored', title: 'Tactics & strategy books', sub: (store) => `Level up your football knowledge on ${store}.` },
-  tickets:  { query: 'football match tickets', kicker: 'Match day · sponsored',    title: 'Match tickets',            sub: (store) => `Find tickets for upcoming fixtures via ${store}.` },
+  kits:     { query: 'football shirts',       kicker: 'Advertisement', title: 'Shirts & replica kits',    sub: () => `Shop the latest club and country shirts.` },
+  boots:    { query: 'football boots',        kicker: 'Advertisement', title: 'Boots & footwear',         sub: () => `Compare football boots for every position and surface.` },
+  training: { query: 'football training gear', kicker: 'Advertisement', title: 'Training gear',           sub: () => `Cones, bibs, rebounders and more.` },
+  books:    { query: 'football tactics book',  kicker: 'Advertisement', title: 'Tactics & strategy books', sub: () => `Level up your football knowledge.` },
+  tickets:  { query: 'football match tickets', kicker: 'Advertisement', title: 'Match tickets',            sub: () => `Find tickets for upcoming fixtures.` },
 };
 const AD_CATEGORY_KEYS = Object.keys(AD_CATEGORIES);
 

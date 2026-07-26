@@ -67,7 +67,7 @@ body::before{
 /* NAV */
 .nav{
   position:sticky;top:0;z-index:50;
-  background:rgba(5,5,5,0.72);backdrop-filter:saturate(160%) blur(14px);
+  background:rgba(11,18,13,0.96);
   border-bottom:1px solid var(--border);
 }
 .nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
@@ -408,16 +408,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   .game-embed iframe{display:block;width:100%;height:min(82vh,860px);border:0}
 </style>
 
-<!-- FEATURES -->
-<section class="section" style="padding-top:36px">
-  <div class="wrap">
-    <div class="feat-grid">
-      <div class="feat-tile"><div class="fi"></div><h3>Real current-season squads</h3></div>
-      <div class="feat-tile"><div class="fi"></div><h3>Transfers, tactics, cups, academy</h3></div>
-      <div class="feat-tile"><div class="fi"></div><h3>Full season, saved in your browser</h3></div>
-    </div>
-  </div>
-</section>
 
 <!-- TRUST STRIP (social proof) -->
 <section class="section" style="padding-top:0">
@@ -439,16 +429,14 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       <h2>More ways to play</h2>
     </div>
     <div class="soon-grid">
-      <a href="/perfect-cup/" class="soon-card" style="opacity:1">
+      <div class="soon-card" style="opacity:1">
         <div class="soon-thumb"><img src="/assets/badge-draftxi.svg" alt="" width="64" height="52" loading="lazy"></div>
         <div class="soon-body"><h3>Draft XI</h3><p>Draft your perfect squad and simulate a season.</p></div>
-        <span class="soon-chip">Play now →</span>
-      </a>
-      <a href="/scout/" class="soon-card" style="opacity:1">
+      </div>
+      <div class="soon-card" style="opacity:1">
         <div class="soon-thumb"><img src="/assets/badge-scout.svg" alt="" width="64" height="52" loading="lazy"></div>
         <div class="soon-body"><h3>Scout</h3><p>Daily mystery-player puzzle. Build a streak.</p></div>
-        <span class="soon-chip">Play now →</span>
-      </a>
+      </div>
     </div>
   </div>
 </section>
@@ -481,21 +469,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </section>
 
-<!-- MORE READING (internal links, replaces the old Amazon text-link row) -->
-<section class="section" style="padding-top:0">
-  <div class="wrap">
-    <div class="section-head" style="text-align:center">
-      <div class="eyebrow">Guides</div>
-      <h2>Best football manager games</h2>
-      <p>How Gaffer compares to Football Manager, Top Eleven, and OFM — on the platform you actually play on.</p>
-    </div>
-    <div class="shop-links">
-      <a href="/best-football-manager-games-pc.html">On PC &amp; Desktop</a>
-      <a href="/best-football-manager-games-android.html">On Android</a>
-      <a href="/best-football-manager-games-iphone.html">On iPhone</a>
-    </div>
-  </div>
-</section>
 
 <!-- FAQ -->
 <section id="faq" class="section">
@@ -545,6 +518,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       </nav>
     </div>
     <p class="foot-meta">Made for football heads. Data from public sources. © BALLKNW · ballknw.com · Updated July 8, 2026 | <a href="https://www.amazon.com/s?k=football&tag=lloydevans01-21" target="_blank" rel="sponsored noopener noreferrer" style="color:var(--muted)">Shop on Amazon</a></p>
+    <p class="foot-meta" style="margin-top:6px">Guides: <a href="/best-football-manager-games-pc.html" style="color:var(--muted)">Best football manager games on PC</a> · <a href="/best-football-manager-games-android.html" style="color:var(--muted)">Android</a> · <a href="/best-football-manager-games-iphone.html" style="color:var(--muted)">iPhone</a></p>
   </div>
 </footer>
 
