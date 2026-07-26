@@ -47,6 +47,20 @@ const NATIONS: Nation[] = [
     divisions: [8],
     description: 'Ligue 1 — French football with emerging superstars and intensity',
   },
+  {
+    id: 'netherlands',
+    name: 'Netherlands',
+    flag: '🇳🇱',
+    divisions: [9],
+    description: 'Eredivisie — Attacking football and a famous youth conveyor belt',
+  },
+  {
+    id: 'portugal',
+    name: 'Portugal',
+    flag: '🇵🇹',
+    divisions: [10],
+    description: 'Primeira Liga — Technical quality and Europe\'s best scouting network',
+  },
 ];
 
 export default function NationSelectScreen({

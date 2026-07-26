@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { Division, GameData } from '@/engine/types';
 import { DIVISION_NAMES, STARTING_BUDGET } from '@/engine/gameRules';
+import { ALL_DIVISIONS } from '@/engine/seasonProgression';
 import { formatMoney } from '@/engine/utils';
 import { Crest } from './Crest';
 
@@ -15,6 +16,8 @@ const DIV_BLURB: Record<Division, string> = {
   6: 'Italian elite. Tactical chess, defensive masters, and the Scudetto.',
   7: 'German powerhouse. High pressing, incredible atmospheres, and the Meisterschale.',
   8: 'French top flight. Physical football, emerging superstars, and PSG dominance.',
+  9: 'Dutch top flight. Attacking football and a famous youth conveyor belt.',
+  10: 'Portuguese top flight. Technical quality and Europe\'s best scouting network.',
 };
 
 export default function ClubSelectScreen({
@@ -34,7 +37,7 @@ export default function ClubSelectScreen({
 
   const divisions = useMemo(() => {
     const set = new Set(data.clubs.map((c) => c.division));
-    const available = ([1, 2, 3, 4, 5, 6, 7, 8] as Division[]).filter(
+    const available = ALL_DIVISIONS.filter(
       (d) => set.has(d) && (!allowedDivisions || allowedDivisions.includes(d))
     );
     return available;

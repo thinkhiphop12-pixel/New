@@ -1,5 +1,5 @@
 export type Position = 'GK' | 'DEF' | 'MID' | 'FWD';
-export type Division = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+export type Division = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 /** One season of a player's career, recorded at season end. */
 export interface CareerEntry {
@@ -265,7 +265,7 @@ export interface GameState {
   nextPlayerId: number; // for youth academy generation
   players: Record<number, Player>;
   clubs: Club[];
-  fixtures: { d1: Fixture[]; d2: Fixture[]; d3: Fixture[]; d4: Fixture[]; d5: Fixture[]; d6: Fixture[]; d7: Fixture[]; d8: Fixture[] };
+  fixtures: { d1: Fixture[]; d2: Fixture[]; d3: Fixture[]; d4: Fixture[]; d5: Fixture[]; d6: Fixture[]; d7: Fixture[]; d8: Fixture[]; d9: Fixture[]; d10: Fixture[] };
   incomingOffers: TransferOffer[];
   history: SeasonSummary[];
   news: string[];

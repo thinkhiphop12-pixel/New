@@ -50,8 +50,9 @@ export function generateFixtures(clubIds: number[]): Fixture[] {
 }
 
 /** Every division the game supports, in order (English pyramid 1–4, then the
- * top European leagues La Liga, Serie A, Bundesliga, Ligue 1). */
-export const ALL_DIVISIONS: Division[] = [1, 2, 3, 4, 5, 6, 7, 8];
+ * standalone top European leagues: La Liga, Serie A, Bundesliga, Ligue 1,
+ * Eredivisie, Primeira Liga). */
+export const ALL_DIVISIONS: Division[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 function divisionIds(state: GameState, division: Division): number[] {
   return state.clubs.filter((c) => c.division === division).map((c) => c.id);
@@ -74,6 +75,7 @@ function makeSeasonFixtures(state: Pick<GameState, 'clubs'>): GameState['fixture
   return {
     d1: gen(1), d2: gen(2), d3: gen(3), d4: gen(4),
     d5: gen(5), d6: gen(6), d7: gen(7), d8: gen(8),
+    d9: gen(9), d10: gen(10),
   };
 }
 
@@ -204,7 +206,7 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
     nextPlayerId: Math.max(...data.players.map((p) => p.id)) + 1,
     players,
     clubs,
-    fixtures: { d1: [], d2: [], d3: [], d4: [], d5: [], d6: [], d7: [], d8: [] },
+    fixtures: { d1: [], d2: [], d3: [], d4: [], d5: [], d6: [], d7: [], d8: [], d9: [], d10: [] },
     incomingOffers: [],
     history: [],
     news: [`Welcome to ${userClub.name}! The board expects a solid season.`],

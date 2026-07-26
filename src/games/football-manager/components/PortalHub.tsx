@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { GameState } from '@/engine/types';
-import { SEASON_ROUNDS } from '@/engine/gameRules';
+import { DIVISION_NAMES, SEASON_ROUNDS } from '@/engine/gameRules';
 import { computeTable, nextUserFixture, userDivision } from '@/engine/seasonProgression';
 import { isClubAlive, knockoutRoundDue } from '@/engine/cups';
 import { isLineupValid } from '@/engine/teamManagement';
@@ -66,7 +66,7 @@ export default function PortalHub({
         <div className="fm-portal__club-info">
           <h1 className="fm-portal__club-name">{club.name}</h1>
           <p className="fm-portal__club-meta">
-            {state.seasonYear}/{(state.seasonYear + 1) % 100} · {position}{ord(position)} in {div === 1 ? 'Premier League' : div === 2 ? 'Championship' : div === 3 ? 'League One' : div === 4 ? 'League Two' : div === 5 ? 'La Liga' : div === 6 ? 'Serie A' : div === 7 ? 'Bundesliga' : 'Ligue 1'}
+            {state.seasonYear}/{(state.seasonYear + 1) % 100} · {position}{ord(position)} in {DIVISION_NAMES[div]}
           </p>
         </div>
         <div className="fm-portal__week-badge">

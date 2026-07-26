@@ -1,7 +1,7 @@
 import type { Division, FormationDef, Position } from './types';
 
-export const SEASON_ROUNDS = 38;
-export const CLUBS_PER_DIVISION = 20;
+export const SEASON_ROUNDS = 46;
+export const CLUBS_PER_DIVISION = 24;
 export const PROMOTION_SPOTS = 3;
 
 export const MIN_SQUAD_SIZE = 16;
@@ -16,6 +16,8 @@ export const DIVISION_NAMES: Record<Division, string> = {
   6: 'Serie A',
   7: 'Bundesliga',
   8: 'Ligue 1',
+  9: 'Eredivisie',
+  10: 'Primeira Liga',
 };
 
 export const STARTING_BUDGET: Record<Division, number> = {
@@ -27,12 +29,18 @@ export const STARTING_BUDGET: Record<Division, number> = {
   6: 28_000_000,
   7: 25_000_000,
   8: 22_000_000,
+  9: 18_000_000,
+  10: 16_000_000,
 };
 
-/** Calendar weeks each domestic cup round is played (6 rounds, 60 clubs). */
-export const CUP_WEEKS = [4, 9, 14, 19, 25, 31];
+/** Calendar weeks each domestic cup round is played (7 rounds, 72 clubs across
+ *  divisions 1-3 at 24 clubs each — the entrant count isn't a power of two, so
+ *  the bracket needs an extra qualifying round; see makeDomesticCup). The
+ *  first entry is that extra early round, so every later round keeps its
+ *  original week/prize unchanged. */
+export const CUP_WEEKS = [2, 4, 9, 14, 19, 25, 31];
 /** Prize for winning a tie in each cup round (last = winning the final). */
-export const CUP_PRIZES = [150_000, 300_000, 600_000, 1_200_000, 2_500_000, 6_000_000];
+export const CUP_PRIZES = [75_000, 150_000, 300_000, 600_000, 1_200_000, 2_500_000, 6_000_000];
 
 /** Continental Champions Cup: 8 teams, QF/SF/Final. */
 export const CONTINENTAL_WEEKS = [7, 17, 29];
@@ -40,7 +48,7 @@ export const CONTINENTAL_PRIZES = [3_000_000, 6_000_000, 15_000_000];
 export const CONTINENTAL_SPOTS = 8;
 
 /** Weekly gate income baseline per division. */
-export const GATE_BASE: Record<Division, number> = { 1: 550_000, 2: 180_000, 3: 60_000, 4: 25_000, 5: 480_000, 6: 400_000, 7: 380_000, 8: 340_000 };
+export const GATE_BASE: Record<Division, number> = { 1: 550_000, 2: 180_000, 3: 60_000, 4: 25_000, 5: 480_000, 6: 400_000, 7: 380_000, 8: 340_000, 9: 280_000, 10: 250_000 };
 
 /** Cost to upgrade the youth academy to level 2 / level 3. */
 export const ACADEMY_UPGRADE_COST: Record<number, number> = { 2: 5_000_000, 3: 12_000_000 };
