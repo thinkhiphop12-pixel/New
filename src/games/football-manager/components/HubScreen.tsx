@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { GameState } from '@/engine/types';
 import PortalHub from './PortalHub';
 import InboxScreen from './InboxScreen';
@@ -39,6 +39,13 @@ export default function HubScreen({
 }) {
   const [tab, setTab] = useState<Tab>('hub');
 
+  // Same in-place-swap scroll issue as the top-level view switch: reset to
+  // the top of the (new, usually shorter) screen whenever the hub sub-tab
+  // changes, so the tab bar doesn't start out scrolled off-screen.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [tab]);
+
   return (
     <div className="fm-screen">
       <nav className="fm-tabs">
@@ -47,9 +54,11 @@ export default function HubScreen({
             key={t.id}
             className={`fm-tab${tab === t.id ? ' active' : ''}`}
             onClick={() => setTab(t.id)}
+            aria-label={t.label}
+            title={t.label}
           >
-            <span style={{ marginRight: 4 }}>{t.icon}</span>
-            {t.label}
+            <span className="fm-tab__icon" aria-hidden="true">{t.icon}</span>
+            <span className="fm-tab__label">{t.label}</span>
             {t.id === 'transfers' && state.incomingOffers.length > 0 && (
               <span className="fm-tab__badge">{state.incomingOffers.length}</span>
             )}

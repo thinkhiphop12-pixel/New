@@ -17,7 +17,7 @@ export default function MainMenuScreen({
     <div className="fm-screen fm-start">
       <p className="fm-label">A BALLKNW GAME</p>
       <h1 className="fm-start__title">
-        Football <span className="fm-start__accent">Manager</span>
+        <span className="fm-start__accent">Gaffa</span>
       </h1>
       <p className="fm-start__tagline">
         Take charge of a club across three divisions. Set your tactics, work the market, bring

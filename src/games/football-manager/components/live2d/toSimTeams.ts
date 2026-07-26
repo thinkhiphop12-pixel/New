@@ -6,7 +6,7 @@ export const SIM_PITCH: PitchDetails = { pitchWidth: 680, pitchHeight: 1050, goa
 
 const HALF_DEPTH = 500; // own-half depth in sim units before switchSide() mirrors the second team
 
-/** Map a Gaffer 0-100 attribute (or rating) onto footballsim's rough 0-100 skill scale. */
+/** Map a Gaffa 0-100 attribute (or rating) onto footballsim's rough 0-100 skill scale. */
 function clampSkill(v: number): number {
   return Math.max(1, Math.min(100, Math.round(v)));
 }
@@ -24,7 +24,7 @@ function toSkill(p: Player) {
   };
 }
 
-/** Builds a footballsim Team config from a Gaffer lineup + formation, so the
+/** Builds a footballsim Team config from a Gaffa lineup + formation, so the
  *  live match pitch can run real continuous player/ball movement for one
  *  team's own half (the engine mirrors the second team automatically). */
 export function toSimTeam(

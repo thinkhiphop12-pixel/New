@@ -4,11 +4,13 @@ import { useState } from 'react';
 import type { Division, GameState } from '@/engine/types';
 import { CLUBS_PER_DIVISION, DIVISION_NAMES, PROMOTION_SPOTS } from '@/engine/gameRules';
 import { ALL_DIVISIONS, computeTable, userDivision } from '@/engine/seasonProgression';
+import { Crest } from './Crest';
 
 export default function TableScreen({ state }: { state: GameState }) {
   const [division, setDivision] = useState<Division>(userDivision(state));
   const table = computeTable(state, division);
-  const clubName = (id: number) => state.clubs.find((c) => c.id === id)?.name ?? '—';
+  const club = (id: number) => state.clubs.find((c) => c.id === id);
+  const clubName = (id: number) => club(id)?.name ?? '—';
   const divisions: Division[] = ALL_DIVISIONS.filter((d) => state.clubs.some((c) => c.division === d));
   // Promotion/relegation only runs inside the English pyramid (divisions 1–3);
   // the fourth tier and the European leagues are self-contained.
@@ -45,10 +47,16 @@ export default function TableScreen({ state }: { state: GameState }) {
               const promo = inPyramid && division !== 1 && pos <= PROMOTION_SPOTS;
               const releg = inPyramid && division !== pyramidBottom && pos > CLUBS_PER_DIVISION - PROMOTION_SPOTS;
               const me = row.clubId === state.userClubId;
+              const c = club(row.clubId);
               return (
                 <tr key={row.clubId} className={`${me ? 'me ' : ''}${promo ? 'promo' : ''}${releg ? 'releg' : ''}`}>
                   <td>{pos}</td>
-                  <td>{clubName(row.clubId)}</td>
+                  <td className="fm-table__club">
+                    <span className="fm-table__club-inner">
+                      {c && <Crest name={c.name} code={c.code} color={c.color} size={16} />}
+                      <span className="fm-table__club-name">{clubName(row.clubId)}</span>
+                    </span>
+                  </td>
                   <td>{row.played}</td>
                   <td>{row.won}</td>
                   <td>{row.drawn}</td>

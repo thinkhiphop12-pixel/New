@@ -2,13 +2,15 @@
 
 import type { GameState } from '@/engine/types';
 import { divisionFixtures, userDivision } from '@/engine/seasonProgression';
+import { Crest } from './Crest';
 
 export default function FixturesScreen({ state }: { state: GameState }) {
   const div = userDivision(state);
   const fixtures = divisionFixtures(state, div).filter(
     (f) => f.homeId === state.userClubId || f.awayId === state.userClubId
   );
-  const clubName = (id: number) => state.clubs.find((c) => c.id === id)?.name ?? '—';
+  const club = (id: number) => state.clubs.find((c) => c.id === id);
+  const clubName = (id: number) => club(id)?.name ?? '—';
 
   return (
     <ul className="fm-fixture-list">
@@ -18,12 +20,20 @@ export default function FixturesScreen({ state }: { state: GameState }) {
         const ga = isHome ? f.awayGoals : f.homeGoals;
         const outcome = !f.played ? '' : gf > ga ? 'win' : gf < ga ? 'loss' : 'draw';
         const isNext = !f.played && f.round === state.week;
+        const home = club(f.homeId);
+        const away = club(f.awayId);
         return (
           <li key={f.round} className={`fm-fixture ${outcome}${isNext ? ' next' : ''}`}>
             <span className="fm-fixture__round">W{f.round}</span>
-            <span className="fm-fixture__home">{clubName(f.homeId)}</span>
+            <span className="fm-fixture__home">
+              <span className="fm-fixture__team-name">{clubName(f.homeId)}</span>
+              {home && <Crest name={home.name} code={home.code} color={home.color} size={16} />}
+            </span>
             <span className="fm-fixture__score">{f.played ? `${f.homeGoals} – ${f.awayGoals}` : isNext ? 'NEXT' : '—'}</span>
-            <span className="fm-fixture__away">{clubName(f.awayId)}</span>
+            <span className="fm-fixture__away">
+              {away && <Crest name={away.name} code={away.code} color={away.color} size={16} />}
+              <span className="fm-fixture__team-name">{clubName(f.awayId)}</span>
+            </span>
           </li>
         );
       })}

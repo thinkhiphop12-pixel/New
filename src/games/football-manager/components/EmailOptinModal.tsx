@@ -28,7 +28,7 @@ export function EmailOptinModal({
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
-  const gameTitle = gameName === 'scout' ? 'Scout' : 'Gaffer';
+  const gameTitle = gameName === 'scout' ? 'Scout' : 'Gaffa';
   const subscriptionMessage =
     gameName === 'scout'
       ? 'Get email alerts when a new daily puzzle goes live!'

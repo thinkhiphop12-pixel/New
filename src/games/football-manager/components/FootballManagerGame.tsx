@@ -37,6 +37,14 @@ export default function FootballManagerGame() {
     setSettings(loadSettings());
   }, []);
 
+  // Views are swapped in-place (no page navigation), so the browser keeps
+  // whatever scroll position the previous view was left at — a user who
+  // scrolled down the club list would land mid-page on the hub, with the
+  // header and tab bar scrolled out of view. Reset on every view change.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [view]);
+
   const apply = (next: GameState, toSlot = slot) => {
     setGs(next);
     saveGame(next, toSlot);
@@ -126,7 +134,7 @@ export default function FootballManagerGame() {
         <a className="fm-header__brand" href="https://ballknw.com">
           BALLKNW
         </a>
-        <span className="fm-header__title">Gaffer</span>
+        <span className="fm-header__title">Gaffa</span>
         <span className="fm-header__spacer" />
         <button className="fm-header__settings" onClick={() => setShowSettings(true)}>
           Settings
