@@ -29,7 +29,7 @@ Allow: /index.html
 Allow: /#faq
 
 # Game pages: Full descriptions and gameplay guides
-Allow: /football-manager/
+Allow: /gaffa/
 Allow: /perfect-cup/
 Allow: /scout/
 

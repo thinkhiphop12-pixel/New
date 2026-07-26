@@ -80,10 +80,10 @@ banners themselves, so keep an eye on ad density if you add more.
 ## Note on the game builds
 
 The two Next.js games are committed as **prebuilt static output**
-(`football-manager/`, `perfect-cup/`). If you change a game's source
+(`gaffa/`, `perfect-cup/`). If you change a game's source
 (`footballmanager/` or `draftfantasy/`), rebuild and re-commit the output:
 
 ```bash
-cd footballmanager && NEXT_PUBLIC_BASE_PATH=/football-manager npm run build
-# copy footballmanager/out/* -> football-manager/   (see scripts/ or DEPLOY.md)
+cd footballmanager && NEXT_PUBLIC_BASE_PATH=/gaffa npm run build
+# copy footballmanager/out/* -> gaffa/   (see scripts/ or DEPLOY.md)
 ```

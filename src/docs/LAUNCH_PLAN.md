@@ -22,7 +22,7 @@ This document captures all strategic decisions, technical implementation notes, 
 - **Friend feedback** (two rounds) emphasized: launch one complete game, make the homepage answer what-you-do in ~5 seconds, don't look like clickbait or an ad farm, and iterate after real feedback.
 - **Competitive positioning**: showing one polished, feature-complete experience builds trust and sets a clear identity faster than splitting attention across three games.
 - **User retention**: players who discover Gaffer benefit from deeper engagement (full season, transfers, academy, cups, formations, tactics) before encountering the next product. One game played fully > three games abandoned.
-- **SEO & linkability**: existing URLs (`/football-manager/`, `/perfect-cup/`, `/scout/`, all guides) remain live and indexed; we're not deleting content, just not promoting it to strangers on day one.
+- **SEO & linkability**: existing URLs (`/gaffa/`, `/perfect-cup/`, `/scout/`, all guides) remain live and indexed; we're not deleting content, just not promoting it to strangers on day one.
 
 ### 1.2 Copy Reduction: Every Paragraph → ≤1 Short Line
 
@@ -163,12 +163,12 @@ This document captures all strategic decisions, technical implementation notes, 
 **Build Process**:
 ```bash
 cd footballmanager
-STATIC_EXPORT=1 NEXT_PUBLIC_BASE_PATH=/football-manager npx next build
+STATIC_EXPORT=1 NEXT_PUBLIC_BASE_PATH=/gaffa npx next build
 # API routes temporarily moved during build, restored after
-cp -r out/* ../football-manager/
+cp -r out/* ../gaffa/
 ```
 
-**Resulting Static Export**: `/football-manager/` (committed to repo, deployed to GitHub Pages).
+**Resulting Static Export**: `/gaffa/` (committed to repo, deployed to GitHub Pages).
 
 ### 2.4 Git History
 
@@ -313,7 +313,7 @@ The following ideas are **explicitly deferred** until Phase 2 feedback confirms 
 **Known Constraints**:
 - No server-side rendering (SSR). All rendering is client-side.
 - API routes (`app/api/track-event`, `app/api/subscribe-email`) are moved during static build and restored for Vercel deployments. Telemetry works on Vercel only; GitHub Pages deployment has no backend.
-- `NEXT_PUBLIC_BASE_PATH=/football-manager` is hardcoded for GitHub Pages. If you redeploy to a different path (e.g. `/gaffa/`), update `next.config.mjs`.
+- `NEXT_PUBLIC_BASE_PATH=/gaffa` is set by `scripts/export-static.sh` for the GitHub Pages build. If you redeploy the game to a different path, change it there (the value flows through to `next.config.mjs`). The old `/football-manager/` path now serves a redirect stub to `/gaffa/`.
 
 ### 5.3 Performance
 
@@ -344,8 +344,8 @@ The following ideas are **explicitly deferred** until Phase 2 feedback confirms 
 ### Pre-Launch (Production Readiness)
 
 - [ ] All source code committed and pushed to `claude/ballknw-visuals-ads-dexp5n`.
-- [ ] Static export rebuilt with `NEXT_PUBLIC_BASE_PATH=/football-manager`.
-- [ ] `/football-manager/` files match `out/` build output.
+- [ ] Static export rebuilt with `NEXT_PUBLIC_BASE_PATH=/gaffa`.
+- [ ] `/gaffa/` files match `out/` build output.
 - [ ] JSON-LD (FAQ, schema.org) validated (paste index.html into https://validator.schema.org/).
 - [ ] Homepage loads without horizontal scroll on mobile (390px, 1080p desktop).
 - [ ] Gaffer iframe loads and plays smoothly (test on Chrome desktop, mobile Safari on iPad).
@@ -358,8 +358,8 @@ The following ideas are **explicitly deferred** until Phase 2 feedback confirms 
 
 ### Launch Day
 
-- [ ] Deploy `/football-manager/` to production (GitHub Pages or Vercel).
-- [ ] Test live URLs: `https://ballknw.co/`, `https://ballknw.co/football-manager/`, `https://ballknw.co/gaffer-guide/`, footer links to Scout/Draft XI.
+- [ ] Deploy `/gaffa/` to production (GitHub Pages or Vercel).
+- [ ] Test live URLs: `https://ballknw.co/`, `https://ballknw.co/gaffa/`, `https://ballknw.co/gaffer-guide/`, footer links to Scout/Draft XI.
 - [ ] Verify telemetry events fire (if on Vercel; GitHub Pages has no backend).
 - [ ] Post announcement: "Gaffer is live. Free, in your browser, saves locally. No app download, no sign-up."
 - [ ] Social share: share link to one friend or community (Reddit /r/footballmanagergames, Discord gaming servers, etc.). Measure initial referral traffic.
@@ -436,7 +436,7 @@ All in-game text is already generic ("your club," not branded), so minimal casca
 
 ### Immediate (This Session)
 
-1. **Verify static export**: Load `http://localhost:8080/` (homepage) and `http://localhost:8080/football-manager/` (Gaffer) in a local dev server. Confirm no console errors, 2D canvas initializes, fallback works.
+1. **Verify static export**: Load `http://localhost:8080/` (homepage) and `http://localhost:8080/gaffa/` (Gaffer) in a local dev server. Confirm no console errors, 2D canvas initializes, fallback works.
 2. **Commit & push**: All changes already committed to `claude/ballknw-visuals-ads-dexp5n`. Ready to merge to `main` and deploy.
 3. **Prepare launch checklist**: Print this document; tick off every item before going live.
 

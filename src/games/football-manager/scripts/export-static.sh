@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Build the game as a static export for the ballknw.com /football-manager path.
+# Build the game as a static export for the ballknw.com /gaffa path.
 #
 # The live site (vercel.json: framework null, outputDirectory ".") serves the
 # repo as static files, so the playable game is the committed export at
-# <repo root>/football-manager. Run this after changing the game, then commit
+# <repo root>/gaffa. Run this after changing the game, then commit
 # the regenerated folder:
 #
 #   npm -w src/games/football-manager run export:static
@@ -24,8 +24,8 @@ trap restore EXIT
 rm -rf out .next
 mv "$API_DIR" "$API_STASH"
 
-STATIC_EXPORT=1 NEXT_PUBLIC_BASE_PATH=/football-manager npx next build
+STATIC_EXPORT=1 NEXT_PUBLIC_BASE_PATH=/gaffa npx next build
 
-rm -rf "$REPO_ROOT/football-manager"
-cp -r out "$REPO_ROOT/football-manager"
-echo "Static export written to $REPO_ROOT/football-manager"
+rm -rf "$REPO_ROOT/gaffa"
+cp -r out "$REPO_ROOT/gaffa"
+echo "Static export written to $REPO_ROOT/gaffa"

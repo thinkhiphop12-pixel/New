@@ -5,7 +5,7 @@
 The homepage (`index.html`) is a static HTML/CSS/JS page — it does not use
 Next.js APIs itself, even though `footballmanager/` and `perfect-cup/` are
 separate Next.js apps whose static-exported output is committed under
-`football-manager/` and `perfect-cup/` and embedded via `<iframe>`. The
+`gaffa/` and `perfect-cup/` and embedded via `<iframe>`. The
 `AGENTS.md` Next.js guidance above applies to those game subprojects, not to
 `index.html`/`styles.css`/`theme.css`.
 

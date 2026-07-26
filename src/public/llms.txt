@@ -21,11 +21,11 @@
 - **Features:** Three squad pools, four difficulties, formation selection, free-position drafting, full-season simulation, season objectives
 - **URL:** https://ballknw.com/perfect-cup/
 
-### Gaffer
+### Gaffa
 - **Type:** Club management simulation
 - **Gameplay:** Take charge of a club, select formation and XI, trade on the transfer market, manage a full 38-round season
 - **Features:** League navigation, promotion/relegation, tactical management
-- **URL:** https://ballknw.com/football-manager/
+- **URL:** https://ballknw.com/gaffa/
 
 ## Key Features
 

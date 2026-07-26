@@ -60,7 +60,7 @@ Post genuinely — answer comments, don't spam multiple subs the same day.
 > market, and manage through full seasons with promotion/relegation, cups and a
 > youth academy. Runs entirely in the browser, nothing to install.
 >
-> https://ballknw.com/football-manager/ — happy to answer anything about how it
+> https://ballknw.com/gaffa/ — happy to answer anything about how it
 > simulates matches.
 
 ---
@@ -117,7 +117,7 @@ free, all in the browser, no sign-up.
 - Site: https://ballknw.com/
 - Scout: https://ballknw.com/scout/
 - Draft XI: https://ballknw.com/perfect-cup/
-- Gaffer: https://ballknw.com/football-manager/
+- Gaffer: https://ballknw.com/gaffa/
 - Contact: thinkhiphop12@gmail.com
 - Logo/press image: https://ballknw.com/assets/og-image.png
 
