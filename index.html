@@ -79,8 +79,8 @@ body::before{
 }
 .brand b{color:var(--lime)}
 .nav-links{display:flex;align-items:center;gap:26px}
-.nav-links a{color:var(--muted);font-size:14px;font-weight:600;transition:color .15s}
-.nav-links a:hover{color:var(--white)}
+.nav-links a:not(.btn){color:var(--muted);font-size:14px;font-weight:600;transition:color .15s}
+.nav-links a:not(.btn):hover{color:var(--white)}
 .btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;border-radius:13px;cursor:pointer;transition:transform .12s,box-shadow .2s,border-color .2s;font-size:14px;border:1px solid transparent;min-height:48px}
 .btn-primary{background:var(--cta);color:#052411;padding:14px 20px;box-shadow:0 0 0 rgba(42,178,72,0)}
 .btn-primary:hover{transform:translateY(-1px);box-shadow:var(--glow-lime)}

@@ -21,8 +21,8 @@
 }
 .brand b{color:var(--lime)}
 .nav-links{display:flex;align-items:center;gap:26px}
-.nav-links a{color:var(--muted);font-size:14px;font-weight:600;transition:color .15s}
-.nav-links a:hover{color:var(--white)}
+.nav-links a:not(.btn){color:var(--muted);font-size:14px;font-weight:600;transition:color .15s}
+.nav-links a:not(.btn):hover{color:var(--white)}
 @media(max-width:680px){.nav-links a:not(.btn){display:none}}
 
 /* BUTTONS — base shape lives on .btn, but .btn-primary/.btn-ghost also
