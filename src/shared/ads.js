@@ -94,7 +94,7 @@ function injectBaseAdStyles() {
     .aff-card-kicker{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#93a099;font-weight:600;}
     .aff-card-title{font-size:14px;font-weight:700;color:#e8e8ea;font-family:Inter,system-ui,sans-serif;line-height:1.2;margin:2px 0;}
     .aff-card-sub{font-size:12.5px;color:#93a099;line-height:1.4;margin:4px 0 0;}
-    .aff-card-cta{flex-shrink:0;background:none;color:#5fd97a;
+    .aff-card-cta{flex-shrink:0;background:none;color:#2ab248;
       font-weight:700;font-size:13px;text-decoration:none;border-radius:0;padding:8px 4px;white-space:nowrap;
       font-family:Inter,system-ui,sans-serif;display:inline-block;margin-left:12px;}
     .aff-card-cta:hover{text-decoration:underline}

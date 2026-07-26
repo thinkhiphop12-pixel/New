@@ -15,6 +15,9 @@
 > neutral black, and a less-neon, more grass-toned green. Same structure,
 > softer execution. The Logo System section has also been rewritten to
 > match the new mark that actually shipped ("The Corner Mark").
+>
+> **Update (2026-07-26):** Floodlight Green has been deepened from `#5fd97a`
+> to `#2ab248` — the original read as too luminous/glowing.
 
 ## Brand Identity
 
@@ -55,8 +58,8 @@
 ## Color Palette — "Under the Floodlights"
 
 ### Primary Colors
-- **Floodlight Green**: `#5fd97a` (primary CTA gradient start, highlights, active nav)
-  - RGB: 95, 217, 122
+- **Floodlight Green**: `#2ab248` (primary CTA gradient start, highlights, active nav)
+  - RGB: 42, 178, 72
   - Usage: Primary buttons (as gradient with Pitch Emerald), glow accents, hover states
   - Replaces the old neon **Lime** `#b8ff3c` — same role, less retina-searing.
 

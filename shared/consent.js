@@ -113,7 +113,7 @@ function ensureConsentBanner(){
       #consentBanner .consent-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
       #consentBanner button{cursor:pointer;font-weight:700;font-size:13px;border-radius:10px;
         padding:9px 16px;border:1px solid transparent;font-family:inherit;}
-      #consentBanner .btn-primary{background:linear-gradient(135deg,#5fd97a,#12b380);color:#052411;}
+      #consentBanner .btn-primary{background:linear-gradient(135deg,#2ab248,#12b380);color:#052411;}
       #consentBanner .btn-ghost{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:#fff;}`;
     document.head.appendChild(style);
   }

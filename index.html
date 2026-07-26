@@ -35,13 +35,13 @@
   --glass:rgba(255,255,255,0.06);
   --border:rgba(255,255,255,0.10);
   --border-bright:rgba(255,255,255,0.18);
-  --lime:#5fd97a;
+  --lime:#2ab248;
   --emerald:#12b380;
   --white:#f2efe6;
   --muted:#93a099;
   --gold:#e0b84a;
-  --cta:linear-gradient(135deg,#5fd97a 0%,#12b380 100%);
-  --glow-lime:0 0 44px rgba(95,217,122,0.22);
+  --cta:linear-gradient(135deg,#2ab248 0%,#12b380 100%);
+  --glow-lime:0 0 44px rgba(42,178,72,0.22);
   --radius:20px;
   --maxw:1080px;
 }
@@ -60,7 +60,7 @@ a{text-decoration:none;color:inherit}
 body::before{
   content:"";position:fixed;top:-280px;left:50%;transform:translateX(-50%);
   width:900px;height:680px;pointer-events:none;z-index:0;
-  background:radial-gradient(50% 50% at 50% 50%,rgba(18,179,128,0.16) 0%,rgba(95,217,122,0.06) 40%,transparent 72%);
+  background:radial-gradient(50% 50% at 50% 50%,rgba(18,179,128,0.16) 0%,rgba(42,178,72,0.06) 40%,transparent 72%);
   filter:blur(8px);
 }
 
@@ -82,7 +82,7 @@ body::before{
 .nav-links a{color:var(--muted);font-size:14px;font-weight:600;transition:color .15s}
 .nav-links a:hover{color:var(--white)}
 .btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;border-radius:13px;cursor:pointer;transition:transform .12s,box-shadow .2s,border-color .2s;font-size:14px;border:1px solid transparent;min-height:48px}
-.btn-primary{background:var(--cta);color:#052411;padding:14px 20px;box-shadow:0 0 0 rgba(95,217,122,0)}
+.btn-primary{background:var(--cta);color:#052411;padding:14px 20px;box-shadow:0 0 0 rgba(42,178,72,0)}
 .btn-primary:hover{transform:translateY(-1px);box-shadow:var(--glow-lime)}
 .btn-ghost{background:var(--glass);border-color:var(--border);color:var(--white);padding:14px 20px}
 .btn-ghost:hover{border-color:var(--border-bright)}
@@ -121,11 +121,11 @@ body::before{
   padding:30px;min-height:280px;overflow:hidden;transition:transform .18s,border-color .2s,box-shadow .25s;
 }
 .game-card:hover{transform:translateY(-3px);border-color:var(--border-bright)}
-.game-card.scout:hover{box-shadow:0 18px 50px -20px rgba(95,217,122,0.35)}
+.game-card.scout:hover{box-shadow:0 18px 50px -20px rgba(42,178,72,0.35)}
 .game-card.draft:hover{box-shadow:0 18px 50px -20px rgba(18,179,128,0.35)}
 .game-card::after{
   content:"";position:absolute;inset:0;pointer-events:none;opacity:.55;
-  background:radial-gradient(420px 200px at 100% 0%,var(--gcol,rgba(95,217,122,0.10)),transparent 70%);
+  background:radial-gradient(420px 200px at 100% 0%,var(--gcol,rgba(42,178,72,0.10)),transparent 70%);
 }
 .game-card.draft{--gcol:rgba(18,179,128,0.12)}
 .game-card.manager{--gcol:rgba(224,184,74,0.10)}
@@ -133,7 +133,7 @@ body::before{
 .chip.gold{color:#e0b84a;background:rgba(224,184,74,0.10);border:1px solid rgba(224,184,74,0.28)}
 .chips{display:flex;gap:8px;margin-bottom:18px;position:relative;z-index:1}
 .chip{font-size:10.5px;font-weight:800;letter-spacing:.12em;padding:5px 10px;border-radius:7px;text-transform:uppercase}
-.chip.lime{color:var(--lime);background:rgba(95,217,122,0.10);border:1px solid rgba(95,217,122,0.25)}
+.chip.lime{color:var(--lime);background:rgba(42,178,72,0.10);border:1px solid rgba(42,178,72,0.25)}
 .chip.em{color:var(--emerald);background:rgba(18,179,128,0.10);border:1px solid rgba(18,179,128,0.28)}
 .chip.ghost{color:var(--muted);background:var(--glass);border:1px solid var(--border)}
 .game-icon{font-size:34px;margin-bottom:14px;position:relative;z-index:1}
@@ -224,7 +224,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 .promo-banners{position:relative;z-index:1;margin:22px 0}
 .promo-banner{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:var(--surface);transition:transform .18s,box-shadow .25s,border-color .2s}
 .promo-banner:hover{transform:translateY(-2px);border-color:var(--border-bright)}
-.promo-h:hover{box-shadow:0 16px 40px -18px rgba(95,217,122,.35)}
+.promo-h:hover{box-shadow:0 16px 40px -18px rgba(42,178,72,.35)}
 .promo-link{display:flex;align-items:center;gap:16px;padding:18px 56px 18px 22px;text-decoration:none;color:inherit}
 .promo-img{flex-shrink:0;width:72px;height:52px;border-radius:8px;object-fit:cover;border:1px solid var(--border);opacity:.85}
 .promo-badge{flex-shrink:0;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:999px;white-space:nowrap;color:var(--muted);background:var(--glass);border:1px solid var(--border)}
