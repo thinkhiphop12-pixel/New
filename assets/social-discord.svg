@@ -1,7 +1,12 @@
 <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" fill="#0a0e14"/>
-  <path fill-rule="evenodd" fill="#00ff88" d="
-    M 96.000 256.000 A 160.000 160.000 0 1 0 416.000 256.000 A 160.000 160.000 0 1 0 96.000 256.000 Z
-    M 279.465 158.161 Q 289.684 150.737 299.903 158.161 L 347.541 192.772 Q 357.760 200.197 353.856 212.210 L 335.661 268.211 Q 331.757 280.224 319.126 280.224 L 260.243 280.224 Q 247.611 280.224 243.708 268.211 L 225.512 212.210 Q 221.609 200.197 231.828 192.772 Z
-  "/>
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2ab248"/>
+      <stop offset="100%" stop-color="#12b380"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0b120d"/>
+  <rect x="66.1" y="66.1" width="379.8" height="379.8" rx="99.0" fill="url(#g)"/>
+  <text x="170.7" y="327.6" font-family="Inter, system-ui, sans-serif" font-weight="900" font-size="230.1" fill="#052411">B</text>
+  <path d="M 388.0 93.5 L 414.0 112.4 L 404.1 142.9 L 371.9 142.9 L 361.9 112.4 Z" fill="#052411" opacity="0.55"/>
 </svg>
