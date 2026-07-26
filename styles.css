@@ -13,8 +13,8 @@
   border-bottom:1px solid var(--border);
 }
 .nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px}
-.brand{display:flex;align-items:center;gap:8px;font-weight:800;letter-spacing:-0.01em;font-size:17px}
-.mark{
+.brand{display:flex;align-items:center;font-weight:800;letter-spacing:-0.01em;font-size:17px}
+.mark{margin-right:8px;
   width:34px;height:34px;border-radius:9px;background:var(--cta);color:#052411;
   display:grid;place-items:center;font-weight:900;font-size:19px;
   box-shadow:var(--glow-lime);
