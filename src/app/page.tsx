@@ -1,16 +1,10 @@
-import { Page, PageHeader, PageTitle, PageBody } from '@blinkdotnew/ui'
+import dynamic from 'next/dynamic';
+
+const FootballManagerGame = dynamic(
+  () => import('@/games/football-manager/components/FootballManagerGame'),
+  { ssr: false, loading: () => <div className="fm-loading"><div className="fm-spinner" /><p className="fm-hint">Loading GAFFA…</p></div> }
+);
 
 export default function Home() {
-  return (
-    <Page>
-      <PageHeader>
-        <PageTitle>Blink Next.js</PageTitle>
-      </PageHeader>
-      <PageBody>
-        <p className="text-sm text-muted-foreground">
-          Start building — describe what you want and Blink will edit this app.
-        </p>
-      </PageBody>
-    </Page>
-  )
+  return <FootballManagerGame />;
 }

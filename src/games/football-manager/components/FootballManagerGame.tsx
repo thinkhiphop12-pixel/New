@@ -118,7 +118,7 @@ export default function FootballManagerGame() {
       <header className="fm-header">
         <a
           className="fm-header__brand"
-          href="https://ballknw.com"
+          href="/"
           style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
         >
           <svg width="18" height="18" viewBox="0 0 512 512" style={{ flexShrink: 0 }}>
@@ -130,12 +130,12 @@ export default function FootballManagerGame() {
             </defs>
             <rect x="20" y="20" width="472" height="472" rx="123" fill="url(#fmBrandMark)" />
             <text x="150" y="345" fontFamily="Inter, system-ui, sans-serif" fontWeight="900" fontSize="286" fill="#052411">
-              B
+              G
             </text>
           </svg>
-          BALLKNW
+          GAFFA
         </a>
-        <span className="fm-header__title">Gaffer</span>
+        <span className="fm-header__title">Football Manager</span>
         <span className="fm-header__spacer" />
         <button className="fm-header__settings" onClick={() => setShowSettings(true)}>
           Settings
