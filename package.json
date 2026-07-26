@@ -38,9 +38,10 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@types/node": "20.19.43",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "playwright": "^1.62.0",
     "typescript": "^5"
   },
   "ignoreScripts": [
