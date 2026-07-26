@@ -20,3 +20,4 @@ src/games/football-manager/public/blog/
 src/games/football-manager/public/squads/
 src/games/football-manager/public/page-metadata.json
 .env
+.claude/settings.local.json
