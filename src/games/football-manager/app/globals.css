@@ -219,6 +219,21 @@ body {
 .fm-club-card__name { font-weight: 800; font-size: 14px; }
 .fm-club-card__meta { font-size: 11.5px; color: var(--muted); }
 
+/* ── Nation grid ── */
+.fm-nation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.fm-nation-card {
+  display: flex; flex-direction: column; gap: 8px; align-items: center; text-align: center;
+  background: var(--panel); border: 2px solid var(--border-soft);
+  border-radius: var(--r-lg); padding: 20px 16px; cursor: pointer; color: var(--text);
+  transition: border-color 0.15s, transform 0.12s, box-shadow 0.2s;
+}
+.fm-nation-card:hover { border-color: var(--border-bright); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.fm-nation-card:active { transform: translateY(0); }
+.fm-nation-card__flag { font-size: 48px; display: block; }
+.fm-nation-card__name { font-weight: 800; font-size: 18px; color: var(--text); }
+.fm-nation-card__divisions { font-size: 12px; color: var(--muted); font-weight: 600; }
+.fm-nation-card__desc { font-size: 12px; color: var(--muted-dim); line-height: 1.4; margin: 0; }
+
 /* ── Hub header (Portal) ── */
 .fm-hub-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .fm-hub-head__badge {

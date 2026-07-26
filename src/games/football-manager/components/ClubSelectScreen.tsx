@@ -19,21 +19,33 @@ const DIV_BLURB: Record<Division, string> = {
 
 export default function ClubSelectScreen({
   data,
+  divisions: allowedDivisions,
   onPick,
   onBack,
 }: {
   data: GameData;
+  divisions?: Division[];
   onPick: (clubId: number, managerName: string) => void;
   onBack: () => void;
 }) {
-  const [division, setDivision] = useState<Division>(1);
+  const [division, setDivision] = useState<Division | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [managerName, setManagerName] = useState('');
 
   const divisions = useMemo(() => {
     const set = new Set(data.clubs.map((c) => c.division));
-    return ([1, 2, 3, 4, 5, 6, 7, 8] as Division[]).filter((d) => set.has(d));
-  }, [data]);
+    const available = ([1, 2, 3, 4, 5, 6, 7, 8] as Division[]).filter(
+      (d) => set.has(d) && (!allowedDivisions || allowedDivisions.includes(d))
+    );
+    return available;
+  }, [data, allowedDivisions]);
+
+  // Set default division on first render
+  useMemo(() => {
+    if (division === null && divisions.length > 0) {
+      setDivision(divisions[0]);
+    }
+  }, [divisions, division]);
 
   const clubInfo = useMemo(() => {
     const byId = new Map(data.players.map((p) => [p.id, p]));
@@ -45,7 +57,7 @@ export default function ClubSelectScreen({
     });
   }, [data]);
 
-  const shown = clubInfo.filter((x) => x.club.division === division);
+  const shown = division !== null ? clubInfo.filter((x) => x.club.division === division) : [];
 
   return (
     <div className="fm-screen">
@@ -67,9 +79,11 @@ export default function ClubSelectScreen({
           </button>
         ))}
       </div>
-      <p className="fm-hint">
-        {DIV_BLURB[division]} Budget {formatMoney(STARTING_BUDGET[division])}.
-      </p>
+      {division !== null && (
+        <p className="fm-hint">
+          {DIV_BLURB[division]} Budget {formatMoney(STARTING_BUDGET[division])}.
+        </p>
+      )}
       <div className="fm-club-grid">
         {shown.map(({ club, avg, star }) => (
           <button

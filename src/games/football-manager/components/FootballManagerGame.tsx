@@ -1,20 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { GameData, GameState, MatchReport, SeasonSummary, GameSettings } from '@/engine/types';
+import type { Division, GameData, GameState, MatchReport, SeasonSummary, GameSettings } from '@/engine/types';
 import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/engine/seasonProgression';
 import { simulateTickMatch } from '@/engine/tickEngine/sim';
 import { normalizeMentality } from '@/engine/tickEngine/tacticsData';
 import { loadGameData } from '@/lib/gamedata';
 import { clearSave, listSaves, loadGame, saveGame, SAVE_SLOTS, type SaveMeta } from '@/lib/storage';
 import MainMenuScreen from './MainMenuScreen';
+import NationSelectScreen from './NationSelectScreen';
 import ClubSelectScreen from './ClubSelectScreen';
 import HubScreen from './HubScreen';
 import MatchScreen from './match/MatchScreen';
 import SeasonEndScreen from './SeasonEndScreen';
 import SettingsPanel, { loadSettings } from './SettingsPanel';
 
-type View = 'menu' | 'clubselect' | 'hub' | 'match' | 'seasonend';
+type View = 'menu' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonend';
 
 export default function FootballManagerGame() {
   const [data, setData] = useState<GameData | null>(null);
@@ -26,6 +27,7 @@ export default function FootballManagerGame() {
   const [saves, setSaves] = useState<(SaveMeta | null)[]>(Array(SAVE_SLOTS).fill(null));
   const [settings, setSettings] = useState<GameSettings | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [selectedDivisions, setSelectedDivisions] = useState<Division[]>([1, 2, 3, 4]);
 
   useEffect(() => {
     loadGameData()
@@ -51,6 +53,11 @@ export default function FootballManagerGame() {
 
   const handleNewGame = (s: number) => {
     setSlot(s);
+    setView('nationselect');
+  };
+
+  const handlePickNation = (divisions: Division[]) => {
+    setSelectedDivisions(divisions);
     setView('clubselect');
   };
 
@@ -137,8 +144,10 @@ export default function FootballManagerGame() {
           </div>
         ) : view === 'menu' ? (
           <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} />
+        ) : view === 'nationselect' ? (
+          <NationSelectScreen onPick={handlePickNation} onBack={backToMenu} />
         ) : view === 'clubselect' ? (
-          <ClubSelectScreen data={data} onPick={handlePickClub} onBack={backToMenu} />
+          <ClubSelectScreen data={data} divisions={selectedDivisions} onPick={handlePickClub} onBack={() => setView('nationselect')} />
         ) : view === 'match' && gs && settings ? (
           <MatchScreen state={gs} settings={settings} onDone={handleMatchDone} />
         ) : view === 'seasonend' && gs && summary ? (
