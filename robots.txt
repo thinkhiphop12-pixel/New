@@ -10,6 +10,9 @@ Allow: /terms.html
 Allow: /scout-guide.html
 Allow: /gaffer-guide.html
 Allow: /draft-xi-guide.html
+Allow: /best-football-manager-games-pc.html
+Allow: /best-football-manager-games-android.html
+Allow: /best-football-manager-games-iphone.html
 Allow: /scout/
 Allow: /perfect-cup/
 Allow: /football-manager/

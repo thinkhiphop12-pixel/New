@@ -35,6 +35,9 @@ Allow: /scout/
 Allow: /gaffer-guide.html
 Allow: /scout-guide.html
 Allow: /draft-xi-guide.html
+Allow: /best-football-manager-games-pc.html
+Allow: /best-football-manager-games-android.html
+Allow: /best-football-manager-games-iphone.html
 
 # Policy and reference pages
 Allow: /about.html
