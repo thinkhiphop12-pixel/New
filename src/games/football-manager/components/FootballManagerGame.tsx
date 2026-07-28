@@ -29,13 +29,22 @@ export default function FootballManagerGame() {
   const [showSettings, setShowSettings] = useState(false);
   const [selectedDivisions, setSelectedDivisions] = useState<Division[]>([1, 2, 3, 4]);
 
-  useEffect(() => {
+  const fetchGameData = () => {
     loadGameData()
       .then(setData)
-      .catch((e) => setLoadError(String(e)));
+      .catch((e) => setLoadError(e instanceof Error ? e.message : String(e)));
+  };
+
+  useEffect(() => {
+    fetchGameData();
     setSaves(listSaves());
     setSettings(loadSettings());
   }, []);
+
+  const handleRetryLoad = () => {
+    setLoadError(null);
+    fetchGameData();
+  };
 
   // Views are swapped in-place (no page navigation), so the browser keeps
   // whatever scroll position the previous view was left at — a user who
@@ -133,7 +142,7 @@ export default function FootballManagerGame() {
       <header className="fm-header">
         <a
           className="fm-header__brand"
-          href="https://ballknw.com"
+          href="https://www.ballknw.com"
           style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
         >
           <svg width="18" height="18" viewBox="0 0 512 512" style={{ flexShrink: 0 }}>
@@ -158,12 +167,15 @@ export default function FootballManagerGame() {
       </header>
       <main className="fm-main">
         {loadError ? (
-          <div className="fm-screen fm-error">
-            <p className="fm-error-text">Could not load game data. Please refresh.</p>
+          <div className="fm-screen fm-error" role="alert">
+            <p className="fm-error-text">Could not load game data. {loadError}</p>
+            <button className="fm-header__settings" onClick={handleRetryLoad}>
+              Retry
+            </button>
           </div>
         ) : !data ? (
-          <div className="fm-screen fm-loading">
-            <div className="fm-spinner" />
+          <div className="fm-screen fm-loading" role="status" aria-live="polite">
+            <div className="fm-spinner" aria-hidden="true" />
             <p className="fm-hint">Loading player database…</p>
           </div>
         ) : view === 'menu' ? (

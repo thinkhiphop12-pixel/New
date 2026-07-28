@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { GameState } from '@/engine/types';
 import { respondPress, type PressResult, type PressTone } from '@/engine/seasonProgression';
+import Modal from './Modal';
 
 const OPTIONS: { tone: PressTone; label: string; hint: string }[] = [
   { tone: 'confident', label: 'We can get a result', hint: 'Lifts squad morale, fans respond well.' },
@@ -30,10 +31,14 @@ export default function PressConferenceModal({
   };
 
   return (
-    <div className="fm-matchx-modal" onClick={onClose}>
-      <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
+    <Modal
+      onClose={onClose}
+      labelledBy="fm-press-title"
+      className="fm-matchx-modal"
+      panelClassName="fm-matchx-modal__panel fm-matchx-modal__panel--narrow"
+    >
         <div className="fm-matchx-modal__head">
-          <span className="fm-matchx-modal__title">Press Conference</span>
+          <span className="fm-matchx-modal__title" id="fm-press-title">Press Conference</span>
           <button className="fm-matchx-modal__close" onClick={onClose} aria-label="Close">✕</button>
         </div>
         {!result ? (
@@ -59,7 +64,6 @@ export default function PressConferenceModal({
             </div>
           </>
         )}
-      </div>
-    </div>
+    </Modal>
   );
 }

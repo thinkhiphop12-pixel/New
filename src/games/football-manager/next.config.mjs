@@ -1,6 +1,14 @@
 /** @type {import('next').NextConfig} */
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
+if (process.env.STATIC_EXPORT === '1' && !process.env.NEXT_PUBLIC_BASE_PATH) {
+  throw new Error(
+    'NEXT_PUBLIC_BASE_PATH must be set when STATIC_EXPORT=1 (e.g. NEXT_PUBLIC_BASE_PATH=/gaffa). ' +
+      'An unset base path silently produces a static build that fetches /data/gamedata.json from the ' +
+      'site root instead of the correct subpath, bricking the page. See scripts/export-static.sh.'
+  );
+}
+
 const nextConfig = {
   // Game can run fully static on GitHub Pages, but Vercel/production deployments
   // need server support for API routes (email capture, event tracking), so

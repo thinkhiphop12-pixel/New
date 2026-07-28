@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { BASE_PATH, withBase } from '@/lib/basePath';
 import './globals.css';
 
 const inter = Inter({
@@ -11,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://ballknw.com'),
+  metadataBase: new URL('https://www.ballknw.com'),
   title: 'Gaffa — BALLKNW',
   description:
     'Take charge of a club: pick your formation, work the transfer market, and manage your way through a full league season. Free browser game, no account needed.',
@@ -30,16 +31,24 @@ export const metadata: Metadata = {
     title: 'Gaffa — BALLKNW',
     images: ['/assets/og-image.png'],
   },
-  icons: { icon: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/favicon.svg` },
+  icons: { icon: withBase('/favicon.svg') },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#09090b',
+  themeColor: '#050505',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.className}>
+      <head>
+        <link
+          rel="preload"
+          as="fetch"
+          crossOrigin="anonymous"
+          href={withBase('/data/gamedata.json')}
+        />
+      </head>
       <body>
         {children}
         <SpeedInsights />

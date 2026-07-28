@@ -4,7 +4,7 @@
  *  the procedural crest — not this map — is the default everywhere. Drop a PNG
  *  into `public/badges/` and add its club name here to promote it. */
 
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH || '';
+import { BASE_PATH as BASE } from '@/lib/basePath';
 
 /** Club name (as it appears in gamedata.json) -> file in public/badges. */
 const CLUB_BADGES: Record<string, string> = {

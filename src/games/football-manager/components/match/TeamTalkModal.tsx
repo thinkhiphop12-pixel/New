@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { teamTalkEffect, type TeamTalkOutcome, type TeamTalkTone } from '@/engine/teamTalk';
+import Modal from '../Modal';
 
 const OPTIONS: { tone: TeamTalkTone; label: string; hint: string }[] = [
   { tone: 'encourage', label: 'Encourage them', hint: 'Reliable lift — a vote of confidence.' },
@@ -29,10 +30,14 @@ export default function TeamTalkModal({
   };
 
   return (
-    <div className="fm-matchx-modal" onClick={onClose}>
-      <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
+    <Modal
+      onClose={onClose}
+      labelledBy="fm-teamtalk-title"
+      className="fm-matchx-modal"
+      panelClassName="fm-matchx-modal__panel fm-matchx-modal__panel--narrow"
+    >
         <div className="fm-matchx-modal__head">
-          <span className="fm-matchx-modal__title">{moment === 'pre' ? 'Pre-Match Talk' : 'Half-Time Talk'}</span>
+          <span className="fm-matchx-modal__title" id="fm-teamtalk-title">{moment === 'pre' ? 'Pre-Match Talk' : 'Half-Time Talk'}</span>
           <button className="fm-matchx-modal__close" onClick={onClose} aria-label="Close">✕</button>
         </div>
         {!outcome ? (
@@ -58,7 +63,6 @@ export default function TeamTalkModal({
             </div>
           </>
         )}
-      </div>
-    </div>
+    </Modal>
   );
 }

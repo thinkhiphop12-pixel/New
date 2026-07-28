@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { Player } from '@/engine/types';
 import { ALL_FORMATIONS, getFormation } from '@/engine/gameRules';
 import { MENTALITIES, MENTALITY_ORDER, type MentalityId } from '@/engine/tickEngine/tacticsData';
+import Modal from '../Modal';
 
 export interface TacticsSelection {
   formationId: string;
@@ -58,10 +59,9 @@ export default function TacticsModal({
   const ratingClass = (r: number) => (r >= 7.5 ? ' good' : r < 6 ? ' poor' : '');
 
   return (
-    <div className="fm-matchx-modal" onClick={onClose}>
-      <div className="fm-matchx-modal__panel" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} labelledBy="fm-tactics-title" className="fm-matchx-modal" panelClassName="fm-matchx-modal__panel">
         <div className="fm-matchx-modal__head">
-          <span className="fm-matchx-modal__title">Tactics</span>
+          <span className="fm-matchx-modal__title" id="fm-tactics-title">Tactics</span>
           <button className="fm-matchx-modal__close" onClick={onClose} aria-label="Close">✕</button>
         </div>
 
@@ -123,7 +123,6 @@ export default function TacticsModal({
           </button>
           <button className="fm-btn fm-btn--ghost" onClick={onClose}>Cancel</button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

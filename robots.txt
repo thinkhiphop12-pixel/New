@@ -46,5 +46,5 @@ Allow: /
 User-agent: anthropic-ai
 Allow: /
 
-Sitemap: https://ballknw.com/sitemap.xml
-Sitemap: https://ballknw.com/llms.txt
+Sitemap: https://www.ballknw.com/sitemap.xml
+Sitemap: https://www.ballknw.com/llms.txt

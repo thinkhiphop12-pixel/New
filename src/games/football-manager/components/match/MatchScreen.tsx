@@ -12,6 +12,7 @@ import { ratingsFromCounts } from '@/engine/tickEngine/ratings';
 import type { MatchTimeline, MinuteSnapshot, ResumeContext, TeamSide, TickMatchEvent } from '@/engine/tickEngine/types';
 import type { TeamTalkOutcome } from '@/engine/teamTalk';
 import MatchHighlights from '../MatchHighlights';
+import Modal from '../Modal';
 import { Crest } from '../Crest';
 import { StatTile } from '../visuals';
 import PitchCanvas from './PitchCanvas';
@@ -382,10 +383,14 @@ export default function MatchScreen({
 
       {/* Match menu */}
       {showMenu && (
-        <div className="fm-matchx-modal" onClick={() => setShowMenu(false)}>
-          <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
+        <Modal
+          onClose={() => setShowMenu(false)}
+          labelledBy="fm-matchmenu-title"
+          className="fm-matchx-modal"
+          panelClassName="fm-matchx-modal__panel fm-matchx-modal__panel--narrow"
+        >
             <div className="fm-matchx-modal__head">
-              <span className="fm-matchx-modal__title">Match Menu</span>
+              <span className="fm-matchx-modal__title" id="fm-matchmenu-title">Match Menu</span>
               <button className="fm-matchx-modal__close" onClick={() => setShowMenu(false)} aria-label="Close">✕</button>
             </div>
             <div className="fm-menu-list">
@@ -405,16 +410,19 @@ export default function MatchScreen({
                 {finished ? 'Continue' : 'Exit match'}
               </button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Key events sheet */}
       {showEvents && (
-        <div className="fm-matchx-modal" onClick={() => setShowEvents(false)}>
-          <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
+        <Modal
+          onClose={() => setShowEvents(false)}
+          labelledBy="fm-events-title"
+          className="fm-matchx-modal"
+          panelClassName="fm-matchx-modal__panel fm-matchx-modal__panel--narrow"
+        >
             <div className="fm-matchx-modal__head">
-              <span className="fm-matchx-modal__title">Match Events</span>
+              <span className="fm-matchx-modal__title" id="fm-events-title">Match Events</span>
               <button className="fm-matchx-modal__close" onClick={() => setShowEvents(false)} aria-label="Close">✕</button>
             </div>
             <div className="fm-matchx__feed" ref={feedRef}>
@@ -430,8 +438,7 @@ export default function MatchScreen({
                 </div>
               ))}
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Half-time banner */}
@@ -459,10 +466,14 @@ export default function MatchScreen({
 
       {/* Substitutions */}
       {showSubs && (
-        <div className="fm-matchx-modal" onClick={() => setShowSubs(false)}>
-          <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
+        <Modal
+          onClose={() => setShowSubs(false)}
+          labelledBy="fm-subs-title"
+          className="fm-matchx-modal"
+          panelClassName="fm-matchx-modal__panel fm-matchx-modal__panel--narrow"
+        >
             <div className="fm-matchx-modal__head">
-              <span className="fm-matchx-modal__title">Substitution ({subsUsed}/{MAX_SUBS})</span>
+              <span className="fm-matchx-modal__title" id="fm-subs-title">Substitution ({subsUsed}/{MAX_SUBS})</span>
               <button className="fm-matchx-modal__close" onClick={() => setShowSubs(false)} aria-label="Close">✕</button>
             </div>
             <div className="fm-sub-grid">
@@ -501,8 +512,7 @@ export default function MatchScreen({
                 </div>
               )}
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Tactics modal */}

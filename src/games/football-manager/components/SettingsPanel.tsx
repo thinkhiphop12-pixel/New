@@ -1,6 +1,7 @@
 'use client';
 
 import type { GameSettings, MatchSpeed } from '@/engine/types';
+import Modal from './Modal';
 
 const SPEEDS: { id: MatchSpeed; label: string }[] = [
   { id: 'slow', label: 'Slow' },
@@ -54,10 +55,9 @@ export default function SettingsPanel({
   };
 
   return (
-    <div className="fm-settings-overlay" onClick={onClose}>
-      <div className="fm-settings-panel" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} labelledBy="fm-settings-title" className="fm-settings-overlay" panelClassName="fm-settings-panel">
         <div className="fm-settings-header">
-          <h2>Game Settings</h2>
+          <h2 id="fm-settings-title">Game Settings</h2>
           <button className="fm-settings-close" onClick={onClose}>&times;</button>
         </div>
         <div className="fm-settings-body">
@@ -152,7 +152,6 @@ export default function SettingsPanel({
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

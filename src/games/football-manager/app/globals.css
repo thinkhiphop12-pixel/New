@@ -21,7 +21,7 @@
   --text: #ffffff;
   --text-2: rgba(255,255,255,0.82);
   --muted: #8a8a8e;
-  --muted-dim: #5f5f63;
+  --muted-dim: #7a7a7f; /* ~4.77:1 against --bg #050505, passes WCAG AA for small text (>=4.5:1) */
 
   /* Accents — lime/emerald replace the old FM green */
   --green: #b8ff3c;
@@ -74,7 +74,21 @@
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100vh; overflow-x: hidden; }
+html, body { margin: 0; min-height: 100vh; min-height: 100dvh; overflow-x: hidden; }
+
+/* Keyboard-focus visibility. Mouse/pointer focus stays unstyled; only
+   :focus-visible (keyboard/programmatic focus) gets a visible ring. */
+:focus { outline: none; }
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="dialog"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--green-600);
+  outline-offset: 2px;
+}
 
 body {
   background: var(--bg);
@@ -86,7 +100,7 @@ body {
 }
 
 /* ── App shell ── */
-.fm-app { display: flex; flex-direction: column; min-height: 100vh; }
+.fm-app { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
 
 .fm-header {
   display: flex; align-items: center; gap: 10px;
@@ -419,7 +433,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   flex: 1; min-width: 130px;
   background: var(--panel); border: 1px solid var(--border);
   border-radius: var(--r-full); color: var(--text);
-  padding: 7px 14px; font-size: 12.5px; outline: none; font-family: inherit;
+  padding: 7px 14px; font-size: 12.5px; font-family: inherit;
   transition: border-color 0.15s;
 }
 .fm-search::placeholder { color: var(--muted-dim); }
