@@ -13,6 +13,7 @@ import type { MatchTimeline, MinuteSnapshot, ResumeContext, TeamSide, TickMatchE
 import type { TeamTalkOutcome } from '@/engine/teamTalk';
 import MatchHighlights from '../MatchHighlights';
 import { Crest } from '../Crest';
+import ManagerAvatar from '../ManagerAvatar';
 import { StatTile } from '../visuals';
 import PitchCanvas from './PitchCanvas';
 import LineupScreen from './LineupScreen';
@@ -286,6 +287,14 @@ export default function MatchScreen({
           <span /><span /><span />
         </button>
         <div className="fm-fmbar__seg fm-fmbar__seg--home">
+          {userIsHome && state.managerProfile && (
+            <ManagerAvatar
+              config={state.managerProfile.avatarConfig}
+              size={20}
+              title={state.managerProfile.name}
+              style={{ borderRadius: '50%', flexShrink: 0 }}
+            />
+          )}
           <Crest name={home?.name} code={home?.code ?? ''} color={home?.color ?? 'var(--panel-3)'} size={22} />
           <span className="fm-fmbar__team">{home?.code}</span>
         </div>
@@ -295,6 +304,14 @@ export default function MatchScreen({
         <div className="fm-fmbar__seg fm-fmbar__seg--away">
           <Crest name={away?.name} code={away?.code ?? ''} color={away?.color ?? 'var(--panel-3)'} size={22} />
           <span className="fm-fmbar__team">{away?.code}</span>
+          {!userIsHome && state.managerProfile && (
+            <ManagerAvatar
+              config={state.managerProfile.avatarConfig}
+              size={20}
+              title={state.managerProfile.name}
+              style={{ borderRadius: '50%', flexShrink: 0 }}
+            />
+          )}
         </div>
         <div className="fm-fmbar__seg fm-fmbar__seg--clock">{minuteLabel}</div>
         <div className="fm-fmbar__dots">

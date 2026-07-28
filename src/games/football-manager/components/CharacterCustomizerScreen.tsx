@@ -1,17 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import type { AvatarConfig, ManagerProfile } from '@/engine/types';
+import ManagerAvatar, { shadeColor } from './ManagerAvatar';
 
 const DEFAULT_AVATAR: AvatarConfig = {
   skinTone: 'c1ad60',
+  skinShadow: shadeColor('#c1ad60'),
   eyeColor: '1f2937',
   hairColor: '4a3728',
+  eyebrowColor: shadeColor('#4a3728', -0.1),
   hairStyle: 'long01',
   facialHair: '',
   mouth: 'default',
   eyes: 'default',
   nose: 'default',
+  accessories: [],
 };
 
 const SKIN_TONES = [
@@ -40,19 +44,82 @@ const HAIR_COLORS = [
   { label: 'Gray', value: 'a8a8a8' },
 ];
 
+const EYEBROW_COLORS = HAIR_COLORS;
+
 const HAIR_STYLES = [
   { label: 'Long', value: 'long01' },
-  { label: 'Medium', value: 'long02' },
+  { label: 'Medium', value: 'straight01' },
   { label: 'Short', value: 'short01' },
   { label: 'Curly', value: 'curly01' },
-  { label: 'Wavy', value: 'straight01' },
+  { label: 'Buzz', value: 'buzz' },
+  { label: 'Bald', value: '' },
 ];
 
 const FACIAL_HAIR = [
   { label: 'Clean', value: '' },
   { label: 'Beard', value: 'beardMajestic' },
   { label: 'Goatee', value: 'beardLight' },
+  { label: 'Moustache', value: 'moustache' },
 ];
+
+const ACCESSORIES = [
+  { label: 'None', value: '' },
+  { label: 'Glasses', value: 'glasses' },
+];
+
+function randomOf<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function randomAvatar(): AvatarConfig {
+  const skinTone = randomOf(SKIN_TONES).value;
+  const hairColor = randomOf(HAIR_COLORS).value;
+  return {
+    skinTone,
+    skinShadow: shadeColor(`#${skinTone}`),
+    eyeColor: randomOf(EYE_COLORS).value,
+    hairColor,
+    eyebrowColor: randomOf(EYEBROW_COLORS).value,
+    hairStyle: randomOf(HAIR_STYLES).value,
+    facialHair: randomOf(FACIAL_HAIR).value,
+    mouth: 'default',
+    eyes: 'default',
+    nose: 'default',
+    accessories: Math.random() < 0.3 ? ['glasses'] : [],
+  };
+}
+
+/** Draws the avatar SVG to an offscreen canvas and triggers a PNG download.
+ *  Runs entirely client-side — no server round trip for a cosmetic export. */
+function downloadAvatarPng(config: AvatarConfig, filename: string) {
+  const svgEl = document.querySelector('.customizer-avatar-svg svg') as SVGSVGElement | null;
+  if (!svgEl) return;
+  const size = 512;
+  const serializer = new XMLSerializer();
+  const svgString = serializer.serializeToString(svgEl);
+  const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(img, 0, 0, size, size);
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(link.href);
+      }, 'image/png');
+    }
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+}
 
 export default function CharacterCustomizerScreen({
   onSave,
@@ -67,26 +134,11 @@ export default function CharacterCustomizerScreen({
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(
     initialProfile?.avatarConfig || { ...DEFAULT_AVATAR }
   );
-  const [avatarUrl, setAvatarUrl] = useState('');
+  const avatarRef = useRef<HTMLDivElement | null>(null);
 
-  // Generate Dicebear avatar URL
-  useEffect(() => {
-    const params = new URLSearchParams({
-      skinColor: avatarConfig.skinTone,
-      hairColor: avatarConfig.hairColor,
-      hairStyle: avatarConfig.hairStyle,
-      facialHairColor: avatarConfig.hairColor,
-      facialHairType: avatarConfig.facialHair,
-      eyeColor: avatarConfig.eyeColor,
-      mouth: avatarConfig.mouth,
-      eyes: avatarConfig.eyes,
-      nose: avatarConfig.nose,
-      seed: name || 'default',
-    });
-
-    const url = `https://api.dicebear.com/7.x/avataaars/svg?${params.toString()}`;
-    setAvatarUrl(url);
-  }, [avatarConfig, name]);
+  const setSkin = (value: string) => {
+    setAvatarConfig({ ...avatarConfig, skinTone: value, skinShadow: shadeColor(`#${value}`) });
+  };
 
   const handleSave = () => {
     if (!name.trim()) {
@@ -109,6 +161,14 @@ export default function CharacterCustomizerScreen({
     setAvatarConfig({ ...DEFAULT_AVATAR });
   };
 
+  const handleRandomize = () => {
+    setAvatarConfig(randomAvatar());
+  };
+
+  const handleDownload = () => {
+    downloadAvatarPng(avatarConfig, `${(name || 'manager').replace(/\s+/g, '_')}_avatar.png`);
+  };
+
   return (
     <div className="fm-screen fm-character-customizer">
       <p className="fm-label">CUSTOMIZE YOUR MANAGER</p>
@@ -116,16 +176,16 @@ export default function CharacterCustomizerScreen({
       <div className="character-container">
         <div className="avatar-preview-section">
           <h3>Your Manager</h3>
-          <div className="avatar-preview">
-            <img
-              src={avatarUrl}
-              alt="Manager avatar"
-              className="avatar-image"
-              onError={(e) => {
-                e.currentTarget.src =
-                  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23e5e7eb" width="200" height="200"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%236b7280"%3ELoading...%3C/text%3E%3C/svg%3E';
-              }}
-            />
+          <div className="avatar-preview customizer-avatar-svg" ref={avatarRef}>
+            <ManagerAvatar config={avatarConfig} size={280} title={name || 'Manager avatar'} />
+          </div>
+          <div className="preview-actions">
+            <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={handleRandomize}>
+              🎲 Randomize
+            </button>
+            <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={handleDownload}>
+              ⬇ Download PNG
+            </button>
           </div>
         </div>
 
@@ -147,13 +207,14 @@ export default function CharacterCustomizerScreen({
 
             <div className="form-group">
               <label className="fm-label-small">Skin Tone</label>
+              <p className="fm-category-desc">Sets a matching shadow tone automatically, so shading looks right at every skin tone.</p>
               <div className="color-selector">
                 {SKIN_TONES.map((tone) => (
                   <button
                     key={tone.value}
                     className={`color-option ${avatarConfig.skinTone === tone.value ? 'active' : ''}`}
                     style={{ backgroundColor: `#${tone.value}` }}
-                    onClick={() => setAvatarConfig({ ...avatarConfig, skinTone: tone.value })}
+                    onClick={() => setSkin(tone.value)}
                     title={tone.label}
                   />
                 ))}
@@ -162,6 +223,7 @@ export default function CharacterCustomizerScreen({
 
             <div className="form-group">
               <label className="fm-label-small">Hair Color</label>
+              <p className="fm-category-desc">Independent of hairstyle — mix any color with any cut.</p>
               <div className="color-selector">
                 {HAIR_COLORS.map((color) => (
                   <button
@@ -176,7 +238,24 @@ export default function CharacterCustomizerScreen({
             </div>
 
             <div className="form-group">
+              <label className="fm-label-small">Eyebrow Color</label>
+              <p className="fm-category-desc">Its own axis — doesn't have to match your hair.</p>
+              <div className="color-selector">
+                {EYEBROW_COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    className={`color-option ${(avatarConfig.eyebrowColor ?? '') === color.value ? 'active' : ''}`}
+                    style={{ backgroundColor: `#${color.value}` }}
+                    onClick={() => setAvatarConfig({ ...avatarConfig, eyebrowColor: color.value })}
+                    title={color.label}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="form-group">
               <label className="fm-label-small">Hair Style</label>
+              <p className="fm-category-desc">The shape and length of your cut.</p>
               <div className="option-grid">
                 {HAIR_STYLES.map((style) => (
                   <button
@@ -192,6 +271,7 @@ export default function CharacterCustomizerScreen({
 
             <div className="form-group">
               <label className="fm-label-small">Eye Color</label>
+              <p className="fm-category-desc">Iris color.</p>
               <div className="color-selector">
                 {EYE_COLORS.map((color) => (
                   <button
@@ -207,6 +287,7 @@ export default function CharacterCustomizerScreen({
 
             <div className="form-group">
               <label className="fm-label-small">Facial Hair</label>
+              <p className="fm-category-desc">Uses your hair color.</p>
               <div className="option-grid">
                 {FACIAL_HAIR.map((style) => (
                   <button
@@ -215,6 +296,26 @@ export default function CharacterCustomizerScreen({
                     onClick={() => setAvatarConfig({ ...avatarConfig, facialHair: style.value })}
                   >
                     {style.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="fm-label-small">Accessories</label>
+              <p className="fm-category-desc">Optional extras.</p>
+              <div className="option-grid">
+                {ACCESSORIES.map((acc) => (
+                  <button
+                    key={acc.value}
+                    className={`fm-btn fm-btn--small ${
+                      (avatarConfig.accessories?.[0] ?? '') === acc.value ? 'active' : ''
+                    }`}
+                    onClick={() =>
+                      setAvatarConfig({ ...avatarConfig, accessories: acc.value ? [acc.value] : [] })
+                    }
+                  >
+                    {acc.label}
                   </button>
                 ))}
               </div>
@@ -276,10 +377,10 @@ export default function CharacterCustomizerScreen({
           overflow: hidden;
         }
 
-        .avatar-image {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
+        .preview-actions {
+          display: flex;
+          gap: 0.5rem;
+          margin-top: 1rem;
         }
 
         .customization-section {
@@ -315,9 +416,15 @@ export default function CharacterCustomizerScreen({
           display: block;
           font-size: 0.875rem;
           color: #a8bdd1;
-          margin-bottom: 0.75rem;
+          margin-bottom: 0.375rem;
           text-transform: uppercase;
           letter-spacing: 0.05em;
+        }
+
+        .fm-category-desc {
+          margin: 0 0 0.75rem 0;
+          font-size: 0.8rem;
+          color: #6f8398;
         }
 
         .color-selector {

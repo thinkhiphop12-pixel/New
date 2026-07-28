@@ -20,12 +20,21 @@ export interface Player {
   /** Specialized tactical role (e.g., 'cb_playmaker', 'st_poacher'). Overrides basic role if set. */
   tacticalRole?: string;
   rating: number;
+  /** Ceiling this player can develop toward. Never exceeded by `rating`. Cap 99. */
+  potential: number;
   pac: number;
   sho: number;
   pas: number;
   dri: number;
   def: number;
   phy: number;
+  /** Keeper-only attributes (low filler values for outfield players). */
+  gkReflexes: number;
+  gkPositioning: number;
+  /** Height in cm. */
+  height: number;
+  /** Secondary detailed roles the player can cover naturally (e.g. ['LM']). */
+  altPos: string[];
   age: number;
   value: number;
   wage: number; // weekly wage
@@ -33,8 +42,38 @@ export interface Player {
   form: number; // 0.85–1.15 multiplier, drifts weekly
   injuryWeeks: number; // 0 = fit
   contractYears: number; // seasons left on contract
+  /** Contract expiry as an ISO date (YYYY-MM-DD), always snapped to a
+   *  31 Jan / 30 Jun transfer window. Kept in sync with `contractYears`. */
+  contractEnd: string;
+  /** Fee that automatically buys the player out of his contract. 0 = none. */
+  releaseClause: number;
+  /** A loyal player resists moves and accepts smaller pay rises. */
+  loyal: boolean;
+  /** Placed on the transfer list by his club. */
+  transferListed: boolean;
+  /** Has asked to leave. */
+  wantsMove: boolean;
+  /** Squad status promised to him ('star' | 'important' | 'rotation' | …). */
+  promisedStatus: string | null;
+  /** Personal retirement age (35–43 outfield, 35–47 GK). */
+  retireAge: number;
+  /** Individual morale 0–100. */
+  morale: number;
+  /** Physical condition 0–100. */
+  fitness: number;
+  /** Match sharpness 0–100. */
+  sharpness: number;
+  /** Squad familiarity 0–100. */
+  chem: number;
   apps: number; // appearances this season
   goals: number; // goals this season
+  assists: number; // assists this season
+  cleanSheets: number; // clean sheets this season (GK/DEF)
+  saves: number; // saves this season (GK)
+  /** Domestic-league-only mirrors of apps/goals, so national awards ignore
+   *  cup and European games. */
+  lgApps: number;
+  lgGoals: number;
   /** Season year the loan ends; while set the player is away on loan. */
   onLoanUntil?: number;
   career: CareerEntry[];
@@ -233,7 +272,7 @@ export interface DualFormation {
 }
 
 export interface GameState {
-  version: 2;
+  version: 3;
   userClubId: number;
   seasonYear: number;
   /** Next round to be played, 1..SEASON_ROUNDS. > SEASON_ROUNDS means season over. */
@@ -251,6 +290,10 @@ export interface GameState {
   fanConfidence: number; // 0–100
   board: Board;
   manager: Manager;
+  /** Cosmetic manager avatar + name, travels with the save slot (per career,
+   *  not per device — a manager who moves clubs keeps his face). Optional so
+   *  older saves without one still load. */
+  managerProfile?: ManagerProfile;
   academyLevel: number; // 1–3
   /** Squad captain (player id). Leaders make better captains. */
   captainId?: number | null;
@@ -311,8 +354,15 @@ export interface GameSettings {
 
 export interface AvatarConfig {
   skinTone: string;
+  /** Paired shadow tone for `skinTone`, so shading reads correctly across
+   *  every skin colour instead of one flat fill. Optional — falls back to
+   *  a computed darken of `skinTone` when absent (older saves). */
+  skinShadow?: string;
   eyeColor: string;
   hairColor: string;
+  /** Eyebrow colour as its own axis, independent of hair colour. Optional —
+   *  falls back to a computed shade of `hairColor` when absent. */
+  eyebrowColor?: string;
   hairStyle: string;
   facialHair: string;
   mouth: string;
@@ -332,7 +382,13 @@ export interface ManagerProfile {
 export interface GameData {
   meta: { attribution: string; clubCount: number; playerCount: number };
   clubs: Club[];
-  players: (Omit<Player, 'form' | 'injuryWeeks' | 'contractYears' | 'apps' | 'goals' | 'career' | 'wage'> & {
+  players: (Omit<
+    Player,
+    | 'form' | 'injuryWeeks' | 'contractYears' | 'contractEnd' | 'apps' | 'goals'
+    | 'assists' | 'cleanSheets' | 'saves' | 'lgApps' | 'lgGoals' | 'career' | 'wage'
+    | 'transferListed' | 'wantsMove' | 'promisedStatus' | 'morale' | 'fitness'
+    | 'sharpness' | 'chem'
+  > & {
     wage?: number;
   })[];
 }

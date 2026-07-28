@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { GameState } from '@/engine/types';
 import { respondPress, type PressResult, type PressTone } from '@/engine/seasonProgression';
+import ManagerAvatar from './ManagerAvatar';
 
 const OPTIONS: { tone: PressTone; label: string; hint: string }[] = [
   { tone: 'confident', label: 'We can get a result', hint: 'Lifts squad morale, fans respond well.' },
@@ -38,9 +39,19 @@ export default function PressConferenceModal({
         </div>
         {!result ? (
           <>
-            <p className="fm-hint" style={{ textAlign: 'left', marginTop: 0 }}>
-              &quot;Ahead of the visit of {opponentName}, how are you feeling about this one, boss?&quot;
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              {state.managerProfile && (
+                <ManagerAvatar
+                  config={state.managerProfile.avatarConfig}
+                  size={36}
+                  title={state.managerProfile.name}
+                  style={{ borderRadius: '50%', flexShrink: 0 }}
+                />
+              )}
+              <p className="fm-hint" style={{ textAlign: 'left', marginTop: 0, marginBottom: 0 }}>
+                &quot;Ahead of the visit of {opponentName}, how are you feeling about this one, boss?&quot;
+              </p>
+            </div>
             <div className="fm-press-options">
               {OPTIONS.map((o) => (
                 <button key={o.tone} className="fm-press-option" onClick={() => pick(o.tone)}>

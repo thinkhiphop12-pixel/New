@@ -2,6 +2,7 @@
 
 import type { GameState, SeasonSummary } from '@/engine/types';
 import { formatMoney } from '@/engine/utils';
+import ManagerAvatar from './ManagerAvatar';
 
 export default function SeasonEndScreen({
   state,
@@ -30,9 +31,19 @@ export default function SeasonEndScreen({
   return (
     <div className="fm-screen fm-start">
       <span className={`fm-banner ${banner.cls}`}>{banner.text}</span>
-      <h2 style={{ margin: '4px 0 0' }}>
-        {club.name} — {summary.year}/{(summary.year + 1) % 100}
-      </h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 4 }}>
+        {state.managerProfile && (
+          <ManagerAvatar
+            config={state.managerProfile.avatarConfig}
+            size={40}
+            title={state.managerProfile.name}
+            style={{ borderRadius: '50%', flexShrink: 0 }}
+          />
+        )}
+        <h2 style={{ margin: 0 }}>
+          {club.name} — {summary.year}/{(summary.year + 1) % 100}
+        </h2>
+      </div>
       <div className="fm-panel">
         <div style={{ display: 'flex', justifyContent: 'space-around' }}>
           <div className="fm-stat" style={{ border: 'none', background: 'transparent' }}>

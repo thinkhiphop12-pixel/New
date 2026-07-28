@@ -1,7 +1,7 @@
 import type { GameState, Player } from '@/engine/types';
 import { makeBoardObjective, makeContinental, makeDomesticCup } from '@/engine/seasonProgression';
 import { squadAvgRating } from '@/engine/teamManagement';
-import { weeklyWage } from '@/engine/utils';
+import { contractEndFor, rollRetireAge, weeklyWage } from '@/engine/utils';
 
 /**
  * Save games live in the browser. Three career slots; slot 0 keeps the legacy
@@ -24,7 +24,7 @@ type RawSave = Omit<GameState, 'version'> & { version: number };
 /** Upgrade any older save in place to the current shape (idempotent). */
 function migrate(raw: RawSave): GameState {
   const s = raw as unknown as GameState;
-  const wasV1 = raw.version !== 2;
+  const stale = raw.version < 3;
   for (const p of Object.values(s.players) as Player[]) {
     p.wage = p.wage ?? weeklyWage(p.value, p.rating);
     p.contractYears = p.contractYears ?? 2;
@@ -33,6 +33,48 @@ function migrate(raw: RawSave): GameState {
     p.career = p.career ?? [];
     p.seasonRatingSum = p.seasonRatingSum ?? 0;
     p.seasonRatingCount = p.seasonRatingCount ?? 0;
+
+    // --- v3: player model (potential, condition, contracts, GK attrs, stats).
+    // Pre-v3 saves have none of this. Potential is re-derived from the same
+    // age curve the dataset builder uses, so a migrated save develops exactly
+    // like a fresh one; anyone already at or past 30 is simply finished.
+    if (p.potential == null) {
+      const gap = p.age >= 30 ? 0
+        : p.age <= 19 ? 12 + Math.floor(Math.random() * 13)
+        : p.age <= 21 ? 10 + Math.floor(Math.random() * 11)
+        : p.age <= 23 ? 6 + Math.floor(Math.random() * 10)
+        : p.age <= 25 ? 3 + Math.floor(Math.random() * 8)
+        : p.age <= 27 ? 1 + Math.floor(Math.random() * 6)
+        : Math.floor(Math.random() * 4);
+      p.potential = Math.min(99, p.rating + gap);
+    }
+    // Never let a migrated player already sit above his own ceiling.
+    p.potential = Math.min(99, Math.max(p.potential, p.rating));
+    p.gkReflexes = p.gkReflexes ?? (p.pos === 'GK' ? p.rating : 5 + Math.floor(Math.random() * 15));
+    p.gkPositioning = p.gkPositioning ?? (p.pos === 'GK' ? p.rating : 5 + Math.floor(Math.random() * 15));
+    p.height = p.height ?? (p.pos === 'GK' ? 190 : p.pos === 'DEF' ? 184 : p.pos === 'MID' ? 179 : 180);
+    p.altPos = p.altPos ?? [];
+    p.contractEnd = p.contractEnd ?? contractEndFor(s.seasonYear, p.contractYears);
+    p.releaseClause = p.releaseClause ?? 0;
+    p.loyal = p.loyal ?? Math.random() < 0.6;
+    p.transferListed = p.transferListed ?? false;
+    p.wantsMove = p.wantsMove ?? p.unhappy ?? false;
+    p.promisedStatus = p.promisedStatus ?? null;
+    p.retireAge = p.retireAge ?? rollRetireAge(p.pos === 'GK');
+    // An existing veteran must not retire the instant the save is opened —
+    // give anyone already past his rolled age at least one more season.
+    if (p.age >= p.retireAge) p.retireAge = p.age + 1;
+    p.morale = p.morale ?? s.morale ?? 70;
+    p.fitness = p.fitness ?? (p.injuryWeeks > 0 ? 40 : 90);
+    p.sharpness = p.sharpness ?? 70;
+    p.chem = p.chem ?? s.chemistry ?? 60;
+    p.assists = p.assists ?? 0;
+    p.cleanSheets = p.cleanSheets ?? 0;
+    p.saves = p.saves ?? 0;
+    // Domestic mirrors can only be back-filled optimistically — before v3 the
+    // game did not distinguish league from cup appearances.
+    p.lgApps = p.lgApps ?? p.apps;
+    p.lgGoals = p.lgGoals ?? p.goals;
   }
   const t = s.tactics as GameState['tactics'];
   t.tempo = t.tempo ?? 'normal';
@@ -45,6 +87,10 @@ function migrate(raw: RawSave): GameState {
     name: 'The Gaffer', reputation: 45, wins: 0, draws: 0, losses: 0,
     seasons: s.history?.length ?? 0, trophies: [],
   };
+  // managerProfile.avatarConfig.skinShadow / eyebrowColor are new, optional
+  // fields — older saves simply lack them, and ManagerAvatar derives a
+  // sensible shade at render time when they're absent, so no backfill is
+  // needed here beyond the field being optional on the type.
   s.academyLevel = s.academyLevel ?? 1;
   s.staff = s.staff ?? { coach: 0, physio: 0, scout: 0 };
   s.stadiumLevel = s.stadiumLevel ?? 1;
@@ -66,7 +112,7 @@ function migrate(raw: RawSave): GameState {
       .map((c) => c.id);
     s.continental = makeContinental(d1);
   }
-  if (wasV1) s.version = 2;
+  if (stale) s.version = 3;
   return s;
 }
 
@@ -83,7 +129,7 @@ export function loadGame(slot = 0): GameState | null {
     const raw = localStorage.getItem(SLOT_KEYS[slot]);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as RawSave;
-    if (!parsed.userClubId || (parsed.version !== 1 && parsed.version !== 2)) return null;
+    if (!parsed.userClubId || ![1, 2, 3].includes(parsed.version)) return null;
     return migrate(parsed);
   } catch {
     return null;

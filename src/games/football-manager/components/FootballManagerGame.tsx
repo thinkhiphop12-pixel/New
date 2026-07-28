@@ -37,6 +37,16 @@ export default function FootballManagerGame() {
       .catch((e) => setLoadError(String(e)));
     setSaves(listSaves());
     setSettings(loadSettings());
+    // The manager avatar is edited from the main menu before a career even
+    // exists, so it needs a home outside GameState too — fall back to the
+    // legacy standalone key (pre-dating GameState.managerProfile) so a
+    // profile set up before starting still shows up as the default here.
+    try {
+      const raw = localStorage.getItem('managerProfile');
+      if (raw) setManagerProfile(JSON.parse(raw));
+    } catch {
+      // ignore corrupt/blocked storage
+    }
   }, []);
 
   // Views are swapped in-place (no page navigation), so the browser keeps
@@ -57,6 +67,7 @@ export default function FootballManagerGame() {
     if (save) {
       setSlot(s);
       setGs(save);
+      if (save.managerProfile) setManagerProfile(save.managerProfile);
       setView('hub');
     }
   };
@@ -79,6 +90,9 @@ export default function FootballManagerGame() {
   const handlePickClub = (clubId: number, managerName: string) => {
     if (!data) return;
     const state = newGame(data, clubId, managerName);
+    // Carry the manager avatar (edited from the main menu, or from a prior
+    // career) with the save slot rather than a separate device-wide key.
+    if (managerProfile) state.managerProfile = managerProfile;
     apply(state);
     setView('hub');
   };
@@ -136,8 +150,12 @@ export default function FootballManagerGame() {
 
   const handleCharacterSave = (profile: ManagerProfile) => {
     setManagerProfile(profile);
-    // Save to localStorage for persistence
+    // Legacy key: still the source of truth before any career exists (the
+    // main menu can open the customizer with no `gs` yet).
     localStorage.setItem('managerProfile', JSON.stringify(profile));
+    // If a career is in progress, keep the profile travelling with the save
+    // slot rather than only the device-wide key.
+    if (gs) apply({ ...gs, managerProfile: profile });
     setView('menu');
   };
 

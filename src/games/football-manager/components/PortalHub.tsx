@@ -10,6 +10,7 @@ import { formatMoney } from '@/engine/utils';
 import { tint } from './visuals';
 import { Crest } from './Crest';
 import PressConferenceModal from './PressConferenceModal';
+import ManagerAvatar from './ManagerAvatar';
 
 type Filter = 'all' | 'new' | 'tasks';
 
@@ -69,6 +70,15 @@ export default function PortalHub({
             {state.seasonYear}/{(state.seasonYear + 1) % 100} · {position}{ord(position)} in {DIVISION_NAMES[div]}
           </p>
         </div>
+        {state.managerProfile && (
+          <ManagerAvatar
+            config={state.managerProfile.avatarConfig}
+            size={40}
+            title={state.managerProfile.name}
+            className="fm-portal__manager-avatar"
+            style={{ borderRadius: '50%', border: '2px solid rgba(90, 242, 184, 0.3)', flexShrink: 0 }}
+          />
+        )}
         <div className="fm-portal__week-badge">
           <span className="week-num">{Math.min(state.week, SEASON_ROUNDS)}</span>
           <span className="week-lbl">Wk {Math.min(state.week, SEASON_ROUNDS)}/{SEASON_ROUNDS}</span>
