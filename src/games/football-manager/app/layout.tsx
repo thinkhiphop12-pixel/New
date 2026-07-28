@@ -36,6 +36,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: '#050505',
+  // Required for env(safe-area-inset-*) to report anything but 0 — the
+  // landscape nav rail sits against the notch edge otherwise.
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

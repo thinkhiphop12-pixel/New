@@ -274,18 +274,18 @@ body {
 .fm-stat__value--red { color: var(--red); }
 
 /* ── Navigation tabs ──
-   A horizontal scroller with a fade mask so overflow always reads as
-   scrollable rather than clipped. Below ~560px (portrait phones) it
-   switches to icon-only chips so all 9 destinations fit without a
-   tab being chopped in half at the viewport edge. */
+   Seven items (five leaves plus the Competition and Club groups), so the
+   strip no longer needs to scroll at any width — and must not, because the
+   group popovers escape the strip's box and any overflow other than
+   `visible` would clip them. Below ~560px (portrait phones) it switches to
+   icon-only chips; in landscape (see the block at the end of this file) the
+   same <nav> becomes a vertical rail. */
 .fm-tabs {
-  display: flex; gap: 2px; overflow-x: auto;
+  display: flex; gap: 2px; overflow: visible;
   background: var(--panel); border: 1px solid var(--border-soft);
   border-radius: var(--r-lg); padding: 4px;
   scrollbar-width: none;
-  scroll-snap-type: x proximity;
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 14px, #000 calc(100% - 14px), transparent);
-          mask-image: linear-gradient(to right, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+  position: relative; z-index: 30;
 }
 .fm-tabs::-webkit-scrollbar { display: none; }
 .fm-tab {
@@ -306,12 +306,47 @@ body {
   vertical-align: top; position: absolute; top: 4px; right: 4px;
 }
 
+/* ── Grouped nav: popover menus ──
+   A menu, not a dialog: no aria-modal, no focus trap. Anchored below the
+   strip in portrait/desktop; the landscape block re-anchors it to the right
+   of the rail. */
+.fm-navgroup { position: relative; display: inline-flex; flex: 0 0 auto; }
+.fm-tab--group { padding-right: 10px; }
+.fm-tab__caret { font-size: 9px; opacity: 0.7; line-height: 1; }
+.fm-navmenu {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 50;
+  display: flex; flex-direction: column; gap: 2px; min-width: 148px;
+  background: #0d0d0d; border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 4px; box-shadow: var(--shadow-md);
+}
+.fm-navmenu__item {
+  display: flex; align-items: center; gap: 8px; text-align: left;
+  border: none; background: transparent; color: var(--text-2);
+  font-family: inherit; font-weight: 700; font-size: 12.5px;
+  padding: 8px 10px; border-radius: var(--r-sm); cursor: pointer;
+  white-space: nowrap;
+}
+.fm-navmenu__item:hover, .fm-navmenu__item:focus-visible {
+  background: var(--panel-3); color: var(--text); outline: none;
+}
+.fm-navmenu__icon { line-height: 1; }
+
+/* Rail-only affordances — shown only in the landscape block below. */
+.fm-rail__brand, .fm-rail__spacer, .fm-rail__settings { display: none; }
+
 @media (max-width: 560px) {
-  .fm-tabs { gap: 1px; padding: 3px; }
+  .fm-tabs { gap: 1px; padding: 3px; overflow: visible; }
   .fm-tab {
     flex: 1 1 0; min-width: 0; justify-content: center;
-    padding: 9px 2px; scroll-snap-align: center;
+    padding: 9px 2px;
   }
+  .fm-navgroup { flex: 1 1 0; min-width: 0; }
+  .fm-navgroup .fm-tab { width: 100%; }
+  .fm-tab--group { padding-right: 2px; }
+  .fm-tab__caret { display: none; }
+  /* Both groups are at the right-hand end of the strip, so right-aligning
+     the menu keeps a 148px-wide popover inside a 393px viewport. */
+  .fm-navmenu { left: auto; right: 0; }
   .fm-tab__icon { font-size: 16px; }
   .fm-tab__label {
     /* Kept in the DOM (and in the accessible name via aria-label/title on
@@ -1309,3 +1344,129 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-role-tile__name { font-size: 11.5px; font-weight: 800; }
 .fm-role-tile__desc { font-size: 10px; color: var(--muted); line-height: 1.3; }
 .fm-role-tile.active .fm-role-tile__desc { color: inherit; opacity: 0.75; }
+
+/* =====================================================================
+   LANDSCAPE PHONE SHELL
+   ---------------------------------------------------------------------
+   Landscape is the primary phone format, and an iPhone 14 in landscape
+   minus Safari chrome is 852x248 CSS px. Every phone rule above keys on
+   `max-width: 560px`, which a 852px-wide viewport never matches — so
+   landscape used to get the full desktop layout inside 248px of height.
+
+   Keyed on `max-height` because height is the real constraint, and gated
+   on `orientation: landscape` so a *portrait* phone that goes briefly
+   short (software keyboard open) doesn't flip its whole layout mid-typing.
+
+   The shell is `position: fixed; inset: 0` rather than `100dvh` on
+   purpose: a fixed element sized by inset tracks the layout viewport with
+   no unit involved, whereas `dvh` animates while Safari's chrome collapses
+   and makes the inner scroller jitter.
+
+   DO NOT add backdrop-filter / transform / filter / contain / will-change
+   to .fm-app or .fm-main. Any of those turns them into the containing
+   block for .fm-matchx (position: fixed; inset: 0, rendered inside
+   .fm-main) and the match screen would silently stop covering the screen.
+   ===================================================================== */
+@media (orientation: landscape) and (max-height: 560px) {
+  html, body { overflow: hidden; height: 100%; }
+
+  .fm-app {
+    position: fixed; inset: 0;
+    flex-direction: row; min-height: 0;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    /* Fixed positioning lifts the shell off the flow, so the page's static
+       SEO copy would otherwise show through behind it. */
+    background: var(--bg-grad); background-color: var(--bg);
+  }
+
+  /* Brand and Settings move into the rail; 52px of header is unaffordable. */
+  .fm-header { display: none; }
+
+  .fm-main {
+    flex: 1 1 auto; min-width: 0; min-height: 0;
+    padding: 8px 10px 8px 8px;
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+
+  /* Every screen fills the shell and owns its own scrolling, since .fm-main
+     is clipped. Screens without a nav rail (menu, nation select, club select,
+     season end) stay a normal column and simply scroll as one block. */
+  .fm-screen {
+    max-width: none; height: 100%; min-height: 0; gap: 8px;
+    overflow-y: auto; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .fm-screen > * { flex-shrink: 0; }
+
+  /* Only the hub puts a rail beside its content, so only the hub is a row.
+     Applying this to .fm-screen generally turned every pre-game screen into
+     a row of stretched columns — the club picker's label, name field and
+     buttons became vertical slivers. */
+  .fm-screen--hub {
+    flex-direction: row;
+    overflow: hidden;
+  }
+  .fm-screen--hub > *:not(.fm-tabs) {
+    flex: 1 1 auto; min-width: 0; height: 100%;
+    overflow-y: auto; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Screen roots are flex columns. Once one is given a bounded height its
+     children start shrinking to fit instead of overflowing, which silently
+     chops rows like the portal's filter chips in half — and turns them into
+     second scrollers. In a scroll pane, children keep their natural height. */
+  .fm-screen--hub > *:not(.fm-tabs) > * { flex-shrink: 0; }
+
+  /* ── Nav becomes a vertical rail ── */
+  .fm-tabs {
+    flex: 0 0 56px; flex-direction: column; height: 100%;
+    padding: 4px 4px; gap: 1px;
+    border: none; border-right: 1px solid var(--border-soft);
+    border-bottom: none; border-radius: 0;
+    background: var(--panel);
+    /* The rail must never scroll: overflow-y:auto implies overflow-x:auto,
+       which would clip the group flyouts that deliberately escape it. So
+       the seven items are sized by flex rather than by a fixed height —
+       they share whatever is left (~25px each at 248px viewport height,
+       ~22px at 230px) and are capped at 40px on taller landscape screens,
+       which makes overflow structurally impossible. */
+    overflow: visible;
+  }
+  .fm-tab {
+    width: 100%; flex: 1 1 0; min-height: 22px; max-height: 40px;
+    justify-content: center; padding: 2px; gap: 0;
+  }
+  .fm-tab__icon { font-size: 18px; }
+  .fm-tab__label { display: none; }
+  .fm-tab__caret { display: none; }
+  .fm-tab__badge { top: 1px; right: 3px; }
+
+  .fm-navgroup { width: 100%; flex: 1 1 0; min-height: 22px; max-height: 40px; display: flex; }
+  .fm-navgroup .fm-tab { max-height: none; }
+  /* Fly out to the right of the rail rather than down off the bottom. */
+  /* Both groups sit at the bottom of the rail, so the flyout grows upward
+     from the trigger's baseline — anchored at the top it would run off the
+     bottom of a 248px viewport. */
+  .fm-navmenu { top: auto; bottom: 0; left: calc(100% + 6px); right: auto; }
+
+  .fm-rail__brand {
+    display: flex; align-items: center; justify-content: center;
+    flex: 0 0 18px; margin-bottom: 1px;
+    font-weight: 900; font-size: 12px; color: var(--green);
+    letter-spacing: 1px;
+  }
+  /* Absorbs the slack once the tabs have hit their 40px cap on taller
+     landscape screens; collapses to nothing on a 248px phone. */
+  .fm-rail__spacer { display: block; flex: 1 1 0; min-height: 0; }
+  .fm-rail__settings {
+    display: flex; align-items: center; justify-content: center;
+    flex: 0 0 24px; width: 100%;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: var(--r-sm); color: var(--muted);
+    font-size: 15px; cursor: pointer; font-family: inherit;
+  }
+  .fm-rail__settings:hover { border-color: var(--border-bright); color: var(--text); }
+}

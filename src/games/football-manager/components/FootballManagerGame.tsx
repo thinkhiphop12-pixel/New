@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Division, GameData, GameState, MatchReport, SeasonSummary, GameSettings } from '@/engine/types';
 import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/engine/seasonProgression';
 import { simulateTickMatch } from '@/engine/tickEngine/sim';
@@ -14,6 +14,7 @@ import HubScreen from './HubScreen';
 import MatchScreen from './match/MatchScreen';
 import SeasonEndScreen from './SeasonEndScreen';
 import SettingsPanel, { loadSettings } from './SettingsPanel';
+import { useScrollReset } from './useScrollReset';
 
 type View = 'menu' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonend';
 
@@ -28,6 +29,8 @@ export default function FootballManagerGame() {
   const [settings, setSettings] = useState<GameSettings | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedDivisions, setSelectedDivisions] = useState<Division[]>([1, 2, 3, 4]);
+  // In landscape the shell is fixed and this element is the scroller, not the page.
+  const mainRef = useRef<HTMLElement | null>(null);
 
   const fetchGameData = () => {
     loadGameData()
@@ -49,10 +52,8 @@ export default function FootballManagerGame() {
   // Views are swapped in-place (no page navigation), so the browser keeps
   // whatever scroll position the previous view was left at — a user who
   // scrolled down the club list would land mid-page on the hub, with the
-  // header and tab bar scrolled out of view. Reset on every view change.
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [view]);
+  // header and nav scrolled out of view. Reset on every view change.
+  useScrollReset(mainRef, view);
 
   const apply = (next: GameState, toSlot = slot) => {
     setGs(next);
@@ -165,7 +166,7 @@ export default function FootballManagerGame() {
           Settings
         </button>
       </header>
-      <main className="fm-main">
+      <main className="fm-main" ref={mainRef}>
         {loadError ? (
           <div className="fm-screen fm-error" role="alert">
             <p className="fm-error-text">Could not load game data. {loadError}</p>
@@ -195,7 +196,14 @@ export default function FootballManagerGame() {
             onRetire={handleAbandon}
           />
         ) : gs ? (
-          <HubScreen state={gs} onChange={apply} onPlayMatch={handlePlayMatch} onAbandon={handleAbandon} />
+          <HubScreen
+            state={gs}
+            onChange={apply}
+            onPlayMatch={handlePlayMatch}
+            onAbandon={handleAbandon}
+            onOpenSettings={() => setShowSettings(true)}
+            paneRef={mainRef}
+          />
         ) : (
           <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} />
         )}
