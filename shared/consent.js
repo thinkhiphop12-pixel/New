@@ -71,16 +71,30 @@ function fillAllAdSlots(){
   });
 }
 
-/* Monetag Vignette (impression-based, between-page-navigation banner) —
-   opt-in per page via `window.BK_VIGNETTE_ZONE` set BEFORE this script loads,
-   so it only runs on pages that explicitly want it, not site-wide. */
+/* Monetag Vignette (impression-based, between-page-navigation banner).
+   Runs site-wide on the zones in VIGNETTE_ZONES. A page can override the set
+   by declaring `window.BK_VIGNETTE_ZONES = ['1234']` (or the older single
+   `window.BK_VIGNETTE_ZONE`) BEFORE this script loads, and can opt out
+   entirely with `window.BK_VIGNETTE_ZONES = []`.
+
+   Loaded only from applyConsent('all') — never before the visitor accepts. */
+const VIGNETTE_ZONES = ['11417067', '11418211'];
+
+function vignetteZones(){
+  if (Array.isArray(window.BK_VIGNETTE_ZONES)) return window.BK_VIGNETTE_ZONES;
+  if (window.BK_VIGNETTE_ZONE) return [window.BK_VIGNETTE_ZONE];
+  return VIGNETTE_ZONES;
+}
+
 function loadMonetagVignette(){
-  if (!window.BK_VIGNETTE_ZONE) return;
-  if (document.querySelector('script[data-zone="' + window.BK_VIGNETTE_ZONE + '"]')) return;
-  const s = document.createElement('script');
-  s.dataset.zone = window.BK_VIGNETTE_ZONE;
-  s.src = 'https://n6wxm.com/vignette.min.js';
-  document.body.appendChild(s);
+  vignetteZones().forEach(function(zone){
+    if (!zone) return;
+    if (document.querySelector('script[data-zone="' + zone + '"]')) return;
+    const s = document.createElement('script');
+    s.dataset.zone = zone;
+    s.src = 'https://n6wxm.com/vignette.min.js';
+    document.body.appendChild(s);
+  });
 }
 
 function applyConsent(choice){
