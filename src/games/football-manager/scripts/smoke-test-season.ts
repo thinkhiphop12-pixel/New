@@ -16,6 +16,7 @@ import {
   leagueFixtures, leagueClubs, generateLeagueFixtures, splitFixtures,
 } from '../engine/seasonProgression';
 import { simulateMatch } from '../engine/matchSimulation';
+import { needsDrilling, styleFamiliarity, weeksToDrill } from '../engine/familiarity';
 import { simulateTickMatch } from '../engine/tickEngine/sim';
 import {
   CLUBS_PER_DIVISION, LEAGUES, SEASON_ROUNDS, WINTER_BREAK, getLeague, isPhantomLeague,
@@ -291,6 +292,30 @@ assert(
   });
   assert(avgBad.length === 0, `${avgBad.length} player(s) have a NaN season average rating`);
   console.log(`  No NaN in any of ${Object.keys(state.players).length} player ratings after a full simulated season.`);
+}
+
+/* --- Phase 5: tactical familiarity ------------------------------------- */
+{
+  const drilled = state.clubs.filter((c) => c.playStyle && needsDrilling(c.playStyle));
+  if (!drilled.length) throw new Error('no club was assigned a drilled play-style');
+
+  // Every club should have accrued familiarity in the style it actually plays.
+  const undrilled = drilled.filter((c) => styleFamiliarity(c, c.playStyle!) < 40);
+  if (undrilled.length) {
+    throw new Error(`${undrilled.length} clubs played a style all season without drilling it`);
+  }
+
+  // Switching to a distant style must cost real time; switching to a near
+  // neighbour must not. This is the whole point of the kinship model.
+  const club = state.clubs.find((c) => c.playStyle === 'possession')
+    ?? state.clubs.find((c) => needsDrilling(c.playStyle ?? 'balanced'))!;
+  const near = weeksToDrill(club, 'tiki-taka');
+  const far = weeksToDrill(club, 'catenaccio');
+  if (far <= near) {
+    throw new Error(`kinship broken: ${club.playStyle} -> catenaccio (${far}w) should cost more than -> tiki-taka (${near}w)`);
+  }
+  console.log(`\nTactical familiarity: ${drilled.length} clubs drilled in a named style.`);
+  console.log(`  ${club.name} (${club.playStyle}) would need ${near}w to drill tiki-taka, ${far}w for catenaccio. ✓`);
 }
 
 console.log('\n✓ ALL SMOKE TESTS PASSED');

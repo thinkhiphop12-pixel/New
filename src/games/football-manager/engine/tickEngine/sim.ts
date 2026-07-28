@@ -1,5 +1,6 @@
 import type { FormationDef, GameState, Player, Tactics } from '../types';
-import { HOME_ADVANTAGE, MAX_SUBS, MORALE_START, getFormation } from '../gameRules';
+import { HOME_ADVANTAGE, MAX_SUBS, MORALE_START, getFormation, getLeague } from '../gameRules';
+import { styleExec } from '../familiarity';
 import { aiMatchSetup, availableSquad, lineupStrength, squadAvgRating } from '../teamManagement';
 import { scorerTraitMult } from '../traits';
 import { weightedIndex } from '../utils';
@@ -662,9 +663,20 @@ function applyResume(side: SideState, ctx: ResumeSideContext, stats: SideStats, 
 function initShotModel(s: Sim): void {
   const qualityMult = (side: SideState) =>
     side.strengthMult * (1 + (side.morale - 60) / 900) * (1 + (side.chemistry - 50) / 1200);
+  /* Phase 5: how well each side executes its named identity, judged against the
+   * opponent it is actually facing — possession is easier against a passive
+   * side than an aggressive one. Falls back to 1 when a club has no identity
+   * (pre-v6 saves), which is exactly how 'balanced' behaves. */
+  const execOf = (side: SideState, opp: SideState) => {
+    const club = s.state.clubs.find((c) => c.id === side.clubId);
+    if (!club) return 1;
+    const style = (side.clubId === s.state.userClubId ? s.state.playStyle : club.playStyle) ?? 'balanced';
+    const level = getLeague(club.leagueId)?.level ?? 3;
+    return styleExec(club, side.xi.map((sl) => sl.p), style, level, { xi: opp.xi.map((sl) => sl.p) });
+  };
   const xg = calcMatchXG(
-    { xi: s.home.xi, tactics: s.home.tactics, mentality: s.home.mentality, qualityMult: qualityMult(s.home) },
-    { xi: s.away.xi, tactics: s.away.tactics, mentality: s.away.mentality, qualityMult: qualityMult(s.away) }
+    { xi: s.home.xi, tactics: s.home.tactics, mentality: s.home.mentality, qualityMult: qualityMult(s.home), styleExec: execOf(s.home, s.away) },
+    { xi: s.away.xi, tactics: s.away.tactics, mentality: s.away.mentality, qualityMult: qualityMult(s.away), styleExec: execOf(s.away, s.home) }
   );
   s.home.budgetXG = xg.homeXG;
   s.away.budgetXG = xg.awayXG;

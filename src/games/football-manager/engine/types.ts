@@ -1,5 +1,21 @@
 export type Position = 'GK' | 'DEF' | 'MID' | 'FWD';
 
+/** Named play-style identity. `balanced` and `parkbus` need no drilling — they
+ *  are the fallbacks a side reverts to. See engine/familiarity.ts. */
+export type PlayStyle =
+  | 'balanced' | 'parkbus'
+  | 'direct' | 'possession' | 'tiki-taka' | 'counter'
+  | 'gegenpressing' | 'longball' | 'catenaccio';
+
+/** Per-club drilling state: how familiar the squad is with each style and
+ *  shape, 0–100. */
+export interface TacFam {
+  styles: Partial<Record<PlayStyle, number>>;
+  formations: Record<string, number>;
+  lastStyle: PlayStyle | null;
+  lastFormation: string | null;
+}
+
 /** Legacy division number, kept only for the raw dataset (gamedata.json) and
  *  the pre-v4 save migration. Live game state keys off `LeagueDef.id`. */
 export type Division = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
@@ -158,6 +174,17 @@ export interface Club {
   /** Dormant club sitting in a phantom league's pool — no fixtures, no
    *  transfer activity, waiting to rotate up. */
   dormant?: boolean;
+
+  /* --- Phase 5: tactical identity and drilling. All optional; a save without
+     them behaves as a 'balanced' side, which needs no drilling. --- */
+  /** Named play-style this club is drilled in. */
+  playStyle?: PlayStyle;
+  /** Formation this club habitually sets up in. */
+  formationId?: string;
+  /** Club standing 1–5, used to scale AI drilling speed. */
+  reputation?: number;
+  /** Per-style and per-formation familiarity, 0–100. */
+  tacFam?: TacFam;
 }
 
 /** A club as it appears in the raw dataset, still keyed by division number. */
@@ -393,7 +420,7 @@ export interface DualFormation {
 }
 
 export interface GameState {
-  version: 5;
+  version: 6;
   userClubId: number;
   seasonYear: number;
   /** Next round to be played, 1..SEASON_ROUNDS. > SEASON_ROUNDS means season over. */
@@ -408,6 +435,9 @@ export interface GameState {
   tactics: Tactics;
   training: TrainingFocus;
   chemistry: number; // 0–100 team chemistry
+  /** Phase 5: the user club's named play-style identity. Optional so pre-v6
+   *  saves default to 'balanced', which needs no drilling. */
+  playStyle?: PlayStyle;
   fanConfidence: number; // 0–100
   board: Board;
   manager: Manager;

@@ -4,6 +4,7 @@ import {
 } from '@/engine/seasonProgression';
 import { LEAGUES, getLeague, leagueIdForDivision } from '@/engine/gameRules';
 import { contractEndFor, rollRetireAge, weeklyWage } from '@/engine/utils';
+import { seedClubIdentities } from '@/engine/clubIdentity';
 import { compressToUTF16, decompressFromUTF16, WORKER_SOURCE } from '@/lib/lz';
 import { idbDelete, idbGet, idbPut } from '@/lib/idb';
 
@@ -33,7 +34,7 @@ type RawSave = Omit<GameState, 'version'> & { version: number };
 /** Upgrade any older save in place to the current shape (idempotent). */
 function migrate(raw: RawSave): GameState {
   const s = raw as unknown as GameState;
-  const stale = raw.version < 5;
+  const stale = raw.version < 6;
   for (const p of Object.values(s.players) as Player[]) {
     p.wage = p.wage ?? weeklyWage(p.value, p.rating);
     p.contractYears = p.contractYears ?? 2;
@@ -174,7 +175,13 @@ function migrate(raw: RawSave): GameState {
   // v5 also adds optional shot coordinates / injury detail to MatchEvent. Those
   // only ever appear on reports written after this version, and every reader
   // treats them as optional, so stored reports need no back-fill.
-  if (stale) s.version = 5;
+  // --- v6: play-style identities and tactical familiarity. Seeding clubs that
+  // lack an identity is idempotent, and familiarity itself is created lazily by
+  // tacFamInit on the first drilling tick, so nothing else needs back-filling.
+  seedClubIdentities(s);
+  s.playStyle = s.playStyle ?? s.clubs.find((c) => c.id === s.userClubId)?.playStyle ?? 'balanced';
+
+  if (stale) s.version = 6;
   return s;
 }
 
@@ -310,7 +317,7 @@ export async function loadGame(slot = 0): Promise<GameState | null> {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as RawSave;
-    if (!parsed.userClubId || ![1, 2, 3, 4, 5].includes(parsed.version)) return null;
+    if (!parsed.userClubId || ![1, 2, 3, 4, 5, 6].includes(parsed.version)) return null;
     return migrate(parsed);
   } catch {
     return null;

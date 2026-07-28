@@ -507,6 +507,13 @@ export interface XGSide {
   mentality: string;
   /** Extra multiplier from morale / chemistry / difficulty scaling. */
   qualityMult: number;
+  /**
+   * Phase 5: how well this side executes its named play-style, 0-1, combining
+   * squad ability with drilled familiarity. Supplied by the caller so this
+   * module stays free of a familiarity import. Defaults to 1 (fully executed)
+   * when absent, which is what an undrilled 'balanced' side gets.
+   */
+  styleExec?: number;
 }
 
 export interface MatchXG {
@@ -636,6 +643,14 @@ export function calcMatchXG(home: XGSide, away: XGSide): MatchXG {
   const spaceQ = (attR: number, defR: number) => Math.max(0, Math.min(1.2, Math.pow(attR / defR, 3) - 0.4));
   if (!countersFromDeep(aMen) && hCounterRisk > 1) awayXG *= 1 + (hCounterRisk - 1) * 0.4 * spaceQ(aAttR, hDefR);
   if (!countersFromDeep(hMen) && aCounterRisk > 1) homeXG *= 1 + (aCounterRisk - 1) * 0.4 * spaceQ(hAttR, aDefR);
+
+  // 4b. Style execution. A side asked to play an identity it hasn't drilled,
+  // or hasn't the players for, gets less out of everything above. Scaled to
+  // half-strength so a poorly-drilled side is blunted, not crippled — the
+  // instructions still work, they just work less well.
+  const execMult = (e: number | undefined) => 1 - (1 - Math.max(0, Math.min(1, e ?? 1))) * 0.5;
+  homeXG *= execMult(home.styleExec);
+  awayXG *= execMult(away.styleExec);
 
   // 5. Tactics amplify quality — they don't replace it. Compress each side's
   // net tactical GAIN over its ratings-only baseline by the class gap. Net

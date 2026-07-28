@@ -13,6 +13,8 @@ import {
 import { matchRatings, simulateMatch } from './matchSimulation';
 import { autoPickLineup, getSquad, isLineupValid, isOnLoan, squadAvgRating } from './teamManagement';
 import { clamp, contractEndFor, marketValue, pickRandom, rollRetireAge, weeklyWage } from './utils';
+import { tickTacticalFamiliarity } from './familiarity';
+import { seedClubIdentities } from './clubIdentity';
 import { aiWeeklyTransfers, generateWeeklyOffers } from './transferMarket';
 import { clubRunName, createKnockout, isClubAlive, knockoutRoundDue, playKnockoutRound, roundName, tieWinner, userTieThisRound } from './cups';
 import { pushInbox } from './inbox';
@@ -431,7 +433,7 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
 
   const userClub = clubs.find((c) => c.id === userClubId)!;
   const state: GameState = {
-    version: 5,
+    version: 6,
     userClubId,
     seasonYear,
     week: 1,
@@ -480,6 +482,10 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
   state.cup = makeDomesticCup(state);
   state.continental = makeContinental(continentalEntrants(state));
   state.lineup = autoPickLineup(state, userClubId, getFormation(state.formationId));
+  // Give every club a play-style identity and reputation band before the first
+  // drilling tick, so familiarity has something to work from.
+  seedClubIdentities(state);
+  state.playStyle = state.playStyle ?? state.clubs.find((c) => c.id === userClubId)?.playStyle ?? 'balanced';
   state.news.push(`Board objective: ${state.board.objective}.`);
   pushInbox(state, {
     category: 'club',
@@ -766,6 +772,10 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
       s.records.biggestWin = { margin, text: `${gf}–${ga} vs ${opp} (${s.seasonYear}/${(s.seasonYear + 1) % 100})` };
     }
   }
+
+  // Weekly tactical drilling. Runs before form drift so a style switched this
+  // week starts accruing familiarity immediately rather than a week late.
+  tickTacticalFamiliarity(s);
 
   // Weekly form drift + injury recovery for every player.
   const fitnessFocus = s.training === 'fitness';
