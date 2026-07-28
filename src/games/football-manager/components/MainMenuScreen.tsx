@@ -1,7 +1,7 @@
 'use client';
 
 import type { SaveMeta } from '@/lib/storage';
-import type { ManagerProfile } from '@/games/football-manager/engine/types';
+import type { ManagerProfile } from '@/engine/types';
 
 export default function MainMenuScreen({
   saves,

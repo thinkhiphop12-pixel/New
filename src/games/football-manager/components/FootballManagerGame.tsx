@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { Division, GameData, GameState, MatchReport, SeasonSummary, GameSettings, ManagerProfile } from '@/games/football-manager/engine/types';
-import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/games/football-manager/engine/seasonProgression';
-import { simulateTickMatch } from '@/games/football-manager/engine/tickEngine/sim';
-import { normalizeMentality } from '@/games/football-manager/engine/tickEngine/tacticsData';
+import type { Division, GameData, GameState, MatchReport, SeasonSummary, GameSettings, ManagerProfile } from '@/engine/types';
+import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/engine/seasonProgression';
+import { simulateTickMatch } from '@/engine/tickEngine/sim';
+import { normalizeMentality } from '@/engine/tickEngine/tacticsData';
 import { loadGameData } from '@/lib/gamedata';
 import { clearSave, listSaves, loadGame, saveGame, SAVE_SLOTS, type SaveMeta } from '@/lib/storage';
 import MainMenuScreen from './MainMenuScreen';

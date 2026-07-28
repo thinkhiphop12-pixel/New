@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { AvatarConfig, ManagerProfile } from '@/games/football-manager/engine/types';
+import type { AvatarConfig, ManagerProfile } from '@/engine/types';
 
 const DEFAULT_AVATAR: AvatarConfig = {
   skinTone: 'c1ad60',
