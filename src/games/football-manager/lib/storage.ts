@@ -31,7 +31,7 @@ type RawSave = Omit<GameState, 'version'> & { version: number };
 /** Upgrade any older save in place to the current shape (idempotent). */
 function migrate(raw: RawSave): GameState {
   const s = raw as unknown as GameState;
-  const stale = raw.version < 4;
+  const stale = raw.version < 5;
   for (const p of Object.values(s.players) as Player[]) {
     p.wage = p.wage ?? weeklyWage(p.value, p.rating);
     p.contractYears = p.contractYears ?? 2;
@@ -82,11 +82,25 @@ function migrate(raw: RawSave): GameState {
     // game did not distinguish league from cup appearances.
     p.lgApps = p.lgApps ?? p.apps;
     p.lgGoals = p.lgGoals ?? p.goals;
+
+    // --- v5: the seven-type injury model. Pre-v5 saves only know how many
+    // whole weeks a man is out for; convert that to the day clock the match
+    // engine now writes, and label an unexplained layoff as a knock.
+    p.injuryDays = p.injuryDays ?? p.injuryWeeks * 7;
+    p.injuryType = p.injuryType ?? (p.injuryWeeks > 0 ? 'knock' : null);
   }
   const t = s.tactics as GameState['tactics'];
   t.tempo = t.tempo ?? 'normal';
   t.width = t.width ?? 'standard';
   t.mentality = t.mentality ?? 'balanced';
+  // --- v5: the tactical instructions the xG chain reads. Every one defaults
+  // to its neutral setting, so a migrated save plays exactly as it did before.
+  t.defLine = t.defLine ?? 'normal';
+  t.focus = t.focus ?? 'mixed';
+  t.buildUp = t.buildUp ?? 'balanced';
+  t.passingStyle = t.passingStyle ?? 'mixed';
+  t.runs = t.runs ?? 'balanced';
+  t.tackling = t.tackling ?? 'normal';
   s.training = s.training ?? 'balanced';
   s.chemistry = s.chemistry ?? 50;
   s.fanConfidence = s.fanConfidence ?? 60;
@@ -155,7 +169,10 @@ function migrate(raw: RawSave): GameState {
   s.board = s.board ?? makeBoardObjective(s);
   s.cup = s.cup ?? makeDomesticCup(s);
   if (!s.continental) s.continental = makeContinental(continentalEntrants(s));
-  if (stale) s.version = 4;
+  // v5 also adds optional shot coordinates / injury detail to MatchEvent. Those
+  // only ever appear on reports written after this version, and every reader
+  // treats them as optional, so stored reports need no back-fill.
+  if (stale) s.version = 5;
   return s;
 }
 
@@ -172,7 +189,7 @@ export function loadGame(slot = 0): GameState | null {
     const raw = localStorage.getItem(SLOT_KEYS[slot]);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as RawSave;
-    if (!parsed.userClubId || ![1, 2, 3, 4].includes(parsed.version)) return null;
+    if (!parsed.userClubId || ![1, 2, 3, 4, 5].includes(parsed.version)) return null;
     return migrate(parsed);
   } catch {
     return null;

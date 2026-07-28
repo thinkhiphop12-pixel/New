@@ -56,21 +56,9 @@ export const ROLE_ZONE: Record<string, 0 | 1 | 2 | 3 | 4> = {
 /** Base xG feel by ball zone (only the attacking zones matter for shots). */
 export const ZONE_XG_BASE = [0.08, 0.25, 0.5, 0.72, 0.92];
 
-export interface ChanceTier {
-  id: string;
-  label: string;
-  min: number;
-  max: number;
-  weight: number;
-}
-
-export const CHANCE_QUALITY: ChanceTier[] = [
-  { id: 'longShot', label: 'a strike from distance', min: 0.02, max: 0.06, weight: 30 },
-  { id: 'halfChance', label: 'a half chance', min: 0.06, max: 0.12, weight: 30 },
-  { id: 'goodChance', label: 'a good chance', min: 0.12, max: 0.25, weight: 22 },
-  { id: 'clearCut', label: 'a clear-cut chance', min: 0.25, max: 0.45, weight: 12 },
-  { id: 'oneOnOne', label: 'a one-on-one', min: 0.3, max: 0.55, weight: 6 },
-];
+/* The flat chance-quality tier table that preceded Phase 4 has been removed:
+   shot quality now comes from real pitch geometry and shot archetypes in
+   `xgModel.ts` (`shotBaseXG` / `SHOT_ARCH`), not from a capped tier roll. */
 
 /** Down to 10 or 9 men the side compacts into a defensive shape. */
 export function compactFormation(menOnPitch: number): string | null {

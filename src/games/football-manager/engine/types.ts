@@ -99,6 +99,11 @@ export interface Player {
   clubId: number; // 0 = free agent
   form: number; // 0.85–1.15 multiplier, drifts weekly
   injuryWeeks: number; // 0 = fit
+  /** Remaining layoff in DAYS — the real precision behind `injuryWeeks`,
+   *  which is kept in sync as `ceil(injuryDays / 7)`. */
+  injuryDays?: number;
+  /** `INJURY_TYPES` id of the current layoff (null/undefined when fit). */
+  injuryType?: string | null;
   contractYears: number; // seasons left on contract
   /** Contract expiry as an ISO date (YYYY-MM-DD), always snapped to a
    *  31 Jan / 30 Jun transfer window. Kept in sync with `contractYears`. */
@@ -190,7 +195,30 @@ export interface Tactics {
   width: Width;
   /** Team mentality (tick engine). Defaults to 'balanced' for older saves. */
   mentality?: 'ultra-defensive' | 'defensive' | 'balanced' | 'attacking' | 'ultra-attacking';
+
+  /* --- Phase 4: the instructions the tactical xG chain reads. All optional
+     with a neutral default so pre-v5 saves behave exactly as before. --- */
+  /** How high the back line holds. */
+  defLine?: DefLine;
+  /** Which channel play is aimed through — matched against opponent width. */
+  focus?: AttackFocus;
+  /** Playing out from the back vs going long — gated on the XI's passing. */
+  buildUp?: BuildUp;
+  /** Passing directness — gated on the XI's passers. Named `passingStyle` to
+   *  avoid colliding with the `pressing` field's naming. */
+  passingStyle?: PassingStyle;
+  /** Forward runs — gated on the XI's pace and the opponent's line. */
+  runs?: RunStyle;
+  /** Challenge intensity: card risk traded for recoveries. */
+  tackling?: Tackling;
 }
+
+export type DefLine = 'deep' | 'normal' | 'high';
+export type AttackFocus = 'flanks' | 'mixed' | 'middle';
+export type BuildUp = 'play-out' | 'balanced' | 'long';
+export type PassingStyle = 'short' | 'mixed' | 'through-balls';
+export type RunStyle = 'into-feet' | 'balanced' | 'in-behind';
+export type Tackling = 'cautious' | 'normal' | 'aggressive';
 
 export type TrainingFocus = 'balanced' | 'attack' | 'defense' | 'fitness';
 
@@ -211,6 +239,27 @@ export interface MatchEvent {
   clubId: number; // 0 for neutral events (kickoff etc.)
   text: string;
   playerId?: number; // scorer for goal events
+
+  /* --- Phase 4: shot-level detail, so PitchCanvas can plot true positions
+     and the season loop can apply real injuries. All optional — pre-v5
+     reports simply lack them. --- */
+  /** Metres out from the goal being attacked (0 = on the line). */
+  gx?: number;
+  /** Metres left/right of the middle of that goal (0 = dead centre). */
+  gy?: number;
+  /** Expected goals for this shot, 0–1. Never exceeds 1.0. */
+  xg?: number;
+  /** Shot archetype id (`tap_in`, `one_on_one`, `header_cross`, …). */
+  archetype?: string;
+  /** How the ball was struck. */
+  contact?: 'header' | 'volley' | 'foot';
+  /** Assisting player for a goal. */
+  assistId?: number;
+  /** Injury detail (injury events only). */
+  injuryType?: string;
+  injuryDays?: number;
+  /** Potential the injury permanently costs (ACL: 3). */
+  potDrop?: number;
 }
 
 export interface MatchReport {
@@ -344,7 +393,7 @@ export interface DualFormation {
 }
 
 export interface GameState {
-  version: 4;
+  version: 5;
   userClubId: number;
   seasonYear: number;
   /** Next round to be played, 1..SEASON_ROUNDS. > SEASON_ROUNDS means season over. */

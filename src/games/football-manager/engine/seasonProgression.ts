@@ -16,6 +16,7 @@ import { clamp, contractEndFor, marketValue, pickRandom, rollRetireAge, weeklyWa
 import { aiWeeklyTransfers, generateWeeklyOffers } from './transferMarket';
 import { clubRunName, createKnockout, isClubAlive, knockoutRoundDue, playKnockoutRound, roundName, tieWinner, userTieThisRound } from './cups';
 import { pushInbox } from './inbox';
+import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
 
 export { markInboxRead, markAllInboxRead } from './inbox';
 
@@ -430,7 +431,7 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
 
   const userClub = clubs.find((c) => c.id === userClubId)!;
   const state: GameState = {
-    version: 4,
+    version: 5,
     userClubId,
     seasonYear,
     week: 1,
@@ -617,6 +618,45 @@ function applyReportStats(s: GameState, report: MatchReport): void {
     if (e.type === 'goal' && e.playerId !== undefined) {
       const p = s.players[e.playerId];
       if (p) p.goals++;
+      const a = e.assistId !== undefined ? s.players[e.assistId] : undefined;
+      if (a) a.assists++;
+    }
+    // Match injuries (gap 25): seven types, day-based layoff, and the serious
+    // ones permanently cost potential — an ACL rupture takes 3 off the ceiling.
+    if (e.type === 'injury' && e.playerId !== undefined && e.injuryDays) {
+      const p = s.players[e.playerId];
+      if (p) {
+        p.injuryDays = Math.max(p.injuryDays ?? 0, e.injuryDays);
+        p.injuryType = e.injuryType ?? 'knock';
+        p.injuryWeeks = Math.max(p.injuryWeeks, Math.ceil(p.injuryDays / 7));
+        if (e.potDrop) p.potential = Math.max(p.rating, p.potential - e.potDrop);
+      }
+    }
+  }
+  // Per-match condition (gap 26): minutes played drain fitness, resting tops it
+  // up, and match sharpness only comes from actually playing.
+  applyMatchCondition(s, report);
+}
+
+/** Fitness/sharpness bookkeeping for everyone involved in a finished match. */
+function applyMatchCondition(s: GameState, report: MatchReport): void {
+  const played = new Set([...report.homeLineup, ...report.awayLineup]);
+  for (const clubId of [report.homeId, report.awayId]) {
+    const club = s.clubs.find((c) => c.id === clubId);
+    if (!club) continue;
+    const rate = teamStaminaRate(clubId === s.userClubId ? s.tactics : { style: 'balanced', pressing: 'mid', tempo: 'normal', width: 'standard' });
+    for (const id of club.playerIds) {
+      const p = s.players[id];
+      if (!p) continue;
+      if (played.has(id)) {
+        // Assume a full shift; substitutes are already the minority case and
+        // the report does not track minutes.
+        p.fitness = clamp(p.fitness - matchFitnessDrain(p, 90, rate) + 20, 15, 100);
+        p.sharpness = clamp(p.sharpness + 7, 0, 100);
+      } else if (p.injuryWeeks === 0) {
+        p.fitness = clamp(p.fitness + FITNESS_RECOVER_REST, 15, 100);
+        p.sharpness = clamp(p.sharpness - 2, 0, 100);
+      }
     }
   }
 }
@@ -732,6 +772,17 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   for (const p of Object.values(s.players)) {
     p.form = clamp(p.form + (Math.random() - 0.5) * 0.06, 0.85, 1.15);
     if (p.injuryWeeks > 0) p.injuryWeeks--;
+    // Day-based recovery is the real clock; injuryWeeks stays in sync as a
+    // rounded-up view of it for every screen that already reads weeks.
+    if (p.injuryDays && p.injuryDays > 0) {
+      p.injuryDays = Math.max(0, p.injuryDays - 7);
+      p.injuryWeeks = Math.ceil(p.injuryDays / 7);
+      if (p.injuryDays === 0) p.injuryType = null;
+    } else if (p.injuryWeeks === 0) {
+      p.injuryType = null;
+    }
+    // A rest day for anyone whose club had no fixture this round.
+    p.fitness = clamp(p.fitness + 4, 15, 100);
   }
 
   // Squad happiness: good players left out of the XI week after week grow
@@ -793,6 +844,8 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
     const p = s.players[id];
     if (p && p.injuryWeeks === 0 && Math.random() < injuryChance) {
       p.injuryWeeks = 1 + Math.floor(Math.random() * 3);
+      p.injuryDays = p.injuryWeeks * 7;
+      p.injuryType = 'knock';
       s.news.unshift(`${p.name} injured — out for ${p.injuryWeeks} week${p.injuryWeeks > 1 ? 's' : ''}.`);
       pushInbox(s, {
         category: 'injury',
@@ -1455,6 +1508,8 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     p.value = marketValue(p.rating, p.age);
     p.form = 1;
     p.injuryWeeks = 0;
+    p.injuryDays = 0;
+    p.injuryType = null;
     p.fitness = 100;
     p.sharpness = clamp(p.sharpness, 50, 75);
   }

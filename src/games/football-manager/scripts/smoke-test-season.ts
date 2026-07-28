@@ -16,6 +16,7 @@ import {
   leagueFixtures, leagueClubs, generateLeagueFixtures, splitFixtures,
 } from '../engine/seasonProgression';
 import { simulateMatch } from '../engine/matchSimulation';
+import { simulateTickMatch } from '../engine/tickEngine/sim';
 import {
   CLUBS_PER_DIVISION, LEAGUES, SEASON_ROUNDS, WINTER_BREAK, getLeague, isPhantomLeague,
   leagueAbove, leagueIdForDivision, leagueName,
@@ -227,5 +228,69 @@ assert(
   state.lineup.every((id) => id === null || !!state.players[id]),
   'the lineup still holds a retired player'
 );
+
+// --- Phase 4: the match engine core ----------------------------------------
+// Three assertions from the plan: goals/game in the 2.4–3.2 band, no single
+// shot ever worth more than a certain goal, and no NaN rating anywhere after a
+// full simulated season.
+{
+  let goals = 0;
+  let matches = 0;
+  let maxShotXG = 0;
+  let shots = 0;
+  const clubIds = state.clubs.filter((c) => !c.dormant).map((c) => c.id);
+  for (let i = 0; i < 400; i++) {
+    const homeId = clubIds[(i * 7) % clubIds.length];
+    const awayId = clubIds[(i * 13 + 3) % clubIds.length];
+    if (homeId === awayId) continue;
+    const rep = simulateMatch(state, homeId, awayId);
+    goals += rep.homeGoals + rep.awayGoals;
+    matches++;
+    assert(Number.isFinite(rep.homeXG) && Number.isFinite(rep.awayXG), `non-finite team xG in ${homeId} v ${awayId}`);
+    for (const e of rep.events) {
+      if (e.xg === undefined) continue;
+      shots++;
+      assert(Number.isFinite(e.xg), `non-finite shot xG at minute ${e.minute}`);
+      assert(e.xg <= 1.0, `shot xG ${e.xg} exceeds 1.0 (${e.archetype} at ${e.gx}m)`);
+      maxShotXG = Math.max(maxShotXG, e.xg);
+    }
+  }
+  // Headless reports only carry goal events; run a handful of full
+  // (visualised) matches too so every shot's coordinates and xG are checked.
+  for (let i = 0; i < 20; i++) {
+    const homeId = clubIds[(i * 5) % clubIds.length];
+    const awayId = clubIds[(i * 11 + 1) % clubIds.length];
+    if (homeId === awayId) continue;
+    const tl = simulateTickMatch(state, homeId, awayId);
+    for (const e of tl.events) {
+      if (e.xg === undefined) continue;
+      shots++;
+      assert(Number.isFinite(e.xg), `non-finite shot xG at minute ${e.minute}`);
+      assert(e.xg <= 1.0, `shot xG ${e.xg} exceeds 1.0 (${e.archetype})`);
+      assert(Number.isFinite(e.gx!) && Number.isFinite(e.gy!), 'shot event is missing pitch coordinates');
+      assert(e.gx! >= 0 && e.gx! <= 40 && Math.abs(e.gy!) <= 25, `shot coordinates off the pitch: ${e.gx}, ${e.gy}`);
+      maxShotXG = Math.max(maxShotXG, e.xg);
+    }
+  }
+  const perGame = goals / matches;
+  console.log(`\nMatch engine: ${matches} matches, ${perGame.toFixed(2)} goals/game, ${shots} shots logged, max shot xG ${maxShotXG.toFixed(3)}.`);
+  assert(perGame >= 2.4 && perGame <= 3.2, `goals/game ${perGame.toFixed(2)} is outside the 2.4–3.2 band`);
+  assert(maxShotXG <= 1.0, `a shot was worth ${maxShotXG} xG — above a certain goal`);
+}
+
+// No NaN in any player rating (or the season rating average) after five seasons.
+{
+  const bad = Object.values(state.players).filter(
+    (p) => !Number.isFinite(p.rating) || !Number.isFinite(p.potential) || !Number.isFinite(p.fitness)
+      || !Number.isFinite(p.sharpness) || !Number.isFinite(p.seasonRatingSum ?? 0)
+  );
+  assert(bad.length === 0, `${bad.length} player(s) carry a non-finite rating/condition value, e.g. ${bad[0]?.name}`);
+  const avgBad = Object.values(state.players).filter((p) => {
+    const c = p.seasonRatingCount ?? 0;
+    return c > 0 && !Number.isFinite((p.seasonRatingSum ?? 0) / c);
+  });
+  assert(avgBad.length === 0, `${avgBad.length} player(s) have a NaN season average rating`);
+  console.log(`  No NaN in any of ${Object.keys(state.players).length} player ratings after a full simulated season.`);
+}
 
 console.log('\n✓ ALL SMOKE TESTS PASSED');
