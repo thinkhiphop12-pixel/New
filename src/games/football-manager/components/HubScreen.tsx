@@ -11,8 +11,13 @@ import TableScreen from './TableScreen';
 import FixturesScreen from './FixturesScreen';
 import CupScreen from './CupScreen';
 import ClubScreen from './ClubScreen';
+import ScoutScreen from './ScoutScreen';
+import FacilitiesScreen from './FacilitiesScreen';
+import FinancesScreen from './FinancesScreen';
+import EuropeanScreen from './EuropeanScreen';
+import TrainingScreen from './TrainingScreen';
 
-type Tab = 'hub' | 'inbox' | 'squad' | 'tactics' | 'transfers' | 'table' | 'fixtures' | 'cups' | 'club';
+type Tab = 'hub' | 'inbox' | 'squad' | 'tactics' | 'transfers' | 'table' | 'fixtures' | 'cups' | 'club' | 'scout' | 'facilities' | 'finances' | 'european' | 'training';
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'hub', label: 'Hub', icon: '🏠' },
@@ -20,10 +25,15 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'squad', label: 'Squad', icon: '👥' },
   { id: 'tactics', label: 'Tactics', icon: '📐' },
   { id: 'transfers', label: 'Transfers', icon: '💰' },
+  { id: 'scout', label: 'Scout', icon: '🔍' },
   { id: 'table', label: 'Table', icon: '📊' },
   { id: 'fixtures', label: 'Fixtures', icon: '📅' },
   { id: 'cups', label: 'Cups', icon: '🏆' },
-  { id: 'club', label: 'Club', icon: '🏟️' },
+  { id: 'training', label: 'Training', icon: '🏋️' },
+  { id: 'facilities', label: 'Facilities', icon: '🏗️' },
+  { id: 'finances', label: 'Finances', icon: '💵' },
+  { id: 'european', label: 'European', icon: '🌍' },
+  { id: 'club', label: 'Club', icon: '🏢' },
 ];
 
 export default function HubScreen({
@@ -76,9 +86,14 @@ export default function HubScreen({
       {tab === 'squad' && <SquadScreen state={state} onChange={onChange} />}
       {tab === 'tactics' && <TacticsScreen state={state} onChange={onChange} />}
       {tab === 'transfers' && <TransfersScreen state={state} onChange={onChange} />}
+      {tab === 'scout' && <ScoutScreen state={state} onChange={onChange} />}
       {tab === 'table' && <TableScreen state={state} />}
       {tab === 'fixtures' && <FixturesScreen state={state} />}
       {tab === 'cups' && <CupScreen state={state} />}
+      {tab === 'training' && <TrainingScreen state={state} onChange={onChange} />}
+      {tab === 'facilities' && <FacilitiesScreen state={state} onChange={onChange} />}
+      {tab === 'finances' && <FinancesScreen state={state} />}
+      {tab === 'european' && <EuropeanScreen state={state} />}
       {tab === 'club' && <ClubScreen state={state} onChange={onChange} />}
     </div>
   );
