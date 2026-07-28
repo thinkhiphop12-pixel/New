@@ -128,7 +128,18 @@ function ensureConsentBanner(){
       #consentBanner button{cursor:pointer;font-weight:700;font-size:13px;border-radius:10px;
         padding:9px 16px;border:1px solid transparent;font-family:inherit;}
       #consentBanner .btn-primary{background:linear-gradient(135deg,#2ab248,#12b380);color:#052411;}
-      #consentBanner .btn-ghost{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:#fff;}`;
+      #consentBanner .btn-ghost{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:#fff;}
+      /* Short viewports — chiefly a phone held in landscape, where the full
+         banner covered ~60% of the screen and sat over the page's own
+         controls. Go single-row and cap the height so the page stays usable
+         while the choice is pending. */
+      @media (max-height:560px){
+        #consentBanner{bottom:8px;width:min(96vw,720px);padding:10px 12px;border-radius:12px;
+          display:flex;align-items:center;gap:12px;max-height:40vh;overflow-y:auto;}
+        #consentBanner .consent-text{font-size:12px;line-height:1.4;margin:0;flex:1;min-width:0;}
+        #consentBanner .consent-actions{flex-wrap:nowrap;flex:0 0 auto;gap:8px;}
+        #consentBanner button{padding:7px 12px;font-size:12px;white-space:nowrap;}
+      }`;
     document.head.appendChild(style);
   }
   const banner = document.createElement('div');
