@@ -9,7 +9,7 @@
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build && npm run build:gaffa && npm run postbuild",
     "build:gaffa": "bash src/games/football-manager/scripts/export-static.sh",
-    "postbuild": "node scripts/postbuild.js",
+    "postbuild": "node scripts/postbuild.js && node scripts/verify-out.js",
     "start": "next start",
     "dev:game": "npm -w src/games/football-manager run dev",
     "build:game": "npm -w src/games/football-manager run build",

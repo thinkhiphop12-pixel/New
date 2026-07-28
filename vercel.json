@@ -1,8 +1,8 @@
 {
   "framework": null,
-  "buildCommand": null,
-  "installCommand": null,
-  "outputDirectory": ".",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "outputDirectory": "out",
   "redirects": [
     { "source": "/DraftXI/:path*", "destination": "/perfect-cup/:path*", "permanent": true },
     { "source": "/football-manager/:path*", "destination": "/gaffa/:path*", "permanent": true }
