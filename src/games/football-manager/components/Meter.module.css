@@ -1,0 +1,58 @@
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  white-space: nowrap;
+}
+
+.value {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.bandName {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.track {
+  height: 4px;
+  border-radius: var(--r-sm);
+  background: var(--panel-3);
+  border: 1px solid var(--border-soft);
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: var(--r-sm);
+}
+
+.red { color: var(--red); }
+.gold { color: var(--gold-2); }
+.green { color: var(--green); }
+
+.track .fill.red { background: var(--red); }
+.track .fill.gold { background: var(--gold-2); }
+.track .fill.green { background: var(--green); }

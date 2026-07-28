@@ -277,6 +277,32 @@ export function userPosition(state: GameState): number {
   return table.findIndex((r) => r.clubId === state.userClubId) + 1;
 }
 
+/** Current league position (1-based) of any club in its own division's table. */
+export function clubPosition(state: GameState, clubId: number): number {
+  const club = state.clubs.find((c) => c.id === clubId);
+  if (!club) return 0;
+  const table = computeTable(state, club.division);
+  return table.findIndex((r) => r.clubId === clubId) + 1;
+}
+
+/** A club's last n played results (most-recent-first), derived from its division fixtures. */
+export function lastResults(state: GameState, clubId: number, n: number): ('W' | 'D' | 'L')[] {
+  const club = state.clubs.find((c) => c.id === clubId);
+  if (!club) return [];
+  const fixtures = divisionFixtures(state, club.division)
+    .filter((f) => f.played && (f.homeId === clubId || f.awayId === clubId))
+    .sort((a, b) => b.round - a.round);
+  const out: ('W' | 'D' | 'L')[] = [];
+  for (const f of fixtures) {
+    if (out.length >= n) break;
+    const isHome = f.homeId === clubId;
+    const gf = isHome ? f.homeGoals : f.awayGoals;
+    const ga = isHome ? f.awayGoals : f.homeGoals;
+    out.push(gf > ga ? 'W' : gf < ga ? 'L' : 'D');
+  }
+  return out;
+}
+
 export function seasonOver(state: GameState): boolean {
   return state.week > SEASON_ROUNDS;
 }
