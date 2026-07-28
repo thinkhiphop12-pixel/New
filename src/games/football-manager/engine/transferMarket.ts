@@ -1,7 +1,7 @@
 import type { GameState, Player, Position, TransferOffer } from './types';
 import { MAX_SQUAD_SIZE, MIN_SQUAD_SIZE } from './gameRules';
 import { availableSquad, getSquad, isOnLoan, squadAvgRating } from './teamManagement';
-import { clamp, weeklyWage } from './utils';
+import { clamp, contractEndFor, weeklyWage } from './utils';
 import { pushInbox } from './inbox';
 
 /** What another club (or agent) wants for a player. */
@@ -41,6 +41,7 @@ export function buyPlayer(state: GameState, playerId: number): GameState {
   mine.playerIds.push(playerId);
   p.clubId = s.userClubId;
   p.contractYears = 3;
+  p.contractEnd = contractEndFor(s.seasonYear, 3);
   delete p.onLoanUntil;
   s.budget -= price;
   s.chemistry = clamp(s.chemistry - 6, 0, 100); // new faces take time to gel
@@ -104,6 +105,7 @@ export function renewContract(state: GameState, playerId: number): GameState {
   const sp = s.players[playerId];
   sp.wage = Math.round((sp.wage * 1.2) / 100) * 100;
   sp.contractYears += 3;
+  sp.contractEnd = contractEndFor(s.seasonYear, sp.contractYears);
   s.budget -= bonus;
   s.ledger.unshift({ week: s.week, desc: `${sp.name} contract bonus`, amount: -bonus });
   s.news.unshift(`${sp.name} signs a new deal (${sp.contractYears}y, ${money(sp.wage)}/w).`);
@@ -233,6 +235,7 @@ export function aiWeeklyTransfers(s: GameState): string[] {
     if (!pick) continue;
     pick.clubId = club.id;
     pick.contractYears = 2;
+    pick.contractEnd = contractEndFor(s.seasonYear, 2);
     club.playerIds.push(pick.id);
     freeAgents.splice(freeAgents.indexOf(pick), 1);
     if (pick.rating >= clubAvg + 2) headlines.push(`${club.name} snap up free agent ${pick.name}.`);

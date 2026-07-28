@@ -10,7 +10,7 @@ import {
 } from './gameRules';
 import { matchRatings, simulateMatch } from './matchSimulation';
 import { autoPickLineup, getSquad, isLineupValid, isOnLoan, squadAvgRating } from './teamManagement';
-import { clamp, marketValue, pickRandom, weeklyWage } from './utils';
+import { clamp, contractEndFor, marketValue, pickRandom, rollRetireAge, weeklyWage } from './utils';
 import { aiWeeklyTransfers, generateWeeklyOffers } from './transferMarket';
 import { clubRunName, createKnockout, isClubAlive, knockoutRoundDue, playKnockoutRound, roundName, tieWinner, userTieThisRound } from './cups';
 import { pushInbox } from './inbox';
@@ -131,13 +131,16 @@ const YOUTH_FIRST = ['Alfie', 'Ben', 'Callum', 'Dan', 'Eli', 'Finn', 'George', '
 const YOUTH_LAST = ['Abbott', 'Barnes', 'Clarke', 'Dawson', 'Ellis', 'Foster', 'Grant', 'Hayes', 'Ingram', 'Jennings', 'Kerr', 'Lowe', 'Mercer', 'Nolan', 'Osborne', 'Price', 'Quinn', 'Reid', 'Shaw', 'Turner'];
 const YOUTH_ROLES: [Position, string][] = [['GK', 'GK'], ['DEF', 'CB'], ['DEF', 'RB'], ['MID', 'CM'], ['MID', 'CAM'], ['FWD', 'ST'], ['FWD', 'LW']];
 
-function makeYouthPlayer(id: number, clubId: number, academyLevel: number): Player {
+function makeYouthPlayer(id: number, clubId: number, academyLevel: number, seasonYear = 2026): Player {
   const [pos, role] = pickRandom(YOUTH_ROLES);
   const base = 52 + academyLevel * 4;
   const rating = base + Math.floor(Math.random() * 9);
   const age = 16 + Math.floor(Math.random() * 3);
   const stat = () => clamp(rating - 6 + Math.floor(Math.random() * 14), 30, 90);
   const value = marketValue(rating, age);
+  // Academy kids are raw: a better academy finds bigger ceilings, and the gap
+  // above their current rating is what makes them worth playing.
+  const potential = Math.min(99, rating + 8 + academyLevel * 2 + Math.floor(Math.random() * 12));
   return {
     id,
     name: `${pickRandom(YOUTH_FIRST)} ${pickRandom(YOUTH_LAST)}`,
@@ -145,7 +148,12 @@ function makeYouthPlayer(id: number, clubId: number, academyLevel: number): Play
     pos,
     role,
     rating,
+    potential,
     pac: stat(), sho: stat(), pas: stat(), dri: stat(), def: stat(), phy: stat(),
+    gkReflexes: pos === 'GK' ? stat() : 5 + Math.floor(Math.random() * 15),
+    gkPositioning: pos === 'GK' ? stat() : 5 + Math.floor(Math.random() * 15),
+    height: pos === 'GK' ? 185 + Math.floor(Math.random() * 15) : 168 + Math.floor(Math.random() * 24),
+    altPos: [],
     age,
     value,
     wage: weeklyWage(value, rating),
@@ -153,8 +161,24 @@ function makeYouthPlayer(id: number, clubId: number, academyLevel: number): Play
     form: 1,
     injuryWeeks: 0,
     contractYears: 3,
+    contractEnd: contractEndFor(seasonYear, 3),
+    releaseClause: 0,
+    loyal: Math.random() < 0.8, // academy graduates start out attached to the club
+    transferListed: false,
+    wantsMove: false,
+    promisedStatus: null,
+    retireAge: rollRetireAge(pos === 'GK'),
+    morale: 70 + Math.floor(Math.random() * 20),
+    fitness: 90 + Math.floor(Math.random() * 11),
+    sharpness: 50 + Math.floor(Math.random() * 20),
+    chem: 60 + Math.floor(Math.random() * 20),
     apps: 0,
     goals: 0,
+    assists: 0,
+    cleanSheets: 0,
+    saves: 0,
+    lgApps: 0,
+    lgGoals: 0,
     career: [],
   };
 }
@@ -163,14 +187,29 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
   const clubs: Club[] = data.clubs.map((c) => ({ ...c, playerIds: [...c.playerIds] }));
   const players: GameState['players'] = {};
   for (const p of data.players) {
+    const years = 1 + (p.id % 4);
     players[p.id] = {
       ...p,
       wage: p.wage ?? weeklyWage(p.value, p.rating),
       form: 1,
       injuryWeeks: 0,
-      contractYears: 1 + (p.id % 4),
+      contractYears: years,
+      contractEnd: contractEndFor(seasonYear, years),
+      transferListed: Math.random() < 0.03,
+      wantsMove: false,
+      promisedStatus: null,
+      morale: 65 + Math.floor(Math.random() * 31),
+      fitness: 75 + Math.floor(Math.random() * 26),
+      sharpness: 60 + Math.floor(Math.random() * 31),
+      // Seeded squads read as established sides with a few newer faces.
+      chem: 55 + Math.floor(Math.random() * 36),
       apps: 0,
       goals: 0,
+      assists: 0,
+      cleanSheets: 0,
+      saves: 0,
+      lgApps: 0,
+      lgGoals: 0,
       career: [],
       seasonRatingSum: 0,
       seasonRatingCount: 0,
@@ -179,7 +218,7 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
 
   const userClub = clubs.find((c) => c.id === userClubId)!;
   const state: GameState = {
-    version: 2,
+    version: 3,
     userClubId,
     seasonYear,
     week: 1,
@@ -840,13 +879,24 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
   s.manager.reputation = clamp(s.manager.reputation + (objectiveMet ? 3 : -4) + (relegated ? -5 : 0), 0, 100);
   s.board.confidence = clamp(s.board.confidence + (objectiveMet ? 20 : -20), 1, 99);
 
-  // Career history entries, then reset season stats.
+  // Career history entries, then reset season stats. Minutes and average match
+  // rating are captured first because development (below) is earned on the
+  // pitch, and the counters are about to be zeroed for the new season.
   const clubNameOf = (id: number) => (id === 0 ? 'Free agent' : s.clubs.find((c) => c.id === id)?.name ?? '—');
+  const seasonApps = new Map<number, number>();
+  const seasonAvgRating = new Map<number, number>();
   for (const p of Object.values(s.players)) {
+    seasonApps.set(p.id, p.apps);
+    if (p.seasonRatingCount) seasonAvgRating.set(p.id, p.seasonRatingSum! / p.seasonRatingCount);
     if (p.apps > 0) p.career.push({ year: s.seasonYear, club: clubNameOf(p.clubId), apps: p.apps, goals: p.goals });
     if (p.career.length > 12) p.career = p.career.slice(-12);
     p.apps = 0;
     p.goals = 0;
+    p.assists = 0;
+    p.cleanSheets = 0;
+    p.saves = 0;
+    p.lgApps = 0;
+    p.lgGoals = 0;
     p.seasonRatingSum = 0;
     p.seasonRatingCount = 0;
   }
@@ -856,22 +906,27 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     if (p.onLoanUntil !== undefined && p.onLoanUntil <= s.seasonYear + 1) {
       delete p.onLoanUntil;
       if (p.clubId === s.userClubId && p.age <= 23) {
-        p.rating = Math.min(94, p.rating + 2);
+        // A loan spell can push a youngster on, but never past his ceiling.
+        p.rating = Math.min(p.potential, p.rating + 2);
         s.news.unshift(`${p.name} returns from loan a better player (${p.rating} OVR).`);
       }
     }
   }
 
   // Contracts: everyone loses a year; expired user players leave, AI auto-renews.
+  // `contractEnd` is the display-facing truth (a real 31 Jan / 30 Jun date), so
+  // it is re-derived wherever `contractYears` moves.
   for (const p of Object.values(s.players)) {
     if (p.clubId === 0) continue;
     p.contractYears = Math.max(0, p.contractYears - 1);
+    p.contractEnd = contractEndFor(s.seasonYear + 1, p.contractYears);
     if (p.contractYears === 0) {
       if (p.clubId === s.userClubId) {
         const club = s.clubs.find((c) => c.id === p.clubId)!;
         if (club.playerIds.length <= 15) {
           // Can't afford to lose him with the squad this thin — a grudging 1-year deal.
           p.contractYears = 1;
+          p.contractEnd = contractEndFor(s.seasonYear + 1, 1);
           s.news.unshift(`${p.name} agrees a short one-year extension.`);
           pushInbox(s, {
             category: 'contract',
@@ -892,6 +947,7 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
         });
       } else {
         p.contractYears = 2 + Math.floor(Math.random() * 3);
+        p.contractEnd = contractEndFor(s.seasonYear + 1, p.contractYears);
       }
     }
   }
@@ -900,7 +956,7 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
   const intakeCount = s.academyLevel >= 3 ? 2 : 1;
   for (let i = 0; i < intakeCount; i++) {
     if (userClub.playerIds.length >= MAX_SQUAD_SIZE) break;
-    const kid = makeYouthPlayer(s.nextPlayerId++, s.userClubId, s.academyLevel);
+    const kid = makeYouthPlayer(s.nextPlayerId++, s.userClubId, s.academyLevel, s.seasonYear);
     s.players[kid.id] = kid;
     userClub.playerIds.push(kid.id);
     s.news.unshift(`Academy graduate ${kid.name} (${kid.role}, ${kid.rating} OVR) joins the first team.`);
@@ -912,14 +968,88 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     });
   }
 
-  // Ageing: youngsters develop, veterans decline, values move with both.
+  // Ageing, development and retirement.
+  //
+  // Development converges on `potential` rather than running a flat +1 per
+  // season under 24. How fast a player closes that gap is earned on the pitch:
+  // his age band sets the base rate, minutes and average match rating scale it,
+  // and how much ceiling is left scales it again (a 17-year-old 20 points short
+  // is a different animal from a 22-year-old two points short). Nobody ever
+  // passes his ceiling. Past 30 there is no potential left — what he is now is
+  // what he is — so `potential` is pulled down to `rating` and only decline
+  // remains. Rates are ported from their tickPlayerDevelopment, rescaled from
+  // per-week rolls to one per-season expectation.
+  const retired: Player[] = [];
   for (const p of Object.values(s.players)) {
     p.age++;
-    if (p.age <= 23) p.rating = Math.min(94, p.rating + 1);
-    else if (p.age >= 31) p.rating = Math.max(48, p.rating - (p.age >= 34 ? 2 : 1));
+
+    if (p.age >= p.retireAge) {
+      retired.push(p);
+      continue;
+    }
+
+    if (p.age >= 30) {
+      // Development is over; close any advertised upside outright.
+      p.potential = p.rating;
+      if (p.age >= 31) p.rating = Math.max(48, p.rating - (p.age >= 34 ? 2 : 1));
+    } else if (p.rating < p.potential) {
+      const headroom = p.potential - p.rating;
+      // Expected OVR points gained this season, weighted hard toward youth.
+      const base = p.age <= 17 ? 3.0 : p.age <= 19 ? 2.5 : p.age <= 21 ? 1.9
+        : p.age <= 23 ? 1.2 : p.age <= 25 ? 0.6 : p.age <= 27 ? 0.32 : 0.16;
+      const apps = seasonApps.get(p.id) ?? 0;
+      // Minutes are the single biggest lever for a young player; the spread
+      // narrows with age because a 27-year-old isn't learning much either way.
+      const playTime = p.age > 23
+        ? (apps <= 0 ? 0.45 : Math.min(1.4, 0.8 + (apps / SEASON_ROUNDS) * 0.55))
+        : (apps <= 0 ? 0.17 : Math.min(1.95, 0.46 + (apps / SEASON_ROUNDS) * 1.08));
+      const avg = seasonAvgRating.get(p.id);
+      // 6.5 is par; youngsters ride their form harder.
+      const formMult = avg === undefined
+        ? 1
+        : clamp(1 + (avg - 6.5) * (p.age <= 23 ? 0.34 : 0.25), 0.72, 1.55);
+      const headroomMult = p.age > 23
+        ? clamp(0.7 + headroom * 0.07, 0.7, 1.4)
+        : clamp(0.65 + headroom * 0.085, 0.65, 1.85);
+      const expected = base * playTime * formMult * headroomMult;
+      // Fractional part becomes the odds of one further point, so slow burners
+      // still climb over several seasons instead of being rounded to nothing.
+      const gain = Math.floor(expected) + (Math.random() < expected % 1 ? 1 : 0);
+      p.rating = Math.min(p.potential, p.rating + gain);
+    } else if (p.age <= 23) {
+      // A prospect who has already maxed out shouldn't stop dead at 20 — his
+      // ceiling occasionally creeps up instead. (Their same fix, per season.)
+      if (Math.random() < (p.age <= 20 ? 0.35 : 0.2)) p.potential = Math.min(99, p.potential + 1);
+    }
+
+    p.potential = Math.min(99, Math.max(p.potential, p.rating));
     p.value = marketValue(p.rating, p.age);
     p.form = 1;
     p.injuryWeeks = 0;
+    p.fitness = 100;
+    p.sharpness = clamp(p.sharpness, 50, 75);
+  }
+
+  // Retirees leave the squad and the player pool entirely — every reference to
+  // them has to go with them or the lineup/offers point at ghosts.
+  for (const p of retired) {
+    const club = s.clubs.find((c) => c.id === p.clubId);
+    if (club) club.playerIds = club.playerIds.filter((id) => id !== p.id);
+    if (p.clubId === s.userClubId) {
+      s.news.unshift(`${p.name} retires at ${p.age} after ${p.career.length} recorded seasons.`);
+      pushInbox(s, {
+        category: 'club',
+        title: `${p.name} announces his retirement`,
+        body: `${p.name} has hung up his boots at ${p.age}.\n\nHis place in the squad is now free — the board expects a replacement to be found.`,
+        playerId: p.id,
+      });
+    }
+    delete s.players[p.id];
+  }
+  if (retired.length) {
+    s.lineup = s.lineup.map((id) => (id !== null && !s.players[id] ? null : id));
+    if (s.captainId != null && !s.players[s.captainId]) s.captainId = null;
+    s.incomingOffers = s.incomingOffers.filter((o) => s.players[o.playerId]);
   }
 
   // Job offers: rescue jobs when sacked, step-up offers after a strong season.

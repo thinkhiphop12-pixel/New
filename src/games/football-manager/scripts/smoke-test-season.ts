@@ -12,7 +12,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { GameData } from '../engine/types';
-import { newGame, playRound, seasonOver, computeTable, userDivision, ALL_DIVISIONS, divisionFixtures } from '../engine/seasonProgression';
+import { newGame, playRound, seasonOver, computeTable, userDivision, endSeason, ALL_DIVISIONS, divisionFixtures } from '../engine/seasonProgression';
 import { simulateMatch } from '../engine/matchSimulation';
 import { CLUBS_PER_DIVISION, SEASON_ROUNDS, DIVISION_NAMES } from '../engine/gameRules';
 
@@ -82,5 +82,45 @@ for (const d of ALL_DIVISIONS) {
   const totalPlayed = table.reduce((s, r) => s + r.played, 0);
   assert(totalPlayed === CLUBS_PER_DIVISION * (2 * (CLUBS_PER_DIVISION - 1)), `division ${d} table games-played total looks wrong: ${totalPlayed}`);
 }
+
+// --- Phase 1: development converges on potential, and players retire --------
+// Five seasons is long enough for the youngest prospects to close a real slice
+// of their gap and for the oldest pros to reach their rolled retirement age.
+const idsAtStart = new Set(Object.keys(state.players).map(Number));
+for (let season = 2; season <= 5; season++) {
+  state = endSeason(state).state;
+  while (!seasonOver(state)) {
+    const div = userDivision(state);
+    const fx = divisionFixtures(state, div).find(
+      (f) => f.round === state.week && (f.homeId === state.userClubId || f.awayId === state.userClubId)
+    );
+    const report = fx
+      ? simulateMatch(state, fx.homeId, fx.awayId)
+      : { homeId: 0, awayId: 0, homeGoals: 0, awayGoals: 0, events: [], playerRatings: {} };
+    state = playRound(state, report as any);
+  }
+}
+state = endSeason(state).state;
+
+const overCeiling = Object.values(state.players).filter((p) => p.rating > p.potential);
+console.log(`\nAfter 5 seasons: ${Object.keys(state.players).length} players in the pool, ${overCeiling.length} above their potential.`);
+assert(
+  overCeiling.length === 0,
+  `${overCeiling.length} player(s) developed past their potential, e.g. ${overCeiling[0]?.name} ${overCeiling[0]?.rating}/${overCeiling[0]?.potential}`
+);
+
+const retiredCount = [...idsAtStart].filter((id) => !state.players[id]).length;
+console.log(`  ${retiredCount} of the original ${idsAtStart.size} players have retired.`);
+assert(retiredCount > 0, 'no player retired across 5 seasons — retirement is not firing');
+
+// A retiree must be gone everywhere, not just from the players map.
+for (const club of state.clubs) {
+  const ghosts = club.playerIds.filter((id) => !state.players[id]);
+  assert(ghosts.length === 0, `${club.name} still lists ${ghosts.length} retired player id(s) in its squad`);
+}
+assert(
+  state.lineup.every((id) => id === null || !!state.players[id]),
+  'the lineup still holds a retired player'
+);
 
 console.log('\n✓ ALL SMOKE TESTS PASSED');
