@@ -1,5 +1,63 @@
 export type Position = 'GK' | 'DEF' | 'MID' | 'FWD';
+
+/** Legacy division number, kept only for the raw dataset (gamedata.json) and
+ *  the pre-v4 save migration. Live game state keys off `LeagueDef.id`. */
 export type Division = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+
+/**
+ * One league in the pyramid. Structure, promotion/relegation counts, UEFA slot
+ * allocation and TV equal share are ported from the reference implementation;
+ * see LEAGUES in engine/gameRules.ts.
+ */
+export interface LeagueDef {
+  id: string;
+  name: string;
+  country: string;
+  /** 1 = top flight of its country. */
+  level: number;
+  /** How many clubs the league holds. */
+  clubCount: number;
+  /** Times every club plays every other club (2 = normal double round-robin,
+   *  3 = Scottish Premiership pre-split, 4 = Scottish Championship). */
+  rounds: number;
+  /** Scotland only: after `rounds` full rounds the league splits into a top
+   *  and bottom half of this size, who play each other once more and cannot
+   *  cross the split. */
+  splitSize?: number;
+  /** Clubs promoted automatically from the top of the table. */
+  autoPromotion: number;
+  /** Clubs entering the promotion play-off bracket, below the auto spots. */
+  playoffSpots: number;
+  /** Clubs relegated automatically from the bottom of the table. */
+  relegation: number;
+  /** Set on the UPPER league: id of the league below whose qualifier its
+   *  lowest safe club faces (Bundesliga Relegationsspiele, Ligue 1 barrage). */
+  interPlayoff?: string;
+  /** Set on the LOWER league: id of the league above it feeds a challenger to. */
+  interPlayoffFeeder?: string;
+  /** How many clubs below the auto-promotion spots contest that challenger
+   *  place (1 = straight into the tie, 3 = a 3rd–5th mini bracket). */
+  interPlayoffFeederSpots?: number;
+  /** UEFA slot allocation. */
+  championsLeague: number;
+  clPlayoff: number;
+  europaLeague: number;
+  conferenceLeague: number;
+  /** Broadcast equal share, £m per club per season. */
+  tvEqualShare: number;
+
+  /* --- engine extensions (not in the reference's own LEAGUES map) --------- */
+  /** Not simulated: no fixtures, hidden from the UI. Exists as a dormant pool
+   *  feeding the league above with promotion/relegation churn. */
+  phantom?: boolean;
+  /** Transfer budget a club in this league starts with. */
+  startingBudget: number;
+  /** Weekly gate income baseline. */
+  gateBase: number;
+  /** Prize money for finishing 1st, and the reduction per place below that. */
+  prizeTop: number;
+  prizeStep: number;
+}
 
 /** One season of a player's career, recorded at season end. */
 export interface CareerEntry {
@@ -85,6 +143,20 @@ export interface Player {
 }
 
 export interface Club {
+  id: number;
+  name: string;
+  code: string;
+  color: string;
+  /** LeagueDef.id this club is registered in. Exactly one, always. */
+  leagueId: string;
+  playerIds: number[];
+  /** Dormant club sitting in a phantom league's pool — no fixtures, no
+   *  transfer activity, waiting to rotate up. */
+  dormant?: boolean;
+}
+
+/** A club as it appears in the raw dataset, still keyed by division number. */
+export interface DataClub {
   id: number;
   name: string;
   code: string;
@@ -228,7 +300,7 @@ export interface JobOffer {
 
 export interface ClubRecords {
   biggestWin: { text: string; margin: number } | null;
-  bestFinish: { year: number; division: Division; position: number } | null;
+  bestFinish: { year: number; leagueId: string; level: number; position: number } | null;
   topSeasonScorer: { name: string; goals: number; year: number } | null;
 }
 
@@ -241,7 +313,7 @@ export interface LegacyEntry {
 
 export interface SeasonSummary {
   year: number;
-  division: Division;
+  leagueId: string;
   position: number;
   pts: number;
   champions: boolean;
@@ -272,7 +344,7 @@ export interface DualFormation {
 }
 
 export interface GameState {
-  version: 3;
+  version: 4;
   userClubId: number;
   seasonYear: number;
   /** Next round to be played, 1..SEASON_ROUNDS. > SEASON_ROUNDS means season over. */
@@ -308,7 +380,18 @@ export interface GameState {
   nextPlayerId: number; // for youth academy generation
   players: Record<number, Player>;
   clubs: Club[];
-  fixtures: { d1: Fixture[]; d2: Fixture[]; d3: Fixture[]; d4: Fixture[]; d5: Fixture[]; d6: Fixture[]; d7: Fixture[]; d8: Fixture[]; d9: Fixture[]; d10: Fixture[] };
+  /** League fixtures keyed by LeagueDef.id. Phantom leagues hold none. */
+  fixtures: Record<string, Fixture[]>;
+  /** Dormant club ids queued in each phantom league's pool, front first. */
+  phantomPools?: Record<string, number[]>;
+  /** For split leagues: the frozen [top half, bottom half] club ids, once the
+   *  pre-split programme has finished. Clubs cannot cross the split. */
+  splitGroups?: Record<string, number[][]>;
+  /** Set when the user's club drops out of the bottom of the pyramid the game
+   *  simulates — there is nowhere lower to send them. */
+  relegatedOutOfPyramid?: boolean;
+  /** Next id for a generated filler club. */
+  nextClubId?: number;
   incomingOffers: TransferOffer[];
   history: SeasonSummary[];
   news: string[];
@@ -381,7 +464,7 @@ export interface ManagerProfile {
 
 export interface GameData {
   meta: { attribution: string; clubCount: number; playerCount: number };
-  clubs: Club[];
+  clubs: DataClub[];
   players: (Omit<
     Player,
     | 'form' | 'injuryWeeks' | 'contractYears' | 'contractEnd' | 'apps' | 'goals'

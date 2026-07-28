@@ -1,6 +1,8 @@
-import type { GameState, Player } from '@/engine/types';
-import { makeBoardObjective, makeContinental, makeDomesticCup } from '@/engine/seasonProgression';
-import { squadAvgRating } from '@/engine/teamManagement';
+import type { Club, Fixture, GameState, Player } from '@/engine/types';
+import {
+  continentalEntrants, makeBoardObjective, makeContinental, makeDomesticCup, refillPhantomPools,
+} from '@/engine/seasonProgression';
+import { LEAGUES, getLeague, leagueIdForDivision } from '@/engine/gameRules';
 import { contractEndFor, rollRetireAge, weeklyWage } from '@/engine/utils';
 
 /**
@@ -15,16 +17,21 @@ export interface SaveMeta {
   clubName: string;
   seasonYear: number;
   week: number;
-  division: number;
+  leagueId: string;
+  leagueName: string;
   managerName: string;
 }
+
+/** Pre-v4 shapes, kept only so migrate() can read them. */
+type LegacyClub = Club & { division?: number };
+type LegacyFixtures = Record<string, Fixture[]>;
 
 type RawSave = Omit<GameState, 'version'> & { version: number };
 
 /** Upgrade any older save in place to the current shape (idempotent). */
 function migrate(raw: RawSave): GameState {
   const s = raw as unknown as GameState;
-  const stale = raw.version < 3;
+  const stale = raw.version < 4;
   for (const p of Object.values(s.players) as Player[]) {
     p.wage = p.wage ?? weeklyWage(p.value, p.rating);
     p.contractYears = p.contractYears ?? 2;
@@ -103,16 +110,52 @@ function migrate(raw: RawSave): GameState {
   s.nextInboxId = s.nextInboxId ?? (s.inbox.reduce((m, i) => Math.max(m, i.id), 0) + 1);
   s.pressWeek = s.pressWeek ?? 0;
   s.nextPlayerId = s.nextPlayerId ?? Math.max(...Object.keys(s.players).map(Number)) + 1;
+  // --- v4: the league pyramid. Pre-v4 saves key clubs, fixtures, records and
+  // season history off a Division number (1–10); everything now keys off a
+  // LeagueDef id. Map each old division onto the league it became, rebuild the
+  // fixture map under league-id keys, and seed the phantom pools so the first
+  // season end after loading has churn to work with.
+  for (const club of s.clubs as LegacyClub[]) {
+    if (!club.leagueId) club.leagueId = leagueIdForDivision(club.division ?? 1);
+    delete club.division;
+  }
+  const oldFixtures = s.fixtures as LegacyFixtures | undefined;
+  if (oldFixtures && Object.keys(oldFixtures).some((k) => /^d\d+$/.test(k))) {
+    const mapped: GameState['fixtures'] = {};
+    for (const [key, list] of Object.entries(oldFixtures)) {
+      const m = /^d(\d+)$/.exec(key);
+      const id = m ? leagueIdForDivision(Number(m[1])) : key;
+      // Anything that resolves to neither an old division key nor a real
+      // league id is junk from a hand-edited save — drop it rather than
+      // carrying a fixture list nothing will ever play.
+      if (!m && !LEAGUES.some((l) => l.id === key)) continue;
+      mapped[id] = list;
+    }
+    s.fixtures = mapped;
+  }
+  s.fixtures = s.fixtures ?? {};
+  s.splitGroups = s.splitGroups ?? {};
+  s.nextClubId = s.nextClubId ?? Math.max(0, ...s.clubs.map((c) => c.id)) + 1;
+  if (!s.phantomPools) {
+    s.phantomPools = {};
+    refillPhantomPools(s);
+  }
+  const bestFinish = s.records?.bestFinish as (GameState['records']['bestFinish'] & { division?: number }) | null;
+  if (bestFinish && !bestFinish.leagueId) {
+    bestFinish.leagueId = leagueIdForDivision(bestFinish.division ?? 1);
+    bestFinish.level = getLeague(bestFinish.leagueId).level;
+    delete bestFinish.division;
+  }
+  for (const h of s.history ?? []) {
+    const legacy = h as typeof h & { division?: number };
+    if (!legacy.leagueId) legacy.leagueId = leagueIdForDivision(legacy.division ?? 1);
+    delete legacy.division;
+  }
+
   s.board = s.board ?? makeBoardObjective(s);
   s.cup = s.cup ?? makeDomesticCup(s);
-  if (!s.continental) {
-    const d1 = s.clubs
-      .filter((c) => c.division === 1)
-      .sort((a, b) => squadAvgRating(s, b.id) - squadAvgRating(s, a.id))
-      .map((c) => c.id);
-    s.continental = makeContinental(d1);
-  }
-  if (stale) s.version = 3;
+  if (!s.continental) s.continental = makeContinental(continentalEntrants(s));
+  if (stale) s.version = 4;
   return s;
 }
 
@@ -129,7 +172,7 @@ export function loadGame(slot = 0): GameState | null {
     const raw = localStorage.getItem(SLOT_KEYS[slot]);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as RawSave;
-    if (!parsed.userClubId || ![1, 2, 3].includes(parsed.version)) return null;
+    if (!parsed.userClubId || ![1, 2, 3, 4].includes(parsed.version)) return null;
     return migrate(parsed);
   } catch {
     return null;
@@ -155,7 +198,8 @@ export function listSaves(): (SaveMeta | null)[] {
       clubName: club?.name ?? '—',
       seasonYear: s.seasonYear,
       week: s.week,
-      division: club?.division ?? 1,
+      leagueId: club?.leagueId ?? 'premier_league',
+      leagueName: getLeague(club?.leagueId ?? 'premier_league').name,
       managerName: s.manager.name,
     };
   });

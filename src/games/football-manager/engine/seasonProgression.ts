@@ -1,12 +1,14 @@
 import type {
-  Board, Club, Division, Fixture, GameData, GameState, JobOffer, Knockout, MatchReport, Player,
+  Board, Club, Fixture, GameData, GameState, JobOffer, Knockout, LeagueDef, MatchReport, Player,
   Position, SeasonSummary, Staff, TableRow,
 } from './types';
 import {
   ACADEMY_UPGRADE_COST, CONTINENTAL_PRIZES, CONTINENTAL_SPOTS, CONTINENTAL_WEEKS, CUP_PRIZES,
-  CUP_WEEKS, GATE_BASE, MAX_SQUAD_SIZE, MORALE_DRAW, MORALE_LOSS, MORALE_MAX,
-  MORALE_MIN, MORALE_START, MORALE_WIN, PROMOTION_SPOTS, SEASON_ROUNDS, STADIUM_UPGRADE_COST,
-  STAFF_MAX_LEVEL, STAFF_UPGRADE_COST, STAFF_WEEKLY_WAGE, STARTING_BUDGET, getFormation, prizeMoney,
+  CUP_WEEKS, LEAGUES, MAX_SQUAD_SIZE, MORALE_DRAW, MORALE_LOSS, MORALE_MAX,
+  MORALE_MIN, MORALE_START, MORALE_WIN, SEASON_ROUNDS, SIMULATED_LEAGUE_IDS, STADIUM_UPGRADE_COST,
+  STAFF_MAX_LEVEL, STAFF_UPGRADE_COST, STAFF_WEEKLY_WAGE, gateBase, getFormation, getLeague,
+  isPhantomLeague, isWinterBreakWeek, leagueAbove, leagueBelow, leagueIdForDivision, leagueName,
+  prizeMoney, roundToWeek, startingBudget,
 } from './gameRules';
 import { matchRatings, simulateMatch } from './matchSimulation';
 import { autoPickLineup, getSquad, isLineupValid, isOnLoan, squadAvgRating } from './teamManagement';
@@ -17,103 +19,188 @@ import { pushInbox } from './inbox';
 
 export { markInboxRead, markAllInboxRead } from './inbox';
 
-/** Double round-robin fixtures via the circle method. 20 clubs → 38 rounds. */
-export function generateFixtures(clubIds: number[]): Fixture[] {
-  const ids = [...clubIds];
+/**
+ * Single round-robin pairings via the circle method. `startRound` is the round
+ * number the first matchday gets; `flip` swaps home and away for alternating
+ * legs so nobody plays every meeting at home.
+ */
+function roundRobin(ids: number[], startRound: number, flip: boolean): Fixture[] {
   const n = ids.length;
   const half = n - 1;
   const fixtures: Fixture[] = [];
   const arr = ids.slice(1);
   for (let round = 0; round < half; round++) {
-    const pairings: [number, number][] = [];
     const others = [ids[0], ...arr];
     for (let i = 0; i < n / 2; i++) {
       const a = others[i];
       const b = others[n - 1 - i];
-      // Alternate home/away by round so nobody plays 19 straight home games.
-      pairings.push(round % 2 === 0 ? [a, b] : [b, a]);
-    }
-    for (const [homeId, awayId] of pairings) {
-      fixtures.push({ round: round + 1, homeId, awayId, played: false, homeGoals: 0, awayGoals: 0 });
+      const homeFirst = (round % 2 === 0) !== flip;
       fixtures.push({
-        round: round + 1 + half,
-        homeId: awayId,
-        awayId: homeId,
-        played: false,
-        homeGoals: 0,
-        awayGoals: 0,
+        round: startRound + round,
+        homeId: homeFirst ? a : b,
+        awayId: homeFirst ? b : a,
+        played: false, homeGoals: 0, awayGoals: 0,
       });
     }
     arr.unshift(arr.pop()!);
   }
-  return fixtures.sort((a, b) => a.round - b.round);
+  return fixtures;
 }
 
-/** Every division the game supports, in order (English pyramid 1–4, then the
- * standalone top European leagues: La Liga, Serie A, Bundesliga, Ligue 1,
- * Eredivisie, Primeira Liga). */
-export const ALL_DIVISIONS: Division[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-function divisionIds(state: GameState, division: Division): number[] {
-  return state.clubs.filter((c) => c.division === division).map((c) => c.id);
+/**
+ * A league's fixture list: `rounds` full round-robins (2 = home and away,
+ * 3 = the Scottish Premiership's pre-split phase, 4 = the Scottish
+ * Championship). Match rounds are mapped onto calendar weeks by `roundToWeek`,
+ * which steps over the winter break.
+ */
+export function generateLeagueFixtures(clubIds: number[], rounds = 2): Fixture[] {
+  if (clubIds.length < 2) return [];
+  const ids = [...clubIds];
+  const perRobin = ids.length - 1;
+  const out: Fixture[] = [];
+  for (let r = 0; r < rounds; r++) {
+    out.push(...roundRobin(ids, r * perRobin + 1, r % 2 === 1));
+  }
+  for (const f of out) f.round = roundToWeek(f.round);
+  return out.sort((a, b) => a.round - b.round);
 }
 
-/** The league fixture list for any division (1–8). */
-export function divisionFixtures(state: GameState, division: Division): Fixture[] {
-  return state.fixtures[`d${division}` as keyof GameState['fixtures']] ?? [];
+/** Back-compat alias: a plain home-and-away season. */
+export function generateFixtures(clubIds: number[]): Fixture[] {
+  return generateLeagueFixtures(clubIds, 2);
+}
+
+/**
+ * The Scottish split. After the pre-split rounds the table freezes into a top
+ * and bottom half of `splitSize`; each half plays one more round-robin among
+ * itself and clubs cannot cross the split — a club in the bottom half finishes
+ * 7th at best however many points it ends on.
+ */
+export function splitFixtures(topIds: number[], bottomIds: number[], startWeek: number): Fixture[] {
+  const out = [
+    ...roundRobin(topIds, 1, false),
+    ...roundRobin(bottomIds, 1, true),
+  ];
+  // Lay the extra matchdays out on successive non-break calendar weeks.
+  const weeks = new Map<number, number>();
+  let w = startWeek;
+  for (const r of [...new Set(out.map((f) => f.round))].sort((a, b) => a - b)) {
+    while (isWinterBreakWeek(w)) w++;
+    weeks.set(r, w++);
+  }
+  return out.map((f) => ({ ...f, round: weeks.get(f.round)! })).sort((a, b) => a.round - b.round);
+}
+
+/** Every league the game simulates, in pyramid order. */
+export const ALL_LEAGUES: string[] = SIMULATED_LEAGUE_IDS;
+
+/** League ids that actually hold clubs in this save, pyramid order. */
+export function activeLeagueIds(state: Pick<GameState, 'clubs'>): string[] {
+  return ALL_LEAGUES.filter((id) => state.clubs.some((c) => c.leagueId === id && !c.dormant));
+}
+
+export function leagueClubs(state: Pick<GameState, 'clubs'>, leagueId: string): Club[] {
+  return state.clubs.filter((c) => c.leagueId === leagueId && !c.dormant);
+}
+
+/** The league fixture list for any league id. */
+export function leagueFixtures(state: GameState, leagueId: string): Fixture[] {
+  return state.fixtures[leagueId] ?? [];
 }
 
 export function allFixtures(state: GameState): Fixture[][] {
-  return ALL_DIVISIONS.map((d) => divisionFixtures(state, d)).filter((list) => list.length > 0);
+  return Object.values(state.fixtures).filter((list) => list.length > 0);
 }
 
 function makeSeasonFixtures(state: Pick<GameState, 'clubs'>): GameState['fixtures'] {
-  const gen = (d: Division) => {
-    const ids = state.clubs.filter((c) => c.division === d).map((c) => c.id);
-    return ids.length >= 2 ? generateFixtures(ids) : [];
-  };
-  return {
-    d1: gen(1), d2: gen(2), d3: gen(3), d4: gen(4),
-    d5: gen(5), d6: gen(6), d7: gen(7), d8: gen(8),
-    d9: gen(9), d10: gen(10),
-  };
+  const out: GameState['fixtures'] = {};
+  for (const lg of LEAGUES) {
+    if (lg.phantom) continue;
+    const ids = leagueClubs(state, lg.id).map((c) => c.id);
+    // A split league only schedules its pre-split rounds up front; the rest is
+    // generated once the halves are known (see applySplits).
+    out[lg.id] = ids.length >= 2 ? generateLeagueFixtures(ids, lg.rounds) : [];
+  }
+  return out;
 }
 
-/** Board expectations based on the club's squad rank within its division. */
+/**
+ * Generate the post-split round-robins for any split league whose pre-split
+ * programme has finished. Idempotent — a league already split is skipped.
+ */
+export function applySplits(s: GameState): void {
+  s.splitGroups = s.splitGroups ?? {};
+  for (const lg of LEAGUES) {
+    if (lg.phantom || !lg.splitSize) continue;
+    const fixtures = s.fixtures[lg.id];
+    if (!fixtures || !fixtures.length) continue;
+    if (s.splitGroups[lg.id]) continue;
+    if (fixtures.some((f) => !f.played)) continue;
+    const order = computeTable(s, lg.id).map((r) => r.clubId);
+    if (order.length < lg.splitSize * 2) continue;
+    const top = order.slice(0, lg.splitSize);
+    const bottom = order.slice(lg.splitSize);
+    s.splitGroups[lg.id] = [top, bottom];
+    const lastRound = Math.max(...fixtures.map((f) => f.round));
+    s.fixtures[lg.id] = [...fixtures, ...splitFixtures(top, bottom, lastRound + 1)];
+  }
+}
+
+/**
+ * Board expectations from the club's squad rank inside its own league, graded
+ * against that league's real promotion / play-off / relegation shape rather
+ * than a fixed 1–3 up, 22–24 down assumption.
+ */
 export function makeBoardObjective(state: GameState): Board {
   const club = state.clubs.find((c) => c.id === state.userClubId)!;
-  const peers = state.clubs
-    .filter((c) => c.division === club.division)
+  const lg = getLeague(club.leagueId);
+  const peers = leagueClubs(state, club.leagueId)
     .map((c) => ({ id: c.id, avg: squadAvgRating(state, c.id) }))
     .sort((a, b) => b.avg - a.avg);
+  const n = Math.max(peers.length, 1);
   const rank = peers.findIndex((p) => p.id === club.id) + 1;
+  const up = lg.autoPromotion;
+  const po = up + lg.playoffSpots;
+  const safe = n - lg.relegation;
+
   let objective: string;
   let minPosition: number;
-  if (rank <= 2 && club.division === 1) {
+  if (lg.level === 1 && rank <= 2) {
     objective = 'Challenge for the title (finish top 2)';
     minPosition = 2;
-  } else if (rank <= 3 && club.division !== 1) {
-    objective = 'Win promotion (finish top 3)';
-    minPosition = PROMOTION_SPOTS;
-  } else if (rank <= 6) {
+  } else if (up > 0 && rank <= up) {
+    objective = `Win automatic promotion (finish top ${up})`;
+    minPosition = up;
+  } else if (po > up && rank <= po) {
+    objective = `Reach the promotion play-offs (finish top ${po})`;
+    minPosition = po;
+  } else if (lg.level === 1 && rank <= Math.max(4, lg.championsLeague)) {
+    objective = `Qualify for Europe (finish top ${Math.max(4, lg.championsLeague)})`;
+    minPosition = Math.max(4, lg.championsLeague);
+  } else if (rank <= Math.ceil(n / 4)) {
     objective = 'Finish in the top 6';
     minPosition = 6;
-  } else if (rank <= 12) {
+  } else if (rank <= Math.ceil(n / 2)) {
     objective = 'Finish in the top half';
-    minPosition = 10;
+    minPosition = Math.floor(n / 2);
   } else {
     objective = 'Avoid relegation';
-    minPosition = 17;
+    minPosition = Math.max(1, safe);
   }
   return { objective, minPosition, confidence: 60 };
 }
 
 /** Domestic cup for one season: all clubs, byes to square the bracket. */
 export function makeDomesticCup(state: Pick<GameState, 'clubs'>): Knockout {
-  // The BALLKNW Cup is the English knockout — the top three tiers (up to 63
-  // entrants) keep the bracket within the six scheduled CUP_WEEKS. Clubs in the
-  // fourth tier and the European leagues focus on their league campaign.
-  const ids = state.clubs.filter((c) => c.division <= 3).map((c) => c.id);
+  // The BALLKNW Cup is the English knockout — the top three English tiers (up
+  // to 63 entrants) keep the bracket within the six scheduled CUP_WEEKS. The
+  // lower tiers and every foreign league focus on their league campaign.
+  const ids = state.clubs
+    .filter((c) => {
+      const lg = getLeague(c.leagueId);
+      return !c.dormant && lg.country === 'England' && lg.level <= 3;
+    })
+    .map((c) => c.id);
   // Largest power of two ≤ entrants becomes the round-2 field size.
   let bracket = 2;
   while (bracket * 2 <= ids.length) bracket *= 2;
@@ -183,8 +270,133 @@ function makeYouthPlayer(id: number, clubId: number, academyLevel: number, seaso
   };
 }
 
+/* ---------------------------------------------------------------------------
+   PHANTOM POOL CLUBS
+   ---------------------------------------------------------------------------
+   Phantom leagues are not simulated, so a club sitting in one needs no squad
+   until the day it rotates up. Pool clubs are therefore created dormant and
+   squadless, and given a generated squad only at the moment they are promoted
+   into a league the game actually plays (see wakePoolClub). That keeps the
+   save small while still giving every league real promotion churn.
+--------------------------------------------------------------------------- */
+
+const FILLER_ROLES: [Position, string][] = [
+  ['GK', 'GK'], ['GK', 'GK'],
+  ['DEF', 'CB'], ['DEF', 'CB'], ['DEF', 'CB'], ['DEF', 'LB'], ['DEF', 'RB'],
+  ['MID', 'CDM'], ['MID', 'CM'], ['MID', 'CM'], ['MID', 'CAM'], ['MID', 'LM'], ['MID', 'RM'],
+  ['FWD', 'LW'], ['FWD', 'RW'], ['FWD', 'ST'], ['FWD', 'ST'], ['FWD', 'ST'],
+];
+
+function makeFillerPlayer(id: number, clubId: number, target: number, seasonYear: number, slot: number): Player {
+  const [pos, role] = FILLER_ROLES[slot % FILLER_ROLES.length];
+  const rating = clamp(target + Math.floor(Math.random() * 9) - 4, 40, 90);
+  const age = 18 + Math.floor(Math.random() * 15);
+  const stat = () => clamp(rating - 6 + Math.floor(Math.random() * 14), 30, 92);
+  const value = marketValue(rating, age);
+  const years = 1 + Math.floor(Math.random() * 4);
+  return {
+    id,
+    name: `${pickRandom(YOUTH_FIRST)} ${pickRandom(YOUTH_LAST)}`,
+    nat: 'Unattached',
+    pos, role, rating,
+    potential: Math.min(99, rating + (age <= 22 ? 4 + Math.floor(Math.random() * 10) : Math.floor(Math.random() * 3))),
+    pac: stat(), sho: stat(), pas: stat(), dri: stat(), def: stat(), phy: stat(),
+    gkReflexes: pos === 'GK' ? stat() : 5 + Math.floor(Math.random() * 15),
+    gkPositioning: pos === 'GK' ? stat() : 5 + Math.floor(Math.random() * 15),
+    height: pos === 'GK' ? 185 + Math.floor(Math.random() * 15) : 168 + Math.floor(Math.random() * 24),
+    altPos: [],
+    age, value,
+    wage: weeklyWage(value, rating),
+    clubId,
+    form: 1,
+    injuryWeeks: 0,
+    contractYears: years,
+    contractEnd: contractEndFor(seasonYear, years),
+    releaseClause: 0,
+    loyal: Math.random() < 0.5,
+    transferListed: false,
+    wantsMove: false,
+    promisedStatus: null,
+    retireAge: Math.max(age + 1, rollRetireAge(pos === 'GK')),
+    morale: 60 + Math.floor(Math.random() * 25),
+    fitness: 85 + Math.floor(Math.random() * 16),
+    sharpness: 60 + Math.floor(Math.random() * 25),
+    chem: 55 + Math.floor(Math.random() * 30),
+    apps: 0, goals: 0, assists: 0, cleanSheets: 0, saves: 0, lgApps: 0, lgGoals: 0,
+    career: [],
+    seasonRatingSum: 0,
+    seasonRatingCount: 0,
+  };
+}
+
+const POOL_SIZE = 4;
+
+function nextClubId(s: GameState): number {
+  const next = Math.max(s.nextClubId ?? 0, ...s.clubs.map((c) => c.id)) + 1;
+  s.nextClubId = next;
+  return next;
+}
+
+/** Create one dormant club at the back of a phantom league's pool. */
+function makePoolClub(s: GameState, leagueId: string, seq: number): Club {
+  const lg = getLeague(leagueId);
+  const id = nextClubId(s);
+  const name = `${lg.name} ${seq}`;
+  const club: Club = {
+    id,
+    name,
+    code: lg.name.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || 'AFC',
+    color: '#5a5a5a',
+    leagueId,
+    playerIds: [],
+    dormant: true,
+  };
+  s.clubs.push(club);
+  return club;
+}
+
+/** Top every phantom league's pool back up to POOL_SIZE dormant clubs. */
+export function refillPhantomPools(s: GameState): void {
+  s.phantomPools = s.phantomPools ?? {};
+  for (const lg of LEAGUES) {
+    if (!lg.phantom) continue;
+    const pool = (s.phantomPools[lg.id] = s.phantomPools[lg.id] ?? []);
+    let seq = 1;
+    while (pool.length < POOL_SIZE) {
+      pool.push(makePoolClub(s, lg.id, s.seasonYear * 10 + seq++).id);
+    }
+  }
+}
+
+/**
+ * A dormant pool club has just been promoted into a league the game plays, so
+ * it needs a squad. Clubs that dropped in from a real league already have one
+ * and keep it.
+ */
+function wakePoolClub(s: GameState, club: Club, targetLeagueId: string, seasonYear: number): void {
+  club.dormant = false;
+  if (club.playerIds.length > 0) return;
+  const lg = getLeague(targetLeagueId);
+  // Promoted sides are weaker than the division they join: base the squad on
+  // the weakest existing side in it, or a low floor if the league is empty.
+  const peers = leagueClubs(s, targetLeagueId);
+  const weakest = peers.length
+    ? Math.min(...peers.map((c) => squadAvgRating(s, c.id)))
+    : 70 - lg.level * 4;
+  const target = clamp(Math.round(weakest) - 1, 46, 88);
+  for (let i = 0; i < 18; i++) {
+    const p = makeFillerPlayer(s.nextPlayerId++, club.id, target, seasonYear, i);
+    s.players[p.id] = p;
+    club.playerIds.push(p.id);
+  }
+}
+
 export function newGame(data: GameData, userClubId: number, managerName = 'The Gaffer', seasonYear = 2026): GameState {
-  const clubs: Club[] = data.clubs.map((c) => ({ ...c, playerIds: [...c.playerIds] }));
+  const clubs: Club[] = data.clubs.map(({ division, ...c }) => ({
+    ...c,
+    leagueId: leagueIdForDivision(division),
+    playerIds: [...c.playerIds],
+  }));
   const players: GameState['players'] = {};
   for (const p of data.players) {
     const years = 1 + (p.id % 4);
@@ -218,11 +430,11 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
 
   const userClub = clubs.find((c) => c.id === userClubId)!;
   const state: GameState = {
-    version: 3,
+    version: 4,
     userClubId,
     seasonYear,
     week: 1,
-    budget: STARTING_BUDGET[userClub.division],
+    budget: startingBudget(userClub.leagueId),
     morale: MORALE_START,
     formationId: '4-3-3',
     lineup: [],
@@ -231,7 +443,12 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
     chemistry: 50,
     fanConfidence: 60,
     board: { objective: '', minPosition: 17, confidence: 60 },
-    manager: { name: managerName, reputation: userClub.division === 1 ? 50 : userClub.division === 2 ? 40 : 30, wins: 0, draws: 0, losses: 0, seasons: 0, trophies: [] },
+    manager: {
+      name: managerName,
+      // Reputation on appointment tracks how high up the pyramid the job is.
+      reputation: clamp(60 - getLeague(userClub.leagueId).level * 10, 20, 50),
+      wins: 0, draws: 0, losses: 0, seasons: 0, trophies: [],
+    },
     academyLevel: 1,
     captainId: null,
     staff: { coach: 0, physio: 0, scout: 0 },
@@ -245,7 +462,10 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
     nextPlayerId: Math.max(...data.players.map((p) => p.id)) + 1,
     players,
     clubs,
-    fixtures: { d1: [], d2: [], d3: [], d4: [], d5: [], d6: [], d7: [], d8: [], d9: [], d10: [] },
+    fixtures: {},
+    phantomPools: {},
+    splitGroups: {},
+    nextClubId: Math.max(...data.clubs.map((c) => c.id)) + 1,
     incomingOffers: [],
     history: [],
     news: [`Welcome to ${userClub.name}! The board expects a solid season.`],
@@ -253,14 +473,11 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
     nextInboxId: 1,
     pressWeek: 0,
   };
+  refillPhantomPools(state);
   state.fixtures = makeSeasonFixtures(state);
   state.board = makeBoardObjective(state);
   state.cup = makeDomesticCup(state);
-  const d1ByStrength = clubs
-    .filter((c) => c.division === 1)
-    .sort((a, b) => squadAvgRating(state, b.id) - squadAvgRating(state, a.id))
-    .map((c) => c.id);
-  state.continental = makeContinental(d1ByStrength);
+  state.continental = makeContinental(continentalEntrants(state));
   state.lineup = autoPickLineup(state, userClubId, getFormation(state.formationId));
   state.news.push(`Board objective: ${state.board.objective}.`);
   pushInbox(state, {
@@ -271,16 +488,17 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
   return state;
 }
 
-export function computeTable(state: GameState, division: Division): TableRow[] {
-  const clubs = state.clubs.filter((c) => c.division === division);
+export function computeTable(state: GameState, leagueId: string): TableRow[] {
+  const clubs = leagueClubs(state, leagueId);
   const rows = new Map<number, TableRow>(
     clubs.map((c) => [c.id, { clubId: c.id, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, gd: 0, pts: 0 }])
   );
-  const fixtures = divisionFixtures(state, division);
+  const fixtures = leagueFixtures(state, leagueId);
   for (const f of fixtures) {
     if (!f.played) continue;
-    const h = rows.get(f.homeId)!;
-    const a = rows.get(f.awayId)!;
+    const h = rows.get(f.homeId);
+    const a = rows.get(f.awayId);
+    if (!h || !a) continue;
     h.played++; a.played++;
     h.gf += f.homeGoals; h.ga += f.awayGoals;
     a.gf += f.awayGoals; a.ga += f.homeGoals;
@@ -290,20 +508,51 @@ export function computeTable(state: GameState, division: Division): TableRow[] {
   }
   const out = [...rows.values()];
   for (const r of out) r.gd = r.gf - r.ga;
-  return out.sort((x, y) => y.pts - x.pts || y.gd - x.gd || y.gf - x.gf);
+  out.sort((x, y) => y.pts - x.pts || y.gd - x.gd || y.gf - x.gf);
+  // Scottish split: once the halves are frozen a club cannot cross them, so the
+  // bottom six finish 7th–12th however many points they end on.
+  const groups = state.splitGroups?.[leagueId];
+  if (groups && groups.length === 2) {
+    const half = new Map<number, number>();
+    groups.forEach((ids, i) => ids.forEach((id) => half.set(id, i)));
+    out.sort((x, y) => (half.get(x.clubId) ?? 0) - (half.get(y.clubId) ?? 0));
+  }
+  return out;
 }
 
-export function userDivision(state: GameState): Division {
-  return state.clubs.find((c) => c.id === state.userClubId)!.division;
+/** The league id the user's club is registered in. */
+export function userLeagueId(state: GameState): string {
+  return state.clubs.find((c) => c.id === state.userClubId)!.leagueId;
 }
 
-export function hasThirdDivision(state: GameState): boolean {
-  return state.clubs.some((c) => c.division === 3);
+/** The user's league definition. */
+export function userLeague(state: GameState): LeagueDef {
+  return getLeague(userLeagueId(state));
+}
+
+/**
+ * Continental Champions Cup entrants: the strongest sides from each top flight,
+ * allocated by that league's Champions League slot count and ordered by squad
+ * strength, so the field reflects UEFA's per-league allocation.
+ */
+export function continentalEntrants(state: GameState): number[] {
+  const seeds: { id: number; avg: number }[] = [];
+  for (const lg of LEAGUES) {
+    const slots = lg.championsLeague + lg.clPlayoff;
+    if (lg.phantom || slots <= 0) continue;
+    const table = computeTable(state, lg.id);
+    const order = table.length
+      ? table.map((r) => r.clubId)
+      : leagueClubs(state, lg.id)
+          .sort((a, b) => squadAvgRating(state, b.id) - squadAvgRating(state, a.id))
+          .map((c) => c.id);
+    for (const id of order.slice(0, slots)) seeds.push({ id, avg: squadAvgRating(state, id) });
+  }
+  return seeds.sort((a, b) => b.avg - a.avg).map((x) => x.id).slice(0, CONTINENTAL_SPOTS);
 }
 
 export function nextUserFixture(state: GameState): Fixture | null {
-  const div = userDivision(state);
-  const fixtures = divisionFixtures(state, div);
+  const fixtures = leagueFixtures(state, userLeagueId(state));
   return (
     fixtures.find(
       (f) => f.round === state.week && (f.homeId === state.userClubId || f.awayId === state.userClubId)
@@ -312,7 +561,7 @@ export function nextUserFixture(state: GameState): Fixture | null {
 }
 
 export function userPosition(state: GameState): number {
-  const table = computeTable(state, userDivision(state));
+  const table = computeTable(state, userLeagueId(state));
   return table.findIndex((r) => r.clubId === state.userClubId) + 1;
 }
 
@@ -329,12 +578,11 @@ export function getStadiumLevel(state: GameState): number {
   return state.stadiumLevel ?? 1;
 }
 
-/** Weekly matchday income: division base scaled by position, fans and stadium. */
+/** Weekly matchday income: league base scaled by position, fans and stadium. */
 export function gateIncome(state: GameState): number {
-  const div = userDivision(state);
   const pos = Math.max(userPosition(state), 1);
   const stadiumMult = 1 + 0.25 * (getStadiumLevel(state) - 1);
-  const raw = GATE_BASE[div] * (0.55 + state.fanConfidence / 250 + (21 - pos) / 50) * stadiumMult;
+  const raw = gateBase(userLeagueId(state)) * (0.55 + state.fanConfidence / 250 + (21 - pos) / 50) * stadiumMult;
   return Math.round(raw / 10_000) * 10_000;
 }
 
@@ -582,9 +830,9 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
 
   // Dynamic news: the wider world.
   if (round % 6 === 0) {
-    const table = computeTable(s, userDivision(s));
+    const table = computeTable(s, userLeagueId(s));
     const leader = s.clubs.find((c) => c.id === table[0]?.clubId);
-    if (leader && leader.id !== s.userClubId) s.news.unshift(`${leader.name} top Division ${userDivision(s)} after week ${round}.`);
+    if (leader && leader.id !== s.userClubId) s.news.unshift(`${leader.name} top the ${leagueName(userLeagueId(s))} after week ${round}.`);
   }
   if (round % 8 === 0) {
     const scorer = getSquad(s, s.userClubId).sort((a, b) => b.goals - a.goals)[0];
@@ -615,6 +863,9 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   else if (s.fanConfidence <= 25 && round % 5 === 0) s.news.unshift('Protests in the stands — the fans want change.');
 
   s.week = round + 1;
+  // A split league schedules its post-split round-robins once its pre-split
+  // programme is complete and the halves are known.
+  applySplits(s);
   s.incomingOffers = generateWeeklyOffers(s);
 
   // Repair the lineup if injuries/sales/loans broke it.
@@ -747,7 +998,7 @@ export function switchJob(state: GameState, clubId: number): GameState {
   const club = s.clubs.find((c) => c.id === clubId);
   if (!club) return state;
   s.userClubId = clubId;
-  s.budget = STARTING_BUDGET[club.division] + s.manager.reputation * 100_000;
+  s.budget = startingBudget(club.leagueId) + s.manager.reputation * 100_000;
   s.chemistry = 45;
   s.morale = MORALE_START;
   s.fanConfidence = 60;
@@ -772,39 +1023,217 @@ export function switchJob(state: GameState, clubId: number): GameState {
   return s;
 }
 
+/* ===========================================================================
+   PROMOTION, RELEGATION AND THE PLAY-OFFS
+   ===========================================================================
+   Ported from the reference's season.js. Every league moves clubs according to
+   its own LeagueDef: `autoPromotion` straight up, a `playoffSpots` bracket for
+   the last promotion place, `relegation` straight down, plus two extras —
+   the inter-league play-off (Bundesliga Relegationsspiele / Ligue 1 barrage),
+   where a top flight's lowest safe club defends its place against a challenger
+   from the tier below, and the dormant phantom pools that stand in for tiers
+   we do not simulate.
+========================================================================== */
+
+export interface LeagueMove {
+  clubId: number;
+  from: string;
+  to: string;
+}
+
+/** One-off play-off tie; a draw is settled by a coin toss (their simPO). */
+function simPlayoff(s: GameState, aId: number, bId: number): number {
+  const r = simulateMatch(s, aId, bId);
+  if (r.homeGoals > r.awayGoals) return aId;
+  if (r.awayGoals > r.homeGoals) return bId;
+  return Math.random() < 0.5 ? aId : bId;
+}
+
+/** 3rd v 6th, 4th v 5th, then the final — the winner takes the last place up. */
+function runPromotionPlayoff(s: GameState, seeds: number[]): number | null {
+  if (seeds.length < 4) return seeds[0] ?? null;
+  const sf1 = simPlayoff(s, seeds[0], seeds[3]);
+  const sf2 = simPlayoff(s, seeds[1], seeds[2]);
+  return simPlayoff(s, sf1, sf2);
+}
+
+/**
+ * A phantom league's dormant pool feeds the simulated league directly above it.
+ * The front of the queue auto-promotes (as many as that league relegates), the
+ * next in line contests its relegation play-off where the league has one, and
+ * every club relegated out of it goes dormant at the back of the queue.
+ */
+function processPhantomPool(s: GameState, poolLg: LeagueDef, moves: LeagueMove[]): void {
+  const feeder = leagueAbove(poolLg.id);
+  if (!feeder || feeder.phantom) return;
+  const table = computeTable(s, feeder.id);
+  if (!table.length) return;
+  s.phantomPools = s.phantomPools ?? {};
+  const pool = (s.phantomPools[poolLg.id] = s.phantomPools[poolLg.id] ?? []);
+  const relCount = feeder.relegation;
+  if (relCount <= 0) return;
+
+  const relegated = table.slice(-relCount).map((r) => r.clubId);
+  const atRisk = table[table.length - relCount - 1]?.clubId ?? null;
+
+  // Front of the queue comes up, so the league keeps its size.
+  const promoteCount = Math.min(relCount, pool.length);
+  for (let i = 0; i < promoteCount; i++) {
+    const id = pool.shift()!;
+    moves.push({ clubId: id, from: poolLg.id, to: feeder.id });
+  }
+
+  // The relegation play-off (Relegationsspiele / barrage): the lowest safe club
+  // defends its place against the pool's challenger.
+  if (feeder.interPlayoff === poolLg.id && atRisk !== null && pool.length) {
+    const spots = Math.max(1, poolLg.interPlayoffFeederSpots ?? 1);
+    let challenger = pool.shift()!;
+    // A wider feeder bracket (Ligue 2's 3rd–5th) is settled among pool entrants.
+    const extras: number[] = [];
+    for (let i = 1; i < spots && pool.length; i++) extras.push(pool.shift()!);
+    for (const e of extras) challenger = simPlayoff(s, challenger, e);
+    const winner = simPlayoff(s, atRisk, challenger);
+    if (winner === challenger) {
+      moves.push({ clubId: challenger, from: poolLg.id, to: feeder.id });
+      if (atRisk === s.userClubId) {
+        // Never strand the user without fixtures — they get the reprieve.
+        moves.pop();
+        pool.push(challenger);
+      } else {
+        moves.push({ clubId: atRisk, from: feeder.id, to: poolLg.id });
+      }
+    } else {
+      pool.push(challenger);
+    }
+    for (const e of extras) pool.push(e);
+  }
+
+  // The auto-relegated clubs go dormant at the back of the queue.
+  for (const id of relegated) {
+    if (id === s.userClubId) {
+      s.relegatedOutOfPyramid = true;
+      continue;
+    }
+    moves.push({ clubId: id, from: feeder.id, to: poolLg.id });
+    pool.push(id);
+  }
+}
+
+/**
+ * Work out every club movement for the season just finished. Does not apply
+ * them — `applyLeagueMoves` does, so the caller can read the user's old league
+ * first.
+ */
+export function computeLeagueMoves(s: GameState): LeagueMove[] {
+  const moves: LeagueMove[] = [];
+  const tables = new Map<string, TableRow[]>();
+  for (const lg of LEAGUES) {
+    if (lg.phantom) continue;
+    tables.set(lg.id, computeTable(s, lg.id));
+  }
+
+  // 1. Promotion play-offs (each league's own bracket).
+  const playoffWinner = new Map<string, number>();
+  for (const lg of LEAGUES) {
+    const table = tables.get(lg.id);
+    if (!table || lg.autoPromotion <= 0 || lg.playoffSpots < 4) continue;
+    const above = leagueAbove(lg.id);
+    if (!above || above.phantom) continue;
+    if (table.length < lg.autoPromotion + lg.playoffSpots) continue;
+    const seeds = table.slice(lg.autoPromotion, lg.autoPromotion + lg.playoffSpots).map((r) => r.clubId);
+    const w = runPromotionPlayoff(s, seeds);
+    if (w !== null) playoffWinner.set(lg.id, w);
+  }
+
+  // 2. Straight promotions and relegations inside each country's pyramid.
+  for (const lg of LEAGUES) {
+    const table = tables.get(lg.id);
+    if (!table) continue;
+    const above = leagueAbove(lg.id);
+    const below = leagueBelow(lg.id);
+    if (above && !above.phantom) {
+      for (const r of table.slice(0, lg.autoPromotion)) moves.push({ clubId: r.clubId, from: lg.id, to: above.id });
+      const w = playoffWinner.get(lg.id);
+      if (w !== undefined) moves.push({ clubId: w, from: lg.id, to: above.id });
+    }
+    if (below && !below.phantom && lg.relegation > 0) {
+      for (const r of table.slice(-lg.relegation)) moves.push({ clubId: r.clubId, from: lg.id, to: below.id });
+    } else if (!below && lg.relegation > 0) {
+      // Bottom of the pyramid we model — nowhere lower to send anyone.
+      if (table.slice(-lg.relegation).some((r) => r.clubId === s.userClubId)) s.relegatedOutOfPyramid = true;
+    }
+  }
+
+  // 3. Inter-league play-offs between two simulated leagues.
+  for (const lg of LEAGUES) {
+    if (!lg.interPlayoff) continue;
+    const lower = getLeague(lg.interPlayoff);
+    if (lower.phantom) continue; // handled by the phantom pool instead
+    const upTable = tables.get(lg.id);
+    const downTable = tables.get(lower.id);
+    if (!upTable?.length || !downTable?.length) continue;
+    const upClub = upTable[upTable.length - lg.relegation - 1]?.clubId;
+    const spots = Math.max(1, lower.interPlayoffFeederSpots ?? 1);
+    const seeds = downTable.slice(lower.autoPromotion, lower.autoPromotion + spots).map((r) => r.clubId);
+    if (upClub === undefined || !seeds.length) continue;
+    let downClub = seeds[seeds.length - 1];
+    for (let i = seeds.length - 2; i >= 0; i--) downClub = simPlayoff(s, seeds[i], downClub);
+    const winner = simPlayoff(s, upClub, downClub);
+    if (winner === downClub) {
+      moves.push({ clubId: downClub, from: lower.id, to: lg.id });
+      moves.push({ clubId: upClub, from: lg.id, to: lower.id });
+    }
+  }
+
+  // 4. Dormant tier pools feed the churn for every tier we do not simulate.
+  for (const lg of LEAGUES) {
+    if (lg.phantom) processPhantomPool(s, lg, moves);
+  }
+
+  return moves;
+}
+
+/** Apply computed movements, waking any dormant club that has come up. */
+export function applyLeagueMoves(s: GameState, moves: LeagueMove[]): void {
+  for (const m of moves) {
+    const club = s.clubs.find((c) => c.id === m.clubId);
+    if (!club) continue;
+    club.leagueId = m.to;
+    if (isPhantomLeague(m.to)) {
+      club.dormant = true;
+    } else {
+      wakePoolClub(s, club, m.to, s.seasonYear + 1);
+    }
+  }
+  refillPhantomPools(s);
+}
+
 /** Wrap up the season: prizes, promotion/relegation, contracts, youth, ageing. */
 export function endSeason(state: GameState): { state: GameState; summary: SeasonSummary } {
   const s: GameState = structuredClone(state);
-  const div = userDivision(s);
+  const leagueId = userLeagueId(s);
+  const lg = getLeague(leagueId);
   const userClub = s.clubs.find((c) => c.id === s.userClubId)!;
-  const table = computeTable(s, div);
+  const table = computeTable(s, leagueId);
   const position = table.findIndex((r) => r.clubId === s.userClubId) + 1;
-  const prize = prizeMoney(div, position);
+  const prize = prizeMoney(leagueId, position);
 
-  const d1Table = computeTable(s, 1);
-  const d2Table = computeTable(s, 2);
-  const d3 = hasThirdDivision(s);
-  const d3Table = d3 ? computeTable(s, 3) : [];
-  const relegatedD1 = d1Table.slice(-PROMOTION_SPOTS).map((r) => r.clubId);
-  const promotedD2 = d2Table.slice(0, PROMOTION_SPOTS).map((r) => r.clubId);
-  const relegatedD2 = d3 ? d2Table.slice(-PROMOTION_SPOTS).map((r) => r.clubId) : [];
-  const promotedD3 = d3 ? d3Table.slice(0, PROMOTION_SPOTS).map((r) => r.clubId) : [];
-  for (const c of s.clubs) {
-    if (relegatedD1.includes(c.id)) c.division = 2;
-    if (promotedD2.includes(c.id)) c.division = 1;
-    if (relegatedD2.includes(c.id)) c.division = 3;
-    if (promotedD3.includes(c.id)) c.division = 2;
-  }
+  // Promotion, relegation and every play-off, across the whole pyramid.
+  const moves = computeLeagueMoves(s);
+  applyLeagueMoves(s, moves);
+  const myMove = moves.find((m) => m.clubId === s.userClubId);
+  const promoted = !!myMove && getLeague(myMove.to).level < lg.level;
+  const relegated = (!!myMove && getLeague(myMove.to).level > lg.level) || !!s.relegatedOutOfPyramid;
+  const newLeague = getLeague(userLeagueId(s));
 
-  const promoted = div !== 1 && (div === 2 ? promotedD2 : promotedD3).includes(s.userClubId);
-  const relegated = (div === 1 && relegatedD1.includes(s.userClubId)) || (div === 2 && relegatedD2.includes(s.userClubId));
   const objectiveMet = position <= s.board.minPosition;
   const sacked = !objectiveMet && s.board.confidence < 20;
 
-  // Records & legends for the user's club.
-  if (!s.records.bestFinish || div < s.records.bestFinish.division ||
-      (div === s.records.bestFinish.division && position < s.records.bestFinish.position)) {
-    s.records.bestFinish = { year: s.seasonYear, division: div, position };
+  // Records & legends for the user's club. "Best" is highest tier first, then
+  // best position within it.
+  if (!s.records.bestFinish || lg.level < s.records.bestFinish.level ||
+      (lg.level === s.records.bestFinish.level && position < s.records.bestFinish.position)) {
+    s.records.bestFinish = { year: s.seasonYear, leagueId, level: lg.level, position };
   }
   const topScorer = getSquad(s, s.userClubId).sort((a, b) => b.goals - a.goals)[0];
   if (topScorer && topScorer.goals > 0 &&
@@ -820,10 +1249,10 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     s.legacy[id] = entry;
   }
 
-  // League-wide season awards, judged across every club in the user's division.
+  // League-wide season awards, judged across every club in the user's league.
   const awards: string[] = [];
   const divPlayers = s.clubs
-    .filter((c) => c.division === div)
+    .filter((c) => c.leagueId === leagueId)
     .flatMap((c) => c.playerIds.map((id) => s.players[id]))
     .filter((p) => p && p.apps > 0);
   const goldenBoot = [...divPlayers].sort((a, b) => b.goals - a.goals)[0];
@@ -850,10 +1279,10 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
 
   const summary: SeasonSummary = {
     year: s.seasonYear,
-    division: div,
+    leagueId,
     position,
     pts: table[position - 1]?.pts ?? 0,
-    champions: div === 1 && position === 1,
+    champions: position === 1,
     promoted,
     relegated,
     prize,
@@ -870,10 +1299,10 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
   // Manager reputation & trophies.
   s.manager.seasons++;
   if (summary.champions) {
-    s.manager.trophies.push(`Division 1 Title ${s.seasonYear}/${(s.seasonYear + 1) % 100}`);
+    s.manager.trophies.push(`${lg.name} Title ${s.seasonYear}/${(s.seasonYear + 1) % 100}`);
     s.manager.reputation = clamp(s.manager.reputation + 10, 0, 100);
   } else if (promoted) {
-    s.manager.trophies.push(`Division ${div} Promotion ${s.seasonYear}/${(s.seasonYear + 1) % 100}`);
+    s.manager.trophies.push(`${lg.name} Promotion ${s.seasonYear}/${(s.seasonYear + 1) % 100}`);
     s.manager.reputation = clamp(s.manager.reputation + 6, 0, 100);
   }
   s.manager.reputation = clamp(s.manager.reputation + (objectiveMet ? 3 : -4) + (relegated ? -5 : 0), 0, 100);
@@ -1058,25 +1487,25 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
   const others = s.clubs.filter((c) => c.id !== s.userClubId);
   if (sacked) {
     const rescuers = others
-      .filter((c) => c.division >= div)
+      .filter((c) => !c.dormant && getLeague(c.leagueId).level >= lg.level)
       .sort((a, b) => squadAvgRating(s, a.id) - squadAvgRating(s, b.id))
       .slice(0, 4);
     for (const c of rescuers.sort(() => Math.random() - 0.5).slice(0, 2)) {
-      s.jobOffers.push({ clubId: c.id, note: `Division ${c.division} — a chance to rebuild your reputation.` });
+      s.jobOffers.push({ clubId: c.id, note: `${leagueName(c.leagueId)} — a chance to rebuild your reputation.` });
     }
   } else if (s.manager.reputation >= 60 && position <= 6 && Math.random() < 0.7) {
     const suitor = others
-      .filter((c) => c.division <= div && squadAvgRating(s, c.id) > myAvg + 1)
+      .filter((c) => !c.dormant && getLeague(c.leagueId).level <= lg.level && squadAvgRating(s, c.id) > myAvg + 1)
       .sort((a, b) => squadAvgRating(s, b.id) - squadAvgRating(s, a.id))
       .slice(0, 3)[Math.floor(Math.random() * 3)];
-    if (suitor) s.jobOffers.push({ clubId: suitor.id, note: `Division ${suitor.division} — a bigger club wants you.` });
+    if (suitor) s.jobOffers.push({ clubId: suitor.id, note: `${leagueName(suitor.leagueId)} — a bigger club wants you.` });
   }
 
   // Board reinvestment: a club doesn't hoard cash indefinitely. Surplus above a
   // sensible war chest is spent on wages, facilities and debt over the break, so
   // the transfer kitty stays believable instead of snowballing season on season
   // (which quietly broke the market by the second season).
-  const warChest = STARTING_BUDGET[userClub.division] * 1.5;
+  const warChest = startingBudget(userClub.leagueId) * 1.5;
   let reinvestNote: string | null = null;
   if (s.budget > warChest) {
     const reinvested = Math.round((s.budget - warChest) * 0.75);
@@ -1092,18 +1521,19 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
   s.fanConfidence = clamp(Math.round((s.fanConfidence + 60) / 2), 5, 99);
   s.incomingOffers = [];
   s.ledger = [];
+  s.splitGroups = {};
+  s.continental = makeContinental(continentalEntrants(s));
   s.fixtures = makeSeasonFixtures(s);
   s.cup = makeDomesticCup(s);
-  s.continental = makeContinental(computeTable(s, 1).map((r) => r.clubId));
   s.board = { ...makeBoardObjective(s), confidence: s.board.confidence };
   s.lineup = autoPickLineup(s, s.userClubId, getFormation(s.formationId));
   s.news = [
     summary.champions
       ? `CHAMPIONS! ${userClub.name} win the title!`
       : summary.promoted
-        ? `PROMOTED! The club goes up to Division ${userClub.division}!`
+        ? `PROMOTED! The club goes up to the ${newLeague.name}!`
         : summary.relegated
-          ? `Relegated to Division ${userClub.division}. Time to rebuild.`
+          ? `Relegated to the ${newLeague.name}. Time to rebuild.`
           : `Season over — finished ${position}${ordinal(position)}. New season begins.`,
     ...awards,
     ...(reinvestNote ? [reinvestNote] : []),

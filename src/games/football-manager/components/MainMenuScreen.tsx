@@ -41,7 +41,7 @@ export default function MainMenuScreen({
               <>
                 <span className="fm-slot-card__club">{meta.clubName}</span>
                 <span className="fm-slot-card__meta">
-                  {meta.managerName} · D{meta.division} · {meta.seasonYear}/{(meta.seasonYear + 1) % 100} · Week{' '}
+                  {meta.managerName} · {meta.leagueName} · {meta.seasonYear}/{(meta.seasonYear + 1) % 100} · Week{' '}
                   {Math.min(meta.week, 38)}
                 </span>
                 <div className="fm-slot-card__actions">

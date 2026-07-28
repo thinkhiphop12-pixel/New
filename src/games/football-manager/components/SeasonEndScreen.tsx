@@ -1,6 +1,7 @@
 'use client';
 
 import type { GameState, SeasonSummary } from '@/engine/types';
+import { leagueName } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
 import ManagerAvatar from './ManagerAvatar';
 
@@ -47,8 +48,8 @@ export default function SeasonEndScreen({
       <div className="fm-panel">
         <div style={{ display: 'flex', justifyContent: 'space-around' }}>
           <div className="fm-stat" style={{ border: 'none', background: 'transparent' }}>
-            <span className="fm-stat__label">Division</span>
-            <span className="fm-stat__value">{summary.division}</span>
+            <span className="fm-stat__label">League</span>
+            <span className="fm-stat__value">{leagueName(summary.leagueId)}</span>
           </div>
           <div className="fm-stat" style={{ border: 'none', background: 'transparent' }}>
             <span className="fm-stat__label">Finished</span>
@@ -122,7 +123,7 @@ export default function SeasonEndScreen({
           <ul className="fm-news">
             {[...state.history].reverse().map((h) => (
               <li key={h.year}>
-                {h.year}/{(h.year + 1) % 100}: D{h.division}, {h.position}
+                {h.year}/{(h.year + 1) % 100}: {leagueName(h.leagueId)}, {h.position}
                 {ordinal(h.position)} — {h.pts} pts
                 {h.champions ? ' 🏆' : h.promoted ? ' ⬆' : h.relegated ? ' ⬇' : ''}
                 {h.sacked ? ' ❌' : ''}

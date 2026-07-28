@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { Division, GameData, GameState, MatchReport, SeasonSummary, GameSettings, ManagerProfile } from '@/engine/types';
+import type { GameData, GameState, MatchReport, SeasonSummary, GameSettings, ManagerProfile } from '@/engine/types';
 import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/engine/seasonProgression';
 import { simulateTickMatch } from '@/engine/tickEngine/sim';
 import { normalizeMentality } from '@/engine/tickEngine/tacticsData';
@@ -28,7 +28,7 @@ export default function FootballManagerGame() {
   const [saves, setSaves] = useState<(SaveMeta | null)[]>(Array(SAVE_SLOTS).fill(null));
   const [settings, setSettings] = useState<GameSettings | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [selectedDivisions, setSelectedDivisions] = useState<Division[]>([1, 2, 3, 4]);
+  const [selectedDivisions, setSelectedDivisions] = useState<string[]>(['premier_league', 'championship', 'league_one', 'league_two']);
   const [managerProfile, setManagerProfile] = useState<ManagerProfile | null>(null);
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function FootballManagerGame() {
     setView('nationselect');
   };
 
-  const handlePickNation = (divisions: Division[]) => {
+  const handlePickNation = (divisions: string[]) => {
     setSelectedDivisions(divisions);
     setView('clubselect');
   };

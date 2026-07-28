@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameSettings, GameState, MatchReport, Player } from '@/engine/types';
 import { nextUserFixture } from '@/engine/seasonProgression';
 import { availableSquad } from '@/engine/teamManagement';
-import { DIVISION_NAMES, MAX_SUBS } from '@/engine/gameRules';
+import { MAX_SUBS, leagueName } from '@/engine/gameRules';
 import { computeHighlights } from '@/engine/highlights';
 import { simulateTickMatch } from '@/engine/tickEngine/sim';
 import { MENTALITIES, MENTALITY_ORDER, normalizeMentality, type MentalityId } from '@/engine/tickEngine/tacticsData';
@@ -375,7 +375,7 @@ export default function MatchScreen({
             momentum={snap?.momentum ?? 0}
             week={state.week}
             seasonYear={state.seasonYear}
-            competition={DIVISION_NAMES[home?.division ?? 1]}
+            competition={leagueName(home?.leagueId ?? 'premier_league')}
             teamRatings={{ home: teamRating('home'), away: teamRating('away') }}
             cards={{ home: cardCount('home'), away: cardCount('away') }}
             corners={{ home: stats.home.corners, away: stats.away.corners }}

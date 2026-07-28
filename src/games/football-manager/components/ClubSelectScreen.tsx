@@ -1,47 +1,32 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { Division, GameData } from '@/engine/types';
-import { DIVISION_NAMES, STARTING_BUDGET } from '@/engine/gameRules';
-import { ALL_DIVISIONS } from '@/engine/seasonProgression';
+import type { GameData } from '@/engine/types';
+import { SIMULATED_LEAGUE_IDS, formatLeagueBlurb, leagueIdForDivision, leagueName, startingBudget } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
 import { Crest } from './Crest';
 
-const DIV_BLURB: Record<Division, string> = {
-  1: 'Top flight. Stronger squads, higher expectations, continental football.',
-  2: 'Second tier. Weaker squads but a promotion push awaits.',
-  3: 'Third tier. Tiny budgets, big dreams — the ultimate rebuild.',
-  4: 'Fourth tier. Semi-pro grit, shoestring budgets — a true test.',
-  5: 'Spain\'s finest. Technical football, world-class talent, and El Clasico.',
-  6: 'Italian elite. Tactical chess, defensive masters, and the Scudetto.',
-  7: 'German powerhouse. High pressing, incredible atmospheres, and the Meisterschale.',
-  8: 'French top flight. Physical football, emerging superstars, and PSG dominance.',
-  9: 'Dutch top flight. Attacking football and a famous youth conveyor belt.',
-  10: 'Portuguese top flight. Technical quality and Europe\'s best scouting network.',
-};
-
 export default function ClubSelectScreen({
   data,
-  divisions: allowedDivisions,
+  divisions: allowedLeagueIds,
   onPick,
   onBack,
 }: {
   data: GameData;
-  divisions?: Division[];
+  divisions?: string[];
   onPick: (clubId: number, managerName: string) => void;
   onBack: () => void;
 }) {
-  const [division, setDivision] = useState<Division | null>(null);
+  const [division, setDivision] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [managerName, setManagerName] = useState('');
 
   const divisions = useMemo(() => {
-    const set = new Set(data.clubs.map((c) => c.division));
-    const available = ALL_DIVISIONS.filter(
-      (d) => set.has(d) && (!allowedDivisions || allowedDivisions.includes(d))
+    const set = new Set(data.clubs.map((c) => leagueIdForDivision(c.division)));
+    return SIMULATED_LEAGUE_IDS.filter(
+      (id) => set.has(id) && (!allowedLeagueIds || allowedLeagueIds.includes(id))
     );
-    return available;
-  }, [data, allowedDivisions]);
+  }, [data, allowedLeagueIds]);
 
   // Set default division on first render
   useMemo(() => {
@@ -60,7 +45,7 @@ export default function ClubSelectScreen({
     });
   }, [data]);
 
-  const shown = division !== null ? clubInfo.filter((x) => x.club.division === division) : [];
+  const shown = division !== null ? clubInfo.filter((x) => leagueIdForDivision(x.club.division) === division) : [];
 
   return (
     <div className="fm-screen">
@@ -78,13 +63,13 @@ export default function ClubSelectScreen({
       <div className="fm-division-toggle">
         {divisions.map((d) => (
           <button key={d} className={division === d ? 'active' : ''} onClick={() => setDivision(d)}>
-            {DIVISION_NAMES[d]}
+            {leagueName(d)}
           </button>
         ))}
       </div>
       {division !== null && (
         <p className="fm-hint">
-          {DIV_BLURB[division]} Budget {formatMoney(STARTING_BUDGET[division])}.
+          {formatLeagueBlurb(division)} Budget {formatMoney(startingBudget(division))}.
         </p>
       )}
       <div className="fm-club-grid">

@@ -1,6 +1,5 @@
 /**
- * Standalone engine smoke test for the 10-division / 24-club-per-division
- * expansion. Not part of the build — run manually with:
+ * Standalone engine smoke test for the league pyramid. Not part of the build — run manually with:
  *   node --experimental-strip-types scripts/smoke-test-season.ts
  *
  * Plays through an entire season (all 46 rounds) plus the domestic and
@@ -12,9 +11,15 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { GameData } from '../engine/types';
-import { newGame, playRound, seasonOver, computeTable, userDivision, endSeason, ALL_DIVISIONS, divisionFixtures } from '../engine/seasonProgression';
+import {
+  newGame, playRound, seasonOver, computeTable, userLeagueId, endSeason, activeLeagueIds,
+  leagueFixtures, leagueClubs, generateLeagueFixtures, splitFixtures,
+} from '../engine/seasonProgression';
 import { simulateMatch } from '../engine/matchSimulation';
-import { CLUBS_PER_DIVISION, SEASON_ROUNDS, DIVISION_NAMES } from '../engine/gameRules';
+import {
+  CLUBS_PER_DIVISION, LEAGUES, SEASON_ROUNDS, WINTER_BREAK, getLeague, isPhantomLeague,
+  leagueAbove, leagueIdForDivision, leagueName,
+} from '../engine/gameRules';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -29,21 +34,67 @@ const data: GameData = JSON.parse(readFileSync(gamedataPath, 'utf8'));
 console.log(`Loaded ${data.clubs.length} clubs, ${data.players.length} players.`);
 assert(data.clubs.length === CLUBS_PER_DIVISION * 10, `expected ${CLUBS_PER_DIVISION * 10} clubs total, got ${data.clubs.length}`);
 
-for (const d of ALL_DIVISIONS) {
+for (const d of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+  const lid = leagueIdForDivision(d);
   const count = data.clubs.filter((c) => c.division === d).length;
-  console.log(`  Division ${d} (${DIVISION_NAMES[d]}): ${count} clubs`);
-  assert(count === CLUBS_PER_DIVISION, `division ${d} has ${count} clubs, expected ${CLUBS_PER_DIVISION}`);
+  console.log(`  ${leagueName(lid)}: ${count} clubs`);
+  assert(count === CLUBS_PER_DIVISION, `${lid} has ${count} clubs, expected ${CLUBS_PER_DIVISION}`);
 }
 
-// --- Start a career as a division-1 club and simulate every week -----------
+// --- The pyramid itself is internally consistent ---------------------------
+// Every league that promotes into another must send up exactly as many clubs
+// as that league relegates, or division sizes drift season on season.
+console.log('\nPyramid:');
+for (const lg of LEAGUES) {
+  const above = leagueAbove(lg.id);
+  if (!above) continue;
+  const up = lg.autoPromotion + (lg.playoffSpots >= 4 && lg.autoPromotion > 0 ? 1 : 0);
+  const down = above.relegation;
+  console.log(
+    `  ${above.name} (L${above.level}) <- ${lg.name} (L${lg.level}): ${up} up / ${down} down` +
+    `${above.interPlayoff === lg.id ? ' + relegation play-off' : ''}${lg.phantom ? ' [pool]' : ''}`
+  );
+  if (!lg.phantom) {
+    assert(up === down, `${lg.name} sends ${up} up but ${above.name} relegates ${down}`);
+  }
+}
+const countries = new Set(LEAGUES.map((l) => l.country));
+console.log(`  ${LEAGUES.length} leagues across ${countries.size} countries; England is ${LEAGUES.filter((l) => l.country === 'England').length} tiers deep.`);
+
+// --- The Scottish split and multi-round leagues schedule correctly ---------
+// No Scottish clubs ship in the dataset, so exercise the machinery directly.
+{
+  const ids = Array.from({ length: 12 }, (_, i) => i + 1);
+  const pre = generateLeagueFixtures(ids, 3);
+  assert(pre.length === 3 * 6 * 11, `Scottish pre-split programme is ${pre.length} matches, expected 198`);
+  const perClub = ids.map((id) => pre.filter((f) => f.homeId === id || f.awayId === id).length);
+  assert(perClub.every((n) => n === 33), `pre-split games per club: ${perClub.join(',')} (expected 33)`);
+  const post = splitFixtures(ids.slice(0, 6), ids.slice(6), 40);
+  const perClubPost = ids.map((id) => post.filter((f) => f.homeId === id || f.awayId === id).length);
+  assert(perClubPost.every((n) => n === 5), 'post-split half should play 5 more games each');
+  // Nobody crosses the split.
+  assert(
+    post.every((f) => (f.homeId <= 6) === (f.awayId <= 6)),
+    'a post-split fixture crossed the top-six split'
+  );
+  console.log('  Scottish split: 33 pre-split + 5 post-split games per club, no crossing. ✓');
+}
+
+// --- The winter break leaves its calendar weeks empty ----------------------
+// --- Start a career as a top-flight club and simulate every week -----------
 const userClub = data.clubs.find((c) => c.division === 1)!;
 let state = newGame(data, userClub.id, 'Smoke Test');
-console.log(`\nStarted career at ${userClub.name} (Division 1).`);
+console.log(`\nStarted career at ${userClub.name} (${leagueName(userLeagueId(state))}).`);
+
+for (const week of WINTER_BREAK) {
+  const played = Object.values(state.fixtures).flat().filter((f) => f.round === week);
+  assert(played.length === 0, `winter break week ${week} has ${played.length} league fixtures scheduled`);
+}
+console.log(`Winter break weeks ${WINTER_BREAK.join(', ')} carry no league fixtures. ✓`);
 
 let weeksPlayed = 0;
 while (!seasonOver(state)) {
-  const div = userDivision(state);
-  const userFixture = divisionFixtures(state, div).find(
+  const userFixture = leagueFixtures(state, userLeagueId(state)).find(
     (f) => f.round === state.week && (f.homeId === state.userClubId || f.awayId === state.userClubId)
   );
   // Bye week for the user (shouldn't happen with an even club count, but the
@@ -58,14 +109,15 @@ while (!seasonOver(state)) {
 console.log(`Season completed after ${weeksPlayed} weeks (SEASON_ROUNDS=${SEASON_ROUNDS}).`);
 assert(weeksPlayed === SEASON_ROUNDS, `expected exactly ${SEASON_ROUNDS} weeks played, got ${weeksPlayed}`);
 
-// --- Every division's fixture list must be fully played --------------------
-for (const d of ALL_DIVISIONS) {
-  const fixtures = divisionFixtures(state, d);
+// --- Every league's fixture list must be fully played ----------------------
+for (const id of activeLeagueIds(state)) {
+  const fixtures = leagueFixtures(state, id);
+  const clubs = leagueClubs(state, id).length;
   const unplayed = fixtures.filter((f) => !f.played);
-  console.log(`  Division ${d}: ${fixtures.length} fixtures, ${unplayed.length} unplayed`);
-  assert(unplayed.length === 0, `division ${d} has ${unplayed.length} unplayed fixtures at season end`);
-  const expectedRounds = 2 * (CLUBS_PER_DIVISION - 1);
-  assert(fixtures.length === expectedRounds * (CLUBS_PER_DIVISION / 2), `division ${d} fixture count looks wrong: ${fixtures.length}`);
+  console.log(`  ${leagueName(id)}: ${clubs} clubs, ${fixtures.length} fixtures, ${unplayed.length} unplayed`);
+  assert(unplayed.length === 0, `${id} has ${unplayed.length} unplayed fixtures at season end`);
+  const expected = getLeague(id).rounds * (clubs - 1) * (clubs / 2);
+  assert(fixtures.length === expected, `${id} fixture count is ${fixtures.length}, expected ${expected}`);
 }
 
 // --- Domestic cup must have reached a winner --------------------------------
@@ -75,12 +127,66 @@ assert(state.cup.winnerId !== null, 'domestic cup never produced a winner — br
 console.log(`Continental cup (${state.continental.name}): round=${state.continental.round}, winner=${state.continental.winnerId}`);
 assert(state.continental.winnerId !== null, 'continental cup never produced a winner');
 
-// --- Table sanity for every division ---------------------------------------
-for (const d of ALL_DIVISIONS) {
-  const table = computeTable(state, d);
-  assert(table.length === CLUBS_PER_DIVISION, `division ${d} table has ${table.length} rows, expected ${CLUBS_PER_DIVISION}`);
+// --- Table sanity for every league -----------------------------------------
+for (const id of activeLeagueIds(state)) {
+  const clubs = leagueClubs(state, id).length;
+  const table = computeTable(state, id);
+  assert(table.length === clubs, `${id} table has ${table.length} rows, expected ${clubs}`);
   const totalPlayed = table.reduce((s, r) => s + r.played, 0);
-  assert(totalPlayed === CLUBS_PER_DIVISION * (2 * (CLUBS_PER_DIVISION - 1)), `division ${d} table games-played total looks wrong: ${totalPlayed}`);
+  const expected = clubs * getLeague(id).rounds * (clubs - 1);
+  assert(totalPlayed === expected, `${id} table games-played total is ${totalPlayed}, expected ${expected}`);
+}
+
+// --- Phase 2: promotion and relegation move exactly the right clubs ---------
+// Snapshot every club's league, run the season end, and check that each league
+// gained and lost exactly what its LeagueDef promises — and that no club came
+// out of it registered anywhere but in exactly one league.
+{
+  const before = new Map(state.clubs.map((c) => [c.id, c.leagueId]));
+  const sizesBefore = new Map(activeLeagueIds(state).map((id) => [id, leagueClubs(state, id).length]));
+  const rolled = endSeason(state).state;
+
+  const seen = new Map<number, string[]>();
+  for (const c of rolled.clubs) {
+    seen.set(c.id, [...(seen.get(c.id) ?? []), c.leagueId]);
+  }
+  for (const [id, leagues] of seen) {
+    assert(leagues.length === 1, `club ${id} ends the season registered in ${leagues.length} leagues (${leagues.join(', ')})`);
+  }
+
+  console.log('\nPromotion / relegation:');
+  for (const [id, size] of sizesBefore) {
+    const lg = getLeague(id);
+    const now = leagueClubs(rolled, id).length;
+    const arrived = rolled.clubs.filter((c) => c.leagueId === id && !c.dormant && before.get(c.id) !== id);
+    const left = [...before].filter(([cid, lid]) => lid === id && rolled.clubs.find((c) => c.id === cid)?.leagueId !== id);
+    const up = arrived.filter((c) => getLeague(before.get(c.id) ?? id).level > lg.level).length;
+    const down = left.filter(([cid]) => {
+      const to = rolled.clubs.find((c) => c.id === cid)!.leagueId;
+      return getLeague(to).level > lg.level;
+    }).length;
+    console.log(`  ${leagueName(id)}: ${size} -> ${now} clubs, ${up} promoted in, ${down} relegated out`);
+    assert(now === size, `${id} changed size from ${size} to ${now}`);
+    // Relegation is `relegation` clubs, plus one more if this league's lowest
+    // safe place lost its inter-league play-off.
+    const maxDown = lg.relegation + (lg.interPlayoff ? 1 : 0);
+    assert(down >= lg.relegation && down <= maxDown,
+      `${id} relegated ${down} clubs, expected ${lg.relegation}${maxDown !== lg.relegation ? `-${maxDown}` : ''}`);
+    assert(up === down, `${id} took in ${up} promoted clubs but sent ${down} down`);
+  }
+
+  // Every phantom pool still has dormant clubs queued for next season.
+  for (const lg of LEAGUES.filter((l) => l.phantom)) {
+    const pool = rolled.phantomPools?.[lg.id] ?? [];
+    assert(pool.length > 0, `${lg.id} pool ran dry — promotion churn would stall`);
+    assert(pool.every((cid) => rolled.clubs.find((c) => c.id === cid)?.dormant),
+      `${lg.id} pool holds a club that is not dormant`);
+  }
+  assert(
+    rolled.clubs.every((c) => c.dormant === isPhantomLeague(c.leagueId) || !c.dormant),
+    'a dormant club is sitting in a simulated league'
+  );
+  console.log('  Every league promoted and relegated the right count; no club in two leagues. ✓');
 }
 
 // --- Phase 1: development converges on potential, and players retire --------
@@ -90,8 +196,7 @@ const idsAtStart = new Set(Object.keys(state.players).map(Number));
 for (let season = 2; season <= 5; season++) {
   state = endSeason(state).state;
   while (!seasonOver(state)) {
-    const div = userDivision(state);
-    const fx = divisionFixtures(state, div).find(
+    const fx = leagueFixtures(state, userLeagueId(state)).find(
       (f) => f.round === state.week && (f.homeId === state.userClubId || f.awayId === state.userClubId)
     );
     const report = fx

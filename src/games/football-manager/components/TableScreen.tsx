@@ -1,28 +1,36 @@
 'use client';
 
 import { useState } from 'react';
-import type { Division, GameState } from '@/engine/types';
-import { CLUBS_PER_DIVISION, DIVISION_NAMES, PROMOTION_SPOTS } from '@/engine/gameRules';
-import { ALL_DIVISIONS, computeTable, userDivision } from '@/engine/seasonProgression';
+import type { GameState } from '@/engine/types';
+import { getLeague, leagueName } from '@/engine/gameRules';
+import { activeLeagueIds, computeTable, userLeagueId } from '@/engine/seasonProgression';
 import { Crest } from './Crest';
 
 export default function TableScreen({ state }: { state: GameState }) {
-  const [division, setDivision] = useState<Division>(userDivision(state));
-  const table = computeTable(state, division);
+  const [leagueId, setLeagueId] = useState<string>(userLeagueId(state));
+  const leagueIds = activeLeagueIds(state);
+  const active = leagueIds.includes(leagueId) ? leagueId : leagueIds[0] ?? leagueId;
+  const lg = getLeague(active);
+  const table = computeTable(state, active);
   const club = (id: number) => state.clubs.find((c) => c.id === id);
   const clubName = (id: number) => club(id)?.name ?? '—';
-  const divisions: Division[] = ALL_DIVISIONS.filter((d) => state.clubs.some((c) => c.division === d));
-  // Promotion/relegation only runs inside the English pyramid (divisions 1–3);
-  // the fourth tier and the European leagues are self-contained.
-  const pyramid = divisions.filter((d) => d <= 3);
-  const pyramidBottom = pyramid[pyramid.length - 1];
+
+  // Zone boundaries come straight off the league definition, so a five-tier
+  // pyramid and a two-tier one both render correctly without special cases.
+  const n = table.length;
+  const autoUp = lg.autoPromotion;
+  const playoffEnd = autoUp + lg.playoffSpots;
+  // The lowest safe place plays the inter-league relegation play-off
+  // (Bundesliga Relegationsspiele, Ligue 1 barrage) where the league has one.
+  const relFrom = n - lg.relegation;
+  const playoffDown = lg.interPlayoff ? relFrom : 0;
 
   return (
     <>
       <div className="fm-division-toggle" style={{ alignSelf: 'center' }}>
-        {divisions.map((d) => (
-          <button key={d} className={division === d ? 'active' : ''} onClick={() => setDivision(d)}>
-            {DIVISION_NAMES[d]}
+        {leagueIds.map((id) => (
+          <button key={id} className={active === id ? 'active' : ''} onClick={() => setLeagueId(id)}>
+            {leagueName(id)}
           </button>
         ))}
       </div>
@@ -43,9 +51,8 @@ export default function TableScreen({ state }: { state: GameState }) {
           <tbody>
             {table.map((row, i) => {
               const pos = i + 1;
-              const inPyramid = division <= 3;
-              const promo = inPyramid && division !== 1 && pos <= PROMOTION_SPOTS;
-              const releg = inPyramid && division !== pyramidBottom && pos > CLUBS_PER_DIVISION - PROMOTION_SPOTS;
+              const promo = pos <= autoUp || (pos > autoUp && pos <= playoffEnd);
+              const releg = pos > relFrom || pos === playoffDown;
               const me = row.clubId === state.userClubId;
               const c = club(row.clubId);
               return (
@@ -69,15 +76,33 @@ export default function TableScreen({ state }: { state: GameState }) {
           </tbody>
         </table>
       </div>
-      <p className="fm-hint">
-        {division > 3
-          ? `${DIVISION_NAMES[division]} — a standalone league. Win the title; no promotion or relegation.`
-          : division === 1
-            ? `Bottom ${PROMOTION_SPOTS} are relegated. Top 8 qualify for the Continental Champions Cup.`
-            : division === pyramidBottom
-              ? `Top ${PROMOTION_SPOTS} are promoted to Division ${division - 1}.`
-              : `Top ${PROMOTION_SPOTS} go up, bottom ${PROMOTION_SPOTS} go down.`}
-      </p>
+      <p className="fm-hint">{describeLeague(active, n)}</p>
     </>
   );
+}
+
+function ordinal(n: number): string {
+  const s = n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
+  return `${n}${s}`;
+}
+
+/** Plain-English summary of this league's promotion, relegation and UEFA spots. */
+function describeLeague(leagueId: string, clubCount: number): string {
+  const lg = getLeague(leagueId);
+  const parts: string[] = [];
+  if (lg.autoPromotion === 1) parts.push('The champions go up automatically');
+  else if (lg.autoPromotion > 1) parts.push(`Top ${lg.autoPromotion} are promoted automatically`);
+  if (lg.playoffSpots >= 4) {
+    parts.push(
+      `${ordinal(lg.autoPromotion + 1)}–${ordinal(lg.autoPromotion + lg.playoffSpots)} contest the promotion play-offs`
+    );
+  }
+  const euro = lg.championsLeague + lg.clPlayoff;
+  if (euro > 0) parts.push(`top ${euro} qualify for the Continental Champions Cup`);
+  if (lg.relegation === 1) parts.push('the bottom club is relegated');
+  else if (lg.relegation > 1) parts.push(`bottom ${lg.relegation} are relegated`);
+  if (lg.interPlayoff) parts.push(`${ordinal(clubCount - lg.relegation)} plays a relegation play-off`);
+  if (!parts.length) return `${lg.name}. Win the title.`;
+  const text = parts.join(', ');
+  return `${lg.name} — ${text.charAt(0).toUpperCase()}${text.slice(1)}.`;
 }

@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import type { GameState } from '@/engine/types';
-import { DIVISION_NAMES, SEASON_ROUNDS } from '@/engine/gameRules';
-import { computeTable, nextUserFixture, userDivision } from '@/engine/seasonProgression';
+import { SEASON_ROUNDS, leagueName } from '@/engine/gameRules';
+import { computeTable, nextUserFixture, userLeagueId } from '@/engine/seasonProgression';
 import { isClubAlive, knockoutRoundDue } from '@/engine/cups';
 import { isLineupValid } from '@/engine/teamManagement';
 import { formatMoney } from '@/engine/utils';
@@ -29,8 +29,8 @@ export default function PortalHub({
   const [showPress, setShowPress] = useState(false);
 
   const club = state.clubs.find((c) => c.id === state.userClubId)!;
-  const div = userDivision(state);
-  const table = computeTable(state, div);
+  const leagueId = userLeagueId(state);
+  const table = computeTable(state, leagueId);
   const position = table.findIndex((r) => r.clubId === state.userClubId) + 1;
   const fixture = nextUserFixture(state);
   const opponentId = fixture ? (fixture.homeId === state.userClubId ? fixture.awayId : fixture.homeId) : null;
@@ -67,7 +67,7 @@ export default function PortalHub({
         <div className="fm-portal__club-info">
           <h1 className="fm-portal__club-name">{club.name}</h1>
           <p className="fm-portal__club-meta">
-            {state.seasonYear}/{(state.seasonYear + 1) % 100} · {position}{ord(position)} in {DIVISION_NAMES[div]}
+            {state.seasonYear}/{(state.seasonYear + 1) % 100} · {position}{ord(position)} in the {leagueName(leagueId)}
           </p>
         </div>
         {state.managerProfile && (

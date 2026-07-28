@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import type { GameState } from '@/engine/types';
-import { computeTable } from '@/engine/seasonProgression';
+import { computeTable, userLeagueId } from '@/engine/seasonProgression';
+import { getLeague } from '@/engine/gameRules';
 import { isClubAlive, roundName, tieWinner, userTieThisRound } from '@/engine/cups';
 import { StatTile } from './visuals';
 
@@ -20,10 +21,13 @@ export default function EuropeanScreen({ state }: { state: GameState }) {
   const wonIt = k.winnerId === state.userClubId;
 
   // If the user never entered this season's continental knockout, show whether
-  // their current league position would qualify next time (top 8 of Division 1).
-  const d1Table = computeTable(state, 1);
+  // their current league position would qualify next time — their own league's
+  // Champions League allocation, not a flat top 8.
+  const myLeague = getLeague(userLeagueId(state));
+  const euroSpots = myLeague.championsLeague + myLeague.clPlayoff;
+  const d1Table = computeTable(state, myLeague.id);
   const d1Rank = d1Table.findIndex((r) => r.clubId === state.userClubId) + 1;
-  const onCourseToQualify = d1Rank > 0 && d1Rank <= 8;
+  const onCourseToQualify = euroSpots > 0 && d1Rank > 0 && d1Rank <= euroSpots;
 
   const userTies = k.rounds.flatMap((ties, i) =>
     ties.filter((t) => t.homeId === state.userClubId || t.awayId === state.userClubId).map((t) => ({ t, round: i }))
@@ -57,8 +61,10 @@ export default function EuropeanScreen({ state }: { state: GameState }) {
           <p className="fm-cup-status">
             Did not qualify this season.{' '}
             {onCourseToQualify
-              ? `Currently ${d1Rank}${ord(d1Rank)} in Division 1 — on course to qualify.`
-              : 'Finish top 8 in Division 1 to qualify next season.'}
+              ? `Currently ${d1Rank}${ord(d1Rank)} in the ${myLeague.name} — on course to qualify.`
+              : euroSpots > 0
+                ? `Finish top ${euroSpots} in the ${myLeague.name} to qualify next season.`
+                : `The ${myLeague.name} has no Champions League place — promotion first.`}
           </p>
         ) : alive ? (
           <p className="fm-cup-status">
