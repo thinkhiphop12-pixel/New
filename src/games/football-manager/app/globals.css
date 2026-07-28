@@ -1298,3 +1298,51 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-role-tile__name { font-size: 11.5px; font-weight: 800; }
 .fm-role-tile__desc { font-size: 10px; color: var(--muted); line-height: 1.3; }
 .fm-role-tile.active .fm-role-tile__desc { color: inherit; opacity: 0.75; }
+
+/* ── Landscape / Wide Screen Responsive ── */
+@media (min-width: 920px) {
+  /* On wide desktops, increase max-width to use available space */
+  .fm-screen { max-width: 1100px; }
+  .fm-main { padding: 16px 16px 80px; }
+}
+
+@media (min-width: 1200px) {
+  /* Extra wide screens */
+  .fm-screen { max-width: 1200px; }
+  .fm-main { padding: 20px 20px 80px; }
+
+  /* Improve tab layout for many tabs */
+  .fm-tabs { gap: 4px; padding: 6px; }
+  .fm-tab { padding: 10px 16px; font-size: 13px; }
+}
+
+/* Landscape orientation improvements */
+@media (orientation: landscape) and (max-height: 600px) {
+  .fm-main { padding: 12px 12px 70px; }
+  .fm-screen { gap: 10px; }
+  .fm-panel { padding: 12px; }
+  .fm-tabs { gap: 1px; padding: 2px; }
+  .fm-tab { padding: 6px 12px; font-size: 11px; }
+}
+
+/* Grid/Multi-column layouts for wider screens */
+@media (min-width: 1024px) {
+  .fm-portal__cards { grid-template-columns: repeat(3, 1fr); }
+  .fm-attr-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Better handling of many tabs on desktop */
+@media (min-width: 800px) {
+  .fm-tabs {
+    /* On tablets and above, use a tighter layout */
+    gap: 3px;
+  }
+  .fm-tab {
+    padding: 9px 13px;
+    font-size: 11.5px;
+  }
+  .fm-tab__label {
+    /* Keep labels visible on desktop even if there are many tabs */
+    display: inline;
+  }
+}
