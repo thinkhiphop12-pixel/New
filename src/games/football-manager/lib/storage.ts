@@ -344,8 +344,43 @@ export function hasSave(slot = 0): boolean {
 }
 
 /**
+ * Rebuild the localStorage index from the IndexedDB payloads.
+ *
+ * The index and the payloads live in different stores with different eviction
+ * behaviour — browsers clear localStorage far more readily than IndexedDB. If
+ * the index is lost the careers are still there, but `listSaves()` reports
+ * empty slots, which makes them invisible, unreachable, and liable to be
+ * overwritten by a new game. Reconciling on boot makes the index a cache of
+ * the payloads rather than a second source of truth.
+ */
+async function reconcileIndex(): Promise<void> {
+  const index = readIndex();
+  let changed = false;
+  for (let slot = 0; slot < SLOT_KEYS.length; slot++) {
+    if (index[slot]) continue;
+    let stored: string | null = null;
+    try {
+      stored = await idbGet(IDB_KEY(slot));
+    } catch {
+      continue;
+    }
+    if (!stored) continue;
+    try {
+      const parsed = JSON.parse(decompressFromUTF16(stored)) as RawSave;
+      if (!parsed?.userClubId) continue;
+      index[slot] = metaOf(migrate(parsed), slot);
+      changed = true;
+    } catch {
+      // An unreadable payload stays out of the index but is left on disk.
+    }
+  }
+  if (changed) writeIndex(index);
+}
+
+/**
  * One-time relocation of pre-IndexedDB saves, plus recovery of any emergency
- * blob written by the last beforeunload. Safe to call on every boot.
+ * blob written by the last beforeunload, plus index reconciliation. Safe to
+ * call on every boot.
  */
 export async function migrateLegacySaves(): Promise<void> {
   for (let slot = 0; slot < SLOT_KEYS.length; slot++) {
@@ -376,6 +411,8 @@ export async function migrateLegacySaves(): Promise<void> {
   } catch {
     // A corrupt emergency blob is discarded on the next successful save.
   }
+
+  await reconcileIndex();
 }
 
 /**
