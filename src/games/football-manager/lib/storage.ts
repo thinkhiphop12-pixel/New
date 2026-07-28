@@ -4,6 +4,8 @@ import {
 } from '@/engine/seasonProgression';
 import { LEAGUES, getLeague, leagueIdForDivision } from '@/engine/gameRules';
 import { contractEndFor, rollRetireAge, weeklyWage } from '@/engine/utils';
+import { compressToUTF16, decompressFromUTF16, WORKER_SOURCE } from '@/lib/lz';
+import { idbDelete, idbGet, idbPut } from '@/lib/idb';
 
 /**
  * Save games live in the browser. Three career slots; slot 0 keeps the legacy
@@ -176,18 +178,137 @@ function migrate(raw: RawSave): GameState {
   return s;
 }
 
-export function saveGame(state: GameState, slot = 0): void {
-  try {
-    localStorage.setItem(SLOT_KEYS[slot], JSON.stringify(state));
-  } catch {
-    // Storage full or blocked — the session keeps working, it just won't persist.
+/* ---------------------------------------------------------------------------
+ * Persistence
+ *
+ * Payloads live in IndexedDB, LZ-compressed (~11x on real saves). A small
+ * metadata index stays in localStorage so the save menu can render synchronously
+ * without parsing — and without deserializing three multi-megabyte careers just
+ * to print three club names, which is what the previous implementation did.
+ * ------------------------------------------------------------------------- */
+
+const INDEX_KEY = 'fmlite.index.v1';
+const EMERGENCY_KEY = 'fmlite.emergency';
+const IDB_KEY = (slot: number) => `save.${slot}`;
+
+/** Raised when a save could not be persisted. Previously these were swallowed,
+ *  so a career would silently stop saving and the player only found out when
+ *  they came back to an old save. */
+export class SaveFailedError extends Error {
+  constructor(cause: string) {
+    super(`Save failed: ${cause}`);
+    this.name = 'SaveFailedError';
   }
 }
 
-export function loadGame(slot = 0): GameState | null {
+function metaOf(state: GameState, slot: number): SaveMeta {
+  const club = state.clubs.find((c) => c.id === state.userClubId);
+  return {
+    slot,
+    clubName: club?.name ?? '—',
+    seasonYear: state.seasonYear,
+    week: state.week,
+    leagueId: club?.leagueId ?? 'premier_league',
+    leagueName: getLeague(club?.leagueId ?? 'premier_league').name,
+    managerName: state.manager.name,
+  };
+}
+
+function readIndex(): (SaveMeta | null)[] {
   try {
-    const raw = localStorage.getItem(SLOT_KEYS[slot]);
-    if (!raw) return null;
+    const raw = localStorage.getItem(INDEX_KEY);
+    if (!raw) return SLOT_KEYS.map(() => null);
+    const parsed = JSON.parse(raw) as (SaveMeta | null)[];
+    return SLOT_KEYS.map((_, i) => parsed[i] ?? null);
+  } catch {
+    return SLOT_KEYS.map(() => null);
+  }
+}
+
+function writeIndex(index: (SaveMeta | null)[]): void {
+  try {
+    localStorage.setItem(INDEX_KEY, JSON.stringify(index));
+  } catch {
+    // The index is a few hundred bytes; if even that fails the menu degrades to
+    // empty slots, but the payloads in IndexedDB are still intact.
+  }
+}
+
+/* --- compression worker -------------------------------------------------- */
+
+interface PendingJob {
+  resolve: (v: string) => void;
+  reject: (e: Error) => void;
+}
+
+let worker: Worker | null = null;
+let workerJobId = 0;
+const pending = new Map<number, PendingJob>();
+
+function getWorker(): Worker | null {
+  if (worker !== null) return worker;
+  if (typeof Worker === 'undefined' || typeof Blob === 'undefined') return null;
+  try {
+    const url = URL.createObjectURL(new Blob([WORKER_SOURCE], { type: 'text/javascript' }));
+    worker = new Worker(url);
+    worker.onmessage = (e: MessageEvent<{ id: number; ok: boolean; result?: string; error?: string }>) => {
+      const job = pending.get(e.data.id);
+      if (!job) return;
+      pending.delete(e.data.id);
+      if (e.data.ok && e.data.result != null) job.resolve(e.data.result);
+      else job.reject(new Error(e.data.error ?? 'compression failed'));
+    };
+    return worker;
+  } catch {
+    return null;
+  }
+}
+
+/** Compress off the main thread when possible. A ~4 MB save takes long enough
+ *  that doing this inline visibly janks the UI on every autosave. */
+function compressAsync(payload: string): Promise<string> {
+  const w = getWorker();
+  if (!w) return Promise.resolve(compressToUTF16(payload));
+  return new Promise((resolve, reject) => {
+    const id = ++workerJobId;
+    pending.set(id, { resolve, reject });
+    w.postMessage({ id, payload });
+  });
+}
+
+/* --- public API ---------------------------------------------------------- */
+
+export async function saveGame(state: GameState, slot = 0): Promise<void> {
+  const payload = JSON.stringify(state);
+  const compressed = await compressAsync(payload);
+  try {
+    await idbPut(IDB_KEY(slot), compressed);
+  } catch (e) {
+    throw new SaveFailedError((e as Error).message);
+  }
+  const index = readIndex();
+  index[slot] = metaOf(state, slot);
+  writeIndex(index);
+}
+
+export async function loadGame(slot = 0): Promise<GameState | null> {
+  let raw: string | null = null;
+  try {
+    const stored = await idbGet(IDB_KEY(slot));
+    if (stored) raw = decompressFromUTF16(stored);
+  } catch {
+    raw = null;
+  }
+  // Fall back to a pre-IndexedDB save still sitting in localStorage.
+  if (!raw) {
+    try {
+      raw = localStorage.getItem(SLOT_KEYS[slot]);
+    } catch {
+      raw = null;
+    }
+  }
+  if (!raw) return null;
+  try {
     const parsed = JSON.parse(raw) as RawSave;
     if (!parsed.userClubId || ![1, 2, 3, 4, 5].includes(parsed.version)) return null;
     return migrate(parsed);
@@ -196,32 +317,78 @@ export function loadGame(slot = 0): GameState | null {
   }
 }
 
-export function clearSave(slot = 0): void {
+export async function clearSave(slot = 0): Promise<void> {
+  try {
+    await idbDelete(IDB_KEY(slot));
+  } catch {
+    // Nothing to do — the index write below still removes it from the menu.
+  }
   try {
     localStorage.removeItem(SLOT_KEYS[slot]);
   } catch {
     // ignore
   }
+  const index = readIndex();
+  index[slot] = null;
+  writeIndex(index);
 }
 
-/** Lightweight metadata for every slot (null = empty slot). */
+/** Slot metadata, read straight from the localStorage index — no payload is
+ *  fetched, decompressed or parsed. */
 export function listSaves(): (SaveMeta | null)[] {
-  return SLOT_KEYS.map((_, slot) => {
-    const s = loadGame(slot);
-    if (!s) return null;
-    const club = s.clubs.find((c) => c.id === s.userClubId);
-    return {
-      slot,
-      clubName: club?.name ?? '—',
-      seasonYear: s.seasonYear,
-      week: s.week,
-      leagueId: club?.leagueId ?? 'premier_league',
-      leagueName: getLeague(club?.leagueId ?? 'premier_league').name,
-      managerName: s.manager.name,
-    };
-  });
+  return readIndex();
 }
 
 export function hasSave(slot = 0): boolean {
-  return loadGame(slot) !== null;
+  return readIndex()[slot] !== null;
+}
+
+/**
+ * One-time relocation of pre-IndexedDB saves, plus recovery of any emergency
+ * blob written by the last beforeunload. Safe to call on every boot.
+ */
+export async function migrateLegacySaves(): Promise<void> {
+  for (let slot = 0; slot < SLOT_KEYS.length; slot++) {
+    let legacy: string | null = null;
+    try {
+      legacy = localStorage.getItem(SLOT_KEYS[slot]);
+    } catch {
+      continue;
+    }
+    if (!legacy) continue;
+    try {
+      const parsed = JSON.parse(legacy) as RawSave;
+      if (!parsed.userClubId) continue;
+      await saveGame(migrate(parsed), slot);
+      localStorage.removeItem(SLOT_KEYS[slot]);
+    } catch {
+      // Leave an unreadable legacy save where it is rather than destroying it.
+    }
+  }
+
+  try {
+    const emergency = localStorage.getItem(EMERGENCY_KEY);
+    if (emergency) {
+      const { slot, state } = JSON.parse(emergency) as { slot: number; state: RawSave };
+      if (state?.userClubId) await saveGame(migrate(state), slot);
+      localStorage.removeItem(EMERGENCY_KEY);
+    }
+  } catch {
+    // A corrupt emergency blob is discarded on the next successful save.
+  }
+}
+
+/**
+ * Synchronous last-ditch write for `beforeunload`, where async IndexedDB work
+ * will not complete. Stores uncompressed to a single key; absorbed into
+ * IndexedDB by migrateLegacySaves() on the next boot. Best-effort by nature —
+ * if the state is too big for localStorage this simply does nothing, which is
+ * why it is a backstop for the debounced autosave rather than a replacement.
+ */
+export function emergencySave(state: GameState, slot = 0): void {
+  try {
+    localStorage.setItem(EMERGENCY_KEY, JSON.stringify({ slot, state }));
+  } catch {
+    // Nothing further to try at this point in the page lifecycle.
+  }
 }

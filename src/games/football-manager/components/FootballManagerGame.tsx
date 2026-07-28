@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GameData, GameState, MatchReport, SeasonSummary, GameSettings, ManagerProfile } from '@/engine/types';
 import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/engine/seasonProgression';
 import { simulateTickMatch } from '@/engine/tickEngine/sim';
 import { normalizeMentality } from '@/engine/tickEngine/tacticsData';
 import { loadGameData } from '@/lib/gamedata';
-import { clearSave, listSaves, loadGame, saveGame, SAVE_SLOTS, type SaveMeta } from '@/lib/storage';
+import {
+  clearSave, emergencySave, listSaves, loadGame, migrateLegacySaves, saveGame,
+  SAVE_SLOTS, type SaveMeta,
+} from '@/lib/storage';
 import MainMenuScreen from './MainMenuScreen';
 import NationSelectScreen from './NationSelectScreen';
 import ClubSelectScreen from './ClubSelectScreen';
@@ -21,6 +24,9 @@ type View = 'menu' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonen
 export default function FootballManagerGame() {
   const [data, setData] = useState<GameData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Surfaced in the header: a failed write used to be swallowed, so a career
+  // could silently stop persisting without the player ever being told.
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [gs, setGs] = useState<GameState | null>(null);
   const [slot, setSlot] = useState(0);
   const [view, setView] = useState<View>('menu');
@@ -35,7 +41,9 @@ export default function FootballManagerGame() {
     loadGameData()
       .then(setData)
       .catch((e) => setLoadError(String(e)));
-    setSaves(listSaves());
+    // Relocate any pre-IndexedDB save and absorb an emergency blob before the
+    // menu reads the index, so relocated careers appear on first paint.
+    migrateLegacySaves().then(() => setSaves(listSaves()));
     setSettings(loadSettings());
     // The manager avatar is edited from the main menu before a career even
     // exists, so it needs a home outside GameState too — fall back to the
@@ -57,19 +65,51 @@ export default function FootballManagerGame() {
     window.scrollTo(0, 0);
   }, [view]);
 
+  /* Persisting on every action meant compressing and writing ~4 MB per click.
+   * Hold the latest state in a ref and flush on a short debounce instead; the
+   * beforeunload handler below covers the window between the last action and
+   * the next flush. */
+  const pendingSave = useRef<{ state: GameState; slot: number } | null>(null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushSave = useCallback(() => {
+    const job = pendingSave.current;
+    if (!job) return;
+    pendingSave.current = null;
+    saveGame(job.state, job.slot)
+      .then(() => {
+        setSaveError(null);
+        setSaves(listSaves());
+      })
+      .catch((e: Error) => setSaveError(e.message));
+  }, []);
+
   const apply = (next: GameState, toSlot = slot) => {
     setGs(next);
-    saveGame(next, toSlot);
+    pendingSave.current = { state: next, slot: toSlot };
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(flushSave, 800);
   };
 
+  // Anything still queued when the tab closes goes to the synchronous
+  // emergency key, which is absorbed back into IndexedDB on the next boot.
+  useEffect(() => {
+    const onUnload = () => {
+      const job = pendingSave.current;
+      if (job) emergencySave(job.state, job.slot);
+    };
+    window.addEventListener('beforeunload', onUnload);
+    return () => window.removeEventListener('beforeunload', onUnload);
+  }, []);
+
   const handleContinue = (s: number) => {
-    const save = loadGame(s);
-    if (save) {
+    loadGame(s).then((save) => {
+      if (!save) return;
       setSlot(s);
       setGs(save);
       if (save.managerProfile) setManagerProfile(save.managerProfile);
       setView('hub');
-    }
+    });
   };
 
   const handleNewGame = (s: number) => {
@@ -83,8 +123,7 @@ export default function FootballManagerGame() {
   };
 
   const handleDelete = (s: number) => {
-    clearSave(s);
-    setSaves(listSaves());
+    clearSave(s).then(() => setSaves(listSaves()));
   };
 
   const handlePickClub = (clubId: number, managerName: string) => {
@@ -124,8 +163,8 @@ export default function FootballManagerGame() {
   };
 
   const handleAbandon = () => {
-    clearSave(slot);
-    backToMenu();
+    pendingSave.current = null;
+    clearSave(slot).then(backToMenu);
   };
 
   const handlePlayMatch = () => {

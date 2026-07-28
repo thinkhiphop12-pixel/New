@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import type { GameData } from '../engine/types';
 import { newGame, playRound, seasonOver, nextUserFixture, endSeason } from '../engine/seasonProgression';
 import { simulateMatch } from '../engine/matchSimulation';
+import { compressToUTF16, decompressFromUTF16 } from '../lib/lz';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const data = JSON.parse(
@@ -62,3 +63,19 @@ try {
   rows.push(`  simulation stopped: ${(e as Error).message}`);
 }
 console.log(rows.join('\n'));
+
+/* Phase 0b assertion: the compressed payload must round-trip byte-for-byte and
+ * must fit with room to spare even at the largest size measured above. */
+const worst = JSON.stringify(s);
+const packed = compressToUTF16(worst);
+const restored = decompressFromUTF16(packed);
+const packedMb = packed.length / 1048576;
+
+console.log(`\nCompression (worst case above):`);
+console.log(`  raw        ${(worst.length / 1048576).toFixed(2)} MB`);
+console.log(`  compressed ${packedMb.toFixed(2)} MB  (${(worst.length / packed.length).toFixed(1)}x)`);
+console.log(`  round-trip ${restored === worst ? 'OK' : 'FAIL'}`);
+
+if (restored !== worst) throw new Error('compression round-trip corrupted the save');
+if (packedMb > 2) throw new Error(`compressed save ${packedMb.toFixed(2)} MB is too large`);
+console.log(`\n✓ Save fits comfortably once compressed.`);
