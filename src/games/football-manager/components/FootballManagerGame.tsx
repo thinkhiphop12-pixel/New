@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { Division, GameData, GameState, MatchReport, SeasonSummary, GameSettings } from '@/engine/types';
-import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/engine/seasonProgression';
-import { simulateTickMatch } from '@/engine/tickEngine/sim';
-import { normalizeMentality } from '@/engine/tickEngine/tacticsData';
+import type { Division, GameData, GameState, MatchReport, SeasonSummary, GameSettings, ManagerProfile } from '@/games/football-manager/engine/types';
+import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/games/football-manager/engine/seasonProgression';
+import { simulateTickMatch } from '@/games/football-manager/engine/tickEngine/sim';
+import { normalizeMentality } from '@/games/football-manager/engine/tickEngine/tacticsData';
 import { loadGameData } from '@/lib/gamedata';
 import { clearSave, listSaves, loadGame, saveGame, SAVE_SLOTS, type SaveMeta } from '@/lib/storage';
 import MainMenuScreen from './MainMenuScreen';
@@ -14,8 +14,9 @@ import HubScreen from './HubScreen';
 import MatchScreen from './match/MatchScreen';
 import SeasonEndScreen from './SeasonEndScreen';
 import SettingsPanel, { loadSettings } from './SettingsPanel';
+import CharacterCustomizerScreen from './CharacterCustomizerScreen';
 
-type View = 'menu' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonend';
+type View = 'menu' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonend' | 'character';
 
 export default function FootballManagerGame() {
   const [data, setData] = useState<GameData | null>(null);
@@ -28,6 +29,7 @@ export default function FootballManagerGame() {
   const [settings, setSettings] = useState<GameSettings | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedDivisions, setSelectedDivisions] = useState<Division[]>([1, 2, 3, 4]);
+  const [managerProfile, setManagerProfile] = useState<ManagerProfile | null>(null);
 
   useEffect(() => {
     loadGameData()
@@ -128,6 +130,21 @@ export default function FootballManagerGame() {
     }
   };
 
+  const handleCharacterCustomizerOpen = () => {
+    setView('character');
+  };
+
+  const handleCharacterSave = (profile: ManagerProfile) => {
+    setManagerProfile(profile);
+    // Save to localStorage for persistence
+    localStorage.setItem('managerProfile', JSON.stringify(profile));
+    setView('menu');
+  };
+
+  const handleCharacterBack = () => {
+    setView('menu');
+  };
+
   return (
     <div className="fm-app">
       <header className="fm-header">
@@ -166,8 +183,10 @@ export default function FootballManagerGame() {
             <div className="fm-spinner" />
             <p className="fm-hint">Loading player database…</p>
           </div>
+        ) : view === 'character' ? (
+          <CharacterCustomizerScreen onSave={handleCharacterSave} onBack={handleCharacterBack} initialProfile={managerProfile || undefined} />
         ) : view === 'menu' ? (
-          <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} />
+          <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} onCharacterCustomizer={handleCharacterCustomizerOpen} />
         ) : view === 'nationselect' ? (
           <NationSelectScreen onPick={handlePickNation} onBack={backToMenu} />
         ) : view === 'clubselect' ? (
@@ -185,7 +204,7 @@ export default function FootballManagerGame() {
         ) : gs ? (
           <HubScreen state={gs} onChange={apply} onPlayMatch={handlePlayMatch} onAbandon={handleAbandon} />
         ) : (
-          <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} />
+          <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} onCharacterCustomizer={handleCharacterCustomizerOpen} />
         )}
       </main>
 

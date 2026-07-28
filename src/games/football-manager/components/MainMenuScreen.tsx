@@ -1,17 +1,20 @@
 'use client';
 
 import type { SaveMeta } from '@/lib/storage';
+import type { ManagerProfile } from '@/games/football-manager/engine/types';
 
 export default function MainMenuScreen({
   saves,
   onContinue,
   onNewGame,
   onDelete,
+  onCharacterCustomizer,
 }: {
   saves: (SaveMeta | null)[];
   onContinue: (slot: number) => void;
   onNewGame: (slot: number) => void;
   onDelete: (slot: number) => void;
+  onCharacterCustomizer: () => void;
 }) {
   return (
     <div className="fm-screen fm-start">
@@ -23,6 +26,12 @@ export default function MainMenuScreen({
         Take charge of a club across three divisions. Set your tactics, work the market, bring
         through the kids — and survive the board. League, cup and continental glory await.
       </p>
+
+      <div className="fm-menu-actions">
+        <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={onCharacterCustomizer}>
+          🎨 Customize Manager
+        </button>
+      </div>
 
       <div className="fm-slots">
         {saves.map((meta, slot) => (
