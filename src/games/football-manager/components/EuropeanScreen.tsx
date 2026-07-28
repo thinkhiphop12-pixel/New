@@ -1,129 +1,180 @@
 'use client';
 
+import { useState } from 'react';
 import type { GameState } from '@/engine/types';
+import { computeTable } from '@/engine/seasonProgression';
+import { isClubAlive, roundName, tieWinner, userTieThisRound } from '@/engine/cups';
 import { StatTile } from './visuals';
 
+type EuroTab = 'standings' | 'fixtures' | 'stats';
+
 export default function EuropeanScreen({ state }: { state: GameState }) {
-  const european = state.continental;
-  const userClub = state.clubs.find((c) => c.id === state.userClubId);
-  const isParticipating = european.participants.some((p) => p === state.userClubId);
+  const [tab, setTab] = useState<EuroTab>('standings');
+  const k = state.continental;
+  const clubName = (id: number) => state.clubs.find((c) => c.id === id)?.name ?? '—';
 
-  const upcomingFixtures = european.fixtures
-    .filter((f) => (f.homeId === state.userClubId || f.awayId === state.userClubId) && !f.played)
-    .slice(0, 5);
+  const enteredThisSeason =
+    k.byes.includes(state.userClubId) ||
+    k.rounds.some((r) => r.some((t) => t.homeId === state.userClubId || t.awayId === state.userClubId));
+  const alive = isClubAlive(k, state.userClubId);
+  const wonIt = k.winnerId === state.userClubId;
 
-  const results = european.fixtures
-    .filter((f) => (f.homeId === state.userClubId || f.awayId === state.userClubId) && f.played)
-    .slice(0, 5);
+  // If the user never entered this season's continental knockout, show whether
+  // their current league position would qualify next time (top 8 of Division 1).
+  const d1Table = computeTable(state, 1);
+  const d1Rank = d1Table.findIndex((r) => r.clubId === state.userClubId) + 1;
+  const onCourseToQualify = d1Rank > 0 && d1Rank <= 8;
 
-  const userStats = {
-    played: results.length,
-    wins: results.filter((f) => (f.homeId === state.userClubId && f.homeGoals > f.awayGoals) || (f.awayId === state.userClubId && f.awayGoals > f.homeGoals)).length,
-    draws: results.filter((f) => f.homeGoals === f.awayGoals).length,
-  };
-  const userStats_losses = userStats.played - userStats.wins - userStats.draws;
+  const userTies = k.rounds.flatMap((ties, i) =>
+    ties.filter((t) => t.homeId === state.userClubId || t.awayId === state.userClubId).map((t) => ({ t, round: i }))
+  );
+
+  const played = userTies.filter((x) => x.t.played);
+  let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
+  for (const { t } of played) {
+    const isHome = t.homeId === state.userClubId;
+    const myGoals = isHome ? t.homeGoals : t.awayGoals;
+    const oppGoals = isHome ? t.awayGoals : t.homeGoals;
+    gf += myGoals;
+    ga += oppGoals;
+    const winner = tieWinner(t);
+    if (winner === state.userClubId) wins++;
+    else if (t.homeGoals === t.awayGoals && !t.pensWinnerId) draws++;
+    else losses++;
+  }
+
+  const currentTie = userTieThisRound(k, state.userClubId);
 
   return (
     <>
-      {!isParticipating ? (
+      <div className="fm-panel">
+        <p className="fm-label" style={{ marginTop: 0 }}>
+          {k.name || 'Continental Champions Cup'}
+        </p>
+        {wonIt ? (
+          <p className="fm-cup-status">🏆 Winners: {clubName(k.winnerId!)}</p>
+        ) : !enteredThisSeason ? (
+          <p className="fm-cup-status">
+            Did not qualify this season.{' '}
+            {onCourseToQualify
+              ? `Currently ${d1Rank}${ord(d1Rank)} in Division 1 — on course to qualify.`
+              : 'Finish top 8 in Division 1 to qualify next season.'}
+          </p>
+        ) : alive ? (
+          <p className="fm-cup-status">
+            {roundName(k, k.round)} — {k.weeks[k.round] != null ? `week ${k.weeks[k.round]}` : 'draw pending'}.
+          </p>
+        ) : (
+          <p className="fm-cup-status">Knocked out this season.</p>
+        )}
+      </div>
+
+      <div className="fm-division-toggle" style={{ alignSelf: 'center' }}>
+        <button className={tab === 'standings' ? 'active' : ''} onClick={() => setTab('standings')}>
+          Standings
+        </button>
+        <button className={tab === 'fixtures' ? 'active' : ''} onClick={() => setTab('fixtures')}>
+          Fixtures
+        </button>
+        <button className={tab === 'stats' ? 'active' : ''} onClick={() => setTab('stats')}>
+          Statistics
+        </button>
+      </div>
+
+      {tab === 'standings' && (
         <div className="fm-panel">
           <p className="fm-label" style={{ marginTop: 0 }}>
-            European Competitions
-          </p>
-          <p className="fm-club-line" style={{ textAlign: 'left' }}>
-            {userClub?.name} is not currently participating in European competitions.
+            Knockout progress
           </p>
           <p className="fm-hint" style={{ textAlign: 'left' }}>
-            Finish high enough in the league to qualify for European competition next season.
+            The Continental Champions Cup is a straight knockout (Quarter-final → Semi-final →
+            Final) — there is no group stage.
           </p>
+          {k.rounds.map((ties, i) => {
+            const played = ties.some((t) => t.played);
+            if (!played && i !== k.round) return null;
+            return (
+              <div key={i} style={{ marginTop: 10 }}>
+                <p className="fm-label">{roundName(k, i)}</p>
+                <ul className="fm-cup-ties">
+                  {ties.map((t, j) => {
+                    const mine = t.homeId === state.userClubId || t.awayId === state.userClubId;
+                    const w = tieWinner(t);
+                    return (
+                      <li key={j} className={mine ? 'me' : ''}>
+                        <span className={w === t.homeId ? 'w' : ''}>{clubName(t.homeId)}</span>
+                        <span className="score">
+                          {t.played ? `${t.homeGoals}–${t.awayGoals}${t.pensWinnerId ? ' p' : ''}` : 'vs'}
+                        </span>
+                        <span className={w === t.awayId ? 'w' : ''}>{clubName(t.awayId)}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
+          {k.round === 0 && k.byes.length > 0 && (
+            <p className="fm-hint" style={{ textAlign: 'left' }}>
+              Byes into round two: {k.byes.map(clubName).join(', ')}
+            </p>
+          )}
+          {!enteredThisSeason && <p className="fm-hint">No bracket to show — not entered this season.</p>}
         </div>
-      ) : (
-        <>
-          <div className="fm-panel">
-            <p className="fm-label" style={{ marginTop: 0 }}>
-              {userClub?.name} — European Campaign
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginTop: '12px' }}>
-              <StatTile icon="⚽" value={userStats.played} label="Matches" />
-              <StatTile icon="✓" value={userStats.wins} label="Wins" />
-              <StatTile icon="=" value={userStats.draws} label="Draws" />
-              <StatTile icon="✗" value={userStats_losses} label="Losses" />
-            </div>
-          </div>
+      )}
 
-          {upcomingFixtures.length > 0 && (
-            <div className="fm-panel">
-              <p className="fm-label" style={{ marginTop: 0 }}>
-                Upcoming European Fixtures
-              </p>
-              <ul className="fm-fixture-list">
-                {upcomingFixtures.map((f, i) => {
-                  const home = state.clubs.find((c) => c.id === f.homeId);
-                  const away = state.clubs.find((c) => c.id === f.awayId);
-                  const isHome = f.homeId === state.userClubId;
-
-                  return (
-                    <li key={i} className="fm-fixture next">
-                      <div className="fm-fixture__round">R{f.round}</div>
-                      <div className={`fm-fixture__${isHome ? 'home' : 'away'}`}>
-                        <span>{isHome ? home?.code : away?.code}</span>
-                      </div>
-                      <div className="fm-fixture__score">vs</div>
-                      <div className={`fm-fixture__${isHome ? 'away' : 'home'}`}>
-                        <span>{isHome ? away?.code : home?.code}</span>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-
-          {results.length > 0 && (
-            <div className="fm-panel">
-              <p className="fm-label" style={{ marginTop: 0 }}>
-                Recent European Results
-              </p>
-              <ul className="fm-fixture-list">
-                {results.map((f, i) => {
-                  const home = state.clubs.find((c) => c.id === f.homeId);
-                  const away = state.clubs.find((c) => c.id === f.awayId);
-                  const isHome = f.homeId === state.userClubId;
-                  const isWin = (isHome && f.homeGoals > f.awayGoals) || (!isHome && f.awayGoals > f.homeGoals);
-                  const isDraw = f.homeGoals === f.awayGoals;
-
-                  return (
-                    <li key={i} className={`fm-fixture${isWin ? ' win' : isDraw ? ' draw' : ' loss'}`}>
-                      <div className="fm-fixture__round">R{f.round}</div>
-                      <div className={`fm-fixture__${isHome ? 'home' : 'away'}`}>
-                        <span>{isHome ? home?.name : away?.name}</span>
-                      </div>
-                      <div className="fm-fixture__score">
-                        {isHome ? f.homeGoals : f.awayGoals} − {isHome ? f.awayGoals : f.homeGoals}
-                      </div>
-                      <div className={`fm-fixture__${isHome ? 'away' : 'home'}`}>
-                        <span>{isHome ? away?.name : home?.name}</span>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-
-          <div className="fm-panel">
-            <p className="fm-label" style={{ marginTop: 0 }}>
-              Competition Info
-            </p>
-            <ul className="fm-news">
-              <li>European competitions run parallel to your domestic league</li>
-              <li>Progression to knockout stages based on group performance</li>
-              <li>European fixture congestion may affect league fixtures</li>
-              <li>Prize money awarded for progression and winning</li>
+      {tab === 'fixtures' && (
+        <div className="fm-panel">
+          <p className="fm-label" style={{ marginTop: 0 }}>
+            Upcoming
+          </p>
+          {currentTie ? (
+            <ul className="fm-cup-ties">
+              <li className="me">
+                <span className={currentTie.homeId === state.userClubId ? '' : ''}>{clubName(currentTie.homeId)}</span>
+                <span className="score">vs</span>
+                <span>{clubName(currentTie.awayId)}</span>
+              </li>
             </ul>
+          ) : (
+            <p className="fm-hint">No tie currently scheduled.</p>
+          )}
+          <p className="fm-label">Remaining rounds</p>
+          {k.weeks.slice(k.round).length === 0 ? (
+            <p className="fm-hint">No rounds left this season.</p>
+          ) : (
+            <ul className="fm-news">
+              {k.weeks.slice(k.round).map((wk, i) => (
+                <li key={i}>
+                  {roundName(k, k.round + i)} — week {wk}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {tab === 'stats' && (
+        <div className="fm-panel">
+          <p className="fm-label" style={{ marginTop: 0 }}>
+            {clubName(state.userClubId)} in Europe this season
+          </p>
+          <div className="fm-attr-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            <StatTile icon="⚽" value={played.length} label="Played" />
+            <StatTile icon="✅" value={wins} label="Wins" />
+            <StatTile icon="➖" value={draws} label="Draws" />
+            <StatTile icon="❌" value={losses} label="Losses" />
+            <StatTile icon="🥅" value={`${gf}-${ga}`} label="Goals for-against" />
+            <StatTile icon="📈" value={gf - ga >= 0 ? `+${gf - ga}` : gf - ga} label="Goal difference" />
           </div>
-        </>
+          {!enteredThisSeason && <p className="fm-hint">No European matches played this season.</p>}
+        </div>
       )}
     </>
   );
+}
+
+function ord(n: number): string {
+  if (n % 100 >= 11 && n % 100 <= 13) return 'th';
+  return ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
 }
