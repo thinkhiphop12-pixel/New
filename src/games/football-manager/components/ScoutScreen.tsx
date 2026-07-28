@@ -6,6 +6,7 @@ import { askingPrice, buyPlayer, canBuy, scoutRecommendations, transferTargets }
 import { getStaff } from '@/engine/seasonProgression';
 import { formatMoney } from '@/engine/utils';
 import { StatTile } from './visuals';
+import PlayerModal from './PlayerModal';
 
 const POSITIONS: (Position | 'ALL')[] = ['ALL', 'GK', 'DEF', 'MID', 'FWD'];
 
@@ -21,6 +22,8 @@ export default function ScoutScreen({
   const [maxAge, setMaxAge] = useState(40);
   const [shortlist, setShortlist] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<number | null>(null);
+  const detail = detailId !== null ? state.players[detailId] : null;
 
   const clubName = (id: number) => (id === 0 ? 'Free agent' : state.clubs.find((c) => c.id === id)?.name ?? '—');
   const scoutLevel = getStaff(state).scout;
@@ -131,7 +134,7 @@ export default function ScoutScreen({
                 </p>
                 <div className="fm-player-list">
                   {rep.picks.map((p) => (
-                    <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`}>
+                    <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
                       <span className="fm-player-row__badge">{p.role}</span>
                       <span className="fm-player-row__name">
                         {p.name}
@@ -142,14 +145,14 @@ export default function ScoutScreen({
                       <span style={{ display: 'flex', gap: 6 }}>
                         <button
                           className={`fm-btn fm-btn--small${shortlist.has(p.id) ? ' fm-btn--secondary' : ' fm-btn--ghost'}`}
-                          onClick={() => toggleScout(p.id)}
+                          onClick={(e) => { e.stopPropagation(); toggleScout(p.id); }}
                         >
                           {shortlist.has(p.id) ? 'Scouted' : 'Scout'}
                         </button>
                         <button
                           className="fm-btn fm-btn--small fm-btn--primary"
                           disabled={askingPrice(p) > state.budget}
-                          onClick={() => doSign(p.id)}
+                          onClick={(e) => { e.stopPropagation(); doSign(p.id); }}
                         >
                           Sign {formatMoney(askingPrice(p))}
                         </button>
@@ -177,7 +180,7 @@ export default function ScoutScreen({
         ) : (
           <div className="fm-player-list">
             {shortlisted.map((p) => (
-              <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`}>
+              <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
                 <span className="fm-player-row__badge">{p.role}</span>
                 <span className="fm-player-row__name">
                   {p.name}
@@ -186,13 +189,13 @@ export default function ScoutScreen({
                   </span>
                 </span>
                 <span style={{ display: 'flex', gap: 6 }}>
-                  <button className="fm-btn fm-btn--small fm-btn--ghost" onClick={() => toggleScout(p.id)}>
+                  <button className="fm-btn fm-btn--small fm-btn--ghost" onClick={(e) => { e.stopPropagation(); toggleScout(p.id); }}>
                     Drop
                   </button>
                   <button
                     className="fm-btn fm-btn--small fm-btn--primary"
                     disabled={askingPrice(p) > state.budget}
-                    onClick={() => doSign(p.id)}
+                    onClick={(e) => { e.stopPropagation(); doSign(p.id); }}
                   >
                     Sign {formatMoney(askingPrice(p))}
                   </button>
@@ -209,6 +212,16 @@ export default function ScoutScreen({
       <p className="fm-hint">
         A better chief scout surfaces more leads and lowers the bar for what counts as an upgrade.
       </p>
+
+      {detail && (
+        <PlayerModal
+          state={state}
+          player={detail}
+          club={state.clubs.find((c) => c.id === detail.clubId)}
+          onChange={onChange}
+          onClose={() => setDetailId(null)}
+        />
+      )}
     </>
   );
 }

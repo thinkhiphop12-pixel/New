@@ -7,6 +7,7 @@ import {
 } from '@/engine/transferMarket';
 import { getSquad } from '@/engine/teamManagement';
 import { formatMoney } from '@/engine/utils';
+import PlayerModal from './PlayerModal';
 
 type MarketTab = 'buy' | 'sell' | 'offers' | 'scout';
 const POSITIONS: (Position | 'ALL')[] = ['ALL', 'GK', 'DEF', 'MID', 'FWD'];
@@ -22,6 +23,8 @@ export default function TransfersScreen({
   const [posFilter, setPosFilter] = useState<Position | 'ALL'>('ALL');
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<number | null>(null);
+  const detail = detailId !== null ? state.players[detailId] : null;
 
   const clubName = (id: number) => (id === 0 ? 'Free agent' : state.clubs.find((c) => c.id === id)?.name ?? '—');
 
@@ -100,7 +103,7 @@ export default function TransfersScreen({
               const price = askingPrice(p);
               const affordable = price <= state.budget;
               return (
-                <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`}>
+                <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
                   <span className="fm-player-row__badge">{p.role}</span>
                   <span className="fm-player-row__name">
                     {p.name}
@@ -111,7 +114,7 @@ export default function TransfersScreen({
                   <button
                     className="fm-btn fm-btn--small fm-btn--primary"
                     disabled={!affordable}
-                    onClick={() => doBuy(p.id)}
+                    onClick={(e) => { e.stopPropagation(); doBuy(p.id); }}
                   >
                     {formatMoney(price)}
                   </button>
@@ -128,7 +131,7 @@ export default function TransfersScreen({
       {tab === 'sell' && (
         <div className="fm-player-list">
           {mySquad.map((p) => (
-            <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`}>
+            <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
               <span className="fm-player-row__badge">{p.role}</span>
               <span className="fm-player-row__name">
                 {p.name}
@@ -136,7 +139,7 @@ export default function TransfersScreen({
                   {p.nat} · {p.age}y · value {formatMoney(p.value)}
                 </span>
               </span>
-              <button className="fm-btn fm-btn--small fm-btn--danger" onClick={() => doSell(p.id)}>
+              <button className="fm-btn fm-btn--small fm-btn--danger" onClick={(e) => { e.stopPropagation(); doSell(p.id); }}>
                 Sell {formatMoney(saleValue(p))}
               </button>
               <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
@@ -160,7 +163,7 @@ export default function TransfersScreen({
               ) : (
                 <div className="fm-player-list">
                   {rep.picks.map((p) => (
-                    <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`}>
+                    <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
                       <span className="fm-player-row__badge">{p.role}</span>
                       <span className="fm-player-row__name">
                         {p.name}
@@ -168,7 +171,7 @@ export default function TransfersScreen({
                           {p.nat} · {p.age}y · {clubName(p.clubId)}
                         </span>
                       </span>
-                      <button className="fm-btn fm-btn--small fm-btn--primary" onClick={() => doBuy(p.id)}>
+                      <button className="fm-btn fm-btn--small fm-btn--primary" onClick={(e) => { e.stopPropagation(); doBuy(p.id); }}>
                         {formatMoney(askingPrice(p))}
                       </button>
                       <span
@@ -195,7 +198,7 @@ export default function TransfersScreen({
               if (!p) return null;
               const premium = o.amount > p.value;
               return (
-                <div key={`${o.playerId}-${o.fromClubId}`} className={`fm-player-row fm-pos-${p.pos}`}>
+                <div key={`${o.playerId}-${o.fromClubId}`} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
                   <span className="fm-player-row__badge">{p.role}</span>
                   <span className="fm-player-row__name">
                     {p.name}
@@ -204,19 +207,20 @@ export default function TransfersScreen({
                       {premium ? ' (above value)' : ''}
                     </span>
                   </span>
-                  <button className="fm-btn fm-btn--small fm-btn--primary" onClick={() => doSell(o.playerId, true)}>
+                  <button className="fm-btn fm-btn--small fm-btn--primary" onClick={(e) => { e.stopPropagation(); doSell(o.playerId, true); }}>
                     Accept
                   </button>
                   <button
                     className="fm-btn fm-btn--small fm-btn--ghost"
-                    onClick={() =>
+                    onClick={(e) => {
+                      e.stopPropagation();
                       onChange({
                         ...state,
                         incomingOffers: state.incomingOffers.filter(
                           (x) => !(x.playerId === o.playerId && x.fromClubId === o.fromClubId)
                         ),
-                      })
-                    }
+                      });
+                    }}
                   >
                     Reject
                   </button>
@@ -225,6 +229,16 @@ export default function TransfersScreen({
             })}
           </div>
         ))}
+
+      {detail && (
+        <PlayerModal
+          state={state}
+          player={detail}
+          club={state.clubs.find((c) => c.id === detail.clubId)}
+          onChange={onChange}
+          onClose={() => setDetailId(null)}
+        />
+      )}
     </>
   );
 }
