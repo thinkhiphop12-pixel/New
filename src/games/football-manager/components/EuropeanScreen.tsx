@@ -131,7 +131,7 @@ export default function EuropeanScreen({ state }: { state: GameState }) {
           {currentTie ? (
             <ul className="fm-cup-ties">
               <li className="me">
-                <span className={currentTie.homeId === state.userClubId ? '' : ''}>{clubName(currentTie.homeId)}</span>
+                <span>{clubName(currentTie.homeId)}</span>
                 <span className="score">vs</span>
                 <span>{clubName(currentTie.awayId)}</span>
               </li>

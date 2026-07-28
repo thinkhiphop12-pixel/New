@@ -8,7 +8,6 @@ import {
   ACADEMY_UPGRADE_COST, STADIUM_UPGRADE_COST, STAFF_UPGRADE_COST, STAFF_MAX_LEVEL,
 } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
-import { StatTile } from './visuals';
 
 const FACILITY_DESCRIPTIONS: Record<string, { current: string; benefit: string }> = {
   stadium: {
@@ -64,10 +63,10 @@ export default function FacilitiesScreen({
     },
   ];
 
-  const staffLabels: Record<string, { name: string; icon: string; key: 'training' | 'medical' | string }> = {
-    coach: { name: 'Training Ground', icon: '🏃', key: 'training' },
-    physio: { name: 'Medical Centre', icon: '⛑️', key: 'medical' },
-    scout: { name: 'Scouting Network', icon: '🔭', key: 'scouting' },
+  const staffLabels: Record<'coach' | 'physio' | 'scout', string> = {
+    coach: 'Training Ground',
+    physio: 'Medical Centre',
+    scout: 'Scouting Network',
   };
 
   const upcoming = [
@@ -77,7 +76,7 @@ export default function FacilitiesScreen({
     ...(['coach', 'physio', 'scout'] as const)
       .filter((role) => staff[role] < STAFF_MAX_LEVEL)
       .map((role) => ({
-        label: `${staffLabels[role].name} → Level ${staff[role] + 1}`,
+        label: `${staffLabels[role]} → Level ${staff[role] + 1}`,
         cost: STAFF_UPGRADE_COST[staff[role] + 1],
       })),
   ].sort((a, b) => a.cost - b.cost);
