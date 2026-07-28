@@ -309,6 +309,26 @@ export interface GameSettings {
   difficulty: number;
 }
 
+export interface AvatarConfig {
+  skinTone: string;
+  eyeColor: string;
+  hairColor: string;
+  hairStyle: string;
+  facialHair: string;
+  mouth: string;
+  eyes: string;
+  nose: string;
+  accessories?: string[];
+}
+
+export interface ManagerProfile {
+  id: string;
+  name: string;
+  avatarConfig: AvatarConfig;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface GameData {
   meta: { attribution: string; clubCount: number; playerCount: number };
   clubs: Club[];
