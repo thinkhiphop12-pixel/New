@@ -13,6 +13,7 @@
  */
 import type { Club, GameState, PlayStyle, Player } from './types';
 import { getLeague } from './gameRules';
+import { tacFamInit } from './familiarity';
 
 /** 1–5 club standing, from league level and squad strength. Drives AI drilling
  *  speed and, later, transfer prestige. */
@@ -75,5 +76,8 @@ export function seedClubIdentities(state: GameState): void {
     club.playStyle = club.playStyle ?? deriveClubStyle(squad, level);
     club.formationId = club.formationId ?? FORMATIONS_BY_STYLE[club.playStyle] ?? '4-4-2';
     club.reputation = club.reputation ?? clubReputation(level, avgRating);
+    // Seed familiarity now rather than waiting for the first weekly tick —
+    // otherwise a brand-new career shows its own identity as 0% drilled.
+    tacFamInit(club, club.playStyle, club.formationId ?? null);
   }
 }

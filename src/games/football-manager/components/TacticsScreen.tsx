@@ -1,11 +1,34 @@
 'use client';
 
 import { useState } from 'react';
-import type { GameState, Pressing, TacticStyle, Tempo, Width } from '@/engine/types';
-import { ALL_FORMATIONS, getFormation } from '@/engine/gameRules';
+import type { GameState, PlayStyle, Pressing, TacticStyle, Tempo, Width } from '@/engine/types';
+import { ALL_FORMATIONS, getFormation, getLeague } from '@/engine/gameRules';
 import { autoPickLineup } from '@/engine/teamManagement';
+import {
+  coachDrillMult, needsDrilling, projectedFamiliarity, seedFamiliarityForSwitch,
+  styleExec, styleFamiliarity, weeksToDrill,
+} from '@/engine/familiarity';
 import { MENTALITIES, MENTALITY_ORDER, normalizeMentality, type MentalityId } from '@/engine/tickEngine/tacticsData';
 import { PitchMarkings, PlayerToken } from './visuals';
+
+/** Presentation order: the two no-drill fallbacks first, then the identities
+ *  that have to be worked on. */
+const IDENTITY_ORDER: PlayStyle[] = [
+  'balanced', 'parkbus', 'possession', 'tiki-taka', 'gegenpressing',
+  'counter', 'direct', 'longball', 'catenaccio',
+];
+
+const IDENTITY_LABEL: Record<PlayStyle, string> = {
+  balanced: 'Balanced',
+  parkbus: 'Park the Bus',
+  possession: 'Possession',
+  'tiki-taka': 'Tiki-taka',
+  gegenpressing: 'Gegenpressing',
+  counter: 'Counter-attack',
+  direct: 'Direct',
+  longball: 'Long Ball',
+  catenaccio: 'Catenaccio',
+};
 
 export default function TacticsScreen({
   state,
@@ -44,6 +67,39 @@ export default function TacticsScreen({
         outOfPossessionId: id,
       },
     });
+  };
+
+  /* --- Team identity ---------------------------------------------------- */
+  const userClub = state.clubs.find((c) => c.id === state.userClubId)!;
+  const currentStyle: PlayStyle = state.playStyle ?? userClub.playStyle ?? 'balanced';
+  const level = getLeague(userClub.leagueId)?.level ?? 3;
+  const coachMult = coachDrillMult(state);
+  const xi = state.lineup
+    .map((id) => (id == null ? null : state.players[id]))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p));
+
+  const setIdentity = (style: PlayStyle) => {
+    if (style === currentStyle) return;
+    // Carry familiarity across on the switch itself, so the number the card
+    // quoted is the number the club actually lands on.
+    //
+    // tacFam has to be cloned, not spread: seedFamiliarityForSwitch mutates it,
+    // and a shallow { ...club } would still share the same styles object with
+    // the previous state — editing history rather than producing a new state.
+    const clubs = state.clubs.map((c) =>
+      c.id === state.userClubId
+        ? {
+            ...c,
+            playStyle: style,
+            tacFam: c.tacFam
+              ? { ...c.tacFam, styles: { ...c.tacFam.styles }, formations: { ...c.tacFam.formations } }
+              : c.tacFam,
+          }
+        : c,
+    );
+    const club = clubs.find((c) => c.id === state.userClubId)!;
+    seedFamiliarityForSwitch(club, style);
+    update({ playStyle: style, clubs });
   };
 
   const setMentality = (mentality: MentalityId) => {
@@ -167,6 +223,70 @@ export default function TacticsScreen({
         )}
       </div>
 
+      {/* Team Identity — the named play-style the squad is drilled in. */}
+      <div className="fm-tactics__section">
+        <button
+          className="fm-tactics__header"
+          onClick={() => toggleSection('identity')}
+          aria-expanded={expandedSection === 'identity'}
+        >
+          <span className="fm-tactics__title">Team Identity</span>
+          <span className="fm-tactics__indicator">{expandedSection === 'identity' ? '−' : '+'}</span>
+        </button>
+
+        {expandedSection === 'identity' && (
+          <div className="fm-tactics__content">
+            <div className="fm-identity-grid">
+              {IDENTITY_ORDER.map((id) => {
+                const active = currentStyle === id;
+                const fam = active
+                  ? styleFamiliarity(userClub, id)
+                  : projectedFamiliarity(userClub, id);
+                const weeks = weeksToDrill(userClub, id, 80, coachMult);
+                // How well the squad could execute it if fully drilled — the
+                // ability half of the gate, shown separately so a player can
+                // tell "wrong squad" apart from "needs more time".
+                const fit = Math.round(
+                  styleExec(userClub, xi, id, level, undefined, { rawSkill: true }) * 100,
+                );
+                return (
+                  <button
+                    key={id}
+                    className={`fm-identity-card${active ? ' active' : ''}`}
+                    onClick={() => setIdentity(id)}
+                  >
+                    <span className="fm-identity-card__name">{IDENTITY_LABEL[id]}</span>
+                    <span className="fm-identity-card__bar" aria-hidden>
+                      <span
+                        className="fm-identity-card__fill"
+                        style={{ width: `${Math.round(fam)}%` }}
+                      />
+                    </span>
+                    <span className="fm-identity-card__meta">
+                      {active
+                        ? `${Math.round(fam)}% drilled`
+                        : weeks === 0
+                          ? 'ready now'
+                          : `${Math.round(fam)}% · ${weeks}w to drill`}
+                    </span>
+                    <span
+                      className={`fm-identity-card__fit${fit >= 75 ? ' good' : fit >= 55 ? ' ok' : ' poor'}`}
+                    >
+                      squad fit {fit}%
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="fm-hint">
+              {needsDrilling(currentStyle)
+                ? `Your side is ${Math.round(styleFamiliarity(userClub, currentStyle))}% drilled in ${IDENTITY_LABEL[currentStyle]}. Familiarity builds each week and decays on styles you stop using — switching to a related style carries most of the work across.`
+                : 'Balanced and Park the Bus need no drilling. Any other identity has to be worked on before it pays off.'}
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Style Section */}
       <div className="fm-tactics__section">
         <button
@@ -174,7 +294,7 @@ export default function TacticsScreen({
           onClick={() => toggleSection('style')}
           aria-expanded={expandedSection === 'style'}
         >
-          <span className="fm-tactics__title">Play Style</span>
+          <span className="fm-tactics__title">Approach</span>
           <span className="fm-tactics__indicator">{expandedSection === 'style' ? '−' : '+'}</span>
         </button>
 

@@ -59,8 +59,16 @@ type StatKey = 'pac' | 'sho' | 'pas' | 'dri' | 'def' | 'phy';
  * Lower leagues are judged against a lower bar. Without this every side outside
  * the top flight would be permanently incapable of any style, since the
  * requirement is an absolute attribute average.
+ *
+ * RECALIBRATED for our dataset, which does not share the reference's rating
+ * scale. Measured first-XI attribute means in gamedata.json are L1 69.7,
+ * L2 63.5, L3 59.4, L4 57.4, L5 ~57. The reference's offsets (-10/-16/-21/-26)
+ * put the bar so far below those means that every side scored a perfect fit in
+ * every style and the ability gate never discriminated at all. These sit the
+ * bar ~1.5 above each level's mean, so a typical side lands near 0.70 and has
+ * to be genuinely well-suited to a style to clear it.
  */
-const LEVEL_REQ_OFFSET: Record<number, number> = { 1: 0, 2: -10, 3: -16, 4: -21, 5: -26 };
+const LEVEL_REQ_OFFSET: Record<number, number> = { 1: 0, 2: -6, 3: -10, 4: -12, 5: -13 };
 
 export function needsDrilling(style: PlayStyle): boolean {
   return DRILLED_STYLES.includes(style);

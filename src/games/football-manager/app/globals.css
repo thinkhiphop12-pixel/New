@@ -1175,6 +1175,52 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   font-weight: 800; cursor: pointer;
 }
 .fm-mentality-card.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+
+/* --- Team identity cards (Tactics > Team Identity) ------------------------
+   Each card carries three readings, because "this isn't working" has two very
+   different causes: the squad can't play it (squad fit), or hasn't drilled it
+   yet (the bar and the weeks figure). Showing them apart is the whole point. */
+.fm-identity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.fm-identity-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm, 8px);
+  background: var(--panel);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: border-color var(--transition, 0.16s ease), background var(--transition, 0.16s ease);
+}
+.fm-identity-card:hover { border-color: var(--border-bright); background: var(--panel-2); }
+.fm-identity-card.active { border-color: var(--gold); background: var(--gold-dim); }
+.fm-identity-card__name { font-weight: 600; font-size: 13px; color: var(--text); }
+.fm-identity-card.active .fm-identity-card__name { color: var(--gold); }
+.fm-identity-card__bar {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--panel-3);
+  overflow: hidden;
+}
+.fm-identity-card__fill { display: block; height: 100%; background: var(--green-600); }
+.fm-identity-card.active .fm-identity-card__fill { background: var(--gold-2); }
+.fm-identity-card__meta {
+  font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.fm-identity-card__fit { font-size: 11px; font-variant-numeric: tabular-nums; }
+.fm-identity-card__fit.good { color: var(--green-600); }
+.fm-identity-card__fit.ok   { color: var(--gold); }
+.fm-identity-card__fit.poor { color: var(--red); }
 .fm-formation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; margin-bottom: 6px; }
 .fm-formation-tile {
   background: var(--panel-2); border: 1px solid var(--border); color: var(--text-2);
