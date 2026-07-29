@@ -180,6 +180,14 @@ function migrate(raw: RawSave): GameState {
   // --- v6: play-style identities and tactical familiarity. Seeding clubs that
   // lack an identity is idempotent, and familiarity itself is created lazily by
   // tacFamInit on the first drilling tick, so nothing else needs back-filling.
+  // --- Phase 7: transfers. Purely additive and version-agnostic — the
+  // negotiation state is all optional, so an older save simply starts with an
+  // empty market rather than needing a schema bump.
+  s.negotiations = s.negotiations ?? [];
+  s.preContracts = s.preContracts ?? [];
+  s.transferBans = s.transferBans ?? {};
+  s.transferNews = s.transferNews ?? [];
+
   seedClubIdentities(s);
   s.playStyle = s.playStyle ?? s.clubs.find((c) => c.id === s.userClubId)?.playStyle ?? 'balanced';
 

@@ -161,6 +161,154 @@ export interface Player {
   seasonRatingCount?: number;
   /** Wants more minutes or a move — attracts extra transfer interest. */
   unhappy?: boolean;
+
+  /* --- Phase 7: transfers. All optional; absent means "nothing going on". --- */
+  /** Why he asked to leave. */
+  wantsMoveReason?: 'ability' | 'ambition' | 'game_time';
+  /** Price his club has advertised him at (user club only). */
+  listingPrice?: number | null;
+  /** Made available for loan by his club. */
+  loanListed?: boolean;
+  /** Set while he is at a club that does not own him. */
+  loan?: LoanDeal;
+  /** Weeks since the squad-status promise was made, and how long it's been broken. */
+  promiseWeeks?: number;
+  promiseBreachWeeks?: number;
+  /** Consecutive weeks he has gone without an appearance. */
+  benchWeeks?: number;
+}
+
+/** A live loan spell, held on the player while he sits in the borrower's squad. */
+export interface LoanDeal {
+  parentClubId: number;
+  parentClubName: string;
+  /** Season year the loan runs until (returns at the start of that season). */
+  untilSeason: number;
+  /** Share of his wage the PARENT still pays (0 = borrower covers everything). */
+  wageShare: number;
+  /** Agreed playing-time clause, or null for a no-strings loan. */
+  playingTime: 'regular' | 'occasional' | null;
+  /** Pre-agreed permanent fee the borrower may trigger. 0 = none. */
+  optionToBuy: number;
+  /** Snapshot of the player's counters the week the loan began. */
+  startApps: number;
+  startGoals: number;
+  /** Borrowing club's games played when the loan began. */
+  startClubPlayed: number;
+  /** The playing-time clause is currently unmet. */
+  clauseBroken?: boolean;
+  /** Borrower games played when the warning was issued. */
+  warnedGames?: number | null;
+}
+
+export type MoveVerdict = 'keen' | 'open' | 'reluctant' | 'refuses';
+export type SquadStatusKey = 'star' | 'key' | 'first_team' | 'rotation' | 'fringe';
+
+export interface MoveFactor {
+  label: string;
+  delta: number;
+  detail?: string;
+}
+
+export interface MoveAssessment {
+  score: number;
+  verdict: MoveVerdict;
+  factors: MoveFactor[];
+  /** What he'd want to be talked into it: squad_status / wage_premium / … */
+  demands: string[];
+  projectedStatus: SquadStatusKey;
+  /** Wage premium a reluctant player prices in. */
+  wageMult: number;
+}
+
+/** How available a player is, from the buying club's point of view. */
+export interface MarketStatus {
+  listed: boolean;
+  unsettled: boolean;
+  unsettledReason: string | null;
+  expiring: boolean;
+  monthsLeft: number;
+}
+
+/** The selling club's and the player's negotiating positions. */
+export interface NegotiationTerms {
+  asking: number;
+  minFee: number;
+  wageDemand: number;
+  minWage: number;
+  feeRound: number;
+  wageRound: number;
+  /** One-shot chance the club rebuffs a bid that clears its minimum. */
+  holdOut: number;
+  wageHoldOut: number;
+}
+
+export type NegotiationStage = 'fee' | 'terms' | 'outbid';
+export type NegotiationTone = 'info' | 'good' | 'bad' | 'you';
+
+export interface NegotiationMsg {
+  text: string;
+  tone: NegotiationTone;
+}
+
+/** One live transfer negotiation — the user buying, or a club bidding for one
+ *  of the user's players. */
+export interface Negotiation {
+  id: string;
+  /** `outgoing` = the user is buying; `incoming` = a club is bidding for ours. */
+  type: 'outgoing' | 'incoming';
+  playerId: number;
+  /** The other club: the seller (outgoing) or the bidder (incoming). */
+  clubId: number;
+  clubName: string;
+  playerName: string;
+  playerPos: Position;
+  playerRating: number;
+  stage: NegotiationStage;
+  /** Whose move it is. `club` means a reply lands on `responseWeek`. */
+  awaiting: 'user' | 'club';
+  responseWeek: number | null;
+  /** Season round the deal was last touched — stale deals lapse. */
+  lastTouchWeek: number;
+  neg: NegotiationTerms;
+  lastFee: number | null;
+  lastWage: number | null;
+  agreedFee: number | null;
+  agreedWage: number | null;
+  contractYears: number;
+  promisedStatus: SquadStatusKey | null;
+  signingBonus: number;
+  releaseClause: number;
+  stance: MoveVerdict;
+  stanceScore: number;
+  demands: string[];
+  projectedStatus: SquadStatusKey;
+  /** Set once a rival club joins the race for an outgoing target. */
+  rival?: { clubId: number; clubName: string; offer: number } | null;
+  /** Settles as a pre-contract that activates next season instead of now. */
+  preContract?: boolean;
+  /** Incoming-only. */
+  isLoan?: boolean;
+  fee?: number;
+  maxWilling?: number;
+  lastCounter?: number | null;
+  playoffFloor?: number | null;
+  marketValue?: number;
+  loanWageShare?: number;
+  loanPlayingTime?: 'regular' | 'occasional' | null;
+  log: NegotiationMsg[];
+}
+
+/** A deal agreed for a player who joins for free when his contract lapses. */
+export interface PreContract {
+  id: string;
+  playerId: number;
+  playerName: string;
+  fromClubId: number;
+  agreedWage: number;
+  agreedYears: number;
+  /** Season year the player actually arrives. */
+  activatesSeason: number;
 }
 
 export interface Club {
@@ -321,6 +469,35 @@ export interface MatchReport {
   awayLineup: number[];
   /** Event-weighted match ratings from the tick engine (absent in old saves). */
   ratings?: Record<number, number>;
+
+  /* --- Phase 6: stoppage time, extra time, penalty shootouts (gaps 17-18, 27-29). --- */
+  /** Added time at the end of the first half, in minutes. */
+  stoppage1?: number;
+  /** Added time at the end of the second half (or the match, if no ET), in minutes. */
+  stoppage2?: number;
+  /** Final whistle minute, including all stoppage and (if played) extra time. */
+  matchEnd?: number;
+  /** True when a decisive-result match went to extra time (still level after 90+stoppage). */
+  wentToExtraTime?: boolean;
+  /** Present when the match needed a penalty shootout to produce a winner. */
+  shootout?: ShootoutResult;
+}
+
+/** One kick in a penalty shootout. */
+export interface ShootoutKick {
+  side: 'home' | 'away';
+  playerId: number;
+  playerName: string;
+  outcome: 'scored' | 'saved' | 'missed';
+  round: number; // 0-4 for the first five rounds, 5+ for sudden death
+}
+
+/** The full result of a penalty shootout. */
+export interface ShootoutResult {
+  homeScore: number;
+  awayScore: number;
+  winnerId: number;
+  kicks: ShootoutKick[];
 }
 
 export interface TableRow {
@@ -351,6 +528,10 @@ export interface CupTie {
   awayGoals: number;
   /** Winner on penalties when the tie was drawn. */
   pensWinnerId?: number;
+  /** True when the tie needed extra time before being settled (with or without pens). */
+  wentToExtraTime?: boolean;
+  /** Penalty shootout score, when the tie was decided that way. */
+  penScore?: { home: number; away: number };
 }
 
 /** A knockout competition (domestic cup, continental cup). */
@@ -371,6 +552,149 @@ export interface LedgerEntry {
   week: number;
   desc: string;
   amount: number; // positive = income
+}
+
+/* =========================================================================
+   Phase 8 — finances. Everything below is optional on GameState (`finances?`)
+   and lazily initialised by engine/finances.ts, so it is additive and
+   version-agnostic: an old save picks it up on the first tick or the first
+   render of the Finances screen without a save-version bump.
+   ========================================================================= */
+
+/** The three commercial inventory slots a club can sell. */
+export type SponsorSlotId = 'shirt' | 'sleeve' | 'stadium';
+
+/** Ticket pricing tier the club sets for home league fixtures. */
+export type TicketTier = 'cheap' | 'standard' | 'high' | 'premium';
+
+/** Performance bonus written into a sponsor contract. */
+export interface SponsorClause {
+  type: 'win' | 'title' | 'topHalf' | 'promotion';
+  /** Payout in £. */
+  amount: number;
+}
+
+export interface SponsorDeal {
+  name: string;
+  /** 1 regional, 2 national, 3 global — drives the name pool. */
+  tier: 1 | 2 | 3;
+  slot: SponsorSlotId;
+  /** £ per week. */
+  weeklyValue: number;
+  /** Seasons still to run; decremented at each season rollover. */
+  seasonsLeft: number;
+  /** Length the deal was signed for, kept for the UI. */
+  termSeasons: number;
+  clauses: SponsorClause[];
+}
+
+export interface KitDeal {
+  name: string;
+  /** £ per season. */
+  annualValue: number;
+  seasonsLeft: number;
+  termSeasons: number;
+}
+
+/** A deal on the table. `negotiated`/`withdrawn` track one negotiation attempt. */
+export type SponsorOffer = SponsorDeal & { negotiated?: boolean; withdrawn?: boolean };
+export type KitOffer = KitDeal & { negotiated?: boolean; withdrawn?: boolean };
+
+export interface SeasonIncome {
+  tv: number;
+  matchday: number;
+  sponsorship: number;
+  merchandise: number;
+  prizes: number;
+  sales: number;
+  parachute: number;
+  grants: number;
+}
+
+export interface SeasonExpenses {
+  wages: number;
+  staff: number;
+  transfers: number;
+  agentFees: number;
+  academyUpkeep: number;
+  stadiumMaint: number;
+}
+
+/** A transfer fee spread across the signed contract length. Accounting only —
+ *  the cash left the balance at signing, this only feeds the squad cost ratio. */
+export interface Amortization {
+  /** £ per week. */
+  weeklyCost: number;
+  weeksLeft: number;
+}
+
+export interface FinanceSeasonRecord {
+  year: number;
+  leagueId: string;
+  position: number;
+  income: number;
+  expenses: number;
+  profit: number;
+  balance: number;
+  confidence: number;
+}
+
+/** One point on the balance sparkline. */
+export interface BalancePoint {
+  year: number;
+  week: number;
+  balance: number;
+}
+
+export interface FinanceState {
+  /** Season this state was last rolled over into — drives lazy season-end
+   *  finalisation without a second hook in seasonProgression. */
+  seasonYear: number;
+  /** League the club was in at the last rollover, for parachute detection. */
+  leagueId: string;
+  /** Board confidence 0–100 (mirrors and drives `board.confidence`). */
+  boardConfidence: number;
+
+  shirt: SponsorDeal | null;
+  sleeve: SponsorDeal | null;
+  stadium: SponsorDeal | null;
+  kitDeal: KitDeal | null;
+  /** Slots whose deal expired and need re-selling. */
+  needsRenewal: SponsorSlotId[];
+  kitNeedsRenewal: boolean;
+  /** Live offer sheets, so a negotiation attempt survives a re-render. */
+  offers: Partial<Record<SponsorSlotId, SponsorOffer[]>>;
+  kitOffers: KitOffer[] | null;
+
+  ticketPricing: TicketTier;
+
+  seasonIncome: SeasonIncome;
+  seasonExpenses: SeasonExpenses;
+  balanceHistory: BalancePoint[];
+  history: FinanceSeasonRecord[];
+
+  /** Net profit for each of the last three completed seasons, oldest first. */
+  ffpRolling: number[];
+  ffpBreachWeeks: number;
+  ffpDeductedThisBreach: boolean;
+
+  amortizations: Amortization[];
+  /** Last computed squad cost ratio. */
+  scr: number;
+  scrOverWeeks: number;
+  transferEmbargo: boolean;
+  /** Weeks spent under embargo, for the follow-up deduction. */
+  embargoWeeks: number;
+
+  /** Points docked this season, applied to the table exactly once. */
+  pointsDeduction: number;
+  /** Ledger entries already folded into transfers/amortization, so the
+   *  ledger scan is idempotent across ticks. */
+  seenLedger: string[];
+
+  parachuteYears: number;
+  boardFundsRequested: boolean;
+  weeksElapsed: number;
 }
 
 export interface Manager {
@@ -575,6 +899,9 @@ export interface GameState {
   staff?: Staff;
   stadiumLevel?: number; // 1–3, scales gate income
   ledger: LedgerEntry[];
+  /** Phase 8 finances. Optional and lazily initialised (see engine/finances.ts)
+   *  so pre-Phase-8 saves migrate additively with no version bump. */
+  finances?: FinanceState;
   cup: Knockout;
   continental: Knockout;
   jobOffers: JobOffer[];
@@ -596,6 +923,18 @@ export interface GameState {
   /** Next id for a generated filler club. */
   nextClubId?: number;
   incomingOffers: TransferOffer[];
+
+  /* --- Phase 7: transfers. All optional so pre-Phase-7 saves load unchanged;
+     lib/storage.ts migrate() back-fills them additively. --- */
+  /** Live fee/terms negotiations, both directions. */
+  negotiations?: Negotiation[];
+  /** Deals agreed for players arriving free at the next season rollover. */
+  preContracts?: PreContract[];
+  /** playerId → season year he refused to talk to us. Cleared each season. */
+  transferBans?: Record<number, number>;
+  /** Headlines about transfer business elsewhere in the league. */
+  transferNews?: string[];
+
   history: SeasonSummary[];
   news: string[];
   /** Structured inbox items (news you can open into a full article + player card). */

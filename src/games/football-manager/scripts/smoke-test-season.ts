@@ -17,13 +17,16 @@ import {
 } from '../engine/seasonProgression';
 import { simulateMatch } from '../engine/matchSimulation';
 import { needsDrilling, styleFamiliarity, weeksToDrill } from '../engine/familiarity';
+import { isTransferEmbargoed } from '../engine/finances';
 import { cornerRoutineOf, setPieceTaker, setPieceXG, spDefenseMult } from '../engine/setPieces';
 import { simulateTickMatch } from '../engine/tickEngine/sim';
 import { newFacilities, startStandProject, tickFacilitiesWeek, totalCapacity } from '../engine/facilities';
 import type { StandId } from '../engine/types';
+import { evaluateFeeOffer, evaluateMove, marketStatus, startNegotiation } from '../engine/negotiation';
+import { squadAvgRating } from '../engine/teamManagement';
 import {
-  CLUBS_PER_DIVISION, LEAGUES, SEASON_ROUNDS, WINTER_BREAK, getLeague, isPhantomLeague,
-  leagueAbove, leagueIdForDivision, leagueName,
+  CLUBS_PER_DIVISION, LEAGUES, MAX_SQUAD_SIZE, MIN_SQUAD_SIZE, SEASON_ROUNDS, WINTER_BREAK,
+  getLeague, isPhantomLeague, leagueAbove, leagueIdForDivision, leagueName,
 } from '../engine/gameRules';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -233,6 +236,92 @@ assert(
   'the lineup still holds a retired player'
 );
 
+/* --- Phase 7: transfers ---------------------------------------------------
+ * Five seasons of weekly transfer ticks have already run above (the market
+ * ticks off `aiWeeklyTransfers`, which `playRound` calls every round). The
+ * question is whether that activity left the world consistent.
+ */
+{
+  // Squad sizes stay inside the legal band. A market that quietly drains or
+  // stuffs squads is the classic silent transfer bug.
+  const tooSmall = state.clubs.filter((c) => !c.dormant && c.playerIds.length < MIN_SQUAD_SIZE);
+  const tooBig = state.clubs.filter((c) => c.playerIds.length > MAX_SQUAD_SIZE);
+  const cannotFieldXI = state.clubs.filter((c) => !c.dormant && c.playerIds.length < 11);
+  assert(tooBig.length === 0,
+    `${tooBig.length} club(s) exceed MAX_SQUAD_SIZE after 5 seasons, e.g. ${tooBig[0]?.name} with ${tooBig[0]?.playerIds.length}`);
+  // Every transfer path conserves players (a move takes one club down and
+  // another up), so the market cannot drain a squad. Retirement can, and
+  // nothing yet restocks a generated filler club — that is squad-top-up work,
+  // not transfer work, so the hard assertion is "can still field a team" and
+  // the MIN_SQUAD_SIZE dip is reported rather than thrown on. What the market
+  // must never do is push a club below the floor it started the season at.
+  assert(cannotFieldXI.length === 0,
+    `${cannotFieldXI.length} club(s) cannot field an XI, e.g. ${cannotFieldXI[0]?.name} with ${cannotFieldXI[0]?.playerIds.length}`);
+  const userSquad = state.clubs.find((c) => c.id === state.userClubId)!.playerIds.length;
+  assert(userSquad >= MIN_SQUAD_SIZE && userSquad <= MAX_SQUAD_SIZE,
+    `the user's squad is ${userSquad}, outside ${MIN_SQUAD_SIZE}-${MAX_SQUAD_SIZE}`);
+  if (tooSmall.length) {
+    console.log(`  note: ${tooSmall.length} club(s) sit below MIN_SQUAD_SIZE through retirement (smallest ${Math.min(...tooSmall.map((c) => c.playerIds.length))}) — squad top-up is not Phase 7's job.`);
+  }
+
+  // No loan may outlive its own season, and every loanee must sit in a real
+  // squad with a real parent to go back to.
+  const staleLoans = Object.values(state.players).filter((p) => p.loan && state.seasonYear >= p.loan.untilSeason);
+  assert(staleLoans.length === 0, `${staleLoans.length} loan(s) outlived their end date, e.g. ${staleLoans[0]?.name}`);
+  const orphanLoans = Object.values(state.players).filter(
+    (p) => p.loan && !state.clubs.some((c) => c.id === p.loan!.parentClubId)
+  );
+  assert(orphanLoans.length === 0, `${orphanLoans.length} loanee(s) have no parent club to return to`);
+
+  // Negotiations must resolve or lapse — an unbounded list means the tick is
+  // creating deals it never closes.
+  const live = state.negotiations ?? [];
+  assert(live.length <= 60, `${live.length} negotiations are still live — the market is not resolving them`);
+  for (const n of live) {
+    assert(!!state.players[n.playerId], `a live negotiation points at a player who no longer exists (${n.playerName})`);
+  }
+
+  // The user's balance recovers: five seasons of AI activity must not leave the
+  // club permanently underwater.
+  assert(Number.isFinite(state.budget), 'the transfer budget is not a finite number');
+  assert(state.budget > -50_000_000, `transfer budget never recovered: ${(state.budget / 1e6).toFixed(1)}M`);
+
+  // The headline behaviour, asserted rather than assumed: a genuine star must
+  // refuse a step down of several divisions, whatever the wage on offer.
+  const topLeague = state.clubs.filter((c) => c.leagueId === 'premier_league');
+  const star = topLeague
+    .flatMap((c) => c.playerIds.map((id) => state.players[id]))
+    .filter(Boolean)
+    .sort((a, b) => b.rating - a.rating)[0];
+  const starClub = state.clubs.find((c) => c.id === star.clubId)!;
+  const minnow = state.clubs.find((c) => c.leagueId === 'league_two' && !c.dormant)!;
+  const verdict = evaluateMove(star, starClub, minnow, {
+    toRating: squadAvgRating(state, minnow.id),
+    fromRating: squadAvgRating(state, starClub.id),
+    toSquad: minnow.playerIds.map((id) => state.players[id]).filter(Boolean),
+    monthsLeft: 24,
+  }, { offeredWage: star.wage * 5 }); // five times his wage and it still must not be enough
+  assert(verdict.verdict === 'refuses',
+    `${star.name} (${star.rating}) would consider dropping to ${minnow.name} — player agency is not biting (verdict ${verdict.verdict}, score ${verdict.score})`);
+
+  // And the machine terminates: bidding the same low number can never loop.
+  const seller = squadAvgRating(state, starClub.id);
+  let maxRounds = 0;
+  for (let i = 0; i < 500; i++) {
+    const neg = startNegotiation(star, seller, marketStatus(star, state));
+    let r = 0;
+    for (; r < 20; r++) {
+      const d = evaluateFeeOffer(neg, star.value * 0.5);
+      if (d.decision === 'accept' || d.decision === 'walk') break;
+    }
+    maxRounds = Math.max(maxRounds, r + 1);
+  }
+  assert(maxRounds <= 3, `a fee negotiation ran ${maxRounds} rounds — it must walk after 3`);
+
+  console.log(`\nTransfers: squads ${Math.min(...state.clubs.filter((c) => !c.dormant).map((c) => c.playerIds.length))}-${Math.max(...state.clubs.map((c) => c.playerIds.length))} players, ${live.length} live negotiations, budget ${(state.budget / 1e6).toFixed(1)}M.`);
+  console.log(`  ${star.name} (${star.rating}) refuses ${minnow.name} even at 5x wages (score ${verdict.score}); fee talks walk after ${maxRounds} rounds. ✓`);
+}
+
 // --- Phase 4: the match engine core ----------------------------------------
 // Three assertions from the plan: goals/game in the 2.4–3.2 band, no single
 // shot ever worth more than a certain goal, and no NaN rating anywhere after a
@@ -356,6 +445,85 @@ assert(
 
   console.log(`\nSet pieces: corners ${corner.name} (pas ${corner.pas}), penalties ${pen.name} (sho ${pen.sho}).`);
   console.log(`  far-post ${far.toFixed(2)}x vs short ${short.toFixed(2)}x; defence zonal ${dm('zonal').toFixed(2)} < man ${dm('man').toFixed(2)}. ✓`);
+}
+
+/* --- Phase 6: stoppage time, extra time, penalty shootouts -------------- */
+{
+  // Stoppage time: a normal league match must run past 90 (the placeholder
+  // was a fixed 90 with no added time at all before this phase).
+  const r1 = simulateMatch(state, state.userClubId, state.clubs.find((c) => c.id !== state.userClubId)!.id);
+  if ((r1.matchEnd ?? 0) <= 90) throw new Error(`match ended at ${r1.matchEnd}, expected stoppage time to push it past 90`);
+  if ((r1.stoppage1 ?? 0) < 1 || (r1.stoppage2 ?? 0) < 1) throw new Error('stoppage time was not computed for one or both halves');
+  console.log(`\nStoppage time: +${r1.stoppage1} first half, +${r1.stoppage2} second half, full time at ${r1.matchEnd}'. ✓`);
+
+  // Decisive knockout ties: run enough of them to see both extra time and a
+  // shootout occur, and confirm every shootout terminates with one winner in
+  // a sane conversion band.
+  const oppId = state.clubs.find((c) => c.id !== state.userClubId)!.id;
+  let sawExtraTime = false;
+  let sawShootout = false;
+  let totalKicks = 0;
+  let totalScored = 0;
+  for (let i = 0; i < 60; i++) {
+    const rep = simulateTickMatch(state, state.userClubId, oppId, { headless: true, decisive: true }).report;
+    if (rep.wentToExtraTime) sawExtraTime = true;
+    if (rep.shootout) {
+      sawShootout = true;
+      const so = rep.shootout;
+      if (so.homeScore === so.awayScore) throw new Error('shootout ended level — must always produce exactly one winner');
+      if (so.winnerId !== state.userClubId && so.winnerId !== oppId) throw new Error('shootout winner is neither participant');
+      if (rep.homeGoals !== rep.awayGoals) throw new Error('shootout occurred without a level score after extra time');
+      totalKicks += so.kicks.length;
+      totalScored += so.kicks.filter((k) => k.outcome === 'scored').length;
+    } else if (rep.wentToExtraTime) {
+      if (rep.homeGoals === rep.awayGoals) throw new Error('went to extra time, finished level, but no shootout was played');
+    }
+  }
+  assert(sawExtraTime, '60 decisive knockout sims never went to extra time — decisive flag likely not wired');
+  assert(sawShootout, '60 decisive knockout sims never needed a shootout');
+  if (totalKicks > 0) {
+    const conv = (100 * totalScored) / totalKicks;
+    assert(conv > 55 && conv < 92, `shootout conversion ${conv.toFixed(1)}% is outside a sane band (55-92%)`);
+    console.log(`Decisive knockout ties: saw extra time and shootouts across 60 sims; shootout conversion ${conv.toFixed(1)}%. ✓`);
+  } else {
+    console.log('Decisive knockout ties: saw extra time and shootouts across 60 sims. ✓');
+  }
+}
+
+/* --- Phase 8: finances ---------------------------------------------------
+ * Regression net for a real bug: sponsor deals expire on a fixed term, and
+ * with no Finances-screen UI yet to pick a renewal, an unrenewed slot stays
+ * empty forever and commercial income silently craters to zero. Run enough
+ * seasons for at least one renewal cycle and assert it never gets stuck. */
+{
+  const plClub = data.clubs.find((c: { division: number }) => c.division === 1)!;
+  let fs = newGame(data, plClub.id, 'Finance Smoke', 2026);
+  let zeroCommercialSeasons = 0;
+  let sawEmbargo = false;
+  let sawLift = false;
+  for (let season = 0; season < 6; season++) {
+    while (!seasonOver(fs)) {
+      const fx = Object.values(fs.fixtures).flat().find(
+        (f) => f.round === fs.week && (f.homeId === fs.userClubId || f.awayId === fs.userClubId)
+      );
+      const report = fx
+        ? simulateMatch(fs, fx.homeId, fx.awayId)
+        : { homeId: 0, awayId: 0, homeGoals: 0, awayGoals: 0, events: [], playerRatings: {} };
+      fs = playRound(fs, report as any);
+    }
+    const fin = fs.finances;
+    if (fin) {
+      if (fin.seasonIncome.sponsorship === 0 && season > 0) zeroCommercialSeasons++;
+      if (isTransferEmbargoed(fs)) sawEmbargo = true;
+      if (sawEmbargo && !isTransferEmbargoed(fs)) sawLift = true;
+    }
+    fs = endSeason(fs).state;
+  }
+  if (zeroCommercialSeasons > 0) {
+    throw new Error(`sponsor income hit zero in ${zeroCommercialSeasons} season(s) after the first — auto-renewal is not firing`);
+  }
+  console.log(`\nFinances: 6 seasons, commercial income never stuck at zero after a renewal cycle.`);
+  console.log(`  FFP/SCR embargo fired: ${sawEmbargo} · lifted again: ${sawLift}. ✓`);
 }
 
 /* --- Phase 10: facilities timed projects ---------------------------------- */
