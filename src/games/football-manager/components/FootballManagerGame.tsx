@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { GameData, GameState, MatchReport, SeasonSummary, GameSettings, ManagerProfile } from '@/engine/types';
+import type { GameData, GameState, MatchReport, ScenarioId, SeasonSummary, GameSettings, ManagerProfile } from '@/engine/types';
 import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/engine/seasonProgression';
+import { simulateMatch } from '@/engine/matchSimulation';
+import { applyScenario, scenarioNeedsPreseasonFastForward } from '@/engine/scenarios';
 import { simulateTickMatch } from '@/engine/tickEngine/sim';
 import { normalizeMentality } from '@/engine/tickEngine/tacticsData';
 import { loadGameData } from '@/lib/gamedata';
@@ -13,13 +15,14 @@ import {
 import MainMenuScreen from './MainMenuScreen';
 import NationSelectScreen from './NationSelectScreen';
 import ClubSelectScreen from './ClubSelectScreen';
+import ScenarioPickScreen from './ScenarioPickScreen';
 import HubScreen from './HubScreen';
 import MatchScreen from './match/MatchScreen';
 import SeasonEndScreen from './SeasonEndScreen';
 import SettingsPanel, { loadSettings } from './SettingsPanel';
 import CharacterCustomizerScreen from './CharacterCustomizerScreen';
 
-type View = 'menu' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonend' | 'character';
+type View = 'menu' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonend' | 'character';
 
 export default function FootballManagerGame() {
   const [data, setData] = useState<GameData | null>(null);
@@ -36,6 +39,7 @@ export default function FootballManagerGame() {
   const [showSettings, setShowSettings] = useState(false);
   const [selectedDivisions, setSelectedDivisions] = useState<string[]>(['premier_league', 'championship', 'league_one', 'league_two']);
   const [managerProfile, setManagerProfile] = useState<ManagerProfile | null>(null);
+  const [selectedScenarioId, setSelectedScenarioId] = useState<ScenarioId | undefined>(undefined);
 
   useEffect(() => {
     loadGameData()
@@ -114,6 +118,17 @@ export default function FootballManagerGame() {
 
   const handleNewGame = (s: number) => {
     setSlot(s);
+    setSelectedScenarioId(undefined);
+    setView('scenariopick');
+  };
+
+  const handlePickScenario = (id: ScenarioId) => {
+    setSelectedScenarioId(id);
+    setView('nationselect');
+  };
+
+  const handleSkipScenario = () => {
+    setSelectedScenarioId(undefined);
     setView('nationselect');
   };
 
@@ -128,10 +143,34 @@ export default function FootballManagerGame() {
 
   const handlePickClub = (clubId: number, managerName: string) => {
     if (!data) return;
-    const state = newGame(data, clubId, managerName);
+    let state = newGame(data, clubId, managerName);
     // Carry the manager avatar (edited from the main menu, or from a prior
     // career) with the save slot rather than a separate device-wide key.
     if (managerProfile) state.managerProfile = managerProfile;
+
+    if (selectedScenarioId) {
+      // Relegation Battle's premise is "you inherit this at the season's
+      // halfway point" — simulate roughly half the season purely at the
+      // engine level (same pattern every smoke/preview script in this repo
+      // uses) before applying the scenario's budget/points/board hit, so it
+      // lands on the club's actual mid-season position rather than week 1.
+      if (scenarioNeedsPreseasonFastForward(selectedScenarioId)) {
+        const targetWeek = Math.floor(state.week + (48 - state.week) / 2);
+        let guard = 0;
+        while (state.week < targetWeek && !seasonOver(state) && guard < 60) {
+          const fx = Object.values(state.fixtures).flat().find(
+            (f) => f.round === state.week && (f.homeId === state.userClubId || f.awayId === state.userClubId),
+          );
+          const report = fx
+            ? simulateMatch(state, fx.homeId, fx.awayId)
+            : ({ homeId: 0, awayId: 0, homeGoals: 0, awayGoals: 0, events: [], playerRatings: {} } as unknown as MatchReport);
+          state = playRound(state, report);
+          guard++;
+        }
+      }
+      state = applyScenario(state, selectedScenarioId);
+    }
+
     apply(state);
     setView('hub');
   };
@@ -244,10 +283,12 @@ export default function FootballManagerGame() {
           <CharacterCustomizerScreen onSave={handleCharacterSave} onBack={handleCharacterBack} initialProfile={managerProfile || undefined} />
         ) : view === 'menu' ? (
           <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} onCharacterCustomizer={handleCharacterCustomizerOpen} />
+        ) : view === 'scenariopick' ? (
+          <ScenarioPickScreen onPick={handlePickScenario} onSkip={handleSkipScenario} onBack={() => setView('menu')} />
         ) : view === 'nationselect' ? (
-          <NationSelectScreen onPick={handlePickNation} onBack={backToMenu} />
+          <NationSelectScreen onPick={handlePickNation} onBack={() => setView('scenariopick')} />
         ) : view === 'clubselect' ? (
-          <ClubSelectScreen data={data} divisions={selectedDivisions} onPick={handlePickClub} onBack={() => setView('nationselect')} />
+          <ClubSelectScreen data={data} divisions={selectedDivisions} scenarioId={selectedScenarioId} onPick={handlePickClub} onBack={() => setView('nationselect')} />
         ) : view === 'match' && gs && settings ? (
           <MatchScreen state={gs} settings={settings} onDone={handleMatchDone} />
         ) : view === 'seasonend' && gs && summary ? (

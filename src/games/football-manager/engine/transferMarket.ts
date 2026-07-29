@@ -6,6 +6,7 @@ import { MAX_SQUAD_SIZE, MIN_SQUAD_SIZE } from './gameRules';
 import { availableSquad, getSquad, isOnLoan, squadAvgRating } from './teamManagement';
 import { clamp, contractEndFor, weeklyWage } from './utils';
 import { pushInbox } from './inbox';
+import { recordScenarioSale } from './scenarios';
 import {
   LOAN_PLAYTIME, SQUAD_STATUS, askingGuide, askingMultiplier, contractMonthsLeft,
   evaluateFeeOffer, evaluateMove, evaluateTermsOffer, isLoanAvailable, loanClauseText,
@@ -80,6 +81,7 @@ export function sellPlayer(state: GameState, playerId: number, offer?: TransferO
   const s: GameState = structuredClone(state);
   const p = s.players[playerId];
   const amount = offer ? offer.amount : saleValue(p);
+  recordScenarioSale(s, p, amount);
   const mine = s.clubs.find((c) => c.id === s.userClubId)!;
   mine.playerIds = mine.playerIds.filter((id) => id !== playerId);
   if (offer) {
@@ -811,6 +813,7 @@ function completeIncomingSale(s: GameState, N: Negotiation): string {
   if (!p || p.clubId !== s.userClubId) return 'That player is no longer in your squad.';
   if (mine.playerIds.length <= MIN_SQUAD_SIZE) return `Squad too small to sell (min ${MIN_SQUAD_SIZE}).`;
   const fee = N.lastCounter ?? N.fee ?? 0;
+  recordScenarioSale(s, p, fee);
   const buyer = clubOf(s, N.clubId);
   mine.playerIds = mine.playerIds.filter((id) => id !== p.id);
   if (buyer && buyer.playerIds.length < MAX_SQUAD_SIZE) {

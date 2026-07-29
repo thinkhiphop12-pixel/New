@@ -741,6 +741,31 @@ export interface FinanceState {
   weeksElapsed: number;
 }
 
+export type ScenarioId =
+  | 'relegation_battle' | 'hollywood' | 'broke' | 'takeover'
+  | 'wonderkid_factory' | 'underdog_title' | 'points_deduction';
+
+export type ScenarioStatus = 'active' | 'success' | 'failed';
+
+/** Free-form per-scenario progress data — shape varies by scenario id, kept
+ *  as a loose record rather than a discriminated union so evalScenario can
+ *  read/write it without a switch on every field access. */
+export interface ScenarioState {
+  id: ScenarioId;
+  status: ScenarioStatus;
+  /** Current objective text, shown on the hub — some scenarios rewrite this
+   *  as progress is made (Hollywood counts down promotions still needed). */
+  objective: string;
+  startedSeason: number;
+  meta: {
+    streak?: number;
+    promosNeeded?: number;
+    deadlineSeason?: number;
+    academySales?: number;
+    deduction?: number;
+  };
+}
+
 export interface Manager {
   name: string;
   reputation: number; // 0–100
@@ -937,6 +962,10 @@ export interface GameState {
    *  not per device — a manager who moves clubs keeps his face). Optional so
    *  older saves without one still load. */
   managerProfile?: ManagerProfile;
+  /** Phase 11: the starting challenge this career was set up under, if any.
+   *  Absent entirely for a normal career — optional rather than a 'none'
+   *  variant so nothing else has to special-case the common path. */
+  scenario?: ScenarioState;
   academyLevel: number; // 1–3
   /** Squad captain (player id). Leaders make better captains. */
   captainId?: number | null;

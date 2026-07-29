@@ -197,6 +197,31 @@ export default function PortalHub({
           </div>
         )}
 
+        {/* Starting scenario status — always visible while active, regardless of
+            filter, since it's a standing objective rather than a transient item. */}
+        {state.scenario && state.scenario.status === 'active' && (
+          <div className="fm-card">
+            <div className="fm-card__header">
+              <h2 className="fm-card__title">🎯 Scenario</h2>
+            </div>
+            <div className="fm-card__body">
+              <p className="fm-card__hint">{state.scenario.objective}</p>
+              {typeof state.scenario.meta.streak === 'number' && (
+                <p className="fm-card__hint">Promotion streak: {state.scenario.meta.streak}</p>
+              )}
+              {typeof state.scenario.meta.academySales === 'number' && (
+                <p className="fm-card__hint">Academy graduates sold for profit: {state.scenario.meta.academySales} / 3</p>
+              )}
+              {typeof state.scenario.meta.deadlineSeason === 'number' && (
+                <p className="fm-card__hint">Deadline: end of {state.scenario.meta.deadlineSeason}</p>
+              )}
+              {typeof state.scenario.meta.deduction === 'number' && (
+                <p className="fm-card__hint">Starting deduction: −{state.scenario.meta.deduction} pts</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* News */}
         {show('news') && state.news.length > 0 && (
           <div className="fm-card">

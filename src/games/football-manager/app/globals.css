@@ -741,6 +741,28 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-ffp-status--ok { color: var(--green-600); }
 .fm-ffp-status--bad { color: var(--red); }
 
+/* --- Starting scenario picker (new game flow) ----------------------------- */
+.fm-scenario-pick { max-width: 720px; margin: 0 auto; padding: 8px; }
+.fm-scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.fm-scenario-card {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 14px; text-align: left;
+  border: 1px solid var(--border); border-radius: var(--r, 12px);
+  background: var(--panel); color: var(--text);
+  cursor: pointer;
+  transition: border-color var(--transition, 0.16s ease), background var(--transition, 0.16s ease);
+}
+.fm-scenario-card:hover { border-color: var(--border-bright); background: var(--panel-2); }
+.fm-scenario-card__icon { font-size: 22px; }
+.fm-scenario-card__name { font-weight: 700; font-size: 14px; }
+.fm-scenario-card__tagline { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.fm-scenario-pick__actions { display: flex; justify-content: center; gap: 10px; }
+
 .fm-sponsor-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

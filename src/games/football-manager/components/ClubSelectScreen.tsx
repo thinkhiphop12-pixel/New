@@ -1,19 +1,45 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { GameData } from '@/engine/types';
+import type { GameData, ScenarioId } from '@/engine/types';
 import { SIMULATED_LEAGUE_IDS, formatLeagueBlurb, leagueIdForDivision, leagueName, startingBudget } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
 import { Crest } from './Crest';
 
+/** Scenario club restrictions, applied here on the raw pre-newGame dataset —
+ *  isBottomHalfClub in engine/scenarios.ts needs a live GameState (squad
+ *  ratings computed from it), which doesn't exist yet at this point in the
+ *  flow, so bottom-half ranking is recomputed directly from clubInfo below
+ *  rather than reused. "Top flight" is division 1 — the only nation with
+ *  more than one simulated tier is England, so this is a no-op restriction
+ *  (nothing qualifies) for every other nation, which is correct: there is no
+ *  "non-top-flight" club to promote from in a single-division country. */
+function scenarioAllowsClub(
+  scenarioId: ScenarioId | undefined,
+  division: number,
+  rankInDivision: number,
+  divisionSize: number,
+): boolean {
+  if (!scenarioId) return true;
+  if (scenarioId === 'relegation_battle' || scenarioId === 'underdog_title') {
+    return rankInDivision > Math.ceil(divisionSize / 2);
+  }
+  if (scenarioId === 'hollywood' || scenarioId === 'takeover') {
+    return division !== 1;
+  }
+  return true;
+}
+
 export default function ClubSelectScreen({
   data,
   divisions: allowedLeagueIds,
+  scenarioId,
   onPick,
   onBack,
 }: {
   data: GameData;
   divisions?: string[];
+  scenarioId?: ScenarioId;
   onPick: (clubId: number, managerName: string) => void;
   onBack: () => void;
 }) {
@@ -45,7 +71,14 @@ export default function ClubSelectScreen({
     });
   }, [data]);
 
-  const shown = division !== null ? clubInfo.filter((x) => leagueIdForDivision(x.club.division) === division) : [];
+  const shownUnfiltered = division !== null ? clubInfo.filter((x) => leagueIdForDivision(x.club.division) === division) : [];
+  // Rank within this division by squad rating, best first, so a "bottom half"
+  // scenario check has something to rank against — same measure the engine
+  // uses post-newGame (squadAvgRating), just computed on the raw dataset here.
+  const rankedInDivision = [...shownUnfiltered].sort((a, b) => b.avg - a.avg);
+  const shown = shownUnfiltered.filter((x) =>
+    scenarioAllowsClub(scenarioId, x.club.division, rankedInDivision.findIndex((r) => r.club.id === x.club.id) + 1, rankedInDivision.length)
+  );
 
   return (
     <div className="fm-screen">

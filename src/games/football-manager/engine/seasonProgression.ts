@@ -21,6 +21,7 @@ import {
   continentalRoundDue, continentalRoundName, continentalRunName, continentalTieWinner, createContinental,
   isContinentalClubAlive, playContinentalRound, tieAggregate, tieComplete, userContinentalTie,
 } from './europeanCup';
+import { evalScenarioAtSeasonEnd } from './scenarios';
 import { pushInbox } from './inbox';
 import { tickFinances, weeklyMatchdayIncome } from './finances';
 import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
@@ -1432,6 +1433,15 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
   };
   s.history.push(summary);
   s.budget += prize;
+
+  // Phase 11: a starting scenario's own pass/fail check, independent of the
+  // board's objective — a scenario can fail even when the board is happy
+  // (Wonderkid Factory) or succeed despite a missed board objective
+  // (Relegation Battle surviving in a lowly position).
+  const scenarioResult = evalScenarioAtSeasonEnd(s, summary);
+  if (scenarioResult) {
+    pushInbox(s, { category: 'board', title: scenarioResult.title, body: scenarioResult.body });
+  }
 
   // Manager reputation & trophies.
   s.manager.seasons++;
