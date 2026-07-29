@@ -25,6 +25,18 @@ const SPEEDS = [1, 2, 4, 8];
 const MS_PER_MINUTE = 640;
 const HIGHLIGHT_DOTS = 14;
 
+/** Broadcast-style minute label: "45+2'" in first-half stoppage, "90+4'" in
+ *  second-half stoppage — replaces a flat "90'" once added time is real
+ *  (gap 18). Extra time isn't reachable from league fixtures, so this only
+ *  needs to cover the two 45-minute halves. */
+function formatMinute(min: number, stoppage1: number): string {
+  if (min <= 45) return `${min}'`;
+  const halfEnd = 45 + stoppage1;
+  if (min <= halfEnd) return `45+${min - 45}'`;
+  if (min <= 90) return `${min}'`;
+  return `90+${min - 90}'`;
+}
+
 function eventIcon(e: TickMatchEvent): string {
   if (e.type === 'goal') return '⚽';
   if (e.type === 'card') return e.card === 'red' ? '🟥' : '🟨';
@@ -75,28 +87,34 @@ export default function MatchScreen({
     setTimeline(tl);
     if (settings.matchSpeed === 'instant') {
       setKickedOff(true);
-      setMinute(90);
+      setMinute(tl.report.matchEnd ?? 90);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const finished = minute >= 90;
+  // The engine's real final whistle — 90 plus whatever stoppage time this
+  // match actually earned (gap 18), not a hardcoded 90 that silently
+  // truncated any added-time goals from ever being shown.
+  const matchEnd = timeline?.report.matchEnd ?? 90;
+  const stoppage1 = timeline?.report.stoppage1 ?? 0;
+  const halfEnd = 45 + stoppage1;
+  const finished = minute >= matchEnd;
   const overlayOpen = showTactics || showSubs || showHt || showMenu || showEvents || showTeamTalk !== null;
 
   // Replay clock.
   useEffect(() => {
     if (!timeline || !kickedOff || paused || finished || overlayOpen) return;
-    const t = setInterval(() => setMinute((m) => Math.min(90, m + 1)), MS_PER_MINUTE / speed);
+    const t = setInterval(() => setMinute((m) => Math.min(matchEnd, m + 1)), MS_PER_MINUTE / speed);
     return () => clearInterval(t);
-  }, [timeline, kickedOff, paused, finished, overlayOpen, speed]);
+  }, [timeline, kickedOff, paused, finished, overlayOpen, speed, matchEnd]);
 
-  // Half-time pause.
+  // Half-time pause, once real added time for the first half has played out.
   useEffect(() => {
-    if (minute >= 45 && !htShown && !finished) {
+    if (minute >= halfEnd && !htShown && !finished) {
       setHtShown(true);
       setShowHt(true);
     }
-  }, [minute, htShown, finished]);
+  }, [minute, halfEnd, htShown, finished]);
 
   const snap: MinuteSnapshot | undefined = useMemo(() => {
     if (!timeline) return undefined;
@@ -110,6 +128,13 @@ export default function MatchScreen({
 
   const shownEvents = useMemo(
     () => (timeline ? timeline.events.filter((e) => e.minute <= minute) : []),
+    [timeline, minute]
+  );
+
+  // Momentum over time, up to the current minute — feeds the SVG momentum
+  // graph in StatsOverlay (previously just a single live bar).
+  const momentumSeries = useMemo(
+    () => (timeline ? timeline.snapshots.filter((sn) => sn.minute <= minute).map((sn) => ({ minute: sn.minute, value: sn.momentum })) : []),
     [timeline, minute]
   );
 
@@ -248,14 +273,14 @@ export default function MatchScreen({
     setKickedOff(true);
     setPaused(false);
     setShowHt(false);
-    setMinute(90);
+    setMinute(matchEnd);
   };
 
   const exitMatch = () => {
     if (finished || window.confirm('Leave the touchline? The result will stand as simulated.')) onDone(timeline.report);
   };
 
-  const minuteLabel = !kickedOff ? 'KO' : finished ? 'FT' : minute === 45 && showHt ? 'HT' : `${minute}'`;
+  const minuteLabel = !kickedOff ? 'KO' : finished ? 'FT' : minute >= halfEnd && showHt ? 'HT' : formatMinute(minute, stoppage1);
 
   // Highlight progress dots: key moments already revealed light up in order.
   const highlights = timeline.events.filter(
@@ -373,6 +398,7 @@ export default function MatchScreen({
             stats={stats}
             score={score}
             momentum={snap?.momentum ?? 0}
+            momentumSeries={momentumSeries}
             week={state.week}
             seasonYear={state.seasonYear}
             competition={leagueName(home?.leagueId ?? 'premier_league')}

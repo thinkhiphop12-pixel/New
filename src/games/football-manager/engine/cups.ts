@@ -1,5 +1,5 @@
 import type { CupTie, GameState, Knockout, MatchReport } from './types';
-import { simulateMatch } from './matchSimulation';
+import { simulateTickMatch } from './tickEngine/sim';
 
 function shuffled<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -80,12 +80,24 @@ export function playKnockoutRound(state: GameState, k: Knockout): MatchReport[] 
   const reports: MatchReport[] = [];
   for (const tie of ties) {
     if (tie.played) continue;
-    const rep = simulateMatch(state, tie.homeId, tie.awayId);
+    // Knockout ties must produce a winner: `decisive` tells the tick engine
+    // to play extra time (two 15-minute periods, fatigue carrying over) and
+    // then a real penalty shootout if still level — replaces the old
+    // `Math.random() < 0.5` coin flip (gap 27).
+    const rep = simulateTickMatch(state, tie.homeId, tie.awayId, { headless: true, decisive: true }).report;
     tie.homeGoals = rep.homeGoals;
     tie.awayGoals = rep.awayGoals;
     tie.played = true;
+    tie.wentToExtraTime = !!rep.wentToExtraTime;
     if (tie.homeGoals === tie.awayGoals) {
-      tie.pensWinnerId = Math.random() < 0.5 ? tie.homeId : tie.awayId;
+      if (rep.shootout) {
+        tie.pensWinnerId = rep.shootout.winnerId;
+        tie.penScore = { home: rep.shootout.homeScore, away: rep.shootout.awayScore };
+      } else {
+        // Should not happen — `decisive` always resolves a level tie via
+        // shootout — but never leave a tie without a winner.
+        tie.pensWinnerId = Math.random() < 0.5 ? tie.homeId : tie.awayId;
+      }
     }
     reports.push(rep);
   }

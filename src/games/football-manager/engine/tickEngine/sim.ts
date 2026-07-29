@@ -1,7 +1,8 @@
-import type { FormationDef, GameState, Player, Tactics } from '../types';
+import type { FormationDef, GameState, Player, ShootoutResult, Tactics } from '../types';
 import { HOME_ADVANTAGE, MAX_SUBS, MORALE_START, getFormation, getLeague } from '../gameRules';
 import { styleExec } from '../familiarity';
 import { setPieceTaker, setPieceXG, spDefenseMult } from '../setPieces';
+import { runShootout } from '../shootout';
 import { aiMatchSetup, availableSquad, lineupStrength, squadAvgRating } from '../teamManagement';
 import { scorerTraitMult } from '../traits';
 import { weightedIndex } from '../utils';
@@ -80,10 +81,27 @@ interface Sim {
   headless: boolean;
   ballX: number;
   baseScore: { home: number; away: number };
-  /** Final whistle minute — 90 plus both halves' stoppage time (gap 18). */
+  /** Final whistle minute — 90 plus both halves' stoppage time (gap 18), and
+   *  extra time on top of that when the tie needs a winner (gap 28). */
   matchEnd: number;
   /** Minute the first half's added time ran to. */
   halfEnd: number;
+  /** Minute regulation (90 + stoppage) ended — before any extra time. */
+  regEnd: number;
+  /** Added time at the end of the first half. */
+  stoppage1: number;
+  /** Added time at the end of the second half (or the whole match if no ET). */
+  stoppage2: number;
+  /** Set once extra time is decided on, at the end of regulation. */
+  wentToExtraTime: boolean;
+  /** Minute extra-time's first 15-minute period ended (with its own added time). */
+  etHalfEnd: number;
+  /* Finalization guards — each period's stoppage is computed exactly once. */
+  stoppage1Set: boolean;
+  stoppage2Set: boolean;
+  etDecided: boolean;
+  et1StoppageSet: boolean;
+  et2StoppageSet: boolean;
 }
 
 const freshStats = (): SideStats => ({ possession: 50, shots: 0, onTarget: 0, xg: 0, corners: 0, fouls: 0 });
@@ -498,6 +516,21 @@ function score(s: Sim, side: TeamSide): number {
   return s.baseScore[side] + s.events.filter((e) => e.type === 'goal' && e.side === side).length;
 }
 
+/**
+ * Added time for a period, driven by what actually happened in it (gap 18)
+ * rather than a flat random roll: goals (celebrations, restarts), subs and
+ * injuries (stoppages for treatment) each add real seconds back. A quiet
+ * half still gets a baseline 1-2 minutes, same as a real added-time board.
+ */
+function periodStoppage(events: TickMatchEvent[], from: number, to: number): number {
+  const window = events.filter((e) => e.minute > from && e.minute <= to);
+  const goals = window.filter((e) => e.type === 'goal').length;
+  const subs = window.filter((e) => e.kind === 'sub').length;
+  const injuries = window.filter((e) => e.type === 'injury').length;
+  const raw = 1 + goals * 0.6 + subs * 0.4 + injuries * 1.0 + Math.random() * 1.5;
+  return Math.max(1, Math.min(9, Math.round(raw)));
+}
+
 function tick(s: Sim): void {
   const att = s.possession === 'home' ? s.home : s.away;
   const def = s.possession === 'home' ? s.away : s.home;
@@ -735,11 +768,22 @@ export function simulateTickMatch(state: GameState, homeId: number, awayId: numb
     headless: !!opts.headless,
     ballX: 0.5,
     baseScore: { home: 0, away: 0 },
-    // Stoppage time, same as a broadcast added-time clock.
-    halfEnd: 45 + 1 + Math.floor(Math.random() * 5),
+    // Stoppage time, same as a broadcast added-time clock — finalized once
+    // each period's events are known (see periodStoppage above), not a flat
+    // roll set in advance. Placeholders below stand in until then.
+    halfEnd: 45,
     matchEnd: 90,
+    regEnd: 90,
+    stoppage1: 0,
+    stoppage2: 0,
+    wentToExtraTime: false,
+    etHalfEnd: 0,
+    stoppage1Set: false,
+    stoppage2Set: false,
+    etDecided: false,
+    et1StoppageSet: false,
+    et2StoppageSet: false,
   };
-  s.matchEnd = s.halfEnd + 45 + 2 + Math.floor(Math.random() * 6);
 
   const startMinute = opts.startMinute ?? 1;
   if (opts.initial) {
@@ -760,6 +804,46 @@ export function simulateTickMatch(state: GameState, homeId: number, awayId: numb
 
   for (let minute = startMinute; minute <= s.matchEnd; minute++) {
     s.minute = minute;
+
+    // Finalize first-half stoppage once the half's events are known, then
+    // extend the match bound so the loop keeps running into it.
+    if (!s.stoppage1Set && minute === 45) {
+      s.stoppage1Set = true;
+      s.stoppage1 = periodStoppage(s.events, 0, 45);
+      s.halfEnd = 45 + s.stoppage1;
+      s.matchEnd = s.halfEnd + 45;
+    }
+    // Same for second-half stoppage, once 90 "real" minutes of play have elapsed.
+    if (!s.stoppage2Set && s.stoppage1Set && minute === s.halfEnd + 45) {
+      s.stoppage2Set = true;
+      s.stoppage2 = periodStoppage(s.events, s.halfEnd, s.halfEnd + 45);
+      s.regEnd = s.halfEnd + 45 + s.stoppage2;
+      s.matchEnd = s.regEnd;
+    }
+    // Knockout tie still level at the final whistle of regulation: extra time.
+    if (!s.etDecided && opts.decisive && s.stoppage2Set && minute === s.regEnd) {
+      s.etDecided = true;
+      if (score(s, 'home') === score(s, 'away')) {
+        s.wentToExtraTime = true;
+        if (!s.headless) push(s, { minute, type: 'info', clubId: 0, text: 'Still level after 90 — the tie goes to extra time.' });
+        s.etHalfEnd = s.regEnd + 15;
+        s.matchEnd = s.etHalfEnd;
+      }
+    }
+    // First 15-minute ET period's own added time.
+    if (s.wentToExtraTime && !s.et1StoppageSet && minute === s.etHalfEnd) {
+      s.et1StoppageSet = true;
+      const etStop1 = periodStoppage(s.events, s.regEnd, s.etHalfEnd);
+      s.etHalfEnd = s.regEnd + 15 + etStop1;
+      s.matchEnd = s.etHalfEnd + 15;
+      if (!s.headless) push(s, { minute, type: 'info', clubId: 0, text: 'End of the first period of extra time.' });
+    }
+    // Second 15-minute ET period's own added time (final whistle of the tie).
+    if (s.wentToExtraTime && s.et1StoppageSet && !s.et2StoppageSet && minute === s.matchEnd) {
+      s.et2StoppageSet = true;
+      const etStop2 = periodStoppage(s.events, s.etHalfEnd, s.matchEnd);
+      s.matchEnd += etStop2;
+    }
 
     // AI chases the game late on.
     for (const side of [s.home, s.away]) {
@@ -788,7 +872,7 @@ export function simulateTickMatch(state: GameState, homeId: number, awayId: numb
       }
       if (minute === 45) push(s, { minute, type: 'info', clubId: 0, text: `${s.halfEnd - 45} added at the end of the first half.` });
       if (minute === s.halfEnd) push(s, { minute, type: 'info', clubId: 0, kind: 'halftime', text: 'Half time.' });
-      if (minute === 90 && s.matchEnd > 90) push(s, { minute, type: 'info', clubId: 0, text: `${s.matchEnd - 90} minutes of stoppage time to play.` });
+      if (minute === s.halfEnd + 45 && s.stoppage2 > 0) push(s, { minute, type: 'info', clubId: 0, text: `${s.stoppage2} minutes of stoppage time to play.` });
       s.snapshots.push(snapshot(s));
     }
   }
@@ -806,6 +890,25 @@ export function simulateTickMatch(state: GameState, homeId: number, awayId: numb
     finalScore
   );
 
+  // Still level after extra time in a decisive tie: penalties. Reuses the
+  // designated set-piece taker (engine/setPieces.ts) for each side's #1 spot;
+  // see engine/shootout.ts for the rest of the ordering and conversion model.
+  let shootout: ShootoutResult | undefined;
+  if (opts.decisive && s.wentToExtraTime && finalScore.home === finalScore.away) {
+    shootout = runShootout(
+      onPitch(s, s.home), onPitch(s, s.away),
+      s.home.tactics, s.away.tactics,
+      homeId, awayId
+    );
+    if (!s.headless) {
+      push(s, { minute: s.matchEnd, type: 'info', clubId: 0, text: 'Penalties will decide it.' });
+      push(s, {
+        minute: s.matchEnd, type: 'info', clubId: 0,
+        text: `${(shootout.winnerId === homeId ? s.home : s.away).name} win the shootout ${shootout.homeScore}–${shootout.awayScore}.`,
+      });
+    }
+  }
+
   return {
     homeId,
     awayId,
@@ -818,6 +921,11 @@ export function simulateTickMatch(state: GameState, homeId: number, awayId: numb
       awayGoals: finalScore.away,
       homeXG: Math.round(s.home.stats.xg * 100) / 100,
       awayXG: Math.round(s.away.stats.xg * 100) / 100,
+      stoppage1: s.stoppage1,
+      stoppage2: s.stoppage2,
+      matchEnd: s.matchEnd,
+      wentToExtraTime: s.wentToExtraTime,
+      shootout,
       events: s.events.map(({ minute, type, clubId, text, playerId, assistId, gx, gy, xg, archetype, contact, injuryType, injuryDays, potDrop }) =>
         ({ minute, type, clubId, text, playerId, assistId, gx, gy, xg, archetype, contact, injuryType, injuryDays, potDrop })),
       homeLineup: [...s.home.appeared],

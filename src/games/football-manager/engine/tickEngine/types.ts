@@ -96,4 +96,10 @@ export interface TickSimOptions {
   initialMomentum?: number;
   /** Skip snapshots/commentary for cheap AI/auto sims. */
   headless?: boolean;
+  /**
+   * Knockout tie that must produce a winner (gap 27-28): if still level at
+   * the end of regulation (plus stoppage), play two 15-minute extra-time
+   * periods, then a penalty shootout if still level after that.
+   */
+  decisive?: boolean;
 }

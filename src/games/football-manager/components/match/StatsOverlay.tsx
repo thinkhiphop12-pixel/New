@@ -9,6 +9,47 @@ const REFEREES = [
 ];
 const REF_STYLES = ['Firm', 'Lenient', 'Card-happy', 'Balanced'];
 
+/**
+ * Diverging momentum area graph over the course of the match — home spells
+ * rise above the midline, away spells dip below, each in their side's colour.
+ * Ported from the reference's `drawMomentumGraph`. Replaces what used to be
+ * a single live momentum bar with the actual shape of the match.
+ */
+function MomentumGraph({
+  series, homeColor, awayColor,
+}: {
+  series: { minute: number; value: number }[];
+  homeColor: string;
+  awayColor: string;
+}) {
+  if (series.length < 2) return null;
+  const width = 100;
+  const mid = 16;
+  const amp = 14; // vertical scale either side of the midline
+  const maxMinute = series[series.length - 1].minute || 1;
+  const x = (m: number) => (m / maxMinute) * width;
+  let dh = `M 0 ${mid}`;
+  let da = `M 0 ${mid}`;
+  for (const pt of series) {
+    const xv = x(pt.minute).toFixed(1);
+    dh += ` L ${xv} ${(mid - Math.max(0, pt.value) * amp).toFixed(1)}`;
+    da += ` L ${xv} ${(mid + Math.max(0, -pt.value) * amp).toFixed(1)}`;
+  }
+  const lastX = x(series[series.length - 1].minute).toFixed(1);
+  dh += ` L ${lastX} ${mid} Z`;
+  da += ` L ${lastX} ${mid} Z`;
+  return (
+    <div style={{ margin: '4px 0 10px' }}>
+      <span style={{ fontSize: 11, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Momentum</span>
+      <svg viewBox={`0 0 ${width} 32`} preserveAspectRatio="none" style={{ width: '100%', height: 32, display: 'block' }}>
+        <line x1="0" y1={mid} x2={width} y2={mid} stroke="rgba(255,255,255,0.18)" strokeWidth="0.5" />
+        <path d={dh} fill={homeColor} opacity="0.75" />
+        <path d={da} fill={awayColor} opacity="0.75" />
+      </svg>
+    </div>
+  );
+}
+
 function Bar({ home, away, label, homeVal, awayVal, homeColor, awayColor }: {
   home: number;
   away: number;
@@ -44,6 +85,7 @@ export default function StatsOverlay({
   stats,
   score,
   momentum,
+  momentumSeries,
   week,
   seasonYear,
   competition,
@@ -56,6 +98,7 @@ export default function StatsOverlay({
   stats: { home: SideStats; away: SideStats };
   score: { home: number; away: number };
   momentum: number;
+  momentumSeries?: { minute: number; value: number }[];
   week: number;
   seasonYear: number;
   competition: string;
@@ -134,6 +177,10 @@ export default function StatsOverlay({
           </div>
         </div>
       </div>
+
+      {momentumSeries && momentumSeries.length > 1 && (
+        <MomentumGraph series={momentumSeries} homeColor={homeColor} awayColor={awayColor} />
+      )}
 
       <div className="fm-mstats__winbar">
         <div className="fm-mstats__winbar-home" style={{ width: `${homeWin}%` }}>
