@@ -23,12 +23,12 @@ import { simulateTickMatch } from '../engine/tickEngine/sim';
 import { newFacilities, startStandProject, tickFacilitiesWeek, totalCapacity } from '../engine/facilities';
 import type { StandId } from '../engine/types';
 import { evaluateFeeOffer, evaluateMove, marketStatus, startNegotiation } from '../engine/negotiation';
-import { squadAvgRating } from '../engine/teamManagement';
+import { contextualizeTactics, previewEffectiveXG, squadAvgRating } from '../engine/teamManagement';
 import { continentalEntrants } from '../engine/seasonProgression';
 import { continentalTieWinner, tieAggregate, tieComplete } from '../engine/europeanCup';
 import {
   CLUBS_PER_DIVISION, LEAGUES, MAX_SQUAD_SIZE, MIN_SQUAD_SIZE, SEASON_ROUNDS, WINTER_BREAK,
-  getLeague, isPhantomLeague, leagueAbove, leagueIdForDivision, leagueName,
+  buildCustomFormation, getFormation, getLeague, isPhantomLeague, leagueAbove, leagueIdForDivision, leagueName,
 } from '../engine/gameRules';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -619,6 +619,42 @@ assert(
 
   console.log(`\nContinental bracket: ${entrants.length} entrants, ${es.continental.directQualifiers.length} direct qualifiers.`);
   console.log(`  Winner decided after ${es.continental.round} rounds; every complete tie played the right number of legs. ✓`);
+}
+
+// --- Phase 5 remainder: custom formations, contextual AI tactics, xG preview
+{
+  const invalid = buildCustomFormation(4, 4, 4);
+  assert(invalid.slots.length === 11, 'an invalid custom formation split must still fall back to a valid 11-slot formation');
+  const valid = buildCustomFormation(3, 4, 3);
+  assert(valid.slots.length === 11, 'custom-3-4-3 must have exactly 11 slots');
+  assert(valid.slots.filter((s) => s.pos === 'DEF').length === 3, 'custom-3-4-3 must have 3 DEF slots');
+  assert(valid.slots.filter((s) => s.pos === 'MID').length === 4, 'custom-3-4-3 must have 4 MID slots');
+  assert(valid.slots.filter((s) => s.pos === 'FWD').length === 3, 'custom-3-4-3 must have 3 FWD slots');
+  assert(getFormation(valid.id).id === valid.id, 'getFormation must resolve a custom formation id on the fly');
+
+  // Opponent-contextual AI tactics: the widest real quality gap in a league
+  // must actually diverge into attacking/defensive, not stay 'balanced' —
+  // this regressed once already (calibrated against a measured 12.6-point
+  // top-to-bottom Premier League spread, see teamManagement.ts).
+  const plId = state.clubs.find((c) => c.name === 'Liverpool')?.leagueId ?? userLeagueId(state);
+  const inLeague = [...state.clubs.filter((c) => c.leagueId === plId)]
+    .sort((a, b) => squadAvgRating(state, b.id) - squadAvgRating(state, a.id));
+  const top = inLeague[0];
+  const bottom = inLeague[inLeague.length - 1];
+  const topTactics = contextualizeTactics(state, top.id, bottom.id);
+  const bottomTactics = contextualizeTactics(state, bottom.id, top.id);
+  assert(topTactics.style === 'attacking', `widest-gap favourite should read as attacking, got ${topTactics.style}`);
+  assert(bottomTactics.style === 'defensive', `widest-gap underdog should read as defensive, got ${bottomTactics.style}`);
+
+  // previewEffectiveXG must actually react to a tactical change, and use the
+  // same tactical chain a real match resolves with (regression check for the
+  // "mutated tactics silently ignored" failure mode).
+  const base = previewEffectiveXG(state, bottom.id);
+  const tweaked = previewEffectiveXG(state, bottom.id, {
+    tactics: { ...state.tactics, mentality: 'ultra-defensive', pressing: 'low', defLine: 'deep' },
+  });
+  assert(tweaked.userXG < base.userXG, 'previewEffectiveXG must lower userXG for an ultra-defensive/low-block tweak');
+  console.log('\nPhase 5 remainder: custom formations resolve correctly, AI tactics read the quality gap, previewEffectiveXG reacts to tactical changes. ✓');
 }
 
 console.log('\n✓ ALL SMOKE TESTS PASSED');

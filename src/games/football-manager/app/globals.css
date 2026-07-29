@@ -1341,6 +1341,14 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   border-radius: var(--r-sm); padding: 8px 2px; font-size: 11px; font-weight: 800; cursor: pointer;
 }
 .fm-formation-tile.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+.fm-custom-formation { display: flex; gap: 14px; margin-bottom: 8px; }
+.fm-custom-formation__stepper { display: flex; align-items: center; gap: 6px; }
+.fm-custom-formation__label { font-size: 11px; font-weight: 800; color: var(--text-2); width: 30px; }
+.fm-custom-formation__count { min-width: 18px; text-align: center; font-weight: 800; }
+.fm-xg-preview { display: flex; align-items: baseline; gap: 8px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.fm-xg-preview__you { color: var(--green); }
+.fm-xg-preview__them { color: var(--text-2); }
+.fm-xg-preview__sep { color: var(--text-dim); }
 .fm-mini-pitch {
   position: relative; width: 100%; aspect-ratio: 3 / 4; border-radius: var(--r-md);
   background: linear-gradient(180deg, #0d2b1c 0%, #061109 100%);

@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import type { GameState, PlayStyle, Pressing, TacticStyle, Tempo, Width } from '@/engine/types';
-import { ALL_FORMATIONS, getFormation, getLeague } from '@/engine/gameRules';
-import { autoPickLineup } from '@/engine/teamManagement';
+import { ALL_FORMATIONS, buildCustomFormation, getFormation, getLeague, parseCustomFormationId } from '@/engine/gameRules';
+import { autoPickLineup, previewEffectiveXG } from '@/engine/teamManagement';
+import { nextUserFixture } from '@/engine/seasonProgression';
 import {
   coachDrillMult, needsDrilling, projectedFamiliarity, seedFamiliarityForSwitch,
   styleExec, styleFamiliarity, weeksToDrill,
@@ -64,6 +65,12 @@ export default function TacticsScreen({
 }) {
   const [expandedSection, setExpandedSection] = useState<string>('formations');
   const [previewShape, setPreviewShape] = useState<'ip' | 'oop'>('ip');
+
+  // Custom formation builder (gap 24): seed the steppers from the current IP
+  // formation's line split when it's already a custom one, else a sensible
+  // 4-3-3 default.
+  const currentIPParsed = parseCustomFormationId(state.dualFormation?.inPossessionId || state.formationId);
+  const [customLines, setCustomLines] = useState<[number, number, number]>(currentIPParsed ?? [4, 3, 3]);
 
   const update = (patch: Partial<GameState>) => onChange({ ...state, ...patch });
 
@@ -180,6 +187,29 @@ export default function TacticsScreen({
         ))}
       </div>
 
+      {(() => {
+        // Gap 32: previewEffectiveXG against the actual next opponent, using
+        // the same calcMatchXG chain a real match resolves with, so a
+        // tactical tweak's effect is visible before it's ever played out.
+        const fixture = nextUserFixture(state);
+        if (!fixture) return null;
+        const opponentId = fixture.homeId === state.userClubId ? fixture.awayId : fixture.homeId;
+        const opponent = state.clubs.find((c) => c.id === opponentId);
+        const xg = previewEffectiveXG(state, opponentId);
+        return (
+          <div className="fm-panel fm-panel--elevated" style={{ marginBottom: 14, padding: 10 }}>
+            <p className="fm-label fm-label--sm" style={{ marginTop: 0 }}>
+              Projected xG vs {opponent?.name ?? 'next opponent'}
+            </p>
+            <div className="fm-xg-preview">
+              <span className="fm-xg-preview__you">You {xg.userXG.toFixed(2)}</span>
+              <span className="fm-xg-preview__sep">–</span>
+              <span className="fm-xg-preview__them">{xg.oppXG.toFixed(2)} Them</span>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Dual Formations Section */}
       <div className="fm-tactics__section">
         <button
@@ -222,6 +252,61 @@ export default function TacticsScreen({
                 ))}
               </div>
               <p className="fm-hint">Used only while defending.</p>
+            </div>
+
+            <div className="fm-tactics__formation-group">
+              <label className="fm-label fm-label--sm">Custom Formation</label>
+              <p className="fm-hint">
+                Build any def-mid-fwd split (must total 10 outfield players) and set it as your
+                in-possession shape.
+              </p>
+              <div className="fm-custom-formation">
+                {(['DEF', 'MID', 'FWD'] as const).map((label, i) => (
+                  <div key={label} className="fm-custom-formation__stepper">
+                    <span className="fm-custom-formation__label">{label}</span>
+                    <button
+                      className="fm-btn fm-btn--ghost fm-btn--sm"
+                      onClick={() => setCustomLines((lines) => {
+                        const next = [...lines] as [number, number, number];
+                        next[i] = Math.max(1, next[i] - 1);
+                        return next;
+                      })}
+                    >
+                      −
+                    </button>
+                    <span className="fm-custom-formation__count">{customLines[i]}</span>
+                    <button
+                      className="fm-btn fm-btn--ghost fm-btn--sm"
+                      onClick={() => setCustomLines((lines) => {
+                        const next = [...lines] as [number, number, number];
+                        next[i] = Math.min(8, next[i] + 1);
+                        return next;
+                      })}
+                    >
+                      +
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {(() => {
+                const total = customLines.reduce((a, b) => a + b, 0);
+                const valid = total === 10;
+                return (
+                  <>
+                    <p className="fm-hint">
+                      {customLines.join('-')} — {total} outfield players
+                      {valid ? '' : ` (needs 10, not ${total})`}
+                    </p>
+                    <button
+                      className="fm-btn fm-btn--primary"
+                      disabled={!valid}
+                      onClick={() => setIPFormation(buildCustomFormation(...customLines).id)}
+                    >
+                      Set as In-Possession Shape
+                    </button>
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}

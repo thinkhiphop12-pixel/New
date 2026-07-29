@@ -464,6 +464,74 @@ export const ALL_FORMATIONS: FormationDef[] = [
   ...EXTENDED_FORMATIONS.filter((f) => !FORMATIONS.some((g) => g.id === f.id)),
 ];
 
+/** Role labels for a line of `n` players, front-to-back by position group.
+ *  Mirrors the label choices already used by the hand-authored FORMATIONS
+ *  above, extended to sizes they don't cover. */
+function lineLabels(group: Position, n: number): string[] {
+  if (n <= 0) return [];
+  if (group === 'DEF') {
+    if (n === 1) return ['CB'];
+    if (n === 2) return ['CB', 'CB'];
+    if (n === 3) return ['CB', 'CB', 'CB'];
+    if (n === 4) return ['LB', 'CB', 'CB', 'RB'];
+    if (n === 5) return ['LB', 'CB', 'CB', 'CB', 'RB'];
+    return ['LB', ...Array(n - 2).fill('CB'), 'RB'];
+  }
+  if (group === 'MID') {
+    if (n === 1) return ['CM'];
+    if (n === 2) return ['CM', 'CM'];
+    if (n === 3) return ['CM', 'CM', 'CM'];
+    if (n === 4) return ['LM', 'CM', 'CM', 'RM'];
+    if (n === 5) return ['LM', 'CM', 'CM', 'CM', 'RM'];
+    return ['LM', ...Array(n - 2).fill('CM'), 'RM'];
+  }
+  // FWD
+  if (n === 1) return ['ST'];
+  if (n === 2) return ['ST', 'ST'];
+  if (n === 3) return ['LW', 'ST', 'RW'];
+  return ['LW', ...Array(n - 2).fill('ST'), 'RW'];
+}
+
+/** Custom formation id convention: `custom-<def>-<mid>-<fwd>`, e.g.
+ *  `custom-3-4-3`. Generated on the fly rather than pre-registered, since the
+ *  space of valid line splits (any three positive integers summing to 10) is
+ *  too large to enumerate — `formation: 'custom'` (gap 24) means "any split
+ *  the player builds", not a fixed extra formation. */
+export function customFormationId(def: number, mid: number, fwd: number): string {
+  return `custom-${def}-${mid}-${fwd}`;
+}
+
+export function parseCustomFormationId(id: string): [number, number, number] | null {
+  const m = /^custom-(\d+)-(\d+)-(\d+)$/.exec(id);
+  if (!m) return null;
+  return [Number(m[1]), Number(m[2]), Number(m[3])];
+}
+
+/** Auto-generates positions and role labels from an arbitrary def/mid/fwd
+ *  line split (gap 24). `def + mid + fwd` must equal 10 — one keeper plus
+ *  the split fills the XI. Invalid splits fall back to a balanced 4-3-3 shape
+ *  rather than producing a formation with the wrong number of slots. */
+export function buildCustomFormation(def: number, mid: number, fwd: number): FormationDef {
+  if (def < 1 || mid < 1 || fwd < 1 || def + mid + fwd !== 10) {
+    return getFormation('4-3-3');
+  }
+  const id = customFormationId(def, mid, fwd);
+  return {
+    id,
+    name: `Custom ${def}-${mid}-${fwd}`,
+    slots: [
+      { pos: 'GK', label: 'GK', x: 50, y: 6 },
+      ...line('DEF', lineLabels('DEF', def), 27),
+      ...line('MID', lineLabels('MID', mid), 55),
+      ...line('FWD', lineLabels('FWD', fwd), 82),
+    ],
+  };
+}
+
 export function getFormation(id: string): FormationDef {
-  return ALL_FORMATIONS.find((f) => f.id === id) ?? FORMATIONS[1];
+  const found = ALL_FORMATIONS.find((f) => f.id === id);
+  if (found) return found;
+  const custom = parseCustomFormationId(id);
+  if (custom) return buildCustomFormation(...custom);
+  return FORMATIONS[1];
 }

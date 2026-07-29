@@ -3,7 +3,7 @@ import { HOME_ADVANTAGE, MAX_SUBS, MORALE_START, getFormation, getLeague } from 
 import { styleExec } from '../familiarity';
 import { setPieceTaker, setPieceXG, spDefenseMult } from '../setPieces';
 import { runShootout } from '../shootout';
-import { aiMatchSetup, availableSquad, lineupStrength, squadAvgRating } from '../teamManagement';
+import { aiMatchSetup, availableSquad, lineupStrength } from '../teamManagement';
 import { scorerTraitMult } from '../traits';
 import { weightedIndex } from '../utils';
 import { MENTALITIES, type MentalityId, compactFormation, normalizeMentality } from './tacticsData';
@@ -649,8 +649,10 @@ function makeSide(
     lineup = setup.lineup;
     formationId = setup.formation.id;
     tactics = setup.tactics;
-    const diff = squadAvgRating(state, clubId) - squadAvgRating(state, opponentId);
-    mentality = diff > 5 ? 'attacking' : diff < -5 ? 'defensive' : 'balanced';
+    // Match the mentality to the same contextual read `aiMatchSetup` already
+    // made (gap 23) rather than recomputing a second, differently-thresholded
+    // quality gap that could disagree with the tactics it's paired with.
+    mentality = tactics.style === 'attacking' ? 'attacking' : tactics.style === 'defensive' ? 'defensive' : 'balanced';
   }
   const userInvolved = state.userClubId === clubId || state.userClubId === opponentId;
   const strengthMult = !isUser && userInvolved && opts.difficulty ? opts.difficulty : 1;
