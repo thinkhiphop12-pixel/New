@@ -18,6 +18,7 @@ import { seedClubIdentities } from './clubIdentity';
 import { aiWeeklyTransfers, generateWeeklyOffers } from './transferMarket';
 import { clubRunName, createKnockout, isClubAlive, knockoutRoundDue, playKnockoutRound, roundName, tieWinner, userTieThisRound } from './cups';
 import { pushInbox } from './inbox';
+import { tickFinances, weeklyMatchdayIncome } from './finances';
 import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
 
 export { markInboxRead, markAllInboxRead } from './inbox';
@@ -587,10 +588,10 @@ export function getStadiumLevel(state: GameState): number {
 
 /** Weekly matchday income: league base scaled by position, fans and stadium. */
 export function gateIncome(state: GameState): number {
-  const pos = Math.max(userPosition(state), 1);
-  const stadiumMult = 1 + 0.25 * (getStadiumLevel(state) - 1);
-  const raw = gateBase(userLeagueId(state)) * (0.55 + state.fanConfidence / 250 + (21 - pos) / 50) * stadiumMult;
-  return Math.round(raw / 10_000) * 10_000;
+  // Phase 8: delegates to the capacity × ticket-tier × opponent matchday model
+  // in engine/finances.ts, which pays per home fixture instead of the old flat
+  // per-week `gateBase` drip.
+  return weeklyMatchdayIncome(state) * (1 + 0.25 * (getStadiumLevel(state) - 1));
 }
 
 /** The user's total weekly wage bill (loanees are off the books). */
@@ -879,6 +880,7 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
     if (round % 3 === 0) s.news.unshift('The club is in the red — the board is uneasy about the finances.');
   }
   s.ledger = s.ledger.slice(0, 24);
+  tickFinances(s, round); // Phase 8 — see engine/finances.ts (sole hook into this file).
 
   // Board confidence tracks performance against the objective.
   const pos = userPosition(s);
