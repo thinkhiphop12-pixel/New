@@ -238,6 +238,26 @@ export interface Tactics {
   runs?: RunStyle;
   /** Challenge intensity: card risk traded for recoveries. */
   tackling?: Tackling;
+
+  /* --- Phase 5: set pieces. Optional throughout — an absent block means
+     "pick sensible defaults", which is what every pre-v6 save gets. --- */
+  setPieces?: SetPieceSetup;
+}
+
+/** Dead-ball setup: who takes them, how they're delivered, and who does what
+ *  in the box at both ends. */
+export interface SetPieceSetup {
+  /** Designated takers, by player id. Ignored if the man isn't in the XI. */
+  penalties?: number;
+  corners?: number;
+  fkShoot?: number;
+  fkDeliver?: number;
+  cornerRoutine?: 'near-post' | 'far-post' | 'drilled' | 'short' | 'edge-of-box';
+  cornerDefense?: 'zonal' | 'man' | 'mixed';
+  /** Attacking box assignment per player id. */
+  boxJobs?: Record<number, 'far' | 'near' | 'six' | 'edge' | 'back'>;
+  /** Defensive box assignment per player id. */
+  defJobs?: Record<number, 'post' | 'mark' | 'zone' | 'edge' | 'up'>;
 }
 
 export type DefLine = 'deep' | 'normal' | 'high';

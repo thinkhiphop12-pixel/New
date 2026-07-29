@@ -17,6 +17,7 @@ import {
 } from '../engine/seasonProgression';
 import { simulateMatch } from '../engine/matchSimulation';
 import { needsDrilling, styleFamiliarity, weeksToDrill } from '../engine/familiarity';
+import { cornerRoutineOf, setPieceTaker, setPieceXG, spDefenseMult } from '../engine/setPieces';
 import { simulateTickMatch } from '../engine/tickEngine/sim';
 import {
   CLUBS_PER_DIVISION, LEAGUES, SEASON_ROUNDS, WINTER_BREAK, getLeague, isPhantomLeague,
@@ -316,6 +317,43 @@ assert(
   }
   console.log(`\nTactical familiarity: ${drilled.length} clubs drilled in a named style.`);
   console.log(`  ${club.name} (${club.playStyle}) would need ${near}w to drill tiki-taka, ${far}w for catenaccio. ✓`);
+}
+
+/* --- Phase 5: set pieces ------------------------------------------------ */
+{
+  const club = state.clubs.find((c) => c.id === state.userClubId)!;
+  const xi = state.lineup
+    .map((id) => (id == null ? null : state.players[id]))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p));
+
+  const corner = setPieceTaker(xi, state.tactics, 'corner');
+  const pen = setPieceTaker(xi, state.tactics, 'penalty');
+  if (!corner || !pen) throw new Error('set-piece takers not resolved');
+  // The corner must go to a passer and the penalty to a finisher. One man can
+  // legitimately do both — plenty of sides work that way — so this checks the
+  // relevant attribute for each job rather than that they differ.
+  if (corner.pas < 60) throw new Error(`corner taker ${corner.name} has pas ${corner.pas}`);
+  if (pen.sho < 60) throw new Error(`penalty taker ${pen.name} has sho ${pen.sho}`);
+
+  // Routines must be ordered as designed, and a real side must sit near 1.0 —
+  // an earlier aerial-threat bug put every club below neutral, which silently
+  // nerfed set pieces everywhere while still looking plausible in isolation.
+  const mult = (r: Parameters<typeof cornerRoutineOf>[0]['setPieces'] extends undefined ? never : string) =>
+    setPieceXG(xi, { ...state.tactics, setPieces: { cornerRoutine: r as 'far-post' } });
+  const far = mult('far-post');
+  const short = mult('short');
+  if (far <= short) throw new Error(`far-post (${far.toFixed(2)}) should out-threaten short (${short.toFixed(2)})`);
+  if (far < 0.75 || far > 1.6) throw new Error(`far-post multiplier ${far.toFixed(2)} is off-scale`);
+
+  // Defensive schemes must be ordered zonal < mixed < man.
+  const dm = (d: 'zonal' | 'man' | 'mixed') =>
+    spDefenseMult(xi, { ...state.tactics, setPieces: { cornerDefense: d } });
+  if (!(dm('zonal') < dm('mixed') && dm('mixed') < dm('man'))) {
+    throw new Error('corner defence schemes are not ordered zonal < mixed < man');
+  }
+
+  console.log(`\nSet pieces: corners ${corner.name} (pas ${corner.pas}), penalties ${pen.name} (sho ${pen.sho}).`);
+  console.log(`  far-post ${far.toFixed(2)}x vs short ${short.toFixed(2)}x; defence zonal ${dm('zonal').toFixed(2)} < man ${dm('man').toFixed(2)}. ✓`);
 }
 
 console.log('\n✓ ALL SMOKE TESTS PASSED');

@@ -1,6 +1,7 @@
 import type { FormationDef, GameState, Player, Tactics } from '../types';
 import { HOME_ADVANTAGE, MAX_SUBS, MORALE_START, getFormation, getLeague } from '../gameRules';
 import { styleExec } from '../familiarity';
+import { setPieceTaker, setPieceXG, spDefenseMult } from '../setPieces';
 import { aiMatchSetup, availableSquad, lineupStrength, squadAvgRating } from '../teamManagement';
 import { scorerTraitMult } from '../traits';
 import { weightedIndex } from '../utils';
@@ -315,7 +316,14 @@ function makeShot(s: Sim, att: SideState, def: SideState, minute: number, forceA
   const A = SHOT_ARCH[archKey];
   if (!A) return null;
   const { gx, gy } = A.isPen ? { gx: PENALTY_SPOT_X, gy: 0 } : sampleShotLocation(archKey);
-  const shooter = pickShooter(s, att, archKey);
+  /* Dead balls go to the designated man, not to whoever the open-play shooter
+   * weighting happens to pick — the whole point of naming a penalty taker is
+   * that he takes them. */
+  const shooter = A.isPen
+    ? setPieceTaker(att.xi.map((sl) => sl.p), att.tactics, 'penalty') ?? pickShooter(s, att, archKey)
+    : archKey === 'free_kick'
+      ? setPieceTaker(att.xi.map((sl) => sl.p), att.tactics, 'fkShoot') ?? pickShooter(s, att, archKey)
+      : pickShooter(s, att, archKey);
   if (!shooter) return null;
 
   const contact: Contact = A.header === 1 ? 'header'
@@ -371,6 +379,13 @@ function makeShot(s: Sim, att: SideState, def: SideState, minute: number, forceA
       - (gk ? (effAttr(gk, 'gkReflexes', gkSharp) - 70) * 0.003 : 0);
     xg = Math.max(0.55, Math.min(0.92, xg));
   } else {
+    /* Set pieces resolve through the dead-ball model: the delivery of the man
+     * taking it, the aerial threat of the men attacking it, the routine chosen,
+     * and how the defending side sets up against it. Open play is untouched. */
+    if (A.setPlay === 'corner' || A.setPiece) {
+      xg *= setPieceXG(att.xi.map((sl) => sl.p), att.tactics)
+        * spDefenseMult(def.xi.map((sl) => sl.p), def.tactics);
+    }
     // Hold the shot to the side's xG budget so sampling noise in the location
     // draw can never quietly inflate or starve a team's output.
     xg *= att.shotScale;
