@@ -9,7 +9,32 @@ import {
   styleExec, styleFamiliarity, weeksToDrill,
 } from '@/engine/familiarity';
 import { MENTALITIES, MENTALITY_ORDER, normalizeMentality, type MentalityId } from '@/engine/tickEngine/tacticsData';
+import {
+  CORNER_ROUTINES, cornerRoutineOf, setPieceTaker, setPieceXG,
+  type CornerDefense, type CornerRoutine, type SPJob,
+} from '@/engine/setPieces';
 import { PitchMarkings, PlayerToken } from './visuals';
+
+const ROUTINE_LABEL: Record<CornerRoutine, string> = {
+  'near-post': 'Near Post',
+  'far-post': 'Far Post',
+  drilled: 'Drilled',
+  short: 'Short',
+  'edge-of-box': 'Edge of Box',
+};
+
+/** The four dead-ball jobs, with the attribute each is judged on — shown next
+ *  to every name so the choice can be made without leaving the screen. */
+const SP_ROLES: { job: SPJob; label: string; stat: 'pas' | 'sho' }[] = [
+  { job: 'penalty', label: 'Penalties', stat: 'sho' },
+  { job: 'corner', label: 'Corners', stat: 'pas' },
+  { job: 'fkShoot', label: 'Free kicks (shoot)', stat: 'sho' },
+  { job: 'fkDeliver', label: 'Free kicks (cross)', stat: 'pas' },
+];
+
+const SP_FIELD: Record<SPJob, string> = {
+  penalty: 'penalties', corner: 'corners', fkShoot: 'fkShoot', fkDeliver: 'fkDeliver',
+};
 
 /** Presentation order: the two no-drill fallbacks first, then the identities
  *  that have to be worked on. */
@@ -77,6 +102,14 @@ export default function TacticsScreen({
   const xi = state.lineup
     .map((id) => (id == null ? null : state.players[id]))
     .filter((p): p is NonNullable<typeof p> => Boolean(p));
+
+  /* --- Set pieces ------------------------------------------------------- */
+  const cornerTaker = setPieceTaker(xi, state.tactics, 'corner');
+  const spThreat = setPieceXG(xi, state.tactics);
+
+  const setSetPiece = (patch: Partial<NonNullable<typeof state.tactics.setPieces>>) => {
+    update({ tactics: { ...state.tactics, setPieces: { ...state.tactics.setPieces, ...patch } } });
+  };
 
   const setIdentity = (style: PlayStyle) => {
     if (style === currentStyle) return;
@@ -219,6 +252,86 @@ export default function TacticsScreen({
               ))}
             </div>
             <p className="fm-hint">Sets the default match mentality — you can change it live from the touchline.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Set Pieces — routine, defensive scheme and designated takers. */}
+      <div className="fm-tactics__section">
+        <button
+          className="fm-tactics__header"
+          onClick={() => toggleSection('setpieces')}
+          aria-expanded={expandedSection === 'setpieces'}
+        >
+          <span className="fm-tactics__title">Set Pieces</span>
+          <span className="fm-tactics__indicator">{expandedSection === 'setpieces' ? '−' : '+'}</span>
+        </button>
+
+        {expandedSection === 'setpieces' && (
+          <div className="fm-tactics__content">
+            <div className="fm-sp-label">Corner routine</div>
+            <div className="fm-pills">
+              {(Object.keys(CORNER_ROUTINES) as CornerRoutine[]).map((r) => (
+                <button
+                  key={r}
+                  className={`fm-pill${cornerRoutineOf(state.tactics) === r ? ' active' : ''}`}
+                  onClick={() => setSetPiece({ cornerRoutine: r })}
+                >
+                  {ROUTINE_LABEL[r]}
+                </button>
+              ))}
+            </div>
+            <p className="fm-hint">
+              Currently worth <strong>{spThreat.toFixed(2)}×</strong> on a corner — delivery from{' '}
+              {cornerTaker?.name ?? 'nobody'} against the aerial threat of the men you send up.
+              Short routines ignore height; far-post leans on it entirely.
+            </p>
+
+            <div className="fm-sp-label">Defending corners</div>
+            <div className="fm-pills">
+              {(['zonal', 'mixed', 'man'] as CornerDefense[]).map((d) => (
+                <button
+                  key={d}
+                  className={`fm-pill${(state.tactics.setPieces?.cornerDefense ?? 'mixed') === d ? ' active' : ''}`}
+                  onClick={() => setSetPiece({ cornerDefense: d })}
+                >
+                  {d[0].toUpperCase() + d.slice(1)}
+                </button>
+              ))}
+            </div>
+            <p className="fm-hint">
+              Zonal concedes least from the delivery itself; man-marking concedes most but leaves
+              you better placed for the second ball.
+            </p>
+
+            <div className="fm-sp-label">Takers</div>
+            <div className="fm-sp-takers">
+              {SP_ROLES.map(({ job, label, stat }) => {
+                const current = setPieceTaker(xi, state.tactics, job);
+                return (
+                  <label key={job} className="fm-sp-taker">
+                    <span className="fm-sp-taker__role">{label}</span>
+                    <select
+                      className="fm-sp-taker__select"
+                      value={current?.id ?? ''}
+                      onChange={(e) => setSetPiece({ [SP_FIELD[job]]: Number(e.target.value) })}
+                    >
+                      {[...xi]
+                        .sort((a, b) => b[stat] - a[stat])
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} ({p[stat]})
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                );
+              })}
+            </div>
+            <p className="fm-hint">
+              Defaults pick the best man on the pitch for each job. Anyone you name here takes it
+              instead, as long as he is in the XI.
+            </p>
           </div>
         )}
       </div>

@@ -1221,6 +1221,32 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-identity-card__fit.good { color: var(--green-600); }
 .fm-identity-card__fit.ok   { color: var(--gold); }
 .fm-identity-card__fit.poor { color: var(--red); }
+
+/* --- Set pieces (Tactics > Set Pieces) ----------------------------------- */
+.fm-sp-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 10px 0 6px;
+}
+.fm-sp-label:first-child { margin-top: 0; }
+.fm-sp-takers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 8px;
+}
+.fm-sp-taker { display: flex; flex-direction: column; gap: 4px; }
+.fm-sp-taker__role { font-size: 12px; color: var(--text-2); }
+.fm-sp-taker__select {
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm, 8px);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 13px;
+}
+.fm-sp-taker__select:hover { border-color: var(--border-bright); }
 .fm-formation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; margin-bottom: 6px; }
 .fm-formation-tile {
   background: var(--panel-2); border: 1px solid var(--border); color: var(--text-2);
