@@ -514,7 +514,11 @@ export function genSponsorOffers(state: GameState, slot: SponsorSlotId, goodSeas
   const used = new Set<string>();
   return cfg.terms.map((term, i) => {
     const sp = genSponsorDeal(state, fin, slot, term, fin.boardConfidence - 10 + i * 12, goodSeason && i > 0);
-    if (used.has(sp.name)) sp.name += ' Group';
+    // Disambiguate a repeated name with a Roman-numeral suffix rather than a
+    // fixed word — the base pool already includes names like "MegaAuto
+    // Group", and appending a fixed " Group" onto that produced "MegaAuto
+    // Group Group".
+    if (used.has(sp.name)) sp.name += ` ${['II', 'III'][used.size - 1] ?? used.size + 1}`;
     used.add(sp.name);
     sp.weeklyValue = Math.round(sp.weeklyValue * (1 + i * 0.06));
     return sp as SponsorOffer;
@@ -535,7 +539,7 @@ export function genKitOffers(state: GameState): KitOffer[] {
   const used = new Set<string>();
   return [2, 3, 4].map((term, i) => {
     const kd = genKitDeal(state, term) as KitOffer;
-    if (used.has(kd.name)) kd.name += ' Pro';
+    if (used.has(kd.name)) kd.name += ` ${['II', 'III'][used.size - 1] ?? used.size + 1}`;
     used.add(kd.name);
     kd.annualValue = Math.round(kd.annualValue * (1 + i * 0.05));
     return kd;

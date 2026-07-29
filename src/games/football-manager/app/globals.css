@@ -735,6 +735,44 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-ledger .in { color: var(--green); font-weight: 700; }
 .fm-ledger .out { color: var(--red); font-weight: 700; }
 
+/* --- Finances screen: FFP/SCR, sponsorship, season table ------------------ */
+.fm-ffp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.fm-ffp-status { font-size: 18px; font-weight: 900; margin: 2px 0; }
+.fm-ffp-status--ok { color: var(--green-600); }
+.fm-ffp-status--bad { color: var(--red); }
+
+.fm-sponsor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.fm-sponsor-card {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 10px; border: 1px solid var(--border); border-radius: var(--r-sm, 8px);
+  background: var(--panel);
+}
+.fm-sponsor-card__label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.fm-sponsor-card__name { font-weight: 700; font-size: 13px; }
+.fm-sponsor-card__value { font-variant-numeric: tabular-nums; color: var(--green-600); font-weight: 700; }
+
+.fm-sponsor-offers {
+  margin-top: 12px; padding: 10px; border: 1px solid var(--border-bright);
+  border-radius: var(--r-sm, 8px); background: var(--panel-2);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.fm-sponsor-offers__header { display: flex; justify-content: space-between; align-items: center; }
+.fm-sponsor-offers__row {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  padding: 8px; border: 1px solid var(--border); border-radius: var(--r-sm, 8px);
+}
+.fm-sponsor-offers__name { font-weight: 600; font-size: 13px; flex: 1; }
+
+.fm-finance-table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.fm-finance-table th { text-align: left; color: var(--muted); font-weight: 600; padding: 4px 8px 6px; border-bottom: 1px solid var(--border); }
+.fm-finance-table td { padding: 5px 8px; border-bottom: 1px solid var(--border-soft); }
+.fm-finance-table td.in { color: var(--green-600); font-weight: 700; }
+.fm-finance-table td.out { color: var(--red); font-weight: 700; }
+
 /* Cup */
 .fm-cup-status { font-size: 12.5px; color: var(--muted); margin: 3px 0 8px; }
 .fm-cup-ties { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
