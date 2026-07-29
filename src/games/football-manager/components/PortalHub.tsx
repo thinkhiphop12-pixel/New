@@ -41,7 +41,9 @@ export default function PortalHub({
     (knockoutRoundDue(state.continental, state.week) && isClubAlive(state.continental, state.userClubId));
 
   const unreadInbox = state.inbox.filter((i) => !i.read).length;
-  const newCount = (state.news.length > 0 ? 1 : 0) + (state.incomingOffers.length > 0 ? 1 : 0) + (unreadInbox > 0 ? 1 : 0);
+  const pendingBids = (state.negotiations ?? []).filter((n) => n.type === 'incoming' && n.awaiting === 'user').length;
+  const offerCount = state.incomingOffers.length + pendingBids;
+  const newCount = (state.news.length > 0 ? 1 : 0) + (offerCount > 0 ? 1 : 0) + (unreadInbox > 0 ? 1 : 0);
 
   const tasks: string[] = [];
   if (!lineupOk) tasks.push('Fix your lineup');
@@ -213,11 +215,11 @@ export default function PortalHub({
         )}
 
         {/* Transfer offers */}
-        {show('offers') && state.incomingOffers.length > 0 && (
+        {show('offers') && offerCount > 0 && (
           <div className="fm-card">
             <div className="fm-card__header">
               <h2 className="fm-card__title">💰 Offers</h2>
-              <span className="fm-badge fm-badge--new">{state.incomingOffers.length}</span>
+              <span className="fm-badge fm-badge--new">{offerCount}</span>
             </div>
             <div className="fm-card__body">
               <p className="fm-card__hint">Check the Transfers tab for details.</p>

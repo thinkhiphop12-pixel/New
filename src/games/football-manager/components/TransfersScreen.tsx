@@ -1,16 +1,27 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { GameState, Position } from '@/engine/types';
+import type { GameState, Negotiation, Position } from '@/engine/types';
 import {
-  askingPrice, buyPlayer, canBuy, canSell, saleValue, scoutRecommendations, sellPlayer, transferTargets,
+  acceptIncomingOffer, counterIncomingOffer, delistPlayer, dismissNegotiation, getLoanMarket,
+  getTransferMarket, isTransferBanned, listForSale, openNegotiation, rejectIncomingOffer,
+  requestLoanIn, submitFeeOffer, submitTermsOffer, toggleLoanList, triggerReleaseClause,
+  walkAwayNegotiation, type MarketEntry, type MarketFilters,
 } from '@/engine/transferMarket';
+import { statusLabel, STATUS_ORDER } from '@/engine/negotiation';
 import { getSquad } from '@/engine/teamManagement';
 import { formatMoney } from '@/engine/utils';
 import PlayerModal from './PlayerModal';
 
-type MarketTab = 'buy' | 'sell' | 'offers' | 'scout';
+type MarketTab = 'market' | 'negotiations' | 'incoming' | 'squad' | 'loans';
 const POSITIONS: (Position | 'ALL')[] = ['ALL', 'GK', 'DEF', 'MID', 'FWD'];
+const AVAIL: { key: string; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'available', label: 'Available' },
+  { key: 'listed', label: 'Listed' },
+  { key: 'wants', label: 'Wants out' },
+  { key: 'expiring', label: 'Expiring' },
+];
 
 export default function TransfersScreen({
   state,
@@ -19,76 +30,78 @@ export default function TransfersScreen({
   state: GameState;
   onChange: (next: GameState) => void;
 }) {
-  const [tab, setTab] = useState<MarketTab>('buy');
+  const [tab, setTab] = useState<MarketTab>('market');
   const [posFilter, setPosFilter] = useState<Position | 'ALL'>('ALL');
+  const [availFilter, setAvailFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<number | null>(null);
+  const [activeNegId, setActiveNegId] = useState<string | null>(null);
+
   const detail = detailId !== null ? state.players[detailId] : null;
+  const negotiations = state.negotiations ?? [];
+  const outgoing = negotiations.filter((n) => n.type === 'outgoing');
+  const incoming = negotiations.filter((n) => n.type === 'incoming');
+  const activeNeg = activeNegId ? negotiations.find((n) => n.id === activeNegId) ?? null : null;
 
-  const clubName = (id: number) => (id === 0 ? 'Free agent' : state.clubs.find((c) => c.id === id)?.name ?? '—');
-
-  const targets = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return transferTargets(state)
-      .filter((p) => posFilter === 'ALL' || p.pos === posFilter)
-      .filter((p) => !q || p.name.toLowerCase().includes(q) || p.nat.toLowerCase().includes(q))
-      .sort((a, b) => b.rating - a.rating)
-      .slice(0, 60);
-  }, [state, posFilter, search]);
-
+  const filters: MarketFilters = { search, pos: posFilter, avail: availFilter };
+  const market = useMemo(
+    () => getTransferMarket(state, filters).slice(0, 80),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [state, search, posFilter, availFilter],
+  );
+  const loanMarket = useMemo(() => getLoanMarket(state).slice(0, 60), [state]);
   const mySquad = getSquad(state, state.userClubId).sort((a, b) => b.rating - a.rating);
 
-  const doBuy = (playerId: number) => {
-    const check = canBuy(state, playerId);
-    if (!check.ok) {
-      setError(check.error ?? 'Cannot buy.');
-      return;
-    }
+  const apply = (result: { state: GameState; ok: boolean; message: string }) => {
+    if (!result.ok) { setError(result.message); setNotice(null); return; }
     setError(null);
-    onChange(buyPlayer(state, playerId));
+    setNotice(result.message);
+    onChange(result.state);
   };
 
-  const doSell = (playerId: number, viaOffer = false) => {
-    const check = canSell(state, playerId);
-    if (!check.ok) {
-      setError(check.error ?? 'Cannot sell.');
-      return;
+  const openTalks = (p: MarketEntry) => {
+    if (isTransferBanned(state, p.id)) { setError(`${p.name} won't talk to your club again this season.`); return; }
+    const result = openNegotiation(state, p.id);
+    apply(result);
+    if (result.ok) {
+      setTab('negotiations');
+      const opened = (result.state.negotiations ?? []).find((n) => n.type === 'outgoing' && n.playerId === p.id);
+      if (opened) setActiveNegId(opened.id);
     }
-    const offer = viaOffer ? state.incomingOffers.find((o) => o.playerId === playerId) : undefined;
-    setError(null);
-    onChange(sellPlayer(state, playerId, offer));
   };
+
+  const clubName = (id: number) => (id === 0 ? 'Free agent' : state.clubs.find((c) => c.id === id)?.name ?? '—');
 
   return (
     <>
       <div className="fm-division-toggle" style={{ alignSelf: 'center' }}>
-        <button className={tab === 'buy' ? 'active' : ''} onClick={() => setTab('buy')}>
-          Buy
+        <button className={tab === 'market' ? 'active' : ''} onClick={() => setTab('market')}>Market</button>
+        <button className={tab === 'negotiations' ? 'active' : ''} onClick={() => setTab('negotiations')}>
+          Negotiations{outgoing.length ? ` (${outgoing.length})` : ''}
         </button>
-        <button className={tab === 'sell' ? 'active' : ''} onClick={() => setTab('sell')}>
-          Sell
+        <button className={tab === 'incoming' ? 'active' : ''} onClick={() => setTab('incoming')}>
+          Incoming{incoming.length ? ` (${incoming.length})` : ''}
         </button>
-        <button className={tab === 'offers' ? 'active' : ''} onClick={() => setTab('offers')}>
-          Offers{state.incomingOffers.length ? ` (${state.incomingOffers.length})` : ''}
-        </button>
-        <button className={tab === 'scout' ? 'active' : ''} onClick={() => setTab('scout')}>
-          Scout
-        </button>
+        <button className={tab === 'squad' ? 'active' : ''} onClick={() => setTab('squad')}>My Squad</button>
+        <button className={tab === 'loans' ? 'active' : ''} onClick={() => setTab('loans')}>Loans</button>
       </div>
 
       {error && <p className="fm-error-text">{error}</p>}
+      {notice && !error && <p className="fm-hint" style={{ color: 'var(--green-600)' }}>{notice}</p>}
 
-      {tab === 'buy' && (
+      {tab === 'market' && (
         <>
           <div className="fm-filters">
             {POSITIONS.map((p) => (
-              <button
-                key={p}
-                className={`fm-pill${posFilter === p ? ' active' : ''}`}
-                onClick={() => setPosFilter(p)}
-              >
+              <button key={p} className={`fm-pill${posFilter === p ? ' active' : ''}`} onClick={() => setPosFilter(p)}>
                 {p}
+              </button>
+            ))}
+            {AVAIL.map((a) => (
+              <button key={a.key} className={`fm-pill${availFilter === a.key ? ' active' : ''}`} onClick={() => setAvailFilter(a.key)}>
+                {a.label}
               </button>
             ))}
             <input
@@ -99,24 +112,36 @@ export default function TransfersScreen({
             />
           </div>
           <div className="fm-player-list">
-            {targets.map((p) => {
-              const price = askingPrice(p);
-              const affordable = price <= state.budget;
+            {market.map((p) => {
+              const banned = isTransferBanned(state, p.id);
+              const alreadyTalking = outgoing.some((n) => n.playerId === p.id);
               return (
                 <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
                   <span className="fm-player-row__badge">{p.role}</span>
                   <span className="fm-player-row__name">
                     {p.name}
                     <span className="fm-player-row__sub">
-                      {p.nat} · {p.age}y · {clubName(p.clubId)}
+                      {p.nat} · {p.age}y · {p.clubName}
+                      {p.status.listed && ' · Listed'}
+                      {p.status.unsettled && ' · Wants out'}
+                      {p.status.expiring && ` · ${p.status.monthsLeft}mo left`}
+                      {p.releaseClauseFee != null && ` · Clause ${formatMoney(p.releaseClauseFee)}`}
                     </span>
                   </span>
+                  {p.releaseClauseFee != null && p.releaseClauseFee <= state.budget && (
+                    <button
+                      className="fm-btn fm-btn--small fm-btn--ghost"
+                      onClick={(e) => { e.stopPropagation(); apply(triggerReleaseClause(state, p.id)); setTab('negotiations'); }}
+                    >
+                      Trigger clause
+                    </button>
+                  )}
                   <button
                     className="fm-btn fm-btn--small fm-btn--primary"
-                    disabled={!affordable}
-                    onClick={(e) => { e.stopPropagation(); doBuy(p.id); }}
+                    disabled={banned || alreadyTalking}
+                    onClick={(e) => { e.stopPropagation(); openTalks(p); }}
                   >
-                    {formatMoney(price)}
+                    {banned ? 'Won’t talk' : alreadyTalking ? 'Talking' : `Guide ${formatMoney(p.askingGuide)}`}
                   </button>
                   <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
                     {p.rating}
@@ -124,11 +149,84 @@ export default function TransfersScreen({
                 </div>
               );
             })}
+            {market.length === 0 && <p className="fm-hint">No players match those filters.</p>}
           </div>
         </>
       )}
 
-      {tab === 'sell' && (
+      {tab === 'negotiations' && (
+        activeNeg ? (
+          <NegotiationPanel
+            state={state}
+            neg={activeNeg}
+            onApply={apply}
+            onBack={() => setActiveNegId(null)}
+          />
+        ) : (
+          <div className="fm-player-list">
+            {outgoing.length === 0 && <p className="fm-hint">No talks open. Approach a target from the Market tab.</p>}
+            {outgoing.map((n) => (
+              <div key={n.id} className={`fm-player-row fm-pos-${n.playerPos}`} onClick={() => setActiveNegId(n.id)}>
+                <span className="fm-player-row__name">
+                  {n.playerName}
+                  <span className="fm-player-row__sub">
+                    {n.clubName} · {n.stage === 'fee' ? 'Agreeing fee' : n.stage === 'terms' ? 'Agreeing terms' : 'Outbid'}
+                    {n.awaiting === 'club' ? ' · awaiting reply' : ' · your move'}
+                  </span>
+                </span>
+                <span className="fm-player-row__rating">{n.playerRating}</span>
+              </div>
+            ))}
+          </div>
+        )
+      )}
+
+      {tab === 'incoming' && (
+        <div className="fm-player-list">
+          {incoming.length === 0 && <p className="fm-hint">No bids for your players this week.</p>}
+          {incoming.map((n) => (
+            <div key={n.id} className={`fm-player-row fm-pos-${n.playerPos}`} onClick={() => setDetailId(n.playerId)}>
+              <span className="fm-player-row__name">
+                {n.playerName}
+                <span className="fm-player-row__sub">
+                  {n.clubName} {n.isLoan ? 'want him on loan' : `bid ${formatMoney(n.fee ?? n.lastCounter ?? 0)}`}
+                  {n.rival ? ` · rival: ${n.rival.clubName} ${formatMoney(n.rival.offer)}` : ''}
+                </span>
+              </span>
+              {n.awaiting === 'user' && !n.isLoan && (
+                <>
+                  <button className="fm-btn fm-btn--small fm-btn--primary" onClick={(e) => { e.stopPropagation(); apply(acceptIncomingOffer(state, n.id)); }}>
+                    Accept
+                  </button>
+                  <button
+                    className="fm-btn fm-btn--small fm-btn--ghost"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const counter = Math.round((n.fee ?? 0) * 1.15);
+                      apply(counterIncomingOffer(state, n.id, counter));
+                    }}
+                  >
+                    Counter {formatMoney(Math.round((n.fee ?? 0) * 1.15))}
+                  </button>
+                </>
+              )}
+              {n.awaiting === 'user' && n.isLoan && (
+                <button className="fm-btn fm-btn--small fm-btn--primary" onClick={(e) => { e.stopPropagation(); apply(acceptIncomingOffer(state, n.id)); }}>
+                  Approve loan
+                </button>
+              )}
+              <button
+                className="fm-btn fm-btn--small fm-btn--ghost"
+                onClick={(e) => { e.stopPropagation(); apply(n.stage === 'outbid' ? dismissNegotiation(state, n.id) : rejectIncomingOffer(state, n.id)); }}
+              >
+                {n.stage === 'outbid' ? 'Dismiss' : 'Reject'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === 'squad' && (
         <div className="fm-player-list">
           {mySquad.map((p) => (
             <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
@@ -137,10 +235,27 @@ export default function TransfersScreen({
                 {p.name}
                 <span className="fm-player-row__sub">
                   {p.nat} · {p.age}y · value {formatMoney(p.value)}
+                  {p.transferListed && ` · listed ${formatMoney(p.listingPrice ?? p.value)}`}
+                  {p.loanListed && ' · loan-listed'}
                 </span>
               </span>
-              <button className="fm-btn fm-btn--small fm-btn--danger" onClick={(e) => { e.stopPropagation(); doSell(p.id); }}>
-                Sell {formatMoney(saleValue(p))}
+              {p.transferListed ? (
+                <button className="fm-btn fm-btn--small fm-btn--ghost" onClick={(e) => { e.stopPropagation(); apply(delistPlayer(state, p.id)); }}>
+                  Delist
+                </button>
+              ) : (
+                <button
+                  className="fm-btn fm-btn--small fm-btn--danger"
+                  onClick={(e) => { e.stopPropagation(); apply(listForSale(state, p.id, Math.round(p.value * 1.05))); }}
+                >
+                  List {formatMoney(Math.round(p.value * 1.05))}
+                </button>
+              )}
+              <button
+                className="fm-btn fm-btn--small fm-btn--ghost"
+                onClick={(e) => { e.stopPropagation(); apply(toggleLoanList(state, p.id)); }}
+              >
+                {p.loanListed ? 'Unlist loan' : 'Loan list'}
               </button>
               <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
                 {p.rating}
@@ -150,85 +265,33 @@ export default function TransfersScreen({
         </div>
       )}
 
-      {tab === 'scout' && (
-        <>
-          <p className="fm-hint">Affordable upgrades, by position.</p>
-          {scoutRecommendations(state).map((rep) => (
-            <div key={rep.pos}>
-              <p className="fm-label">
-                {rep.pos} — your average {rep.need}
-              </p>
-              {rep.picks.length === 0 ? (
-                <p className="fm-hint">No affordable upgrades found.</p>
-              ) : (
-                <div className="fm-player-list">
-                  {rep.picks.map((p) => (
-                    <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
-                      <span className="fm-player-row__badge">{p.role}</span>
-                      <span className="fm-player-row__name">
-                        {p.name}
-                        <span className="fm-player-row__sub">
-                          {p.nat} · {p.age}y · {clubName(p.clubId)}
-                        </span>
-                      </span>
-                      <button className="fm-btn fm-btn--small fm-btn--primary" onClick={(e) => { e.stopPropagation(); doBuy(p.id); }}>
-                        {formatMoney(askingPrice(p))}
-                      </button>
-                      <span
-                        className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}
-                      >
-                        {p.rating}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+      {tab === 'loans' && (
+        <div className="fm-player-list">
+          <p className="fm-hint">Players other clubs will let go on loan.</p>
+          {loanMarket.map((p) => (
+            <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
+              <span className="fm-player-row__badge">{p.role}</span>
+              <span className="fm-player-row__name">
+                {p.name}
+                <span className="fm-player-row__sub">
+                  {p.nat} · {p.age}y · {p.clubName}{p.devLoan ? ' · development loan' : ''}
+                </span>
+              </span>
+              <button
+                className="fm-btn fm-btn--small fm-btn--primary"
+                disabled={p.fee > state.budget}
+                onClick={(e) => { e.stopPropagation(); apply(requestLoanIn(state, p.id)); }}
+              >
+                Enquire {formatMoney(p.fee)}
+              </button>
+              <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
+                {p.rating}
+              </span>
             </div>
           ))}
-        </>
+          {loanMarket.length === 0 && <p className="fm-hint">Nobody suitable is available right now.</p>}
+        </div>
       )}
-
-      {tab === 'offers' &&
-        (state.incomingOffers.length === 0 ? (
-          <p className="fm-hint">No offers this week.</p>
-        ) : (
-          <div className="fm-player-list">
-            {state.incomingOffers.map((o) => {
-              const p = state.players[o.playerId];
-              if (!p) return null;
-              const premium = o.amount > p.value;
-              return (
-                <div key={`${o.playerId}-${o.fromClubId}`} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
-                  <span className="fm-player-row__badge">{p.role}</span>
-                  <span className="fm-player-row__name">
-                    {p.name}
-                    <span className="fm-player-row__sub">
-                      {clubName(o.fromClubId)} bids {formatMoney(o.amount)}
-                      {premium ? ' (above value)' : ''}
-                    </span>
-                  </span>
-                  <button className="fm-btn fm-btn--small fm-btn--primary" onClick={(e) => { e.stopPropagation(); doSell(o.playerId, true); }}>
-                    Accept
-                  </button>
-                  <button
-                    className="fm-btn fm-btn--small fm-btn--ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onChange({
-                        ...state,
-                        incomingOffers: state.incomingOffers.filter(
-                          (x) => !(x.playerId === o.playerId && x.fromClubId === o.fromClubId)
-                        ),
-                      });
-                    }}
-                  >
-                    Reject
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        ))}
 
       {detail && (
         <PlayerModal
@@ -240,5 +303,108 @@ export default function TransfersScreen({
         />
       )}
     </>
+  );
+}
+
+/**
+ * A negotiation is a conversation, not a form — the log reads top to bottom
+ * like a transcript, and only the action the current stage actually allows
+ * (a fee, then terms) is offered.
+ */
+function NegotiationPanel({
+  state,
+  neg,
+  onApply,
+  onBack,
+}: {
+  state: GameState;
+  neg: Negotiation;
+  onApply: (r: { state: GameState; ok: boolean; message: string }) => void;
+  onBack: () => void;
+}) {
+  const [fee, setFee] = useState(String(neg.neg.asking));
+  const [wage, setWage] = useState(String(neg.neg.wageDemand));
+  const [years, setYears] = useState(neg.contractYears);
+  const [status, setStatus] = useState(neg.promisedStatus);
+  const [bonus, setBonus] = useState(0);
+
+  return (
+    <div className="fm-negotiation">
+      <button className="fm-btn fm-btn--small fm-btn--ghost" onClick={onBack}>&larr; All negotiations</button>
+      <h3 style={{ margin: '10px 0 4px' }}>{neg.playerName} <span className="fm-hint">— {neg.clubName}</span></h3>
+      <p className="fm-hint">
+        {statusLabel(neg.projectedStatus)} projected · asking guide {formatMoney(neg.neg.asking)}
+        {neg.demands.length > 0 && ` · wants: ${neg.demands.join(', ')}`}
+      </p>
+
+      <div className="fm-negotiation__log">
+        {neg.log.map((m, i) => (
+          <p key={i} className={`fm-negotiation__msg fm-negotiation__msg--${m.tone}`}>{m.text}</p>
+        ))}
+      </div>
+
+      {neg.awaiting === 'club' ? (
+        <p className="fm-hint">Waiting on {neg.clubName}'s reply next week.</p>
+      ) : neg.stage === 'fee' ? (
+        <div className="fm-negotiation__form">
+          <label>
+            Fee offer
+            <input value={fee} onChange={(e) => setFee(e.target.value)} inputMode="numeric" />
+          </label>
+          <div className="fm-negotiation__actions">
+            <button className="fm-btn fm-btn--primary" onClick={() => onApply(submitFeeOffer(state, neg.id, Number(fee) || 0))}>
+              Submit bid
+            </button>
+            <button className="fm-btn fm-btn--ghost" onClick={() => { onApply(walkAwayNegotiation(state, neg.id)); onBack(); }}>
+              Walk away
+            </button>
+          </div>
+        </div>
+      ) : neg.stage === 'terms' ? (
+        <div className="fm-negotiation__form">
+          <label>
+            Weekly wage
+            <input value={wage} onChange={(e) => setWage(e.target.value)} inputMode="numeric" />
+          </label>
+          <label>
+            Contract length
+            <select value={years} onChange={(e) => setYears(Number(e.target.value))}>
+              {[1, 2, 3, 4, 5].map((y) => <option key={y} value={y}>{y} year{y > 1 ? 's' : ''}</option>)}
+            </select>
+          </label>
+          <label>
+            Promised status
+            <select value={status ?? ''} onChange={(e) => setStatus((e.target.value || null) as typeof status)}>
+              <option value="">No promise</option>
+              {STATUS_ORDER.map((s) => <option key={s} value={s}>{statusLabel(s)}</option>)}
+            </select>
+          </label>
+          <label>
+            Signing bonus
+            <input value={bonus} onChange={(e) => setBonus(Number(e.target.value) || 0)} inputMode="numeric" />
+          </label>
+          <div className="fm-negotiation__actions">
+            <button
+              className="fm-btn fm-btn--primary"
+              onClick={() => onApply(submitTermsOffer(state, neg.id, Number(wage) || 0, {
+                contractYears: years, promisedStatus: status, signingBonus: bonus,
+              }))}
+            >
+              Offer terms
+            </button>
+            <button className="fm-btn fm-btn--ghost" onClick={() => { onApply(walkAwayNegotiation(state, neg.id)); onBack(); }}>
+              Walk away
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="fm-negotiation__actions">
+          <p className="fm-hint">Outbid — a rival club has agreed a deal ahead of you.</p>
+          <button className="fm-btn fm-btn--ghost" onClick={() => { onApply(dismissNegotiation(state, neg.id)); onBack(); }}>
+            Dismiss
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
