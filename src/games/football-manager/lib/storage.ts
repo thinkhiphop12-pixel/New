@@ -5,6 +5,7 @@ import {
 import { LEAGUES, getLeague, leagueIdForDivision } from '@/engine/gameRules';
 import { contractEndFor, rollRetireAge, weeklyWage } from '@/engine/utils';
 import { seedClubIdentities } from '@/engine/clubIdentity';
+import { newFacilities, newScouting } from '@/engine/facilities';
 import { compressToUTF16, decompressFromUTF16, WORKER_SOURCE } from '@/lib/lz';
 import { idbDelete, idbGet, idbPut } from '@/lib/idb';
 
@@ -35,6 +36,7 @@ type RawSave = Omit<GameState, 'version'> & { version: number };
 function migrate(raw: RawSave): GameState {
   const s = raw as unknown as GameState;
   const stale = raw.version < 6;
+  const staleV7 = raw.version < 7;
   for (const p of Object.values(s.players) as Player[]) {
     p.wage = p.wage ?? weeklyWage(p.value, p.rating);
     p.contractYears = p.contractYears ?? 2;
@@ -182,6 +184,15 @@ function migrate(raw: RawSave): GameState {
   s.playStyle = s.playStyle ?? s.clubs.find((c) => c.id === s.userClubId)?.playStyle ?? 'balanced';
 
   if (stale) s.version = 6;
+
+  // --- v7: facilities/staff/scouting (Phase 10). A save with none of this
+  // gets a freshly-derived facilities block (stands seeded at their starting
+  // tier, ground capacity cap derived from the club's league) and an empty
+  // scouting block — no in-flight projects or assignments to fabricate, so
+  // there is nothing lossy about back-filling this way.
+  if (!s.facilities) s.facilities = newFacilities(s);
+  if (!s.scouting) s.scouting = newScouting();
+  if (staleV7) s.version = 7;
   return s;
 }
 
@@ -317,7 +328,7 @@ export async function loadGame(slot = 0): Promise<GameState | null> {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as RawSave;
-    if (!parsed.userClubId || ![1, 2, 3, 4, 5, 6].includes(parsed.version)) return null;
+    if (!parsed.userClubId || ![1, 2, 3, 4, 5, 6, 7].includes(parsed.version)) return null;
     return migrate(parsed);
   } catch {
     return null;

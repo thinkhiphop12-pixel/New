@@ -439,8 +439,112 @@ export interface DualFormation {
   outOfPossessionId: string;
 }
 
+/* --- Phase 10: facilities, staff and scouting. All optional so a save from
+   before this phase loads and behaves exactly as it did (instant-purchase
+   stadium/academy/staff levels stay live and readable; the new timed-projects
+   layer sits alongside, not on top of, them). See engine/facilities.ts. */
+
+/** The eight named zones of the ground: four sides plus four corners. */
+export type StandId = 'north' | 'south' | 'east' | 'west' | 'ne' | 'nw' | 'se' | 'sw';
+
+/** One buildable zone of the stadium. Tier 0 = undeveloped (no capacity). */
+export interface Stand {
+  id: StandId;
+  tier: 0 | 1 | 2 | 3;
+  type: 'seating' | 'terrace' | 'hospitality';
+  capacity: number;
+}
+
+/** Kinds of facility work that go through the timed-project system. */
+export type ProjectKind = 'stand' | 'training' | 'medical' | 'academy';
+
+/** A single in-progress (or just-completed) facility upgrade. Every upgrade
+ *  is a project now — see gap item 66 — rather than an instant purchase. */
+export interface FacilityProject {
+  id: number;
+  kind: ProjectKind;
+  /** Which stand this project targets; only set when kind === 'stand'. */
+  standId?: StandId;
+  label: string;
+  startWeek: number;
+  startYear: number;
+  /** Total weeks scheduled, 2–10, scaled by spend. */
+  durationWeeks: number;
+  /** Weeks of work banked so far — partial-credit accounting. */
+  weeksElapsed: number;
+  spend: number;
+  complete: boolean;
+}
+
+/** A named coach hired into a backroom slot. Head coach quality feeds
+ *  `coachDrillMult` in familiarity.ts (via the legacy `staff.coach` level)
+ *  and player development speed. */
+export interface Coach {
+  id: number;
+  name: string;
+  role: 'head' | 'fitness' | 'goalkeeping';
+  /** 1–99, like a player attribute. */
+  quality: number;
+  wage: number;
+}
+
+export interface FacilitiesState {
+  stands: Record<StandId, Stand>;
+  /** Real ground capacity ceiling this club can build toward, derived from
+   *  its league's stature (DIVERGENCE: no per-club real capacities were
+   *  seeded in the Phase 1 dataset, so this is computed, not looked up —
+   *  see groundCapacityCap() in engine/facilities.ts). */
+  groundCapacityCap: number;
+  trainingLevel: number; // 1-5
+  medicalLevel: number; // 1-5
+  academyReputation: number; // 0-100
+  coaches: Coach[];
+  projects: FacilityProject[];
+  nextProjectId: number;
+  nextCoachId: number;
+}
+
+export type ScoutAssignmentKind = 'opponent' | 'player-search' | 'youth';
+
+export interface ScoutAssignment {
+  id: number;
+  scoutName: string;
+  kind: ScoutAssignmentKind;
+  /** Opponent-report assignments target a club. */
+  targetClubId?: number;
+  startWeek: number;
+  startYear: number;
+  dueWeek: number;
+  dueYear: number;
+  weeksRemaining: number;
+  complete: boolean;
+  /** Populated once complete: opponent report id, or discovered player ids. */
+  reportId?: number;
+  foundPlayerIds?: number[];
+}
+
+export interface OpponentReport {
+  id: number;
+  clubId: number;
+  weekGenerated: number;
+  yearGenerated: number;
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+}
+
+export interface ScoutingState {
+  assignments: ScoutAssignment[];
+  /** Persisted shortlist of scouted player ids — was local-only React state
+   *  before this phase (gap item 67). */
+  shortlist: number[];
+  reports: OpponentReport[];
+  nextAssignmentId: number;
+  nextReportId: number;
+}
+
 export interface GameState {
-  version: 6;
+  version: 6 | 7;
   userClubId: number;
   seasonYear: number;
   /** Next round to be played, 1..SEASON_ROUNDS. > SEASON_ROUNDS means season over. */
@@ -501,6 +605,13 @@ export interface GameState {
   pressWeek: number;
   /** User display/gameplay preferences. */
   settings?: GameSettings;
+  /** Phase 10: stadium/training/medical/academy timed-project state. Optional
+   *  so pre-v7 saves migrate in with a freshly-derived default (see
+   *  engine/facilities.ts newFacilities() + lib/storage.ts migrate()). */
+  facilities?: FacilitiesState;
+  /** Phase 10: scout assignments, opponent reports and the persisted
+   *  shortlist. */
+  scouting?: ScoutingState;
 }
 
 export type InboxCategory = 'club' | 'transfer' | 'injury' | 'contract' | 'youth' | 'board' | 'match' | 'press';

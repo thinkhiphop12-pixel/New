@@ -19,6 +19,8 @@ import { simulateMatch } from '../engine/matchSimulation';
 import { needsDrilling, styleFamiliarity, weeksToDrill } from '../engine/familiarity';
 import { cornerRoutineOf, setPieceTaker, setPieceXG, spDefenseMult } from '../engine/setPieces';
 import { simulateTickMatch } from '../engine/tickEngine/sim';
+import { newFacilities, startStandProject, tickFacilitiesWeek, totalCapacity } from '../engine/facilities';
+import type { StandId } from '../engine/types';
 import {
   CLUBS_PER_DIVISION, LEAGUES, SEASON_ROUNDS, WINTER_BREAK, getLeague, isPhantomLeague,
   leagueAbove, leagueIdForDivision, leagueName,
@@ -354,6 +356,51 @@ assert(
 
   console.log(`\nSet pieces: corners ${corner.name} (pas ${corner.pas}), penalties ${pen.name} (sho ${pen.sho}).`);
   console.log(`  far-post ${far.toFixed(2)}x vs short ${short.toFixed(2)}x; defence zonal ${dm('zonal').toFixed(2)} < man ${dm('man').toFixed(2)}. ✓`);
+}
+
+/* --- Phase 10: facilities timed projects ---------------------------------- */
+{
+  state = { ...state, budget: Math.max(state.budget, 50_000_000) };
+  const fs = newFacilities(state);
+  state = { ...state, facilities: fs };
+
+  const standId: StandId = 'north';
+  const startWeek = state.week;
+  const startYear = state.seasonYear;
+  const before = totalCapacity(state.facilities!);
+  const beforeStandTier = state.facilities!.stands[standId].tier;
+
+  state = startStandProject(state, standId);
+  const project = state.facilities!.projects.find((p) => p.standId === standId && !p.complete);
+  if (!project) throw new Error('stand project did not start');
+  const duration = project.durationWeeks;
+  if (duration < 2 || duration > 10) throw new Error(`project duration ${duration}w out of the 2-10w band`);
+
+  console.log(`\nFacility project: ${project.label}, start S${startYear} wk${startWeek}, duration ${duration}w, scheduled completion wk${startWeek + duration}.`);
+
+  // Advance week-by-week (season/cup progression not needed for this check —
+  // only the facilities weekly tick, driven the same way the FacilitiesScreen
+  // catch-up effect drives it) and confirm nothing applies early.
+  for (let w = 1; w < duration; w++) {
+    state = tickFacilitiesWeek({ ...state, week: state.week + 1 });
+    const midTier = state.facilities!.stands[standId].tier;
+    if (midTier !== beforeStandTier) {
+      throw new Error(`stand tier changed after only ${w}/${duration} weeks — partial credit is leaking early`);
+    }
+  }
+  // Final week completes it.
+  state = tickFacilitiesWeek({ ...state, week: state.week + 1 });
+
+  const after = totalCapacity(state.facilities!);
+  const afterStandTier = state.facilities!.stands[standId].tier;
+  const stillActive = state.facilities!.projects.some((p) => p.standId === standId && !p.complete);
+
+  console.log(`  ${standId.toUpperCase()} stand tier ${beforeStandTier} -> ${afterStandTier}; ground capacity ${before.toLocaleString()} -> ${after.toLocaleString()}.`);
+
+  if (stillActive) throw new Error('stand project never completed');
+  if (afterStandTier !== beforeStandTier + 1) throw new Error(`stand tier ${afterStandTier}, expected ${beforeStandTier + 1}`);
+  if (after <= before) throw new Error(`ground capacity did not increase (${before} -> ${after})`);
+  console.log('  Project completed on schedule and its capacity effect actually applied. ✓');
 }
 
 console.log('\n✓ ALL SMOKE TESTS PASSED');
