@@ -1227,9 +1227,18 @@ function processPhantomPool(s: GameState, poolLg: LeagueDef, moves: LeagueMove[]
     const spots = Math.max(1, poolLg.interPlayoffFeederSpots ?? 1);
     let challenger = pool.shift()!;
     // A wider feeder bracket (Ligue 2's 3rd–5th) is settled among pool entrants.
+    // Only losers of these sub-playoffs go back in the pool below — whichever
+    // entrant keeps winning becomes `challenger` and is tracked separately, so
+    // it can't end up both promoted (or re-pooled) as the final challenger AND
+    // pushed back to the pool a second time under its original id.
     const extras: number[] = [];
     for (let i = 1; i < spots && pool.length; i++) extras.push(pool.shift()!);
-    for (const e of extras) challenger = simPlayoff(s, challenger, e);
+    const losers: number[] = [];
+    for (const e of extras) {
+      const w = simPlayoff(s, challenger, e);
+      losers.push(w === challenger ? e : challenger);
+      challenger = w;
+    }
     const winner = simPlayoff(s, atRisk, challenger);
     if (winner === challenger) {
       moves.push({ clubId: challenger, from: poolLg.id, to: feeder.id });
@@ -1243,7 +1252,7 @@ function processPhantomPool(s: GameState, poolLg: LeagueDef, moves: LeagueMove[]
     } else {
       pool.push(challenger);
     }
-    for (const e of extras) pool.push(e);
+    for (const l of losers) pool.push(l);
   }
 
   // The auto-relegated clubs go dormant at the back of the queue.
