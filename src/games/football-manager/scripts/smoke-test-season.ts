@@ -24,6 +24,8 @@ import { newFacilities, startStandProject, tickFacilitiesWeek, totalCapacity } f
 import type { StandId } from '../engine/types';
 import { evaluateFeeOffer, evaluateMove, marketStatus, startNegotiation } from '../engine/negotiation';
 import { squadAvgRating } from '../engine/teamManagement';
+import { continentalEntrants } from '../engine/seasonProgression';
+import { continentalTieWinner, tieAggregate, tieComplete } from '../engine/europeanCup';
 import {
   CLUBS_PER_DIVISION, LEAGUES, MAX_SQUAD_SIZE, MIN_SQUAD_SIZE, SEASON_ROUNDS, WINTER_BREAK,
   getLeague, isPhantomLeague, leagueAbove, leagueIdForDivision, leagueName,
@@ -569,6 +571,54 @@ assert(
   if (afterStandTier !== beforeStandTier + 1) throw new Error(`stand tier ${afterStandTier}, expected ${beforeStandTier + 1}`);
   if (after <= before) throw new Error(`ground capacity did not increase (${before} -> ${after})`);
   console.log('  Project completed on schedule and its capacity effect actually applied. ✓');
+}
+
+/* --- Phase 9: continental bracket ---------------------------------------- */
+{
+  const plClub = data.clubs.find((c: { division: number }) => c.division === 1)!;
+  let es = newGame(data, plClub.id, 'Euro Smoke', 2026);
+
+  const entrants = continentalEntrants(es);
+  assert(entrants.length <= CLUBS_PER_DIVISION * 10 && entrants.length > 0, 'no continental entrants found');
+  assert(es.continental.directQualifiers.length <= 8, 'more than 8 direct qualifiers');
+
+  let weeksPlayed = 0;
+  while (!es.continental.winnerId && weeksPlayed < 60) {
+    const fx = Object.values(es.fixtures).flat().find(
+      (f) => f.round === es.week && (f.homeId === es.userClubId || f.awayId === es.userClubId)
+    );
+    const report = fx
+      ? simulateMatch(es, fx.homeId, fx.awayId)
+      : { homeId: 0, awayId: 0, homeGoals: 0, awayGoals: 0, events: [], playerRatings: {} };
+    es = playRound(es, report as any);
+    weeksPlayed++;
+  }
+  assert(es.continental.winnerId !== null, 'continental competition never produced a winner within 60 weeks');
+
+  // Every complete tie must have played exactly the legs its format calls for
+  // (2 for playoff/R16/QF/SF, 1 for the final) — a leg-count mismatch would
+  // mean either a phantom extra match or a tie decided on one leg only.
+  for (let i = 0; i < es.continental.ties.length; i++) {
+    for (const t of es.continental.ties[i]) {
+      if (!tieComplete(t)) continue;
+      const expected = t.twoLegged ? 2 : 1;
+      assert(t.legs.length === expected, `tie ${t.id} round ${i} played ${t.legs.length} legs, expected ${expected}`);
+      const w = continentalTieWinner(t);
+      assert(w === t.homeId || w === t.awayId, `tie ${t.id} winner is neither participant`);
+    }
+  }
+  // Aggregate must actually differ from a single leg's score at least once —
+  // otherwise the two-legged model isn't doing anything a single match wouldn't.
+  const aggMatteredSomewhere = es.continental.ties.some((round) =>
+    round.some((t) => t.twoLegged && t.legs.length === 2 && (() => {
+      const agg = tieAggregate(t);
+      return agg.home !== t.legs[1].homeGoals || agg.away !== t.legs[1].awayGoals;
+    })())
+  );
+  assert(aggMatteredSomewhere, 'aggregate score never differed from the deciding leg alone across the whole run');
+
+  console.log(`\nContinental bracket: ${entrants.length} entrants, ${es.continental.directQualifiers.length} direct qualifiers.`);
+  console.log(`  Winner decided after ${es.continental.round} rounds; every complete tie played the right number of legs. ✓`);
 }
 
 console.log('\n✓ ALL SMOKE TESTS PASSED');

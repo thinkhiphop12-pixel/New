@@ -173,7 +173,14 @@ function migrate(raw: RawSave): GameState {
 
   s.board = s.board ?? makeBoardObjective(s);
   s.cup = s.cup ?? makeDomesticCup(s);
-  if (!s.continental) s.continental = makeContinental(continentalEntrants(s));
+  // Phase 9: `continental` moved from the domestic-cup-shaped Knockout to the
+  // real 24-club Continental bracket. A save missing the field entirely, or
+  // still carrying the old shape (no `ties`/`directQualifiers`), gets a fresh
+  // one — an in-progress old-format continental run doesn't carry over, same
+  // as the v4 league-pyramid migration already did for this field once.
+  if (!s.continental || !('ties' in s.continental)) {
+    s.continental = makeContinental(s, continentalEntrants(s));
+  }
   // v5 also adds optional shot coordinates / injury detail to MatchEvent. Those
   // only ever appear on reports written after this version, and every reader
   // treats them as optional, so stored reports need no back-fill.

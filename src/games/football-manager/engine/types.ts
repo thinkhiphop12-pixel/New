@@ -548,6 +548,50 @@ export interface Knockout {
   winnerId: number | null;
 }
 
+/**
+ * One continental tie — one match (playoff round onward for the final) or two
+ * legs (every round before it). `legs[0]` is always the first leg played;
+ * `legs[1]`, if present, has home/away reversed from `legs[0]`.
+ */
+export interface ContinentalTie {
+  id: string;
+  homeId: number;
+  awayId: number;
+  twoLegged: boolean;
+  legs: CupTie[];
+}
+
+/**
+ * The continental competition (Phase 9): a real 24-club bracket rather than a
+ * flat top-8 knockout — the top 8 seeds go straight to the Round of 16, the
+ * other 16 (seeds 9-24) fight through a two-legged playoff round for the
+ * remaining 8 places. Every round from the playoff to the semi-final is
+ * two-legged; the final is a single match, standard continental format.
+ *
+ * Deliberately still a pure knockout, not the reference's full Swiss-model
+ * league phase (a round-robin-lite group stage with its own weekly fixture
+ * calendar) — that is a substantially larger rewrite than the bracket size,
+ * seeding and two-legged ties that actually change how a European run plays
+ * out. Left for a later pass; see docs/PFM26_COMPARISON_AND_HANDOVER.md.
+ */
+export interface Continental {
+  name: string;
+  /** Calendar week each round's first leg is played; two-legged rounds use
+   *  this week and the very next one for leg two. */
+  weeks: number[];
+  /** ties[i] exists once round i is drawn. Empty until the playoff round or
+   *  Round of 16 is reached. */
+  ties: ContinentalTie[][];
+  /** Seed rank at kickoff (1 = top seed), kept for the whole run so a low
+   *  seed that wins through still carries their original ranking into the
+   *  next draw's country-protection check. */
+  seedRank: Record<number, number>;
+  /** The 8 clubs who went straight to the Round of 16. */
+  directQualifiers: number[];
+  round: number;
+  winnerId: number | null;
+}
+
 export interface LedgerEntry {
   week: number;
   desc: string;
@@ -903,7 +947,7 @@ export interface GameState {
    *  so pre-Phase-8 saves migrate additively with no version bump. */
   finances?: FinanceState;
   cup: Knockout;
-  continental: Knockout;
+  continental: Continental;
   jobOffers: JobOffer[];
   records: ClubRecords;
   legacy: Record<number, LegacyEntry>;

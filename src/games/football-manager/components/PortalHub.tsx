@@ -5,6 +5,7 @@ import type { GameState } from '@/engine/types';
 import { SEASON_ROUNDS, leagueName } from '@/engine/gameRules';
 import { computeTable, nextUserFixture, userLeagueId } from '@/engine/seasonProgression';
 import { isClubAlive, knockoutRoundDue } from '@/engine/cups';
+import { continentalRoundDue, isContinentalClubAlive } from '@/engine/europeanCup';
 import { isLineupValid } from '@/engine/teamManagement';
 import { formatMoney } from '@/engine/utils';
 import { tint } from './visuals';
@@ -38,7 +39,7 @@ export default function PortalHub({
   const lineupOk = isLineupValid(state, state.userClubId, state.lineup);
   const cupWeek =
     (knockoutRoundDue(state.cup, state.week) && isClubAlive(state.cup, state.userClubId)) ||
-    (knockoutRoundDue(state.continental, state.week) && isClubAlive(state.continental, state.userClubId));
+    (continentalRoundDue(state.continental, state.week) && isContinentalClubAlive(state.continental, state.userClubId));
 
   const unreadInbox = state.inbox.filter((i) => !i.read).length;
   const pendingBids = (state.negotiations ?? []).filter((n) => n.type === 'incoming' && n.awaiting === 'user').length;

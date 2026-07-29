@@ -1,6 +1,6 @@
 import type {
-  Board, Club, Fixture, GameData, GameState, JobOffer, Knockout, LeagueDef, MatchReport, Player,
-  Position, SeasonSummary, Staff, TableRow,
+  Board, Club, Continental, Fixture, GameData, GameState, JobOffer, Knockout, LeagueDef, MatchReport,
+  Player, Position, SeasonSummary, Staff, TableRow,
 } from './types';
 import {
   ACADEMY_UPGRADE_COST, CONTINENTAL_PRIZES, CONTINENTAL_SPOTS, CONTINENTAL_WEEKS, CUP_PRIZES,
@@ -17,6 +17,10 @@ import { tickTacticalFamiliarity } from './familiarity';
 import { seedClubIdentities } from './clubIdentity';
 import { aiWeeklyTransfers, generateWeeklyOffers } from './transferMarket';
 import { clubRunName, createKnockout, isClubAlive, knockoutRoundDue, playKnockoutRound, roundName, tieWinner, userTieThisRound } from './cups';
+import {
+  continentalRoundDue, continentalRoundName, continentalRunName, continentalTieWinner, createContinental,
+  isContinentalClubAlive, playContinentalRound, tieAggregate, tieComplete, userContinentalTie,
+} from './europeanCup';
 import { pushInbox } from './inbox';
 import { tickFinances, weeklyMatchdayIncome } from './finances';
 import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
@@ -214,8 +218,8 @@ export function makeDomesticCup(state: Pick<GameState, 'clubs'>): Knockout {
 }
 
 /** Continental cup for one season from the given participant clubs. */
-export function makeContinental(participantIds: number[]): Knockout {
-  return createKnockout('Continental Champions Cup', CONTINENTAL_WEEKS, participantIds.slice(0, CONTINENTAL_SPOTS));
+export function makeContinental(state: Pick<GameState, 'clubs'>, participantIds: number[]): Continental {
+  return createContinental('Continental Champions Cup', CONTINENTAL_WEEKS, participantIds, state.clubs);
 }
 
 const YOUTH_FIRST = ['Alfie', 'Ben', 'Callum', 'Dan', 'Eli', 'Finn', 'George', 'Harry', 'Isaac', 'Jack', 'Kai', 'Leo', 'Mason', 'Noah', 'Oscar', 'Reece', 'Sam', 'Theo', 'Will', 'Zack'];
@@ -459,7 +463,7 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
     stadiumLevel: 1,
     ledger: [],
     cup: { name: '', weeks: [], rounds: [], byes: [], round: 0, winnerId: null },
-    continental: { name: '', weeks: [], rounds: [], byes: [], round: 0, winnerId: null },
+    continental: { name: '', weeks: [], ties: [], seedRank: {}, directQualifiers: [], round: 0, winnerId: null },
     jobOffers: [],
     records: { biggestWin: null, bestFinish: null, topSeasonScorer: null },
     legacy: {},
@@ -481,7 +485,7 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
   state.fixtures = makeSeasonFixtures(state);
   state.board = makeBoardObjective(state);
   state.cup = makeDomesticCup(state);
-  state.continental = makeContinental(continentalEntrants(state));
+  state.continental = makeContinental(state, continentalEntrants(state));
   state.lineup = autoPickLineup(state, userClubId, getFormation(state.formationId));
   // Give every club a play-style identity and reputation band before the first
   // drilling tick, so familiarity has something to work from.
@@ -719,6 +723,74 @@ function runKnockout(s: GameState, k: Knockout, prizes: number[], trophyLabel: s
 }
 
 /**
+ * Continental sibling of runKnockout, needed rather than reusing it because a
+ * tie here can span two legs — the round only fully resolves (and a prize is
+ * due) once tieComplete() says so, not on every single leg played. Reports
+ * the individual leg's score as it's played, then the aggregate outcome once
+ * the tie is decided.
+ */
+function runContinental(s: GameState, c: Continental, prizes: number[]): void {
+  const wasAlive = isContinentalClubAlive(c, s.userClubId);
+  const playedRound = c.round;
+  const rName = continentalRoundName(c, playedRound);
+  const userTie = userContinentalTie(c, s.userClubId);
+  const reports = playContinentalRound(s, c);
+  for (const rep of reports) applyReportStats(s, rep);
+
+  if (userTie) {
+    const isHome = userTie.homeId === s.userClubId;
+    const opp = s.clubs.find((c2) => c2.id === (isHome ? userTie.awayId : userTie.homeId))?.name ?? '???';
+    const lastLeg = userTie.legs[userTie.legs.length - 1];
+    if (!lastLeg) return; // nothing played this call (shouldn't happen, but stay quiet rather than crash)
+
+    if (!tieComplete(userTie)) {
+      // First leg of a two-legged tie: report the leg score, no prize yet.
+      const legIsHome = lastLeg.homeId === s.userClubId;
+      const score = `${legIsHome ? lastLeg.homeGoals : lastLeg.awayGoals}–${legIsHome ? lastLeg.awayGoals : lastLeg.homeGoals}`;
+      s.news.unshift(`${c.name} ${rName} (1st leg): ${score} vs ${opp}.`);
+      return;
+    }
+
+    const won = continentalTieWinner(userTie) === s.userClubId;
+    const agg = tieAggregate(userTie);
+    const myAgg = isHome ? agg.home : agg.away;
+    const oppAgg = isHome ? agg.away : agg.home;
+    const score = userTie.twoLegged
+      ? `${myAgg}–${oppAgg} agg${lastLeg.pensWinnerId ? ' (pens)' : ''}`
+      : `${myAgg}–${oppAgg}${lastLeg.pensWinnerId ? ' (pens)' : ''}`;
+    if (won) {
+      const prize = prizes[playedRound] ?? 0;
+      s.budget += prize;
+      s.ledger.unshift({ week: s.week, desc: `${c.name} ${rName} win`, amount: prize });
+      s.morale = clamp(s.morale + 3, MORALE_MIN, MORALE_MAX);
+      s.fanConfidence = clamp(s.fanConfidence + 3, 5, 99);
+      s.news.unshift(`${c.name} ${rName}: beat ${opp} ${score} — ${money(prize)} banked.`);
+      if (c.winnerId === s.userClubId) {
+        const trophy = `Continental Champions Cup ${s.seasonYear}/${(s.seasonYear + 1) % 100}`;
+        s.manager.trophies.push(trophy);
+        s.manager.reputation = clamp(s.manager.reputation + 8, 0, 100);
+        s.board.confidence = clamp(s.board.confidence + 15, 1, 99);
+        s.news.unshift(`🏆 ${s.clubs.find((c2) => c2.id === s.userClubId)!.name} WIN the ${c.name}!`);
+        pushInbox(s, {
+          category: 'match',
+          title: `${trophy} won!`,
+          body: `${s.clubs.find((c2) => c2.id === s.userClubId)!.name} have won the ${c.name}, beating ${opp} ${score} in the final.\n\nThe board and fans are delighted — your reputation as a manager grows.`,
+        });
+      }
+    } else {
+      s.morale = clamp(s.morale - 3, MORALE_MIN, MORALE_MAX);
+      s.fanConfidence = clamp(s.fanConfidence - 3, 5, 99);
+      s.news.unshift(`${c.name} ${rName}: knocked out by ${opp} (${score}).`);
+    }
+  } else if (wasAlive && c.round === 0 && c.directQualifiers.includes(s.userClubId)) {
+    s.news.unshift(`${c.name}: straight into the Round of 16 as a top seed.`);
+  } else if (c.winnerId && c.winnerId !== s.userClubId && c.round >= c.weeks.length) {
+    const w = s.clubs.find((c2) => c2.id === c.winnerId)?.name ?? '???';
+    s.news.unshift(`${w} win the ${c.name}.`);
+  }
+}
+
+/**
  * Play the current round. The user's match report must be pre-simulated (so
  * the UI can play it back); every AI match is simulated here. Advances week,
  * updates morale/form/injuries/finances/cups and rolls fresh transfer offers.
@@ -888,7 +960,7 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
 
   // Cup competitions this week.
   if (knockoutRoundDue(s.cup, round)) runKnockout(s, s.cup, CUP_PRIZES, 'BALLKNW Cup');
-  if (knockoutRoundDue(s.continental, round)) runKnockout(s, s.continental, CONTINENTAL_PRIZES, 'Continental Champions Cup');
+  if (continentalRoundDue(s.continental, round)) runContinental(s, s.continental, CONTINENTAL_PRIZES);
 
   // AI clubs work the market too.
   for (const headline of aiWeeklyTransfers(s)) s.news.unshift(headline);
@@ -1355,7 +1427,7 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     objectiveMet,
     sacked,
     cupRun: clubRunName(s.cup, s.userClubId),
-    continentalRun: clubRunName(s.continental, s.userClubId),
+    continentalRun: continentalRunName(s.continental, s.userClubId),
     awards,
   };
   s.history.push(summary);
@@ -1589,7 +1661,7 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
   s.incomingOffers = [];
   s.ledger = [];
   s.splitGroups = {};
-  s.continental = makeContinental(continentalEntrants(s));
+  s.continental = makeContinental(s, continentalEntrants(s));
   s.fixtures = makeSeasonFixtures(s);
   s.cup = makeDomesticCup(s);
   s.board = { ...makeBoardObjective(s), confidence: s.board.confidence };

@@ -351,10 +351,14 @@ export const CUP_WEEKS = [2, 4, 9, 14, 19, 25, 31];
 /** Prize for winning a tie in each cup round (last = winning the final). */
 export const CUP_PRIZES = [75_000, 150_000, 300_000, 600_000, 1_200_000, 2_500_000, 6_000_000];
 
-/** Continental Champions Cup: 8 teams, QF/SF/Final. */
-export const CONTINENTAL_WEEKS = [7, 17, 29];
-export const CONTINENTAL_PRIZES = [3_000_000, 6_000_000, 15_000_000];
-export const CONTINENTAL_SPOTS = 8;
+/** Continental Champions Cup: 24 clubs (top 8 seeds bye to the Round of 16,
+ *  the rest fight through a two-legged playoff round), then two-legged R16 /
+ *  QF / SF and a single-match final — 5 rounds. Each entry is the week the
+ *  round's first leg (or the final) is played; a two-legged round's second
+ *  leg follows one week later. */
+export const CONTINENTAL_WEEKS = [6, 12, 20, 33, 44];
+export const CONTINENTAL_PRIZES = [1_500_000, 3_000_000, 6_000_000, 12_000_000, 25_000_000];
+export const CONTINENTAL_SPOTS = 24;
 
 
 /** Cost to upgrade the youth academy to level 2 / level 3. */
