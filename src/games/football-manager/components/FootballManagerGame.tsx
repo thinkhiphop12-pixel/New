@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { GameData, GameState, MatchReport, ScenarioId, SeasonSummary, GameSettings, ManagerProfile } from '@/engine/types';
 import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/engine/seasonProgression';
 import { simulateMatch } from '@/engine/matchSimulation';
@@ -21,6 +21,7 @@ import MatchScreen from './match/MatchScreen';
 import SeasonEndScreen from './SeasonEndScreen';
 import SettingsPanel, { loadSettings } from './SettingsPanel';
 import CharacterCustomizerScreen from './CharacterCustomizerScreen';
+import { readableTextOn } from './visuals';
 
 type View = 'menu' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonend' | 'character';
 
@@ -241,8 +242,18 @@ export default function FootballManagerGame() {
     setView('menu');
   };
 
+  // Club theming (gap 82): --brand recolours sidebar/tab/button chrome only,
+  // per the contract documented in globals.css — win/loss, finance and
+  // table-zone colours all stay on their own fixed tokens regardless of this.
+  // No club yet (menu, club select) means --brand simply isn't overridden,
+  // so those screens render with the game's own default accent unchanged.
+  const themedClub = gs ? gs.clubs.find((c) => c.id === gs.userClubId) : null;
+  const brandStyle = themedClub
+    ? ({ '--brand': themedClub.color, '--brand-text': readableTextOn(themedClub.color) } as CSSProperties)
+    : undefined;
+
   return (
-    <div className="fm-app">
+    <div className="fm-app" style={brandStyle}>
       <header className="fm-header">
         <a
           className="fm-header__brand"

@@ -48,6 +48,8 @@
      their meaning must never depend on which club is being managed. */
   --brand: var(--green);
   --brand-text: #04140d;
+  --brand-dim: color-mix(in srgb, var(--brand) 16%, transparent);
+  --brand-gradient: linear-gradient(135deg, var(--brand) 0%, color-mix(in srgb, var(--brand) 70%, #00d68f) 100%);
 
   /* Attribute chip ramp — five bands rather than good/mid/bad, so the
      difference between a 78 and a 92 is legible at a glance. */
@@ -150,7 +152,11 @@ body {
 .fm-btn:not(:disabled):hover { transform: translateY(-1px); }
 .fm-btn:not(:disabled):active { transform: translateY(0); }
 .fm-btn--primary {
-  background: var(--cta-gradient); color: #02100a;
+  /* Chrome, not semantic — uses the per-club brand gradient (gap 82), unlike
+     .fm-banner--green/.fm-progress below which stay on the fixed
+     --cta-gradient since those carry a real meaning (success/progress) that
+     must not depend on which club is being managed. */
+  background: var(--brand-gradient); color: var(--brand-text);
 }
 .fm-btn--primary:not(:disabled):hover { box-shadow: var(--shadow-glow-green); }
 .fm-btn--secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
@@ -306,7 +312,12 @@ body {
   scroll-snap-align: start;
 }
 .fm-tab:hover { color: var(--text); background: var(--glass); }
-.fm-tab.active { color: var(--text); background: var(--panel-2); box-shadow: var(--shadow-sm); }
+.fm-tab.active {
+  color: var(--text); background: var(--panel-2); box-shadow: var(--shadow-sm);
+  /* Chrome (gap 82): a brand-coloured underline on the active tab, subtle
+     enough not to compete with --gold zone/award colours used elsewhere. */
+  border-bottom: 2px solid var(--brand);
+}
 .fm-tab__icon { line-height: 1; }
 .fm-tab__label { line-height: 1; }
 .fm-tab__badge {
@@ -328,8 +339,11 @@ body {
     display: none;
   }
   .fm-tab.active {
-    background: var(--green-dim);
-    box-shadow: inset 0 0 0 1.5px var(--green);
+    /* Chrome (gap 82) — the main nav's active state doubles as this
+       mobile-first layout's "sidebar", so it's brand-themed like the
+       reference's sidebar active state. */
+    background: var(--brand-dim);
+    box-shadow: inset 0 0 0 1.5px var(--brand);
   }
   .fm-tab__badge { top: 3px; right: 3px; }
 }
@@ -872,6 +886,8 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-portal__club-info { flex: 1; }
 .fm-portal__club-name { font-size: 18px; font-weight: 900; margin: 0; line-height: 1.1; letter-spacing: -0.3px; }
+.fm-rep-stars { margin-left: 8px; font-size: 12px; color: var(--gold); letter-spacing: 1px; vertical-align: middle; }
+.fm-rep-stars__empty { color: var(--border-bright); }
 .fm-portal__club-meta { font-size: 11.5px; color: var(--muted); margin: 2px 0 0; }
 .fm-portal__week-badge {
   background: var(--panel-2); border: 1px solid var(--border);

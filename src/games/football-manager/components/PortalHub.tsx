@@ -8,7 +8,7 @@ import { isClubAlive, knockoutRoundDue } from '@/engine/cups';
 import { continentalRoundDue, isContinentalClubAlive } from '@/engine/europeanCup';
 import { isLineupValid } from '@/engine/teamManagement';
 import { formatMoney } from '@/engine/utils';
-import { tint } from './visuals';
+import { ReputationStars, tint } from './visuals';
 import { Crest } from './Crest';
 import PressConferenceModal from './PressConferenceModal';
 import ManagerAvatar from './ManagerAvatar';
@@ -68,7 +68,10 @@ export default function PortalHub({
       <div className="fm-portal__header">
         <Crest name={club.name} code={club.code} color={club.color} size={48} />
         <div className="fm-portal__club-info">
-          <h1 className="fm-portal__club-name">{club.name}</h1>
+          <h1 className="fm-portal__club-name">
+            {club.name}
+            {club.reputation != null && <ReputationStars value={club.reputation} />}
+          </h1>
           <p className="fm-portal__club-meta">
             {state.seasonYear}/{(state.seasonYear + 1) % 100} · {position}{ord(position)} in the {leagueName(leagueId)}
           </p>
