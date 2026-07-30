@@ -86,6 +86,36 @@
 
   --transition: 0.16s ease;
   color-scheme: dark;
+
+  /* Phase 14: Space Grotesk display face for headings (--font-display),
+     falling back to the body Inter stack if the font file hasn't loaded
+     yet or JS hasn't hydrated the next/font class onto <html>. Set from
+     app/layout.tsx via next/font/google, same pattern as the existing
+     Inter load. */
+  --font-display: var(--font-display-loaded), Inter, system-ui, -apple-system, sans-serif;
+
+  /* Phase 14: per-league identity colours (gap — "per-league brand
+     colours" item). Real, recognisable colours per country's top flight,
+     covering every country this game actually simulates (engine/gameRules.ts
+     LEAGUES: England, Spain, Italy, Germany, France, Netherlands, Portugal,
+     Scotland — checked, not assumed). These are LEAGUE chrome, a separate
+     axis from --brand (which is CLUB chrome) — never mix the two, and never
+     use these for win/loss/finance/zone colours per the --brand contract
+     above.
+     Scope note: defined here, ready to use, but NOT wired into any league
+     tab/header markup in this pass — TableScreen.tsx/FixturesScreen.tsx
+     (where the brief's item 1 says to apply them) are outside Phase 14's
+     file-ownership list, and another phase's file-ownership rules for this
+     session are absolute. Disclosed in the Phase 14 report/commit message. */
+  --league-england: #38003c;     /* Premier League purple */
+  --league-spain: #ff4b12;       /* La Liga orange */
+  --league-italy: #024494;       /* Serie A blue */
+  --league-germany: #d3010c;     /* Bundesliga red */
+  --league-france: #0d1a4b;      /* Ligue 1 navy */
+  --league-france-text: #ffffff; /* Ligue 1's navy needs a white ink, unlike the others */
+  --league-netherlands: #e2001a; /* Eredivisie red */
+  --league-portugal: #0f8a5f;    /* Primeira Liga green */
+  --league-scotland: #003087;    /* Scottish Premiership blue */
 }
 
 :focus-visible {
@@ -141,6 +171,40 @@ body {
 .fm-main { flex: 1; display: flex; justify-content: center; padding: 16px 12px 80px; }
 .fm-screen { width: 100%; max-width: 740px; display: flex; flex-direction: column; gap: 12px; }
 
+/* Phase 14: main view-swap fade, keyed per view in FootballManagerGame.tsx
+   (a fresh key remounts this wrapper, replaying the transition). The
+   `.screen { transition: opacity .3s, transform .3s }` pattern from the
+   original plan, as an animation instead of a transition since there's no
+   persistent element to transition FROM across a full unmount/remount. */
+.fm-view-fade { animation: fm-view-fade 0.3s ease; }
+@keyframes fm-view-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-view-fade { animation: none; }
+}
+
+/* Phase 14: reusable brief background-pulse utility for card/goal/event
+   moments — e.g. a stat tile or table row that just changed. Deliberately
+   separate from ToastQueue.tsx's own `fm-toast-in` (checked first, that one
+   is a slide/fade-in for the toast shell itself, not a flash) and from the
+   match screen's existing `.fm-goal-flash` full-screen goal banner (also
+   checked first — that already covers the big goal moment). This is the
+   smaller, general-purpose version for a single element (e.g. re-add this
+   class, keyed, whenever a value it's attached to changes).
+   Scope note: added as a ready-to-use utility only — not wired into any
+   specific match/card component in this pass, since components/match/*
+   isn't in Phase 14's file-ownership list. Disclosed in the commit message. */
+.fm-flash { animation: fm-flash-pulse 0.6s ease; }
+@keyframes fm-flash-pulse {
+  0% { background-color: var(--green-dim); }
+  100% { background-color: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-flash { animation: none; }
+}
+
 /* ── Buttons ── */
 .fm-btn {
   border: none; border-radius: var(--r-full); padding: 11px 20px;
@@ -187,6 +251,13 @@ body {
 }
 
 /* ── Labels / Typography ── */
+/* Phase 14: Space Grotesk display face on headings/section titles — a
+   distinct heading voice from Inter body text, same idea as the reference's
+   display face. Applied to real h1/h2 elements plus this codebase's own
+   heading-equivalent classes (.fm-label, .fm-h1/.fm-h2, .fm-card__title). */
+h1, h2, .fm-label, .fm-h1, .fm-h2, .fm-card__title {
+  font-family: var(--font-display);
+}
 .fm-label {
   font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase;
   color: var(--muted-dim); font-weight: 800;
@@ -461,6 +532,10 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-search::placeholder { color: var(--muted-dim); }
 .fm-search:focus { border-color: var(--green-600); }
+/* Phase 14 a11y sweep: the unconditional `outline: none` above was cancelling
+   the global `:focus-visible` rule for keyboard focus (equal specificity,
+   later source order won) — restore a visible keyboard-focus ring here. */
+.fm-search:focus-visible { outline: 2px solid var(--green-600); outline-offset: 2px; }
 
 /* ── Table ── */
 .fm-table { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
@@ -698,6 +773,10 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-negotiation__form input:focus,
 .fm-negotiation__form select:focus { border-color: var(--border-bright); outline: none; }
+/* Phase 14 a11y sweep: same issue as .fm-search above — :focus removed the
+   outline entirely with nothing restored for keyboard users. */
+.fm-negotiation__form input:focus-visible,
+.fm-negotiation__form select:focus-visible { outline: 2px solid var(--green-600); outline-offset: 2px; }
 .fm-negotiation__actions { display: flex; gap: 8px; margin-top: 4px; }
 
 /* Menu actions */

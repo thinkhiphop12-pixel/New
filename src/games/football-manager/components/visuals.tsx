@@ -22,11 +22,18 @@ export function PitchMarkings({ className = '' }: { className?: string }) {
         {/* bottom (own) box */}
         <rect x="27" y="82" width="46" height="16" />
         <rect x="38" y="92" width="24" height="6" />
+        <circle cx="50" cy="90" r="0.5" fill="#ffffff" fillOpacity="0.3" stroke="none" />
         <path d="M 40 82 A 9 9 0 0 0 60 82" />
         {/* top (attacking) box */}
         <rect x="27" y="2" width="46" height="16" />
         <rect x="38" y="2" width="24" height="6" />
+        <circle cx="50" cy="10" r="0.5" fill="#ffffff" fillOpacity="0.3" stroke="none" />
         <path d="M 40 18 A 9 9 0 0 1 60 18" />
+        {/* Goal frames: 7.32m of a ~68m pitch width is ~10.8% — a 10.8-wide
+            rect straddling each end line at true relative scale, rather than
+            a schematic notch. */}
+        <rect x="44.6" y="0.6" width="10.8" height="1.4" />
+        <rect x="44.6" y="98" width="10.8" height="1.4" />
       </g>
     </svg>
   );

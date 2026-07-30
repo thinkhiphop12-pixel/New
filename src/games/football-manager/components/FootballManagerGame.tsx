@@ -314,6 +314,12 @@ export default function FootballManagerGame() {
         </button>
       </header>
       <main className="fm-main">
+        {/* Phase 14 screen transitions: a minimal additive wrapper around the
+            existing view-swap ternary below, not a restructure of it. Keyed
+            on `view` so each swap remounts (and replays) the fade — cheap
+            since every branch below is already a full component swap, not a
+            shared persistent tree. */}
+        <div key={view} className="fm-view-fade">
         {loadError ? (
           <div className="fm-screen fm-error">
             <p className="fm-error-text">Could not load game data. Please refresh.</p>
@@ -356,6 +362,7 @@ export default function FootballManagerGame() {
         ) : (
           <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} onCharacterCustomizer={handleCharacterCustomizerOpen} />
         )}
+        </div>
       </main>
 
       {showSettings && settings && (
