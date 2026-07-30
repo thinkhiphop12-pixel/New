@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { GameState } from '@/engine/types';
-import { getLeague, leagueName } from '@/engine/gameRules';
+import { getLeague, leagueColor, leagueName } from '@/engine/gameRules';
 import { activeLeagueIds, computeTable, nextUserFixture, userLeagueId } from '@/engine/seasonProgression';
 import { computeMarkets, scoreGrid, seasonOutrights, toOdds, type SeasonOutrights } from '@/engine/odds';
 import { Crest } from './Crest';
@@ -38,11 +38,24 @@ export default function TableScreen({ state }: { state: GameState }) {
       ) : (
       <>
       <div className="fm-division-toggle" style={{ alignSelf: 'center' }}>
-        {leagueIds.map((id) => (
-          <button key={id} className={active === id ? 'active' : ''} onClick={() => setLeagueId(id)}>
-            {leagueName(id)}
-          </button>
-        ))}
+        {leagueIds.map((id) => {
+          // Per-league identity colour (gap 78/Phase 14) — a separate axis
+          // from --brand: this reflects the LEAGUE's own country identity,
+          // not the managed club's colour, so it stays fixed regardless of
+          // which club the player is running.
+          const { color, text } = leagueColor(id);
+          const isActive = active === id;
+          return (
+            <button
+              key={id}
+              className={isActive ? 'active' : ''}
+              onClick={() => setLeagueId(id)}
+              style={isActive ? { background: color, color: text } : undefined}
+            >
+              {leagueName(id)}
+            </button>
+          );
+        })}
       </div>
       <div className="fm-panel" style={{ padding: '8px 6px', overflowX: 'auto' }}>
         <table className="fm-table">

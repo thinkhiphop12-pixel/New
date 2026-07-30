@@ -279,6 +279,44 @@ export function isPhantomLeague(id: string): boolean {
   return !!LEAGUE_BY_ID.get(id)?.phantom;
 }
 
+/** Maps a country to its `--league-*` CSS custom property (defined in
+ *  app/globals.css: real, recognisable per-country colours — PL purple, La
+ *  Liga orange, Bundesliga red, etc.) and the actual hex behind that token,
+ *  kept in sync here so a readable ink colour can be computed for any of
+ *  them, not hand-picked one country at a time. A separate axis from
+ *  `--brand` (the managed club's own colour) — this reflects the LEAGUE's
+ *  identity, fixed regardless of which club the player runs. */
+const COUNTRY_LEAGUE: Record<string, { cssVar: string; hex: string }> = {
+  England: { cssVar: '--league-england', hex: '#38003c' },
+  Spain: { cssVar: '--league-spain', hex: '#ff4b12' },
+  Italy: { cssVar: '--league-italy', hex: '#024494' },
+  Germany: { cssVar: '--league-germany', hex: '#d3010c' },
+  France: { cssVar: '--league-france', hex: '#0d1a4b' },
+  Netherlands: { cssVar: '--league-netherlands', hex: '#e2001a' },
+  Portugal: { cssVar: '--league-portugal', hex: '#0f8a5f' },
+  Scotland: { cssVar: '--league-scotland', hex: '#003087' },
+};
+
+/** Relative luminance via the standard sRGB coefficients — same formula as
+ *  `readableTextOn` in components/visuals.tsx, duplicated here in a small,
+ *  self-contained form rather than imported, since engine modules stay free
+ *  of any component-layer import. */
+function isDark(hex: string): boolean {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b <= 0.55;
+}
+
+/** CSS `var(...)` color for a league's country identity, plus a readable ink
+ *  color for text/borders sitting directly on it. */
+export function leagueColor(id: string): { color: string; text: string } {
+  const country = getLeague(id).country;
+  const entry = COUNTRY_LEAGUE[country];
+  if (!entry) return { color: 'var(--border-bright)', text: 'var(--text)' };
+  return { color: `var(${entry.cssVar})`, text: isDark(entry.hex) ? '#f5f5f5' : '#04140d' };
+}
+
 /** Every league in one country, top tier first. */
 export function pyramidOf(country: string): LeagueDef[] {
   return LEAGUES.filter((l) => l.country === country).sort((a, b) => a.level - b.level);

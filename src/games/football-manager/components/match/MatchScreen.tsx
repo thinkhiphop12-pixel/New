@@ -144,6 +144,23 @@ export default function MatchScreen({
     if (el) el.scrollTop = el.scrollHeight;
   }, [shownEvents.length, showEvents]);
 
+  // Brief scoreboard flash on a goal (Phase 14's .fm-flash keyframe, first
+  // real wiring of it — it shipped as a ready utility with nothing using it
+  // yet). Tracks total goals rather than home/away separately so an own
+  // goal or a goal for either side both trigger it.
+  const [scoreFlash, setScoreFlash] = useState(false);
+  const prevGoalsRef = useRef(0);
+  useEffect(() => {
+    const total = (snap?.score.home ?? 0) + (snap?.score.away ?? 0);
+    if (total > prevGoalsRef.current) {
+      setScoreFlash(true);
+      const t = setTimeout(() => setScoreFlash(false), 700);
+      prevGoalsRef.current = total;
+      return () => clearTimeout(t);
+    }
+    prevGoalsRef.current = total;
+  }, [snap?.score.home, snap?.score.away]);
+
   const liveRatings = useMemo(() => {
     if (!snap) return {};
     const r = snap.resume;
@@ -323,7 +340,7 @@ export default function MatchScreen({
           <Crest name={home?.name} code={home?.code ?? ''} color={home?.color ?? 'var(--panel-3)'} size={22} />
           <span className="fm-fmbar__team">{home?.code}</span>
         </div>
-        <div className="fm-fmbar__seg fm-fmbar__seg--score">
+        <div className={`fm-fmbar__seg fm-fmbar__seg--score${scoreFlash ? ' fm-flash' : ''}`}>
           {score.home} - {score.away}
         </div>
         <div className="fm-fmbar__seg fm-fmbar__seg--away">
