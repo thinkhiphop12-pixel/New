@@ -46,6 +46,10 @@ export default function ClubSelectScreen({
   const [division, setDivision] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [managerName, setManagerName] = useState('');
+  // Gap 81: a real club search — the existing "fm-search" input just above
+  // this one is actually the manager-name field, not a club filter at all,
+  // despite the plan calling for "a searchable club grid with crests."
+  const [clubQuery, setClubQuery] = useState('');
 
   const divisions = useMemo(() => {
     const set = new Set(data.clubs.map((c) => leagueIdForDivision(c.division)));
@@ -75,10 +79,17 @@ export default function ClubSelectScreen({
   // Rank within this division by squad rating, best first, so a "bottom half"
   // scenario check has something to rank against — same measure the engine
   // uses post-newGame (squadAvgRating), just computed on the raw dataset here.
+  // Ranked BEFORE the name search filters it down, so the scenario gate still
+  // sees the whole division's real bottom-half/top-flight shape rather than
+  // a shape distorted by whatever the player has typed so far.
   const rankedInDivision = [...shownUnfiltered].sort((a, b) => b.avg - a.avg);
-  const shown = shownUnfiltered.filter((x) =>
+  const scenarioFiltered = shownUnfiltered.filter((x) =>
     scenarioAllowsClub(scenarioId, x.club.division, rankedInDivision.findIndex((r) => r.club.id === x.club.id) + 1, rankedInDivision.length)
   );
+  const query = clubQuery.trim().toLowerCase();
+  const shown = query
+    ? scenarioFiltered.filter((x) => x.club.name.toLowerCase().includes(query))
+    : scenarioFiltered;
 
   return (
     <div className="fm-screen">
@@ -104,6 +115,16 @@ export default function ClubSelectScreen({
         <p className="fm-hint">
           {formatLeagueBlurb(division)} Budget {formatMoney(startingBudget(division))}.
         </p>
+      )}
+      <input
+        className="fm-search"
+        style={{ alignSelf: 'center', maxWidth: 320, marginBottom: 4 }}
+        placeholder="Search clubs…"
+        value={clubQuery}
+        onChange={(e) => setClubQuery(e.target.value)}
+      />
+      {query && shown.length === 0 && (
+        <p className="fm-hint" style={{ textAlign: 'center' }}>No clubs match &quot;{clubQuery}&quot; in this division.</p>
       )}
       <div className="fm-club-grid">
         {shown.map(({ club, avg, star }) => (
