@@ -22,6 +22,7 @@ import SeasonEndScreen from './SeasonEndScreen';
 import SettingsPanel, { loadSettings } from './SettingsPanel';
 import CharacterCustomizerScreen from './CharacterCustomizerScreen';
 import { readableTextOn } from './visuals';
+import { ToastHost, pushToast } from './ToastQueue';
 
 type View = 'menu' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonend' | 'character';
 
@@ -86,7 +87,14 @@ export default function FootballManagerGame() {
         setSaveError(null);
         setSaves(listSaves());
       })
-      .catch((e: Error) => setSaveError(e.message));
+      .catch((e: Error) => {
+        // `saveError` was previously set here with nothing in the tree ever
+        // rendering it — a save could silently stop persisting with zero
+        // player-visible feedback, exactly the invisible-system risk this
+        // project has repeatedly had to fix for other systems. Surface it.
+        setSaveError(e.message);
+        pushToast(`Save failed: ${e.message}`, 'error');
+      });
   }, []);
 
   const apply = (next: GameState, toSlot = slot) => {
@@ -178,6 +186,13 @@ export default function FootballManagerGame() {
 
   const handleMatchDone = (report: MatchReport) => {
     if (!gs) return;
+    const userIsHome = report.homeId === gs.userClubId;
+    const userGoals = userIsHome ? report.homeGoals : report.awayGoals;
+    const oppGoals = userIsHome ? report.awayGoals : report.homeGoals;
+    const oppName = gs.clubs.find((c) => c.id === (userIsHome ? report.awayId : report.homeId))?.name ?? 'opponent';
+    const outcome = userGoals > oppGoals ? 'success' : userGoals < oppGoals ? 'error' : 'info';
+    pushToast(`Full time: ${userGoals}-${oppGoals} vs ${oppName}`, outcome);
+
     const played = playRound(gs, report);
     if (seasonOver(played)) {
       const { state: next, summary: sum } = endSeason(played);
@@ -254,6 +269,7 @@ export default function FootballManagerGame() {
 
   return (
     <div className="fm-app" style={brandStyle}>
+      <ToastHost />
       <header className="fm-header">
         <a
           className="fm-header__brand"

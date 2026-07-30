@@ -1606,3 +1606,24 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .pm-stat-name { color: var(--muted); font-weight: 700; }
 .pm-stat-val { font-weight: 900; }
 .pm-stat-val.text-gold { color: var(--gold); }
+
+/* --- Toast queue (gap 79) --------------------------------------------------- */
+.fm-toast-stack {
+  position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+  z-index: 200; display: flex; flex-direction: column; gap: 6px;
+  width: min(360px, calc(100vw - 24px)); pointer-events: none;
+}
+.fm-toast {
+  pointer-events: auto; cursor: pointer;
+  border-radius: var(--r-md); padding: 10px 14px; font-size: 13px; font-weight: 700;
+  box-shadow: var(--shadow-lg); border: 1px solid var(--border);
+  background: var(--panel-2); color: var(--text);
+  animation: fm-toast-in 0.2s ease;
+}
+.fm-toast--success { border-color: var(--green); color: var(--green); }
+.fm-toast--error { border-color: var(--red); color: var(--red); }
+.fm-toast--info { border-color: var(--border-bright); }
+@keyframes fm-toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
