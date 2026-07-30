@@ -42,6 +42,9 @@ export default function FootballManagerGame() {
   const [selectedDivisions, setSelectedDivisions] = useState<string[]>(['premier_league', 'championship', 'league_one', 'league_two']);
   const [managerProfile, setManagerProfile] = useState<ManagerProfile | null>(null);
   const [selectedScenarioId, setSelectedScenarioId] = useState<ScenarioId | undefined>(undefined);
+  // Progress label for the scenario fast-forward below. Non-null means a long
+  // synchronous engine job is being run in yielded chunks; see `handlePickClub`.
+  const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => {
     loadGameData()
@@ -150,8 +153,8 @@ export default function FootballManagerGame() {
     clearSave(s).then(() => setSaves(listSaves()));
   };
 
-  const handlePickClub = (clubId: number, managerName: string) => {
-    if (!data) return;
+  const handlePickClub = async (clubId: number, managerName: string) => {
+    if (!data || busy) return;
     let state = newGame(data, clubId, managerName);
     // Carry the manager avatar (edited from the main menu, or from a prior
     // career) with the save slot rather than a separate device-wide key.
@@ -165,8 +168,21 @@ export default function FootballManagerGame() {
       // lands on the club's actual mid-season position rather than week 1.
       if (scenarioNeedsPreseasonFastForward(selectedScenarioId)) {
         const targetWeek = Math.floor(state.week + (48 - state.week) / 2);
+        // MEASURED (scripts/perf-apply2.ts, phase 0c): this loop runs 23
+        // iterations at ~480ms each — 11.1 SECONDS of fully blocking
+        // main-thread work, during which the tab is frozen and the club-select
+        // screen shows no indication anything is happening. `playRound` is the
+        // cost (the whole-league weekly tick), not the state clone, so it can't
+        // be made cheap from here; instead yield to the browser between weeks
+        // so the paint below actually renders and the tab stays responsive.
+        // Engine calls, their order, and the resulting state are unchanged.
+        const totalWeeks = Math.max(1, targetWeek - state.week);
         let guard = 0;
         while (state.week < targetWeek && !seasonOver(state) && guard < 60) {
+          setBusy(`Simulating the first half of the season… ${Math.min(99, Math.round((guard / totalWeeks) * 100))}%`);
+          // Yield a full macrotask so React commits the label above and the
+          // browser paints it before the next ~480ms block of engine work.
+          await new Promise((r) => setTimeout(r, 0));
           const fx = Object.values(state.fixtures).flat().find(
             (f) => f.round === state.week && (f.homeId === state.userClubId || f.awayId === state.userClubId),
           );
@@ -180,6 +196,7 @@ export default function FootballManagerGame() {
       state = applyScenario(state, selectedScenarioId);
     }
 
+    setBusy(null);
     apply(state);
     setView('hub');
   };
@@ -305,6 +322,14 @@ export default function FootballManagerGame() {
           <div className="fm-screen fm-loading">
             <div className="fm-spinner" />
             <p className="fm-hint">Loading player database…</p>
+          </div>
+        ) : busy ? (
+          // Placed above the view chain so it wins while the scenario
+          // fast-forward is mid-flight — `view` is still 'clubselect' at that
+          // point and would otherwise re-render the (now frozen) club list.
+          <div className="fm-screen fm-loading">
+            <div className="fm-spinner" />
+            <p className="fm-hint">{busy}</p>
           </div>
         ) : view === 'character' ? (
           <CharacterCustomizerScreen onSave={handleCharacterSave} onBack={handleCharacterBack} initialProfile={managerProfile || undefined} />
