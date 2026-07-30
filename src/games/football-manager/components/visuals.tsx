@@ -157,12 +157,6 @@ export function tint(hex: string, alpha: string): string {
   return `${hex}${alpha}`;
 }
 
-/** Readable text color (near-black or near-white) for text sitting directly
- *  on a club's color — the reference's `textOn`. Relative luminance via the
- *  standard sRGB coefficients, not a library, matching `tint`'s no-deps
- *  approach above. Used by the club-theming pass (gap 82) so `--brand-text`
- *  stays legible across every club's color, not just the game's own accent
- *  green. */
 /** Club reputation as stars (gap 80), 1-5. Reputation is coarse by design
  *  (see `clubReputation` in engine/clubIdentity.ts) — five filled/empty stars
  *  is the right resolution for it, not a number that implies more precision
@@ -177,6 +171,12 @@ export function ReputationStars({ value, title }: { value: number; title?: strin
   );
 }
 
+/** Readable text color (near-black or near-white) for text sitting directly
+ *  on a club's color — the reference's `textOn`. Relative luminance via the
+ *  standard sRGB coefficients, not a library, matching `tint`'s no-deps
+ *  approach above. Used by the club-theming pass (gap 82) so `--brand-text`
+ *  stays legible across every club's color, not just the game's own accent
+ *  green. */
 export function readableTextOn(hex: string): string {
   if (!hex || !hex.startsWith('#') || hex.length < 7) return '#04140d';
   const r = parseInt(hex.slice(1, 3), 16) / 255;
