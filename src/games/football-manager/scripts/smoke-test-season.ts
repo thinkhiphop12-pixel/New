@@ -24,6 +24,7 @@ import { newFacilities, startStandProject, tickFacilitiesWeek, totalCapacity } f
 import type { StandId } from '../engine/types';
 import { evaluateFeeOffer, evaluateMove, marketStatus, startNegotiation } from '../engine/negotiation';
 import { contextualizeTactics, previewEffectiveXG, squadAvgRating } from '../engine/teamManagement';
+import { computeMarkets, scoreGrid, toOdds } from '../engine/odds';
 import { continentalEntrants } from '../engine/seasonProgression';
 import { continentalTieWinner, tieAggregate, tieComplete } from '../engine/europeanCup';
 import {
@@ -118,6 +119,13 @@ while (!seasonOver(state)) {
 }
 console.log(`Season completed after ${weeksPlayed} weeks (SEASON_ROUNDS=${SEASON_ROUNDS}).`);
 assert(weeksPlayed === SEASON_ROUNDS, `expected exactly ${SEASON_ROUNDS} weeks played, got ${weeksPlayed}`);
+
+// Snapshot news state right after a real week-by-week season — later
+// sections fast-forward multiple seasons via endSeason() alone (no weekly
+// playRound ticks), so generateWeeklyNews never runs there and newsCooldowns
+// would read back empty by the end of the script for reasons that have
+// nothing to do with whether the press desk actually works.
+const newsSnapshot = { news: [...state.news], cooldowns: { ...(state.newsCooldowns ?? {}) } };
 
 // --- Every league's fixture list must be fully played ----------------------
 for (const id of activeLeagueIds(state)) {
@@ -655,6 +663,42 @@ assert(
   });
   assert(tweaked.userXG < base.userXG, 'previewEffectiveXG must lower userXG for an ultra-defensive/low-block tweak');
   console.log('\nPhase 5 remainder: custom formations resolve correctly, AI tactics read the quality gap, previewEffectiveXG reacts to tactical changes. ✓');
+}
+
+// --- Phase 12: odds model + weekly news -------------------------------------
+{
+  const home = state.clubs.find((c) => c.name === 'Liverpool') ?? state.clubs[0];
+  const away = state.clubs.find((c) => c.name === 'Burnley') ?? state.clubs[1];
+  const sg = scoreGrid(state, home.id, away.id);
+  let gridSum = 0;
+  for (const row of sg.grid) for (const p of row) gridSum += p;
+  assert(Math.abs(gridSum - 1) < 0.01, `scoreline grid sums to ${gridSum}, expected ~1.0`);
+
+  const markets = computeMarkets(sg);
+  const oneXTwo = markets.homeWin + markets.draw + markets.awayWin;
+  assert(Math.abs(oneXTwo - 1) < 0.01, `1X2 market sums to ${oneXTwo}, expected ~1.0`);
+  assert(Math.abs((markets.bttsYes + markets.bttsNo) - 1) < 0.001, 'BTTS yes/no must sum to 1');
+  assert(Math.abs((markets.over25 + markets.under25) - 1) < 0.001, 'over/under 2.5 must sum to 1');
+
+  const priced = toOdds(markets.homeWin);
+  assert(typeof priced === 'string' && priced.length > 0, 'toOdds must return a non-empty fractional string');
+
+  console.log(`\nOdds: ${home.name} v ${away.name} — home ${toOdds(markets.homeWin)}, draw ${toOdds(markets.draw)}, away ${toOdds(markets.awayWin)}. ✓`);
+
+  // Weekly news: cooldowns must actually prevent the same story firing every
+  // week (a real bug this system could easily have — checked directly rather
+  // than trusted, since a spammy news feed would be indistinguishable from a
+  // working one on a single week's snapshot). Uses the snapshot taken right
+  // after the initial week-by-week season, not the current `state` — later
+  // sections fast-forward multiple seasons via endSeason() alone, with no
+  // weekly playRound ticks in between, so newsCooldowns would read back
+  // empty there for reasons unrelated to whether the press desk works.
+  const fired = Object.keys(newsSnapshot.cooldowns).length;
+  assert(fired > 0, 'no news cooldown ever fired across a full simulated season — the press desk never produced a story');
+  for (const [key, week] of Object.entries(newsSnapshot.cooldowns)) {
+    assert(week <= SEASON_ROUNDS, `news cooldown '${key}' recorded a week (${week}) beyond the season length (${SEASON_ROUNDS})`);
+  }
+  console.log(`Weekly news: ${fired} story type(s) fired at least once over the season (${newsSnapshot.news.length} headlines held at season end). ✓`);
 }
 
 console.log('\n✓ ALL SMOKE TESTS PASSED');

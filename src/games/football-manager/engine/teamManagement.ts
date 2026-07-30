@@ -306,3 +306,47 @@ export function previewEffectiveXG(
   );
   return { userXG: Math.round(xg.homeXG * 100) / 100, oppXG: Math.round(xg.awayXG * 100) / 100 };
 }
+
+/**
+ * Estimated xG for any fixture between two clubs (either may be the user's),
+ * reusing the same real `calcMatchXG` chain as `previewEffectiveXG` above.
+ * Built for the odds model (gap 75), which needs a scoreline estimate for
+ * arbitrary AI-vs-AI fixtures, not just the user's next match.
+ */
+export function estimateMatchXG(state: GameState, homeId: number, awayId: number): { homeXG: number; awayXG: number } {
+  const homeClub = state.clubs.find((c) => c.id === homeId);
+  const awayClub = state.clubs.find((c) => c.id === awayId);
+  if (!homeClub || !awayClub) return { homeXG: 1, awayXG: 1 };
+
+  const setupFor = (clubId: number, oppId: number) =>
+    clubId === state.userClubId
+      ? {
+          formation: getFormation(state.dualFormation?.inPossessionId ?? state.formationId),
+          lineup: state.lineup,
+          tactics: state.tactics,
+        }
+      : aiMatchSetup(state, clubId, oppId);
+
+  const homeSetup = setupFor(homeId, awayId);
+  const awaySetup = setupFor(awayId, homeId);
+  const homeXi = buildXI(state, homeSetup.lineup, homeSetup.formation);
+  const awayXi = buildXI(state, awaySetup.lineup, awaySetup.formation);
+
+  const mentalityOf = (clubId: number, tactics: Tactics) =>
+    clubId === state.userClubId
+      ? normalizeMentality(tactics.mentality)
+      : tactics.style === 'attacking' ? 'attacking' : tactics.style === 'defensive' ? 'defensive' : 'balanced';
+
+  const homeLevel = getLeague(homeClub.leagueId)?.level ?? 3;
+  const awayLevel = getLeague(awayClub.leagueId)?.level ?? 3;
+  const homeStyle = homeId === state.userClubId ? (state.playStyle ?? 'balanced') : (homeClub.playStyle ?? 'balanced');
+  const awayStyle = awayId === state.userClubId ? (state.playStyle ?? 'balanced') : (awayClub.playStyle ?? 'balanced');
+  const homeExec = styleExec(homeClub, homeXi.map((s) => s.p), homeStyle, homeLevel, { xi: awayXi.map((s) => s.p) });
+  const awayExec = styleExec(awayClub, awayXi.map((s) => s.p), awayStyle, awayLevel, { xi: homeXi.map((s) => s.p) });
+
+  const xg = calcMatchXG(
+    { xi: homeXi, tactics: homeSetup.tactics, mentality: mentalityOf(homeId, homeSetup.tactics), qualityMult: 1, styleExec: homeExec },
+    { xi: awayXi, tactics: awaySetup.tactics, mentality: mentalityOf(awayId, awaySetup.tactics), qualityMult: 1, styleExec: awayExec },
+  );
+  return { homeXG: xg.homeXG, awayXG: xg.awayXG };
+}

@@ -1010,6 +1010,11 @@ export interface GameState {
 
   history: SeasonSummary[];
   news: string[];
+  /** Phase 12: per-story-type cooldown tracker (week each type last fired),
+   *  so the weekly press desk doesn't repeat the same headline every round.
+   *  Optional and lazily initialized — absent entirely on any save from
+   *  before this system existed. */
+  newsCooldowns?: Record<string, number>;
   /** Structured inbox items (news you can open into a full article + player card). */
   inbox: InboxItem[];
   nextInboxId: number;

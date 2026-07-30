@@ -1089,6 +1089,14 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-stat-tile__icon { font-size: 16px; }
 .fm-stat-tile__val { font-size: 17px; font-weight: 900; }
 .fm-stat-tile__lbl { font-size: 10px; color: var(--muted); }
+.fm-odds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.fm-odds-cell {
+  display: flex; flex-direction: column; gap: 2px; align-items: center;
+  border: 1px solid var(--border); border-radius: var(--r-sm); padding: 8px 4px;
+  background: var(--panel-2); font-variant-numeric: tabular-nums;
+}
+.fm-odds-cell span { font-size: 10px; color: var(--muted); }
+.fm-odds-cell b { font-size: 15px; }
 
 /* Goal flash */
 .fm-goal-flash {

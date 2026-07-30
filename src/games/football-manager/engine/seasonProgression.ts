@@ -14,6 +14,7 @@ import { matchRatings, simulateMatch } from './matchSimulation';
 import { autoPickLineup, getSquad, isLineupValid, isOnLoan, squadAvgRating } from './teamManagement';
 import { clamp, contractEndFor, marketValue, pickRandom, rollRetireAge, weeklyWage } from './utils';
 import { tickTacticalFamiliarity } from './familiarity';
+import { generateWeeklyNews } from './news';
 import { seedClubIdentities } from './clubIdentity';
 import { aiWeeklyTransfers, generateWeeklyOffers } from './transferMarket';
 import { clubRunName, createKnockout, isClubAlive, knockoutRoundDue, playKnockoutRound, roundName, tieWinner, userTieThisRound } from './cups';
@@ -851,6 +852,14 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   // week starts accruing familiarity immediately rather than a week late.
   tickTacticalFamiliarity(s);
 
+  // Weekly press desk (Phase 12) — reads the table/squad state as it stands
+  // this week, so it must run after results are recorded above but before
+  // anything below mutates form/fitness for next week.
+  {
+    const newsLeagueId = userLeagueId(s);
+    generateWeeklyNews(s, newsLeagueId, computeTable(s, newsLeagueId), leagueClubs(s, newsLeagueId));
+  }
+
   // Weekly form drift + injury recovery for every player.
   const fitnessFocus = s.training === 'fitness';
   for (const p of Object.values(s.players)) {
@@ -1674,6 +1683,11 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
   // New season setup.
   s.seasonYear++;
   s.week = 1;
+  // Cooldowns are absolute week numbers; week resets to 1 every season, so a
+  // cooldown left over from late last season (e.g. week 45) would otherwise
+  // block that story type until deep into the new season (week - last >= 4
+  // needs week >= 49). Reset alongside the news feed itself.
+  s.newsCooldowns = {};
   s.morale = MORALE_START;
   s.chemistry = clamp(s.chemistry, 40, 70);
   s.fanConfidence = clamp(Math.round((s.fanConfidence + 60) / 2), 5, 99);

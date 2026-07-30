@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import type { GameState } from '@/engine/types';
 import { getLeague, leagueName } from '@/engine/gameRules';
-import { activeLeagueIds, computeTable, userLeagueId } from '@/engine/seasonProgression';
+import { activeLeagueIds, computeTable, nextUserFixture, userLeagueId } from '@/engine/seasonProgression';
+import { computeMarkets, scoreGrid, seasonOutrights, toOdds, type SeasonOutrights } from '@/engine/odds';
 import { Crest } from './Crest';
 
 export default function TableScreen({ state }: { state: GameState }) {
+  const [tab, setTab] = useState<'table' | 'odds'>('table');
   const [leagueId, setLeagueId] = useState<string>(userLeagueId(state));
   const leagueIds = activeLeagueIds(state);
   const active = leagueIds.includes(leagueId) ? leagueId : leagueIds[0] ?? leagueId;
@@ -27,6 +29,14 @@ export default function TableScreen({ state }: { state: GameState }) {
 
   return (
     <>
+      <div className="fm-pills" style={{ alignSelf: 'center', marginBottom: 8 }}>
+        <button className={`fm-pill${tab === 'table' ? ' active' : ''}`} onClick={() => setTab('table')}>Table</button>
+        <button className={`fm-pill${tab === 'odds' ? ' active' : ''}`} onClick={() => setTab('odds')}>Odds</button>
+      </div>
+      {tab === 'odds' ? (
+        <OddsTab state={state} />
+      ) : (
+      <>
       <div className="fm-division-toggle" style={{ alignSelf: 'center' }}>
         {leagueIds.map((id) => (
           <button key={id} className={active === id ? 'active' : ''} onClick={() => setLeagueId(id)}>
@@ -77,8 +87,80 @@ export default function TableScreen({ state }: { state: GameState }) {
         </table>
       </div>
       <p className="fm-hint">{describeLeague(active, n)}</p>
+      </>
+      )}
     </>
   );
+}
+
+/**
+ * The Odds tab (gap 75): calibrated match odds for the user's next fixture
+ * (cheap — one Dixon-Coles scoreline grid, computed live on every render),
+ * plus season outrights via a button-triggered Monte Carlo run rather than
+ * something computed automatically. Measured directly: even the reduced
+ * 12-run default takes several real seconds (it re-simulates every remaining
+ * fixture in the league via the full match engine, not a shortcut model) —
+ * far too slow to run on every render or league-switch, so it's opt-in with
+ * its own loading state instead.
+ */
+function OddsTab({ state }: { state: GameState }) {
+  const [outrights, setOutrights] = useState<SeasonOutrights | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const fixture = nextUserFixture(state);
+  const userClub = state.clubs.find((c) => c.id === state.userClubId);
+  const opponentId = fixture ? (fixture.homeId === state.userClubId ? fixture.awayId : fixture.homeId) : null;
+  const opponent = opponentId ? state.clubs.find((c) => c.id === opponentId) : null;
+
+  const runOutrights = () => {
+    setLoading(true);
+    // Not a real async op (the engine is synchronous) — the timeout just lets
+    // the loading state paint before the run blocks the main thread.
+    setTimeout(() => {
+      setOutrights(seasonOutrights(state));
+      setLoading(false);
+    }, 30);
+  };
+
+  if (!fixture) {
+    return <p className="fm-hint">No upcoming fixture to price up.</p>;
+  }
+
+  const sg = scoreGrid(state, fixture.homeId, fixture.awayId);
+  const markets = computeMarkets(sg);
+  const homeName = fixture.homeId === state.userClubId ? userClub?.name : opponent?.name;
+  const awayName = fixture.awayId === state.userClubId ? userClub?.name : opponent?.name;
+
+  return (
+    <div className="fm-panel" style={{ padding: 12 }}>
+      <p className="fm-label fm-label--sm" style={{ marginTop: 0 }}>{homeName} v {awayName}</p>
+      <div className="fm-odds-grid">
+        <div className="fm-odds-cell"><span>Home</span><b>{toOddsLabel(markets.homeWin)}</b></div>
+        <div className="fm-odds-cell"><span>Draw</span><b>{toOddsLabel(markets.draw)}</b></div>
+        <div className="fm-odds-cell"><span>Away</span><b>{toOddsLabel(markets.awayWin)}</b></div>
+        <div className="fm-odds-cell"><span>BTTS Yes</span><b>{toOddsLabel(markets.bttsYes)}</b></div>
+        <div className="fm-odds-cell"><span>Over 2.5</span><b>{toOddsLabel(markets.over25)}</b></div>
+        <div className="fm-odds-cell"><span>Under 2.5</span><b>{toOddsLabel(markets.under25)}</b></div>
+      </div>
+
+      <p className="fm-label fm-label--sm">Season Outrights ({userClub?.name})</p>
+      {outrights ? (
+        <div className="fm-odds-grid">
+          <div className="fm-odds-cell"><span>Title</span><b>{(outrights.title * 100).toFixed(0)}%</b></div>
+          <div className="fm-odds-cell"><span>Top 4</span><b>{(outrights.topFour * 100).toFixed(0)}%</b></div>
+          <div className="fm-odds-cell"><span>Relegation</span><b>{(outrights.relegation * 100).toFixed(0)}%</b></div>
+        </div>
+      ) : (
+        <button className="fm-btn fm-btn--secondary" onClick={runOutrights} disabled={loading}>
+          {loading ? 'Simulating…' : 'Simulate season outrights'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function toOddsLabel(p: number): string {
+  return toOdds(p);
 }
 
 function ordinal(n: number): string {
