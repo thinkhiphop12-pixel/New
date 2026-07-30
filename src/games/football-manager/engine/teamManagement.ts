@@ -215,17 +215,20 @@ export function contextualizeTactics(state: GameState, clubId: number, opponentI
     };
   }
   if (gap < -6) {
-    // `pressing: 'low'` alone already suppresses the favourite's xG via
-    // `calcMatchXG`'s low-block risk term (measured: PRESS_PRESET.low has
-    // risk -0.14, i.e. a genuine low block blunts the opponent's attack, on
-    // top of its own -0.10 ownBoost) — stacking that with a deep line, narrow
-    // width AND cautious tackling all at once pushed whole-league goals/game
-    // below the 2.4-3.2 regression band in testing (measured as low as 2.28).
-    // `defLine: 'deep'` + `tempo: 'slow'` + `width: 'narrow'` already reads as
-    // "parked in", so pressing stays 'mid' here rather than doubling up on
-    // the same suppression via two different levers.
+    // Every one of defLine/tempo/width/tackling/pressing independently
+    // suppresses this side's OWN attack in calcMatchXG's tactical chain
+    // (LINE_ATK.deep=0.95, TEMPO_ATK.slow=0.96, WIDTH_ATK.narrow=0.97,
+    // TACKLE_BOOST.cautious=-0.02, PRESS_PRESET.low.ownBoost=-0.10) on top of
+    // the rating gap this side is already losing on — stacking four or five
+    // of them multiplicatively on the weaker side pushed whole-league
+    // goals/game below the 2.4-3.2 regression band across repeated runs
+    // (measured as low as 2.28, and failing roughly 1 in 3 smoke-test runs
+    // even after an earlier partial fix). Keeping only `defLine: 'deep'` +
+    // `tackling: 'cautious'` — the two levers a real deep-block underdog
+    // actually needs — reads as clearly cautious without compounding every
+    // available suppressor into a side that barely creates anything at all.
     return {
-      style: 'defensive', pressing: 'mid', tempo: 'slow', width: 'narrow',
+      style: 'defensive', pressing: 'mid', tempo: 'normal', width: 'standard',
       defLine: 'deep', focus: 'flanks', buildUp: 'long', passingStyle: 'mixed', runs: 'balanced', tackling: 'cautious',
     };
   }
