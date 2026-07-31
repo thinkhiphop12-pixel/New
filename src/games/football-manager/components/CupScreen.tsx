@@ -5,6 +5,7 @@ import { isClubAlive, roundName, tieWinner } from '@/engine/cups';
 import {
   continentalRoundName, continentalTieWinner, isContinentalClubAlive, tieAggregate, tieComplete,
 } from '@/engine/europeanCup';
+import { Icon } from './Icon';
 
 function Bracket({ state, k }: { state: GameState; k: Knockout }) {
   const clubName = (id: number) => state.clubs.find((c) => c.id === id)?.name ?? '—';
@@ -20,7 +21,7 @@ function Bracket({ state, k }: { state: GameState; k: Knockout }) {
         {k.name}
       </p>
       {winner ? (
-        <p className="fm-cup-status">🏆 Winners: {winner}</p>
+        <p className="fm-cup-status" style={{ display: "flex", alignItems: "center", gap: 6 }}><Icon name="trophy" size={14} /> Winners: {winner}</p>
       ) : (
         <p className="fm-cup-status">
           {!inComp
@@ -80,7 +81,7 @@ function EuroBracket({ state }: { state: GameState }) {
     <div className="fm-panel">
       <p className="fm-label" style={{ marginTop: 0 }}>{c.name}</p>
       {winner ? (
-        <p className="fm-cup-status">🏆 Winners: {winner}</p>
+        <p className="fm-cup-status" style={{ display: "flex", alignItems: "center", gap: 6 }}><Icon name="trophy" size={14} /> Winners: {winner}</p>
       ) : (
         <p className="fm-cup-status">
           {!inComp

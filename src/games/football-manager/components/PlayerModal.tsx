@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Icon } from './Icon';
 import type { Club, GameState, Player } from '@/engine/types';
 import { canLoanOut, loanOut, renewContract } from '@/engine/transferMarket';
 import { isOnLoan } from '@/engine/teamManagement';
@@ -116,7 +117,7 @@ export default function PlayerModal({
       <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
         <div className="fm-matchx-modal__head">
           <span className="fm-matchx-modal__title">Player</span>
-          <button className="fm-matchx-modal__close" onClick={onClose} aria-label="Close">✕</button>
+          <button className="fm-matchx-modal__close" onClick={onClose} aria-label="Close"><Icon name="cross" size={15} /></button>
         </div>
 
         <div className="pm-header">
@@ -311,8 +312,8 @@ export default function PlayerModal({
           </button>
         </div>
         {p.contractYears <= 1 && (
-          <span className="fm-trait" style={{ display: 'inline-block', marginTop: 8 }}>
-            ⚠ Contract expiring
+          <span className="fm-trait" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
+            <Icon name="warning" size={12} /> Contract expiring
           </span>
         )}
       </div>

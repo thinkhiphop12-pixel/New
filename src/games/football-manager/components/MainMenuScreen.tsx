@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { Icon } from './Icon';
 
 import type { SaveMeta } from '@/lib/storage';
 import type { ManagerProfile } from '@/engine/types';
@@ -52,7 +53,7 @@ export default function MainMenuScreen({
 
       <div className="fm-menu-actions">
         <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={onCharacterCustomizer}>
-          🎨 Customize Manager
+          <Icon name="palette" size={15} /> Customize Manager
         </button>
       </div>
 

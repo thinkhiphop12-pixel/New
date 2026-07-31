@@ -15,6 +15,7 @@ import MatchHighlights from '../MatchHighlights';
 import { Crest } from '../Crest';
 import ManagerAvatar from '../ManagerAvatar';
 import { StatTile } from '../visuals';
+import { Icon } from '../Icon';
 import PitchCanvas from './PitchCanvas';
 import LineupScreen from './LineupScreen';
 import StatsOverlay from './StatsOverlay';
@@ -37,13 +38,13 @@ function formatMinute(min: number, stoppage1: number): string {
   return `90+${min - 90}'`;
 }
 
-function eventIcon(e: TickMatchEvent): string {
-  if (e.type === 'goal') return '⚽';
-  if (e.type === 'card') return e.card === 'red' ? '🟥' : '🟨';
-  if (e.type === 'injury') return '🚑';
-  if (e.kind === 'sub') return '🔁';
-  if (e.kind === 'corner') return '🚩';
-  return '▶';
+function eventIcon(e: TickMatchEvent) {
+  if (e.type === 'goal') return <Icon name="goal" size={14} />;
+  if (e.type === 'card') return <Icon name="card" size={14} style={{ color: e.card === 'red' ? 'var(--red)' : 'var(--gold)' }} />;
+  if (e.type === 'injury') return <Icon name="injury" size={14} />;
+  if (e.kind === 'sub') return <Icon name="sub" size={14} />;
+  if (e.kind === 'corner') return <Icon name="corner" size={14} />;
+  return <Icon name="play" size={14} />;
 }
 
 export default function MatchScreen({
@@ -369,15 +370,15 @@ export default function MatchScreen({
         {teamTalksOn && !kickedOff && (
           <button className="fm-fmbar__icon" onClick={() => setShowTeamTalk('pre')} disabled={preTalkDone}
             aria-label="Team talk" title={preTalkDone ? 'Team talk given' : 'Team talk'}>
-            🗣️
+            <Icon name="mic" size={16} />
           </button>
         )}
         <button className="fm-fmbar__icon" onClick={() => { setSubOut(null); setShowSubs(true); }}
           disabled={finished || subsUsed >= MAX_SUBS} aria-label="Substitutions" title={`Subs ${subsUsed}/${MAX_SUBS}`}>
-          ⇅
+          <Icon name="sub" size={16} />
         </button>
         <button className="fm-fmbar__icon" onClick={() => setShowTactics(true)} disabled={finished} aria-label="Tactics" title="Tactics">
-          ⚙
+          <Icon name="settings" size={16} />
         </button>
         <button
           className="fm-fmbar__play"
@@ -388,7 +389,7 @@ export default function MatchScreen({
           disabled={finished}
           aria-label={!kickedOff || paused ? 'Play' : 'Pause'}
         >
-          {!kickedOff || paused ? '▶' : '❚❚'}
+          {!kickedOff || paused ? <Icon name="play" size={15} /> : <Icon name="pause" size={15} />}
         </button>
       </div>
 
@@ -429,14 +430,14 @@ export default function MatchScreen({
       {/* Commentary ticker */}
       <div className="fm-fmticker">
         <button className="fm-fmticker__btn" onClick={() => setShowTactics(true)} disabled={finished} aria-label="Tactics">
-          ⚙
+          <Icon name="settings" size={15} />
         </button>
         <button className="fm-fmticker__text" onClick={() => setShowEvents(true)}>
           {commentary}
         </button>
         <button className="fm-fmticker__btn" onClick={() => { setSubOut(null); setShowSubs(true); }}
           disabled={finished || subsUsed >= MAX_SUBS} aria-label="Substitutions">
-          ⇅
+          <Icon name="sub" size={15} />
         </button>
       </div>
 
@@ -446,7 +447,7 @@ export default function MatchScreen({
           <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
             <div className="fm-matchx-modal__head">
               <span className="fm-matchx-modal__title">Match Menu</span>
-              <button className="fm-matchx-modal__close" onClick={() => setShowMenu(false)} aria-label="Close">✕</button>
+              <button className="fm-matchx-modal__close" onClick={() => setShowMenu(false)} aria-label="Close"><Icon name="cross" size={15} /></button>
             </div>
             <div className="fm-menu-list">
               <button className="fm-btn fm-btn--secondary" onClick={() => { setShowMenu(false); cycleMentality(); }} disabled={finished}>
@@ -475,7 +476,7 @@ export default function MatchScreen({
           <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
             <div className="fm-matchx-modal__head">
               <span className="fm-matchx-modal__title">Match Events</span>
-              <button className="fm-matchx-modal__close" onClick={() => setShowEvents(false)} aria-label="Close">✕</button>
+              <button className="fm-matchx-modal__close" onClick={() => setShowEvents(false)} aria-label="Close"><Icon name="cross" size={15} /></button>
             </div>
             <div className="fm-matchx__feed" ref={feedRef}>
               {shownEvents.length === 0 && <p className="fm-hint">The teams are out…</p>}
@@ -505,7 +506,7 @@ export default function MatchScreen({
             <p className="fm-hint">Adjust your tactics or make substitutions before the restart.</p>
             <div className="fm-actions">
               {teamTalksOn && (
-                <button className="fm-btn fm-btn--secondary" onClick={() => setShowTeamTalk('ht')}>🗣️ Team Talk</button>
+                <button className="fm-btn fm-btn--secondary" onClick={() => setShowTeamTalk('ht')}><Icon name="mic" size={14} /> Team Talk</button>
               )}
               <button className="fm-btn fm-btn--secondary" onClick={() => { setShowHt(false); setShowTactics(true); }}>Tactics</button>
               <button className="fm-btn fm-btn--secondary" onClick={() => { setShowHt(false); setShowSubs(true); }} disabled={subsUsed >= MAX_SUBS}>
@@ -523,7 +524,7 @@ export default function MatchScreen({
           <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
             <div className="fm-matchx-modal__head">
               <span className="fm-matchx-modal__title">Substitution ({subsUsed}/{MAX_SUBS})</span>
-              <button className="fm-matchx-modal__close" onClick={() => setShowSubs(false)} aria-label="Close">✕</button>
+              <button className="fm-matchx-modal__close" onClick={() => setShowSubs(false)} aria-label="Close"><Icon name="cross" size={15} /></button>
             </div>
             <div className="fm-sub-grid">
               <div>
@@ -599,10 +600,10 @@ export default function MatchScreen({
               </span>
             </div>
             <div className="fm-attr-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 10 }}>
-              <StatTile icon="⚽" value={score.home + score.away} label="Goals" />
-              <StatTile icon="📊" value={(timeline.report.homeXG + timeline.report.awayXG).toFixed(1)} label="xG" />
-              <StatTile icon="🟨" value={timeline.events.filter((e) => e.type === 'card').length} label="Cards" />
-              <StatTile icon="🚑" value={timeline.events.filter((e) => e.type === 'injury').length} label="Injuries" />
+              <StatTile icon={<Icon name="goal" />} value={score.home + score.away} label="Goals" />
+              <StatTile icon={<Icon name="stat" />} value={(timeline.report.homeXG + timeline.report.awayXG).toFixed(1)} label="xG" />
+              <StatTile icon={<Icon name="card" style={{ color: 'var(--gold)' }} />} value={timeline.events.filter((e) => e.type === 'card').length} label="Cards" />
+              <StatTile icon={<Icon name="injury" />} value={timeline.events.filter((e) => e.type === 'injury').length} label="Injuries" />
             </div>
             <MatchHighlights events={computeHighlights(timeline.report)} />
             <div className="fm-actions">

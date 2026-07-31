@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { Icon } from './Icon';
 import type { AvatarConfig, ManagerProfile } from '@/engine/types';
 import ManagerAvatar, { shadeColor } from './ManagerAvatar';
 
@@ -181,10 +182,10 @@ export default function CharacterCustomizerScreen({
           </div>
           <div className="preview-actions">
             <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={handleRandomize}>
-              🎲 Randomize
+              <Icon name="dice" size={15} /> Randomize
             </button>
             <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={handleDownload}>
-              ⬇ Download PNG
+              <Icon name="download" size={15} /> Download PNG
             </button>
           </div>
         </div>

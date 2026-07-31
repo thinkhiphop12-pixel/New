@@ -9,6 +9,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Icon } from './Icon';
 
 interface EmailOptinModalProps {
   onClose: () => void;
@@ -77,7 +78,7 @@ export function EmailOptinModal({
         {submitted ? (
           // Success state
           <div className="text-center">
-            <div className="text-4xl mb-4">✨</div>
+            
             <h3 className="text-xl font-bold mb-2">Thanks for subscribing!</h3>
             <p className="text-gray-600">
               Check your inbox for the next {gameTitle} update.
@@ -90,7 +91,7 @@ export function EmailOptinModal({
               onClick={onClose}
               className="float-right text-gray-500 hover:text-gray-700 text-2xl leading-none"
             >
-              ✕
+              <Icon name="cross" size={22} />
             </button>
 
             <h3 className="text-2xl font-bold mb-2">
@@ -100,7 +101,7 @@ export function EmailOptinModal({
             {streak && (
               <div className="bg-blue-50 border-l-4 border-blue-500 p-3 mb-4 rounded">
                 <p className="text-sm text-blue-800">
-                  🔥 Amazing! You have a <strong>{streak}-day streak</strong>
+                  <Icon name="flame" size={14} style={{ verticalAlign: -2 }} /> Amazing! You have a <strong>{streak}-day streak</strong>
                 </p>
               </div>
             )}

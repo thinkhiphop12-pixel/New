@@ -2,6 +2,7 @@
 
 import type { Club } from '@/engine/types';
 import type { SideStats } from '@/engine/tickEngine/types';
+import { Icon } from '../Icon';
 
 const REFEREES = [
   'Martin Atkinson', 'Mike Dean', 'Anthony Taylor', 'Michael Oliver', 'Craig Pawson',
@@ -169,10 +170,10 @@ export default function StatsOverlay({
             homeVal={stats.home.onTarget} awayVal={stats.away.onTarget} homeColor={homeColor} awayColor={awayColor} />
           <div className="fm-mstats__row fm-mstats__row--split">
             <span className="fm-mstats__val">{cards.home}</span>
-            <span className="fm-mstats__flag" title="Cards">🟨</span>
+            <span className="fm-mstats__flag" title="Cards"><Icon name="card" size={13} style={{ color: 'var(--gold)' }} /></span>
             <span className="fm-mstats__val">{cards.away}</span>
             <span className="fm-mstats__val">{corners.home}</span>
-            <span className="fm-mstats__flag" title="Corners">🚩</span>
+            <span className="fm-mstats__flag" title="Corners"><Icon name="corner" size={13} /></span>
             <span className="fm-mstats__val">{corners.away}</span>
           </div>
         </div>

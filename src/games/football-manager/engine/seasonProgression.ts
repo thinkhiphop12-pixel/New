@@ -704,7 +704,7 @@ function runKnockout(s: GameState, k: Knockout, prizes: number[], trophyLabel: s
         s.manager.trophies.push(trophy);
         s.manager.reputation = clamp(s.manager.reputation + 8, 0, 100);
         s.board.confidence = clamp(s.board.confidence + 15, 1, 99);
-        s.news.unshift(`🏆 ${s.clubs.find((c) => c.id === s.userClubId)!.name} WIN the ${k.name}!`);
+        s.news.unshift(`${s.clubs.find((c) => c.id === s.userClubId)!.name} WIN the ${k.name}!`);
         pushInbox(s, {
           category: 'match',
           title: `${trophy} won!`,
@@ -772,7 +772,7 @@ function runContinental(s: GameState, c: Continental, prizes: number[]): void {
         s.manager.trophies.push(trophy);
         s.manager.reputation = clamp(s.manager.reputation + 8, 0, 100);
         s.board.confidence = clamp(s.board.confidence + 15, 1, 99);
-        s.news.unshift(`🏆 ${s.clubs.find((c2) => c2.id === s.userClubId)!.name} WIN the ${c.name}!`);
+        s.news.unshift(`${s.clubs.find((c2) => c2.id === s.userClubId)!.name} WIN the ${c.name}!`);
         pushInbox(s, {
           category: 'match',
           title: `${trophy} won!`,
@@ -998,7 +998,7 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
     }
   }
   if (s.board.confidence < 30) {
-    s.news.unshift('⚠ The board is losing patience — results must improve.');
+    s.news.unshift('The board is losing patience — results must improve.');
     if (round % 4 === 0) {
       pushInbox(s, {
         category: 'board',

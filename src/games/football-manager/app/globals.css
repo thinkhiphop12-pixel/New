@@ -359,65 +359,140 @@ h1, h2, .fm-label, .fm-h1, .fm-h2, .fm-card__title {
 .fm-stat__value--gold { color: var(--gold); }
 .fm-stat__value--red { color: var(--red); }
 
-/* ── Navigation tabs ──
-   A horizontal scroller with a fade mask so overflow always reads as
-   scrollable rather than clipped. Below ~560px (portrait phones) it
-   switches to icon-only chips so all 9 destinations fit without a
-   tab being chopped in half at the viewport edge. */
-.fm-tabs {
-  display: flex; gap: 2px; overflow-x: auto;
+/* ── Navigation: Touchline (rail, ≥900px) / Pocket (bottom dock, <900px) ──
+   Replaces the old horizontally-scrolling `.fm-tabs` pill strip. Structure
+   borrowed from the BALLKNW hub mockups (docs/ballknw-hub-mockups.html):
+   a persistent icon rail at desktop widths, collapsing to a thumb-reach
+   dock on phones. `.fm-hub-shell` is the flex row that holds the rail
+   beside the tab content; below 900px it stacks to a single column and
+   `.fm-rail` restyles itself into the fixed bottom dock. */
+.fm-hub-shell { display: flex; align-items: flex-start; gap: 12px; width: 100%; }
+.fm-hub-shell__main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+
+.fm-rail {
+  flex: 0 0 auto; display: flex; flex-direction: column; align-items: stretch; gap: 3px;
   background: var(--panel); border: 1px solid var(--border-soft);
-  border-radius: var(--r-lg); padding: 4px;
-  scrollbar-width: none;
-  scroll-snap-type: x proximity;
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 14px, #000 calc(100% - 14px), transparent);
-          mask-image: linear-gradient(to right, transparent, #000 14px, #000 calc(100% - 14px), transparent);
+  border-radius: var(--r-lg); padding: 6px; width: 64px;
+  position: sticky; top: 64px;
 }
-.fm-tabs::-webkit-scrollbar { display: none; }
-.fm-tab {
-  display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto;
+.fm-rail__item {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
   border: none; background: transparent; color: var(--muted);
-  font-weight: 700; font-size: 12px; padding: 8px 14px;
-  border-radius: var(--r-md); cursor: pointer; font-family: inherit;
-  white-space: nowrap; transition: all 0.15s; position: relative;
-  scroll-snap-align: start;
+  font-weight: 700; font-family: inherit; cursor: pointer;
+  border-radius: var(--r-md); padding: 9px 2px; position: relative;
+  transition: all 0.15s;
 }
-.fm-tab:hover { color: var(--text); background: var(--glass); }
-.fm-tab.active {
-  color: var(--text); background: var(--panel-2); box-shadow: var(--shadow-sm);
-  /* Chrome (gap 82): a brand-coloured underline on the active tab, subtle
-     enough not to compete with --gold zone/award colours used elsewhere. */
-  border-bottom: 2px solid var(--brand);
+.fm-rail__item:hover { color: var(--text); background: var(--glass); }
+.fm-rail__item.active {
+  color: var(--text); background: var(--brand-dim);
+  box-shadow: inset 0 0 0 1.5px var(--brand);
 }
-.fm-tab__icon { line-height: 1; }
-.fm-tab__label { line-height: 1; }
-.fm-tab__badge {
+.fm-rail__icon { width: 19px; height: 19px; }
+.fm-rail__label { font-size: 8.5px; line-height: 1.1; letter-spacing: 0.2px; }
+.fm-rail__badge {
   background: var(--red); color: #fff; border-radius: 999px;
-  font-size: 9px; padding: 1px 5px; margin-left: 4px; font-weight: 900;
-  vertical-align: top; position: absolute; top: 4px; right: 4px;
+  font-size: 9px; padding: 1px 5px; font-weight: 900;
+  position: absolute; top: 2px; right: 2px;
 }
 
-@media (max-width: 560px) {
-  .fm-tabs { gap: 1px; padding: 3px; }
-  .fm-tab {
-    flex: 1 1 0; min-width: 0; justify-content: center;
-    padding: 9px 2px; scroll-snap-align: center;
+/* Pocket: below 900px, HubScreen.tsx renders a second `.fm-rail--pocket`
+   (five primary destinations + More) instead of the full desktop rail —
+   CSS just swaps which one is visible at the breakpoint. */
+.fm-rail--pocket { display: none; }
+@media (max-width: 899px) {
+  .fm-hub-shell { flex-direction: column; }
+  .fm-rail:not(.fm-rail--pocket) { display: none; }
+  .fm-rail--pocket {
+    display: flex !important;
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 45;
+    flex-direction: row; width: auto; border-radius: 0;
+    border: none; border-top: 1px solid var(--border-soft);
+    padding: 4px calc(env(safe-area-inset-left, 0px) + 4px) calc(env(safe-area-inset-bottom, 0px) + 4px) calc(env(safe-area-inset-right, 0px) + 4px);
+    background: rgba(5,5,5,0.92); backdrop-filter: saturate(160%) blur(14px);
   }
-  .fm-tab__icon { font-size: 16px; }
-  .fm-tab__label {
-    /* Kept in the DOM (and in the accessible name via aria-label/title on
-       the button) but visually hidden so the strip stays icon-only. */
-    display: none;
-  }
-  .fm-tab.active {
-    /* Chrome (gap 82) — the main nav's active state doubles as this
-       mobile-first layout's "sidebar", so it's brand-themed like the
-       reference's sidebar active state. */
-    background: var(--brand-dim);
-    box-shadow: inset 0 0 0 1.5px var(--brand);
-  }
-  .fm-tab__badge { top: 3px; right: 3px; }
+  .fm-rail--pocket .fm-rail__item { flex: 1 1 0; }
+  /* The dock sits fixed at the bottom, so reserve room for it under the
+     content instead of letting it cover the last card. */
+  .fm-hub-shell__main { padding-bottom: 62px; }
 }
+
+/* "More" overflow sheet (Pocket only — desktop rail shows every tab
+   directly and never renders this). Simple anchored list, not a full-screen
+   modal, so it never competes with `.fm-matchx`'s overlay stack. */
+.fm-rail__more {
+  display: none;
+}
+@media (max-width: 899px) {
+  .fm-rail__more {
+    display: flex; flex-direction: column; gap: 2px;
+    position: fixed; left: 8px; right: 8px; bottom: 62px; z-index: 46;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--r-lg); padding: 6px; box-shadow: var(--shadow-lg);
+    max-height: 55vh; overflow-y: auto;
+  }
+}
+.fm-rail__more-item {
+  display: flex; align-items: center; gap: 8px;
+  border: none; background: transparent; color: var(--text-2);
+  font-weight: 700; font-size: 13px; font-family: inherit; cursor: pointer;
+  padding: 10px 12px; border-radius: var(--r-md); text-align: left;
+}
+.fm-rail__more-item:hover, .fm-rail__more-item.active { background: var(--glass); color: var(--text); }
+.fm-rail__badge--inline { position: static; margin-left: auto; }
+
+/* ── Persistent action dock (date pod + Play Week / Fix lineup CTA) ──
+   Rendered once in FootballManagerGame.tsx, hub view only — never
+   position:fixed stacked under `.fm-matchx` (z-index 60), since that
+   screen owns its own bottom control bar (`.fm-fmticker`). */
+.fm-actiondock {
+  display: flex; align-items: center; gap: 10px;
+  max-width: 740px; margin: 8px auto 0; padding: 10px 14px;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-md);
+}
+.fm-actiondock__date { display: flex; flex-direction: column; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.fm-actiondock__date b { font-size: 13px; font-weight: 900; }
+.fm-actiondock__date span { font-size: 10.5px; color: var(--muted); }
+.fm-actiondock__spacer { flex: 1; }
+.fm-actiondock__cta {
+  border: none; border-radius: var(--r-full); padding: 10px 18px;
+  font-weight: 800; font-size: 13px; cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  background: var(--cta-gradient); color: #02100a;
+}
+.fm-actiondock__cta:disabled { opacity: 0.4; cursor: not-allowed; }
+/* Warning state — something needs fixing before the next match can be
+   played. A fixed semantic colour (--gold), not the club --brand, since
+   this is status, not chrome. */
+.fm-actiondock__cta--warn { background: var(--gold-gradient); color: #1a0f00; }
+@media (max-width: 899px) {
+  .fm-actiondock { position: fixed; left: 8px; right: 8px; bottom: 58px; z-index: 44; margin: 0; }
+}
+
+/* ── Hub module grid (Touchline) ──
+   The hero next-match panel plus a responsive card grid, replacing the
+   old single-column card stack in PortalHub.tsx. */
+.fm-hub-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 640px) { .fm-hub-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 900px) { .fm-hub-grid { grid-template-columns: repeat(3, 1fr); } }
+.fm-hub-grid__hero { grid-column: 1 / -1; }
+.fm-mod { background: var(--panel); border: 1px solid var(--border-soft); border-radius: var(--r-lg); padding: 12px 14px; }
+.fm-mod__head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.fm-mod__title {
+  font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--green); margin: 0;
+}
+.fm-mod--gold .fm-mod__title { color: var(--gold); }
+
+/* ── Bottom ad slot (site-wide ads.js fills `.ad-slot` at runtime) ──
+   In-flow, never fixed, so it can never sit on top of `.fm-matchx`'s own
+   controls — this is why FootballManagerGame.tsx also hides it entirely
+   during the match view rather than trying to reposition it. The extra
+   bottom margin on Pocket widths clears the fixed rail dock (~56px) plus
+   the fixed action dock (~60px) stacked above it, so the ad is never
+   rendered unreachable behind them. */
+.fm-bottom-ad { max-width: 740px; margin: 16px auto 24px; }
+@media (max-width: 899px) { .fm-bottom-ad { margin-bottom: 132px; } }
 
 /* ── News ── */
 .fm-news { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
@@ -851,7 +926,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   transition: border-color var(--transition, 0.16s ease), background var(--transition, 0.16s ease);
 }
 .fm-scenario-card:hover { border-color: var(--border-bright); background: var(--panel-2); }
-.fm-scenario-card__icon { font-size: 22px; }
+.fm-scenario-card__icon { display: flex; color: var(--gold); }
 .fm-scenario-card__name { font-weight: 700; font-size: 14px; }
 .fm-scenario-card__tagline { font-size: 12px; color: var(--muted); line-height: 1.4; }
 .fm-scenario-pick__actions { display: flex; justify-content: center; gap: 10px; }
@@ -1181,7 +1256,8 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   background: var(--panel-2); border: 1px solid var(--border-soft);
   border-radius: var(--r-md); padding: 10px 6px;
 }
-.fm-stat-tile__icon { font-size: 16px; }
+.fm-stat-tile__icon { display: flex; color: var(--muted); }
+.fm-stat-tile__icon svg { width: 16px; height: 16px; }
 .fm-stat-tile__val { font-size: 17px; font-weight: 900; }
 .fm-stat-tile__lbl { font-size: 10px; color: var(--muted); }
 .fm-odds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-bottom: 14px; }
@@ -1339,7 +1415,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-matchx__event.card { color: var(--red); }
 .fm-matchx__event.asst { color: var(--blue); border-left: 2px solid var(--blue); padding-left: 6px; }
 .fm-matchx__event-min { color: var(--muted); font-weight: 700; font-size: 10px; flex: 0 0 24px; }
-.fm-matchx__event-icon { flex: 0 0 auto; }
+.fm-matchx__event-icon { display: inline-flex; align-items: center; flex: 0 0 auto; }
 .fm-matchx__asst-chip {
   flex: 0 0 auto; font-size: 9px; font-weight: 900; letter-spacing: 1px;
   color: var(--blue); background: var(--blue-soft); border-radius: 4px; padding: 1px 4px;
@@ -1503,7 +1579,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-inbox__row:hover { border-color: var(--border-bright); background: var(--panel-2); }
 .fm-inbox__row.unread { border-color: var(--gold-dim, rgba(201,162,39,0.4)); background: var(--gold-dim); }
-.fm-inbox__row-icon { font-size: 18px; flex: 0 0 auto; }
+.fm-inbox__row-icon { display: inline-flex; align-items: center; color: var(--muted); flex: 0 0 auto; }
 .fm-inbox__row-main { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .fm-inbox__row-title { font-weight: 700; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fm-inbox__row-meta { font-size: 11px; color: var(--muted); }
@@ -1555,6 +1631,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-newscard__row { display: flex; justify-content: space-between; font-size: 11px; border-top: 1px solid rgba(58,39,5,0.18); padding-top: 3px; }
 .fm-newscard__row span { opacity: 0.75; }
 .fm-newscard__foot { display: flex; gap: 10px; font-size: 12px; font-weight: 800; border-top: 1px solid rgba(58,39,5,0.25); padding-top: 8px; width: 100%; justify-content: center; }
+.fm-newscard__star, .fm-newscard__stat { display: inline-flex; align-items: center; gap: 3px; }
 
 @media (max-width: 640px) {
   .fm-inbox__article-body { flex-direction: column; }

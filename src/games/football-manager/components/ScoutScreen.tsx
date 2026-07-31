@@ -9,6 +9,7 @@ import {
 } from '@/engine/facilities';
 import { formatMoney } from '@/engine/utils';
 import { StatTile } from './visuals';
+import { Icon } from './Icon';
 import PlayerModal from './PlayerModal';
 
 const POSITIONS: (Position | 'ALL')[] = ['ALL', 'GK', 'DEF', 'MID', 'FWD'];
@@ -91,9 +92,9 @@ export default function ScoutScreen({
   return (
     <>
       <div className="fm-attr-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-        <StatTile icon="🔭" value={totalLeads} label="Leads available this week" />
-        <StatTile icon="⚠️" value={needAttention} label="Position groups need attention" />
-        <StatTile icon="🧑‍💼" value={`Lvl ${scoutLevel}`} label="Chief scout" />
+        <StatTile icon={<Icon name="binoculars" />} value={totalLeads} label="Leads available this week" />
+        <StatTile icon={<Icon name="warning" />} value={needAttention} label="Position groups need attention" />
+        <StatTile icon={<Icon name="staff" />} value={`Lvl ${scoutLevel}`} label="Chief scout" />
       </div>
 
       {error && <p className="fm-error-text">{error}</p>}
