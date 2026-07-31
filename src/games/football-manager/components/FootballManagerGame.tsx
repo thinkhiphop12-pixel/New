@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { GameData, GameState, MatchReport, ScenarioId, SeasonSummary, GameSettings, ManagerProfile } from '@/engine/types';
 import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/engine/seasonProgression';
+import { isLineupValid } from '@/engine/teamManagement';
+import { SEASON_ROUNDS } from '@/engine/gameRules';
 import { simulateMatch } from '@/engine/matchSimulation';
 import { applyScenario, scenarioNeedsPreseasonFastForward } from '@/engine/scenarios';
 import { simulateTickMatch } from '@/engine/tickEngine/sim';
@@ -358,12 +360,51 @@ export default function FootballManagerGame() {
             onRetire={handleAbandon}
           />
         ) : gs ? (
-          <HubScreen state={gs} onChange={apply} onPlayMatch={handlePlayMatch} onAbandon={handleAbandon} />
+          <HubScreen state={gs} onChange={apply} onAbandon={handleAbandon} />
         ) : (
           <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} onCharacterCustomizer={handleCharacterCustomizerOpen} />
         )}
         </div>
       </main>
+
+      {/* Bottom ad slot: filled by /shared/ads.js (loaded in layout.tsx, static
+          export only) the same way every other BALLKNW page's `.ad-slot`
+          divs are. In flow, hidden entirely during a live match — never
+          repositioned to "fit" — so it can never overlap `.fm-matchx`'s own
+          controls or intercept a tap meant for the pitch/menus. */}
+      {view !== 'match' && (
+        <div className="fm-bottom-ad ad-slot" id="gaffaBottomAd" aria-label="Advertisement" />
+      )}
+
+      {/* Persistent action dock (Touchline/Pocket layout): the in-game date
+          and the Play Week / Fix-lineup CTA, reachable from every hub tab —
+          not just PortalHub. Hub view only, and always in-flow (never
+          position:fixed globally) so it can never land on top of
+          `.fm-matchx`'s own bottom control bar during a live match. */}
+      {view === 'hub' && gs && (() => {
+        const fixture = nextUserFixture(gs);
+        const lineupOk = isLineupValid(gs, gs.userClubId, gs.lineup);
+        return (
+          <div className="fm-actiondock">
+            <div className="fm-actiondock__date">
+              <b>Week {Math.min(gs.week, SEASON_ROUNDS)}/{SEASON_ROUNDS}</b>
+              <span>{gs.seasonYear}/{(gs.seasonYear + 1) % 100} season</span>
+            </div>
+            <span className="fm-actiondock__spacer" />
+            {fixture ? (
+              <button
+                className={`fm-actiondock__cta${lineupOk ? '' : ' fm-actiondock__cta--warn'}`}
+                onClick={handlePlayMatch}
+                disabled={!lineupOk}
+              >
+                {lineupOk ? `▶ Play Week ${gs.week}` : '⚠ Fix your lineup'}
+              </button>
+            ) : (
+              <span className="fm-hint" style={{ margin: 0 }}>No fixture this week</span>
+            )}
+          </div>
+        );
+      })()}
 
       {showSettings && settings && (
         <SettingsPanel

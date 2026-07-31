@@ -1,62 +1,35 @@
 /* ==============================================================
-   Ads engine — legit monetization only. Google AdSense removed entirely
-   (deliberately, not just disabled) — Amazon Associates and eBay Partner
-   Network affiliate cards are the sole ad-slot fill now.
-   - Amazon/eBay affiliate card fills every ad slot, so a visitor never
-     sees an empty box. Earns via the Associates tag / ePN campaign ID,
-     needs no ad-network approval.
-   - Lazy load on real viewport visibility. No auto-scroll, no idle
-     impression manipulation, no cookie stuffing — those violate the
-     Associates/ePN program terms and get accounts banned.
+   Ads engine — network-served units only. The prior Amazon Associates /
+   eBay Partner Network affiliate-card fallback has been retired in favour
+   of two real ad-network placements (native banner + 468x60 banner).
+   - Every ad-slot fill happens inside a sandboxed <iframe>, never injected
+     directly into the page. These vendor scripts are known to call
+     document.write(); calling that from a script appended to a live SPA
+     document (after DOMContentLoaded) implicitly re-opens and wipes the
+     ENTIRE page. Isolating it inside an iframe's own document means the
+     worst case is a blank ad slot, never a blown-away game/page.
+   - Lazy load on real viewport visibility only. No auto-scroll, no idle
+     impression manipulation.
    All loading stays consent-gated (getConsent() === 'all').
    ============================================================== */
 
 // ========== CONFIGURATION ==========
 const CONFIG = {
-  AMAZON_TAG: 'lloydevans01-21',
-  EBAY_CAMPID: '5338345975',   // eBay Partner Network campaign ID
-  AFFILIATE_ROTATE: true,       // alternate Amazon/eBay so both programs earn
-  PRELOAD_OFFSET: 200,   // px of preload margin for lazy loading (legit)
+  NATIVE_SRC: 'https://pl29902468.effectivecpmnetwork.com/14db44511efd6640ca8f50a10426428d/invoke.js',
+  NATIVE_CONTAINER_ID: 'container-14db44511efd6640ca8f50a10426428d',
+  BANNER_KEY: 'c02cc2d42ff972393dd66924fd8b9ebe',
+  BANNER_SRC: 'https://www.highperformanceformat.com/c02cc2d42ff972393dd66924fd8b9ebe/invoke.js',
+  BANNER_W: 468,
+  BANNER_H: 60,
+  PRELOAD_OFFSET: 200,   // px of preload margin for lazy loading
   ADBLOCK_NOTICE: true,  // polite, dismissible whitelist prompt only
 };
 
-// Affiliate search links built from each program's tag/campaign ID.
-// These are honest, disclosed affiliate links (rel=sponsored) — the cookie
-// is only set when the user actually clicks through, exactly as the
-// Associates/ePN programs intend. No hidden iframes, no pixel tracking,
-// no auto-redirects — that would be cookie stuffing and gets accounts banned.
-//
-// Category catalogue: a slot can opt into one via `data-ad-category` (e.g.
-// <div class="ad-slot" data-ad-category="boots">). Untagged slots fall back
-// to a category picked deterministically from the slot's id, so a page with
-// several untagged slots still shows variety instead of the same card N
-// times — real relevance, not a static "football shirts" line everywhere.
-const AD_CATEGORIES = {
-  kits:     { query: 'football shirts',       kicker: 'Advertisement', title: 'Shirts & replica kits',    sub: () => `Shop the latest club and country shirts.` },
-  boots:    { query: 'football boots',        kicker: 'Advertisement', title: 'Boots & footwear',         sub: () => `Compare football boots for every position and surface.` },
-  training: { query: 'football training gear', kicker: 'Advertisement', title: 'Training gear',           sub: () => `Cones, bibs, rebounders and more.` },
-  books:    { query: 'football tactics book',  kicker: 'Advertisement', title: 'Tactics & strategy books', sub: () => `Level up your football knowledge.` },
-  tickets:  { query: 'football match tickets', kicker: 'Advertisement', title: 'Match tickets',            sub: () => `Find tickets for upcoming fixtures.` },
-};
-const AD_CATEGORY_KEYS = Object.keys(AD_CATEGORIES);
-
-function affiliateUrl(store, category) {
-  const q = encodeURIComponent(category.query);
-  return store === 'eBay'
-    ? `https://www.ebay.co.uk/sch/i.html?_nkw=${q}&campid=${CONFIG.EBAY_CAMPID}&customid=ballknw`
-    : `https://www.amazon.co.uk/s?k=${q}&tag=${CONFIG.AMAZON_TAG}`;
-}
-
-// Deterministic pick so a given slot doesn't flicker between categories on
-// re-renders (same technique as the existing Amazon/eBay store rotation).
-function pickCategory(slot) {
-  const explicit = slot.dataset.adCategory;
-  if (explicit && AD_CATEGORIES[explicit]) return AD_CATEGORIES[explicit];
-  const key = slot.dataset.adSlot || slot.id || 'x';
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-  return AD_CATEGORIES[AD_CATEGORY_KEYS[hash % AD_CATEGORY_KEYS.length]];
-}
+// The banner tag sets `atOptions` as a page-global before loading its
+// script — a second 468x60 unit on the same page would clobber the first
+// one's config. Cap it at one per page; every other slot gets the native
+// (responsive) unit instead, which has no such global-state conflict.
+let bannerSlotClaimed = false;
 
 // ========== GLOBALS / SHIMS ==========
 // consent.js normally defines these; shim them so this file is safe to load
@@ -80,22 +53,10 @@ function injectBaseAdStyles() {
   style.textContent = `
     .ad-slot{margin:20px auto;min-height:90px;max-width:728px;display:flex;align-items:center;
       justify-content:center;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);
-      border-radius:16px;position:relative;overflow:hidden;}
-    .ad-slot-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#93a099;}
+      border-radius:16px;position:relative;overflow:hidden;padding:8px;}
+    .ad-slot-label{opacity:0.5;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#93a099;}
     .ad-slot.is-filled .ad-slot-label{display:none;}
-    .ad-slot .ad-load-error{color:#666;font-size:12px;padding:10px;}
-    /* Amazon affiliate fallback card (fills any slot no ad network claimed) */
-    .ad-slot.is-affiliate{background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.08);padding:16px 18px;text-align:left;}
-    .aff-card{display:flex;align-items:center;gap:14px;width:100%;justify-content:space-between;flex-wrap:wrap;flex-direction:row;}
-    .aff-card-txt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;}
-    .aff-card-kicker{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#93a099;font-weight:600;}
-    .aff-card-title{font-size:14px;font-weight:700;color:#e8e8ea;font-family:Inter,system-ui,sans-serif;line-height:1.2;margin:2px 0;}
-    .aff-card-sub{font-size:12.5px;color:#93a099;line-height:1.4;margin:4px 0 0;}
-    .aff-card-cta{flex-shrink:0;background:none;color:#2ab248;
-      font-weight:700;font-size:13px;text-decoration:none;border-radius:0;padding:8px 4px;white-space:nowrap;
-      font-family:Inter,system-ui,sans-serif;display:inline-block;margin-left:12px;}
-    .aff-card-cta:hover{text-decoration:underline}
+    .ad-slot iframe{display:block;width:100%;max-width:100%;border:0;background:transparent;}
     .soft-banner{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:600;
       max-width:min(92vw,480px);background:#10131a;border:1px solid rgba(255,255,255,.14);
       border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;
@@ -104,40 +65,52 @@ function injectBaseAdStyles() {
   document.head.appendChild(style);
 }
 
-// ========== AMAZON AFFILIATE FALLBACK ==========
-// Turns any ad slot no network filled into a tasteful, on-brand merch card.
-// Needs no ad-network approval — earns via the Amazon Associates tag — so no
-// slot is ever left as an empty box. Real ads win when they serve; this is
-// only a backfill. This is an honest, disclosed affiliate link (rel=sponsored)
-// — NOT cookie stuffing: the cookie is only set by Amazon when the user
-// actually clicks through, exactly as the Associates program intends.
-function fillSlotWithAffiliate(slot) {
+// ========== NETWORK AD FILL ==========
+// Builds a tiny standalone HTML document for the iframe's `srcdoc` so the
+// vendor's <script> (and any document.write it does) runs against that
+// document, not ours.
+function nativeAdDoc() {
+  return `<!doctype html><html><head><meta charset="utf-8">` +
+    `<meta name="viewport" content="width=device-width,initial-scale=1">` +
+    `<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;}</style></head>` +
+    `<body><div id="${CONFIG.NATIVE_CONTAINER_ID}"></div>` +
+    `<script async data-cfasync="false" src="${CONFIG.NATIVE_SRC}"><\/script></body></html>`;
+}
+function bannerAdDoc() {
+  return `<!doctype html><html><head><meta charset="utf-8">` +
+    `<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;}</style></head>` +
+    `<body><script>atOptions={key:'${CONFIG.BANNER_KEY}',format:'iframe',height:${CONFIG.BANNER_H},width:${CONFIG.BANNER_W},params:{}};<\/script>` +
+    `<script src="${CONFIG.BANNER_SRC}"><\/script></body></html>`;
+}
+
+// Fills a slot with a sandboxed iframe carrying one of the two network
+// units. Never touches the host document beyond the iframe element itself
+// — no matter what the vendor script does inside, it can't remove or
+// replace anything outside its own frame, which is what keeps this safe to
+// drop into the middle of a running game (Gaffa) as well as a static page.
+function fillSlotWithNetwork(slot) {
   if (adsRemoved() || getConsent() !== 'all') return false;
-  if (!CONFIG.AMAZON_TAG && !CONFIG.EBAY_CAMPID) return false;
-  if (slot.classList.contains('is-affiliate')) { slot.classList.add('is-filled'); return true; }
 
-  // Rotate between Amazon and eBay so both programs earn commissions.
-  // Alternation is deterministic per-slot so a given slot doesn't flicker
-  // between stores on re-renders.
-  const useEbay = CONFIG.AFFILIATE_ROTATE && CONFIG.EBAY_CAMPID &&
-    (slot.dataset.adSlot || slot.id || '').length % 2 === 1;
-  const store = useEbay ? 'eBay' : 'Amazon';
-  const category = pickCategory(slot);
-  const url = affiliateUrl(store, category);
+  const width = slot.getBoundingClientRect().width || slot.clientWidth || 0;
+  const useBanner = !bannerSlotClaimed && width >= CONFIG.BANNER_W + 24;
+  if (useBanner) bannerSlotClaimed = true;
 
-  slot.innerHTML = `
-    <div class="aff-card">
-      <div class="aff-card-txt">
-        <span class="aff-card-kicker">${category.kicker}</span>
-        <span class="aff-card-title">${category.title}</span>
-        <span class="aff-card-sub">${category.sub(store)}</span>
-      </div>
-      <a class="aff-card-cta" href="${url}" target="_blank" rel="sponsored noopener">Browse →</a>
-    </div>`;
-  slot.classList.add('is-filled', 'is-affiliate');
-  const cta = slot.querySelector('.aff-card-cta');
-  if (cta) cta.addEventListener('click', () => recordAdEvent(slot.id || 'affiliate', 'click'));
-  recordAdEvent(slot.id || 'affiliate', 'impression');
+  const frame = document.createElement('iframe');
+  frame.title = 'Advertisement';
+  frame.loading = 'lazy';
+  frame.setAttribute('scrolling', 'no');
+  // allow-same-origin is needed for the vendor scripts to set their own
+  // cookies/read their own storage; combined with allow-scripts this is the
+  // standard (if imperfect) sandboxing pattern for a trusted ad-network
+  // partner's own tag — not arbitrary third-party/user content.
+  frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox');
+  frame.style.height = (useBanner ? CONFIG.BANNER_H : 100) + 'px';
+  frame.srcdoc = useBanner ? bannerAdDoc() : nativeAdDoc();
+
+  slot.innerHTML = '';
+  slot.appendChild(frame);
+  slot.classList.add('is-filled', 'is-network');
+  recordAdEvent(slot.id || 'network', 'impression');
   return true;
 }
 
@@ -145,7 +118,7 @@ function fillSlotWithAffiliate(slot) {
 function renderAdSlot(slot) {
   if (!slot || slot.classList.contains('is-filled')) return;
   if (adsRemoved() || getConsent() !== 'all') return;
-  fillSlotWithAffiliate(slot);
+  fillSlotWithNetwork(slot);
 }
 
 // ========== LAZY LOAD (real viewport visibility only) ==========

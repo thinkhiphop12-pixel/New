@@ -36,18 +36,22 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'club', label: 'Club', icon: '🏢' },
 ];
 
+// Pocket (<900px): only these five sit in the fixed bottom dock. The rest
+// are reachable via "More", which opens the full rail as an overlay list —
+// same 14 destinations either way, just progressively disclosed on a phone.
+const POCKET_PRIMARY: Tab[] = ['hub', 'squad', 'tactics', 'table', 'transfers'];
+
 export default function HubScreen({
   state,
   onChange,
-  onPlayMatch,
   onAbandon,
 }: {
   state: GameState;
   onChange: (next: GameState) => void;
-  onPlayMatch: () => void;
   onAbandon: () => void;
 }) {
   const [tab, setTab] = useState<Tab>('hub');
+  const [moreOpen, setMoreOpen] = useState(false);
 
   // Same in-place-swap scroll issue as the top-level view switch: reset to
   // the top of the (new, usually shorter) screen whenever the hub sub-tab
@@ -56,49 +60,98 @@ export default function HubScreen({
     window.scrollTo(0, 0);
   }, [tab]);
 
-  return (
-    <div className="fm-screen">
-      <nav className="fm-tabs">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            className={`fm-tab${tab === t.id ? ' active' : ''}`}
-            onClick={() => setTab(t.id)}
-            aria-label={t.label}
-            title={t.label}
-          >
-            <span className="fm-tab__icon" aria-hidden="true">{t.icon}</span>
-            <span className="fm-tab__label">{t.label}</span>
-            {t.id === 'transfers' && (() => {
-              // Old flat offers plus new negotiation-based incoming bids —
-              // both still populate independently (see TransfersScreen).
-              const count = state.incomingOffers.length
-                + (state.negotiations ?? []).filter((n) => n.type === 'incoming' && n.awaiting === 'user').length;
-              return count > 0 ? <span className="fm-tab__badge">{count}</span> : null;
-            })()}
-            {t.id === 'inbox' && state.inbox.some((i) => !i.read) && (
-              <span className="fm-tab__badge">{state.inbox.filter((i) => !i.read).length}</span>
-            )}
-          </button>
-        ))}
-      </nav>
+  const badgeFor = (id: Tab): number => {
+    if (id === 'transfers') {
+      // Old flat offers plus new negotiation-based incoming bids — both
+      // still populate independently (see TransfersScreen).
+      return state.incomingOffers.length
+        + (state.negotiations ?? []).filter((n) => n.type === 'incoming' && n.awaiting === 'user').length;
+    }
+    if (id === 'inbox') return state.inbox.filter((i) => !i.read).length;
+    return 0;
+  };
 
-      {tab === 'hub' && (
-        <PortalHub state={state} onChange={onChange} onPlayMatch={onPlayMatch} onAbandon={onAbandon} />
+  const pick = (id: Tab) => {
+    setTab(id);
+    setMoreOpen(false);
+  };
+
+  const railItem = (t: (typeof TABS)[number]) => {
+    const count = badgeFor(t.id);
+    return (
+      <button
+        key={t.id}
+        className={`fm-rail__item${tab === t.id ? ' active' : ''}`}
+        onClick={() => pick(t.id)}
+        aria-label={t.label}
+        aria-current={tab === t.id ? 'page' : undefined}
+        title={t.label}
+      >
+        <span className="fm-rail__icon" aria-hidden="true">{t.icon}</span>
+        <span className="fm-rail__label">{t.label}</span>
+        {count > 0 && <span className="fm-rail__badge">{count}</span>}
+      </button>
+    );
+  };
+
+  const primaryTabs = TABS.filter((t) => POCKET_PRIMARY.includes(t.id));
+  const overflowTabs = TABS.filter((t) => !POCKET_PRIMARY.includes(t.id));
+
+  return (
+    <div className="fm-hub-shell">
+      {/* Touchline rail (≥900px): every destination, always visible.
+          Pocket dock (<900px, via CSS): the five primary destinations plus
+          a "More" button revealing the rest as an overlay list. */}
+      <nav className="fm-rail" aria-label="Game sections">
+        {TABS.map(railItem)}
+      </nav>
+      <nav className="fm-rail fm-rail--pocket" aria-label="Game sections">
+        {primaryTabs.map(railItem)}
+        <button
+          className={`fm-rail__item${moreOpen ? ' active' : ''}`}
+          onClick={() => setMoreOpen((v) => !v)}
+          aria-expanded={moreOpen}
+          aria-label="More sections"
+          title="More"
+        >
+          <span className="fm-rail__icon" aria-hidden="true">⋯</span>
+          <span className="fm-rail__label">More</span>
+        </button>
+      </nav>
+      {moreOpen && (
+        <div className="fm-rail__more" role="menu" aria-label="More sections">
+          {overflowTabs.map((t) => (
+            <button
+              key={t.id}
+              className={`fm-rail__more-item${tab === t.id ? ' active' : ''}`}
+              onClick={() => pick(t.id)}
+              role="menuitem"
+            >
+              <span aria-hidden="true">{t.icon}</span> {t.label}
+              {badgeFor(t.id) > 0 && <span className="fm-rail__badge fm-rail__badge--inline">{badgeFor(t.id)}</span>}
+            </button>
+          ))}
+        </div>
       )}
-      {tab === 'inbox' && <InboxScreen state={state} onChange={onChange} />}
-      {tab === 'squad' && <SquadScreen state={state} onChange={onChange} />}
-      {tab === 'tactics' && <TacticsScreen state={state} onChange={onChange} />}
-      {tab === 'transfers' && <TransfersScreen state={state} onChange={onChange} />}
-      {tab === 'scout' && <ScoutScreen state={state} onChange={onChange} />}
-      {tab === 'table' && <TableScreen state={state} />}
-      {tab === 'fixtures' && <FixturesScreen state={state} />}
-      {tab === 'cups' && <CupScreen state={state} />}
-      {tab === 'training' && <TrainingScreen state={state} onChange={onChange} />}
-      {tab === 'facilities' && <FacilitiesScreen state={state} onChange={onChange} />}
-      {tab === 'finances' && <FinancesScreen state={state} onChange={onChange} />}
-      {tab === 'european' && <EuropeanScreen state={state} />}
-      {tab === 'club' && <ClubScreen state={state} onChange={onChange} />}
+
+      <div className="fm-hub-shell__main">
+        {tab === 'hub' && (
+          <PortalHub state={state} onChange={onChange} onAbandon={onAbandon} />
+        )}
+        {tab === 'inbox' && <InboxScreen state={state} onChange={onChange} />}
+        {tab === 'squad' && <SquadScreen state={state} onChange={onChange} />}
+        {tab === 'tactics' && <TacticsScreen state={state} onChange={onChange} />}
+        {tab === 'transfers' && <TransfersScreen state={state} onChange={onChange} />}
+        {tab === 'scout' && <ScoutScreen state={state} onChange={onChange} />}
+        {tab === 'table' && <TableScreen state={state} />}
+        {tab === 'fixtures' && <FixturesScreen state={state} />}
+        {tab === 'cups' && <CupScreen state={state} />}
+        {tab === 'training' && <TrainingScreen state={state} onChange={onChange} />}
+        {tab === 'facilities' && <FacilitiesScreen state={state} onChange={onChange} />}
+        {tab === 'finances' && <FinancesScreen state={state} onChange={onChange} />}
+        {tab === 'european' && <EuropeanScreen state={state} />}
+        {tab === 'club' && <ClubScreen state={state} onChange={onChange} />}
+      </div>
     </div>
   );
 }

@@ -14,6 +14,8 @@ const TRAINING_TYPES: { id: TrainingFocus; label: string; icon: string; desc: st
   { id: 'defense', label: 'Defense', icon: '🛡️', desc: 'Focus on defensive stability (GK/DEF)' },
   { id: 'fitness', label: 'Fitness', icon: '💪', desc: 'Faster injury recovery, no growth focus' },
 ];
+// Prose moved to `title` tooltips only — the pills' icon + label plus the
+// intensity donut already carry the same information.
 
 /** Presentational emphasis breakdown for the currently-selected training focus.
  *  This is a pure function of `state.training`, not simulated per-week history
@@ -150,18 +152,17 @@ export default function TrainingScreen({
     }
   }, [squad, staffTab]);
 
+  const [squadView, setSquadView] = useState<'best' | 'worst'>('best');
   const bestPlayers = [...displayedSquad].sort((a, b) => b.rating - a.rating).slice(0, 5);
   const worstPlayers = [...displayedSquad].sort((a, b) => a.rating - b.rating).slice(0, 5);
+  const shownPlayers = squadView === 'best' ? bestPlayers : worstPlayers;
 
   return (
     <>
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>
-          This week's training focus
-        </p>
-        <p className="fm-club-line" style={{ marginBottom: 12 }}>
-          Current: <strong>{state.training[0].toUpperCase() + state.training.slice(1)}</strong>
-        </p>
+      <div className="fm-mod">
+        <div className="fm-mod__head">
+          <h2 className="fm-mod__title">Focus: {state.training}</h2>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
           {TRAINING_TYPES.map((t) => (
             <button
@@ -178,28 +179,20 @@ export default function TrainingScreen({
         </div>
       </div>
 
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>
-          8-week intensity breakdown
-        </p>
+      <div className="fm-mod">
+        <div className="fm-mod__head"><h2 className="fm-mod__title">8-week intensity</h2></div>
         <IntensityDonut focus={state.training} />
-        <p className="fm-hint" style={{ textAlign: 'left', marginTop: 8 }}>
-          Shows how this week's focus allocates emphasis across attack, defense, passing and
-          recovery over the next training block.
-        </p>
       </div>
 
       <div className="fm-attr-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <StatTile icon="👥" value={squad.length} label="Total squad" />
-        <StatTile icon="🏥" value={injuredCount} label="Injured players" />
-        <StatTile icon="⚠️" value={atRiskCount} label="At-risk (unhappy) players" />
+        <StatTile icon="🏥" value={injuredCount} label="Injured" />
+        <StatTile icon="⚠️" value={atRiskCount} label="Unhappy" />
       </div>
 
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>
-          Staff
-        </p>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 12, overflowX: 'auto' }}>
+      <div className="fm-mod">
+        <div className="fm-mod__head"><h2 className="fm-mod__title">Staff</h2></div>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10, overflowX: 'auto' }}>
           {(Object.keys(STAFF_TAB_LABEL) as StaffTab[]).map((t) => (
             <button
               key={t}
@@ -211,11 +204,6 @@ export default function TrainingScreen({
             </button>
           ))}
         </div>
-
-        <p className="fm-club-line" style={{ marginBottom: 8 }}>
-          One assistant coach and physio serve the whole squad in this club — there are no
-          separate per-position coaches, so upgrades below apply to every group.
-        </p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {(['coach', 'physio'] as const).map((role) => {
             const level = staff[role];
@@ -224,7 +212,7 @@ export default function TrainingScreen({
             const label = role === 'coach' ? 'Assistant coach' : 'Physio';
             return (
               <div key={role} style={{ background: 'var(--panel-2)', padding: 10, borderRadius: 'var(--r-md)' }}>
-                <p className="fm-label" style={{ marginTop: 0 }}>
+                <p className="fm-label" style={{ marginTop: 0 }} title="Serves the whole squad — no separate per-position coaches.">
                   {label}
                 </p>
                 <p style={{ margin: '4px 0 8px', fontSize: 14, fontWeight: 700 }}>
@@ -249,40 +237,20 @@ export default function TrainingScreen({
         </div>
       </div>
 
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>
-          {STAFF_TAB_LABEL[staffTab]} — best rated
-        </p>
-        {bestPlayers.length === 0 ? (
+      <div className="fm-mod">
+        <div className="fm-mod__head">
+          <h2 className="fm-mod__title">{STAFF_TAB_LABEL[staffTab]}</h2>
+          <span className="fm-actiondock__spacer" />
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button className={`fm-pill${squadView === 'best' ? ' active' : ''}`} onClick={() => setSquadView('best')}>Best</button>
+            <button className={`fm-pill${squadView === 'worst' ? ' active' : ''}`} onClick={() => setSquadView('worst')}>Needs work</button>
+          </div>
+        </div>
+        {shownPlayers.length === 0 ? (
           <p className="fm-hint">No players in this group.</p>
         ) : (
-          <div className="fm-player-list">{bestPlayers.map((p) => playerRow(p, 'good'))}</div>
+          <div className="fm-player-list">{shownPlayers.map((p) => playerRow(p, squadView === 'worst' ? 'bad' : 'good'))}</div>
         )}
-      </div>
-
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>
-          {STAFF_TAB_LABEL[staffTab]} — needs work
-        </p>
-        {worstPlayers.length === 0 ? (
-          <p className="fm-hint">No players in this group.</p>
-        ) : (
-          <div className="fm-player-list">{worstPlayers.map((p) => playerRow(p, 'bad'))}</div>
-        )}
-      </div>
-
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>
-          Training tips
-        </p>
-        <ul className="fm-news">
-          <li>Balanced training develops all outfield players evenly.</li>
-          <li>Attack focus prioritises midfielders and forwards under 27.</li>
-          <li>Defense focus prioritises goalkeepers and defenders under 27.</li>
-          <li>Fitness focus speeds up injury recovery instead of growing attributes.</li>
-          <li>A higher-level coach multiplies training progress chances.</li>
-          <li>A higher-level physio further speeds recovery regardless of focus.</li>
-        </ul>
       </div>
     </>
   );
