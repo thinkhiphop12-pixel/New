@@ -169,14 +169,24 @@ body {
 .fm-header__settings:hover { border-color: var(--border-bright); color: var(--text); }
 
 .fm-main { flex: 1; display: flex; justify-content: center; padding: 16px 12px 80px; }
-.fm-screen { width: 100%; max-width: 740px; display: flex; flex-direction: column; gap: 12px; }
+/* margin: auto is the actual centering mechanism — `.fm-main`'s
+   `justify-content: center` alone isn't reliable here. It only centers a
+   flex item using ITS shrink-to-fit width, and a CSS Grid child with `1fr`
+   tracks doesn't contribute much to that measurement, so `.fm-view-fade`
+   (see below) could shrink to near its narrowest possible content instead
+   of stretching — collapsing this down to ~300px and forcing every grid
+   inside to fall back to one narrow column regardless of viewport width.
+   That was the real cause of "huge single-column club cards in landscape". */
+.fm-screen { width: 100%; max-width: 740px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 
 /* Phase 14: main view-swap fade, keyed per view in FootballManagerGame.tsx
    (a fresh key remounts this wrapper, replaying the transition). The
    `.screen { transition: opacity .3s, transform .3s }` pattern from the
    original plan, as an animation instead of a transition since there's no
    persistent element to transition FROM across a full unmount/remount. */
-.fm-view-fade { animation: fm-view-fade 0.3s ease; }
+/* Explicit width, not shrink-to-fit — see the .fm-screen comment above for
+   why leaving this to flex auto-sizing was the actual bug. */
+.fm-view-fade { width: 100%; animation: fm-view-fade 0.3s ease; }
 @keyframes fm-view-fade {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
@@ -309,11 +319,15 @@ h1, h2, .fm-label, .fm-h1, .fm-h2, .fm-card__title {
 .fm-division-toggle button.active { background: var(--gold); color: #1a0f00; }
 
 /* ── Club grid ── */
-.fm-club-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+/* Both grids below are icon/flag + short label pickers — the right shape for
+   a small square tile, unlike the sentence-length scenario/identity/role
+   cards further down, which stay rectangular so their text has room. */
+.fm-club-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 8px; }
 .fm-club-card {
-  display: flex; flex-direction: column; gap: 5px; align-items: flex-start; text-align: left;
+  display: flex; flex-direction: column; gap: 4px; align-items: center; text-align: center;
+  justify-content: center; aspect-ratio: 1; overflow: hidden;
   background: var(--panel); border: 1.5px solid var(--border-soft);
-  border-radius: var(--r-lg); padding: 12px 14px; cursor: pointer; color: var(--text);
+  border-radius: var(--r-lg); padding: 10px 8px; cursor: pointer; color: var(--text);
   transition: border-color 0.15s, transform 0.12s, box-shadow 0.2s;
 }
 .fm-club-card:hover { border-color: var(--border-bright); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
@@ -322,22 +336,38 @@ h1, h2, .fm-label, .fm-h1, .fm-h2, .fm-card__title {
   font-size: 10px; font-weight: 900; letter-spacing: 1px;
   padding: 3px 8px; border-radius: 6px; color: rgba(0,0,0,0.8);
 }
-.fm-club-card__name { font-weight: 800; font-size: 14px; }
-.fm-club-card__meta { font-size: 11.5px; color: var(--muted); }
+/* Single-line ellipsis, not a multi-line clamp: at 3-per-row widths this
+   card is only ~110px tall, and a flex column with three siblings (crest,
+   name, meta) sharing that height doesn't reliably leave a clamped element
+   room for its second line — "Manchester City" was rendering as
+   "Manchester" with nothing below it, not an ellipsis, just silently
+   losing the second line. One predictable truncated line beats that. */
+.fm-club-card__name {
+  font-weight: 800; font-size: 12px; line-height: 1.25; max-width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fm-club-card__meta {
+  font-size: 10px; color: var(--muted); max-width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 /* ── Nation grid ── */
-.fm-nation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.fm-nation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px; }
 .fm-nation-card {
-  display: flex; flex-direction: column; gap: 8px; align-items: center; text-align: center;
+  display: flex; flex-direction: column; gap: 5px; align-items: center; text-align: center;
+  justify-content: center; aspect-ratio: 1; overflow: hidden;
   background: var(--panel); border: 2px solid var(--border-soft);
-  border-radius: var(--r-lg); padding: 20px 16px; cursor: pointer; color: var(--text);
+  border-radius: var(--r-lg); padding: 12px 10px; cursor: pointer; color: var(--text);
   transition: border-color 0.15s, transform 0.12s, box-shadow 0.2s;
 }
 .fm-nation-card:hover { border-color: var(--border-bright); transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .fm-nation-card:active { transform: translateY(0); }
-.fm-nation-card__flag { font-size: 48px; display: block; }
-.fm-nation-card__name { font-weight: 800; font-size: 18px; color: var(--text); }
-.fm-nation-card__divisions { font-size: 12px; color: var(--muted); font-weight: 600; }
+.fm-nation-card__flag { font-size: 30px; display: block; line-height: 1; }
+.fm-nation-card__name { font-weight: 800; font-size: 14px; color: var(--text); }
+.fm-nation-card__divisions {
+  font-size: 10.5px; color: var(--muted); font-weight: 600; line-height: 1.25;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
 
 /* ── Hub header (Portal) ── */
 .fm-hub-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
@@ -1583,10 +1613,11 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   font-size: 13px;
 }
 .fm-sp-taker__select:hover { border-color: var(--border-bright); }
-.fm-formation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; margin-bottom: 6px; }
+.fm-formation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; margin-bottom: 6px; }
 .fm-formation-tile {
+  display: flex; align-items: center; justify-content: center; aspect-ratio: 1;
   background: var(--panel-2); border: 1px solid var(--border); color: var(--text-2);
-  border-radius: var(--r-sm); padding: 8px 2px; font-size: 11px; font-weight: 800; cursor: pointer;
+  border-radius: var(--r-sm); padding: 4px 2px; font-size: 11px; font-weight: 800; cursor: pointer;
 }
 .fm-formation-tile.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
 .fm-custom-formation { display: flex; gap: 14px; margin-bottom: 8px; }
@@ -1756,13 +1787,40 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   .fm-tab { padding: 10px 16px; font-size: 13px; }
 }
 
-/* Landscape orientation improvements */
+/* Landscape orientation improvements. Originally only touched an old
+   `.fm-tabs`/`.fm-tab` pair — extended to the setup-flow screens and hub,
+   which previously had no landscape-specific tightening at all, so a short
+   phone-landscape viewport rendered them at full portrait sizing (the
+   actual bug behind "cards look huge in landscape" — see the width-based
+   grid minmax overrides above for the "small square tiles" request; this
+   block is the height-based half of the same fix). */
 @media (orientation: landscape) and (max-height: 600px) {
   .fm-main { padding: 12px 12px 70px; }
   .fm-screen { gap: 10px; }
   .fm-panel { padding: 12px; }
   .fm-tabs { gap: 1px; padding: 2px; }
   .fm-tab { padding: 6px 12px; font-size: 11px; }
+
+  /* Setup flow: club/nation grids pack tighter still once height is scarce,
+     and the sentence-length pick cards (which stay rectangular, not square
+     — see note above the club/nation grid rules) get denser padding rather
+     than shrinking to illegible text. */
+  .fm-club-grid { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+  .fm-nation-grid { grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); }
+  .fm-nation-card__flag { font-size: 24px; }
+  .fm-scenario-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+  .fm-scenario-card { padding: 10px; gap: 4px; }
+  .fm-identity-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  .fm-identity-card { padding: 8px; }
+  .fm-role-grid { max-height: 160px; }
+  .fm-role-tile { padding: 5px 7px; }
+
+  /* Hub: module cards and the header get the same treatment so a landscape
+     phone doesn't need to scroll past oversized chrome to see content. */
+  .fm-hub-grid { gap: 8px; }
+  .fm-mod { padding: 10px 12px; }
+  .fm-portal__header { gap: 8px; }
+  .fm-actiondock { padding: 8px 12px; }
 }
 
 /* Grid/Multi-column layouts for wider screens */
