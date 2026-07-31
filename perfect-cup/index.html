@@ -215,13 +215,24 @@ a{color:var(--lime-deep);text-decoration:none}
 .table .tr .rk{color:var(--muted);font-weight:700}
 .table .num{text-align:center}
 </style>
+  <link rel="stylesheet" href="/shared/nav.css" />
 </head>
 <body>
-<div class="wrap">
-  <div class="top">
-    <span class="brandtag">BALLKNW · Draft XI</span>
-    <a href="/" class="back">← All games</a>
+<header class="bk-nav">
+  <div class="bk-nav__inner">
+    <a href="/" class="bk-nav__brand"><span class="bk-nav__mark">B</span>BALL<b>KNW</b></a>
+    <nav class="bk-nav__links" aria-label="Site">
+      <a href="/gaffa/">Gaffa</a>
+      <a href="/scout/">Scout</a>
+      <a href="/perfect-cup/" aria-current="page">Draft XI</a>
+      <a href="/gaffer-guide.html">Guides</a>
+      <a href="/about.html">About</a>
+      <a href="/gaffa/" class="bk-nav__cta">Play Gaffa</a>
+    </nav>
   </div>
+</header>
+
+<div class="wrap">
 
   <!-- ============ START ============ -->
   <section id="start">
@@ -820,5 +831,31 @@ function copy(t){navigator.clipboard.writeText(t).then(()=>alert('Result copied!
 <script>window.BK_VIGNETTE_ZONE = '11417067';</script>
 <script src="/shared/consent.js" defer></script>
 <script src="/shared/ads.js" defer></script>
+<footer class="bk-foot">
+  <div class="bk-foot__inner">
+    <div class="bk-foot__top">
+      <div class="bk-foot__brand"><span class="bk-nav__mark">B</span> BALLKNW</div>
+      <nav class="bk-foot__links" aria-label="Footer">
+        <a href="/gaffa/">Gaffa</a>
+        <a href="/scout/">Scout</a>
+        <a href="/perfect-cup/">Draft XI</a>
+        <a href="/about.html">About</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="#" id="cookieSettingsBtn">Cookie settings</a>
+        <a href="mailto:thinkhiphop12@gmail.com">Contact</a>
+      </nav>
+    </div>
+    <p class="bk-foot__meta">Made for football heads. Data from public sources. &copy; BALLKNW &middot; ballknw.com</p>
+    <p class="bk-foot__meta">Guides:
+      <a href="/gaffer-guide.html">Gaffa strategy</a> &middot;
+      <a href="/scout-guide.html">Scout</a> &middot;
+      <a href="/draft-xi-guide.html">Draft XI</a> &middot;
+      <a href="/best-football-manager-games-pc.html">Best football manager games on PC</a> &middot;
+      <a href="/best-football-manager-games-android.html">Android</a> &middot;
+      <a href="/best-football-manager-games-iphone.html">iPhone</a>
+    </p>
+  </div>
+</footer>
 </body>
 </html>

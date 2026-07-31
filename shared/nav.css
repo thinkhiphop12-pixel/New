@@ -1,0 +1,184 @@
+/* ==============================================================
+   BALLKNW shared site navigation.
+
+   Every page used to carry its own header: index.html linked only
+   "Play Gaffa", about.html pointed at /#games and /#about (neither
+   anchor existed), scout/ had no header at all, and perfect-cup/ had
+   a lone "← All games". This is the one canonical header/footer.
+
+   Self-contained on purpose. index.html, scout/index.html and
+   perfect-cup/index.html don't load styles.css — they each carry their
+   own inline design system with different custom-property names
+   (--ink vs --white, --line vs --border). So everything here is
+   namespaced `bk-` and defines its own values, and can be dropped onto
+   any page without colliding with or depending on that page's CSS.
+
+   Markup lives in each page's HTML rather than being injected by JS:
+   these pages exist to rank, and nav links have to be crawlable.
+   ============================================================== */
+
+.bk-nav,
+.bk-foot {
+  --bk-bg: #0b120d;
+  --bk-border: rgba(255, 255, 255, 0.10);
+  --bk-text: #f2efe6;
+  --bk-muted: #93a099;
+  --bk-lime: #2ab248;
+  --bk-emerald: #12b380;
+  --bk-cta: linear-gradient(135deg, #2ab248 0%, #12b380 100%);
+  --bk-maxw: 1080px;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  box-sizing: border-box;
+}
+.bk-nav *, .bk-foot * { box-sizing: border-box; }
+
+/* ── Header ── */
+.bk-nav {
+  position: relative;
+  z-index: 50;
+  background: rgba(11, 18, 13, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--bk-border);
+}
+.bk-nav__inner {
+  max-width: var(--bk-maxw);
+  margin: 0 auto;
+  padding: 0 20px;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.bk-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  /* No `gap` here: "BALL" and <b>KNW</b> are separate flex items, so a gap
+     would split the wordmark. The mark carries the spacing instead. */
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  color: var(--bk-text);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.bk-nav__mark {
+  margin-right: 8px;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--bk-cta);
+  color: #052411;
+  font-weight: 900;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bk-nav__brand b { color: var(--bk-lime); font-weight: 800; }
+
+.bk-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+.bk-nav__links a {
+  color: var(--bk-muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s;
+  /* Comfortable touch target without changing the 64px bar height. */
+  padding: 10px 0;
+}
+.bk-nav__links a:hover,
+.bk-nav__links a:focus-visible { color: var(--bk-text); }
+/* Marks the current page so the nav says where you are, not just where
+   you can go — the site previously gave no such signal anywhere. */
+.bk-nav__links a[aria-current="page"] { color: var(--bk-text); }
+
+.bk-nav__cta {
+  background: var(--bk-cta);
+  color: #052411 !important;
+  font-weight: 800 !important;
+  font-size: 14px;
+  padding: 9px 16px !important;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.bk-nav__cta:hover { filter: brightness(1.07); }
+
+@media (max-width: 720px) {
+  .bk-nav__inner {
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    gap: 10px 16px;
+  }
+  .bk-nav__links {
+    width: 100%;
+    margin-left: 0;
+    gap: 16px;
+    font-size: 13px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .bk-nav__links::-webkit-scrollbar { display: none; }
+  .bk-nav__links a { white-space: nowrap; padding: 6px 0; }
+  .bk-nav__cta { padding: 7px 13px !important; }
+}
+
+/* ── Footer ── */
+.bk-foot {
+  background: var(--bk-bg);
+  border-top: 1px solid var(--bk-border);
+  margin-top: 48px;
+  padding: 32px 0 40px;
+  color: var(--bk-muted);
+}
+.bk-foot__inner {
+  max-width: var(--bk-maxw);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+.bk-foot__top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+.bk-foot__brand {
+  display: flex;
+  align-items: center;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--bk-text);
+}
+.bk-foot__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+}
+.bk-foot__links a {
+  color: var(--bk-muted);
+  font-size: 13.5px;
+  text-decoration: none;
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+}
+.bk-foot__links a:hover { color: var(--bk-text); }
+.bk-foot__meta {
+  color: var(--bk-muted);
+  font-size: 12px;
+  margin: 16px 0 0;
+  line-height: 1.6;
+}
+.bk-foot__meta a { color: var(--bk-muted); text-decoration: underline; }
+.bk-foot__meta a:hover { color: var(--bk-text); }

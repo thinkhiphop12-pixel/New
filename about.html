@@ -54,18 +54,22 @@
   ]
 }
   </script>
+  <link rel="stylesheet" href="/shared/nav.css" />
 </head>
 <body>
-  <header class="nav">
-    <div class="wrap nav-inner">
-      <a href="/" class="brand"><span class="mark">B</span>BALL<b>KNW</b></a>
-      <nav class="nav-links">
-        <a href="/#games">Games</a>
-        <a href="/#about">About</a>
-        <a href="/gaffa/" class="btn btn-primary">Play Gaffa</a>
-      </nav>
-    </div>
-  </header>
+  <header class="bk-nav">
+  <div class="bk-nav__inner">
+    <a href="/" class="bk-nav__brand"><span class="bk-nav__mark">B</span>BALL<b>KNW</b></a>
+    <nav class="bk-nav__links" aria-label="Site">
+      <a href="/gaffa/">Gaffa</a>
+      <a href="/scout/">Scout</a>
+      <a href="/perfect-cup/">Draft XI</a>
+      <a href="/gaffer-guide.html">Guides</a>
+      <a href="/about.html" aria-current="page">About</a>
+      <a href="/gaffa/" class="bk-nav__cta">Play Gaffa</a>
+    </nav>
+  </div>
+</header>
 
   <section class="section" style="padding: 60px 0">
     <div class="wrap">
@@ -109,24 +113,32 @@
     </div>
   </section>
 
-  <footer>
-    <div class="wrap">
-      <div class="foot-inner">
-        <div class="foot-brand"><span class="mark">B</span> BALLKNW</div>
-        <nav class="foot-links">
-          <a href="/scout/">Scout</a>
-          <a href="/perfect-cup/">Draft XI</a>
-          <a href="/gaffa/">Gaffa</a>
-          <a href="/about.html">About</a>
-          <a href="/privacy.html">Privacy</a>
-          <a href="/terms.html">Terms</a>
-          <a href="#" id="cookieSettingsBtn">Cookie settings</a>
-          <a href="mailto:thinkhiphop12@gmail.com">Contact</a>
-        </nav>
-      </div>
-      <p class="foot-meta">Made for football heads. Data from public sources. © BALLKNW · ballknw.com · Updated July 8, 2026</p>
+  <footer class="bk-foot">
+  <div class="bk-foot__inner">
+    <div class="bk-foot__top">
+      <div class="bk-foot__brand"><span class="bk-nav__mark">B</span> BALLKNW</div>
+      <nav class="bk-foot__links" aria-label="Footer">
+        <a href="/gaffa/">Gaffa</a>
+        <a href="/scout/">Scout</a>
+        <a href="/perfect-cup/">Draft XI</a>
+        <a href="/about.html">About</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="#" id="cookieSettingsBtn">Cookie settings</a>
+        <a href="mailto:thinkhiphop12@gmail.com">Contact</a>
+      </nav>
     </div>
-  </footer>
+    <p class="bk-foot__meta">Made for football heads. Data from public sources. &copy; BALLKNW &middot; ballknw.com</p>
+    <p class="bk-foot__meta">Guides:
+      <a href="/gaffer-guide.html">Gaffa strategy</a> &middot;
+      <a href="/scout-guide.html">Scout</a> &middot;
+      <a href="/draft-xi-guide.html">Draft XI</a> &middot;
+      <a href="/best-football-manager-games-pc.html">Best football manager games on PC</a> &middot;
+      <a href="/best-football-manager-games-android.html">Android</a> &middot;
+      <a href="/best-football-manager-games-iphone.html">iPhone</a>
+    </p>
+  </div>
+</footer>
 
   <script src="/shared/consent.js" defer></script>
   <script src="/shared/ads.js" defer></script>
