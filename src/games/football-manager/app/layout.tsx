@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Space_Grotesk } from 'next/font/google';
-import Script from 'next/script';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 
@@ -53,17 +52,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <SpeedInsights />
-        {/* Google AdSense loader (site verification + library) */}
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2741492847457362"
-          crossOrigin="anonymous"
-          data-adsense="1"
-          strategy="afterInteractive"
-        />
-        {/* Shared consent banner + consent-gated ads, served from the site root */}
-        <Script src="/shared/consent.js" strategy="afterInteractive" />
-        <Script src="/shared/ads.js" strategy="afterInteractive" />
       </body>
     </html>
   );
