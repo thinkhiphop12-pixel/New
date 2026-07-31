@@ -207,8 +207,7 @@ export default function CharacterCustomizerScreen({
             <h4>Appearance</h4>
 
             <div className="form-group">
-              <label className="fm-label-small">Skin Tone</label>
-              <p className="fm-category-desc">Sets a matching shadow tone automatically, so shading looks right at every skin tone.</p>
+              <label className="fm-label-small" title="Shadow tone is matched automatically.">Skin Tone</label>
               <div className="color-selector">
                 {SKIN_TONES.map((tone) => (
                   <button
@@ -224,7 +223,6 @@ export default function CharacterCustomizerScreen({
 
             <div className="form-group">
               <label className="fm-label-small">Hair Color</label>
-              <p className="fm-category-desc">Independent of hairstyle — mix any color with any cut.</p>
               <div className="color-selector">
                 {HAIR_COLORS.map((color) => (
                   <button
@@ -240,7 +238,6 @@ export default function CharacterCustomizerScreen({
 
             <div className="form-group">
               <label className="fm-label-small">Eyebrow Color</label>
-              <p className="fm-category-desc">Its own axis — doesn't have to match your hair.</p>
               <div className="color-selector">
                 {EYEBROW_COLORS.map((color) => (
                   <button
@@ -256,7 +253,6 @@ export default function CharacterCustomizerScreen({
 
             <div className="form-group">
               <label className="fm-label-small">Hair Style</label>
-              <p className="fm-category-desc">The shape and length of your cut.</p>
               <div className="option-grid">
                 {HAIR_STYLES.map((style) => (
                   <button
@@ -272,7 +268,6 @@ export default function CharacterCustomizerScreen({
 
             <div className="form-group">
               <label className="fm-label-small">Eye Color</label>
-              <p className="fm-category-desc">Iris color.</p>
               <div className="color-selector">
                 {EYE_COLORS.map((color) => (
                   <button
@@ -287,8 +282,7 @@ export default function CharacterCustomizerScreen({
             </div>
 
             <div className="form-group">
-              <label className="fm-label-small">Facial Hair</label>
-              <p className="fm-category-desc">Uses your hair color.</p>
+              <label className="fm-label-small" title="Uses your hair colour.">Facial Hair</label>
               <div className="option-grid">
                 {FACIAL_HAIR.map((style) => (
                   <button
@@ -304,7 +298,6 @@ export default function CharacterCustomizerScreen({
 
             <div className="form-group">
               <label className="fm-label-small">Accessories</label>
-              <p className="fm-category-desc">Optional extras.</p>
               <div className="option-grid">
                 {ACCESSORIES.map((acc) => (
                   <button
@@ -420,12 +413,6 @@ export default function CharacterCustomizerScreen({
           margin-bottom: 0.375rem;
           text-transform: uppercase;
           letter-spacing: 0.05em;
-        }
-
-        .fm-category-desc {
-          margin: 0 0 0.75rem 0;
-          font-size: 0.8rem;
-          color: #6f8398;
         }
 
         .color-selector {

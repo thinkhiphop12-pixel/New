@@ -42,10 +42,13 @@ export default function SettingsPanel({
   settings,
   onChange,
   onClose,
+  onQuitToMenu,
 }: {
   settings: GameSettings;
   onChange: (s: GameSettings) => void;
   onClose: () => void;
+  /** Absent outside a career — there is nothing to save or quit from. */
+  onQuitToMenu?: () => void;
 }) {
   const update = (patch: Partial<GameSettings>) => {
     const next = { ...settings, ...patch };
@@ -151,6 +154,18 @@ export default function SettingsPanel({
               </div>
             </div>
           </div>
+
+          {onQuitToMenu && (
+            <div className="fm-settings-row">
+              <div>
+                <div className="fm-settings-label">Save &amp; quit</div>
+                <div className="fm-settings-desc">Back to the main menu — your career is kept</div>
+              </div>
+              <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={onQuitToMenu}>
+                Quit to menu
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -14,13 +14,17 @@ import {
 } from '@/engine/facilities';
 import { formatMoney } from '@/engine/utils';
 import StadiumBuilder from './StadiumBuilder';
+import type { Tab } from './HubScreen';
+import { Icon } from './Icon';
 
 export default function FacilitiesScreen({
   state,
   onChange,
+  onNavigate,
 }: {
   state: GameState;
   onChange: (next: GameState) => void;
+  onNavigate: (tab: Tab) => void;
 }) {
   const [selectedStand, setSelectedStand] = useState<StandId | null>(null);
   const fs = state.facilities ?? newFacilities(state);
@@ -206,9 +210,11 @@ export default function FacilitiesScreen({
       <div className="fm-panel">
         <p className="fm-label" style={{ marginTop: 0 }}>Legacy Backroom Levels</p>
         <p className="fm-club-line">
-          Kept for backwards compatibility with existing saves; hiring a named head coach above overrides
-          the coaching figure automatically.
+          Kept for older saves. Hiring a named head coach above overrides these automatically.
         </p>
+        <button className="fm-inline-link" onClick={() => onNavigate('club')}>
+          Instant upgrades and club history are in Club <Icon name="chevron" size={12} />
+        </button>
         {(['coach', 'physio', 'scout'] as const).map((role) => {
           const level = staff[role];
           const cost = STAFF_UPGRADE_COST[level + 1];

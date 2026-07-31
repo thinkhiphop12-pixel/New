@@ -9,6 +9,7 @@ import { getRole } from '@/lib/playerRoles';
 import { PitchMarkings, PlayerToken } from './visuals';
 import { PlayerFace } from './PlayerFace';
 import PlayerModal from './PlayerModal';
+import type { Tab } from './HubScreen';
 
 function lastName(name: string): string {
   const parts = name.split(' ').filter((w) => !/^jr\.?$/i.test(w));
@@ -27,9 +28,11 @@ function formTag(p: Player): React.ReactNode {
 export default function SquadScreen({
   state,
   onChange,
+  onNavigate,
 }: {
   state: GameState;
   onChange: (next: GameState) => void;
+  onNavigate: (tab: Tab) => void;
 }) {
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [detailId, setDetailId] = useState<number | null>(null);
@@ -160,6 +163,11 @@ export default function SquadScreen({
                 </button>
               ))}
             </div>
+            {/* These are the same settings the Tactics screen owns — say so,
+                so the two surfaces don't read as unrelated systems. */}
+            <button className="fm-inline-link" onClick={() => onNavigate('tactics')}>
+              Set pieces, roles and match identity <Icon name="chevron" size={12} />
+            </button>
           </>
         )}
         <p className="fm-hint" style={{ marginBottom: 0, marginTop: 12 }}>

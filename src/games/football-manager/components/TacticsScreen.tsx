@@ -256,10 +256,7 @@ export default function TacticsScreen({
 
             <div className="fm-tactics__formation-group">
               <label className="fm-label fm-label--sm">Custom Formation</label>
-              <p className="fm-hint">
-                Build any def-mid-fwd split (must total 10 outfield players) and set it as your
-                in-possession shape.
-              </p>
+              <p className="fm-hint">Your in-possession shape. Must total 10 outfield players.</p>
               <div className="fm-custom-formation">
                 {(['DEF', 'MID', 'FWD'] as const).map((label, i) => (
                   <div key={label} className="fm-custom-formation__stepper">
@@ -336,7 +333,7 @@ export default function TacticsScreen({
                 </button>
               ))}
             </div>
-            <p className="fm-hint">Sets the default match mentality — you can change it live from the touchline.</p>
+            <p className="fm-hint">Default mentality — changeable live from the touchline.</p>
           </div>
         )}
       </div>
@@ -367,8 +364,7 @@ export default function TacticsScreen({
               ))}
             </div>
             <p className="fm-hint">
-              Currently worth <strong>{spThreat.toFixed(2)}×</strong> on a corner — delivery from{' '}
-              {cornerTaker?.name ?? 'nobody'} against the aerial threat of the men you send up.
+              <strong>{spThreat.toFixed(2)}×</strong> on a corner, from {cornerTaker?.name ?? 'nobody'}.
               Short routines ignore height; far-post leans on it entirely.
             </p>
 
@@ -385,8 +381,8 @@ export default function TacticsScreen({
               ))}
             </div>
             <p className="fm-hint">
-              Zonal concedes least from the delivery itself; man-marking concedes most but leaves
-              you better placed for the second ball.
+              Zonal concedes least from the delivery; man-marking concedes more but wins more
+              second balls.
             </p>
 
             <div className="fm-sp-label">Takers</div>
@@ -414,8 +410,8 @@ export default function TacticsScreen({
               })}
             </div>
             <p className="fm-hint">
-              Defaults pick the best man on the pitch for each job. Anyone you name here takes it
-              instead, as long as he is in the XI.
+              Left unset, the best man on the pitch takes it. Anyone named here takes it instead,
+              if he starts.
             </p>
           </div>
         )}
@@ -478,8 +474,8 @@ export default function TacticsScreen({
             </div>
             <p className="fm-hint">
               {needsDrilling(currentStyle)
-                ? `Your side is ${Math.round(styleFamiliarity(userClub, currentStyle))}% drilled in ${IDENTITY_LABEL[currentStyle]}. Familiarity builds each week and decays on styles you stop using — switching to a related style carries most of the work across.`
-                : 'Balanced and Park the Bus need no drilling. Any other identity has to be worked on before it pays off.'}
+                ? `${Math.round(styleFamiliarity(userClub, currentStyle))}% drilled in ${IDENTITY_LABEL[currentStyle]}. Builds weekly, decays on styles you drop; related styles carry most of it across.`
+                : 'Balanced and Park the Bus need no drilling. Every other identity does.'}
             </p>
           </div>
         )}

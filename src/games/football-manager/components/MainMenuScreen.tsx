@@ -47,8 +47,7 @@ export default function MainMenuScreen({
         <span className="fm-start__accent">Gaffa</span>
       </h1>
       <p className="fm-start__tagline">
-        Take charge of a club across three divisions. Set your tactics, work the market, bring
-        through the kids — and survive the board. League, cup and continental glory await.
+        Take a real club from the lower leagues to European glory.
       </p>
 
       <div className="fm-menu-actions">
@@ -101,28 +100,28 @@ export default function MainMenuScreen({
           <span className="fm-howto__num">1</span>
           <div>
             <h3>Choose your club</h3>
-            <p>Real clubs and real FC 26 squads across ten leagues — the English pyramid plus La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie and Primeira Liga.</p>
+            <p>Real squads, ten leagues.</p>
           </div>
         </li>
         <li className="fm-howto__step">
           <span className="fm-howto__num">2</span>
           <div>
             <h3>Set up your team</h3>
-            <p>Formations, pressing, tempo and width. Pick a training focus and watch your youngsters grow.</p>
+            <p>Formation, pressing, tempo, training.</p>
           </div>
         </li>
         <li className="fm-howto__step">
           <span className="fm-howto__num">3</span>
           <div>
             <h3>Run the club</h3>
-            <p>Contracts, wages, loans, scouting and a youth academy — keep the board and the fans onside.</p>
+            <p>Transfers, contracts, scouting, youth.</p>
           </div>
         </li>
         <li className="fm-howto__step">
           <span className="fm-howto__num">4</span>
           <div>
             <h3>Chase the silverware</h3>
-            <p>League titles, the BALLKNW Cup and the Continental Champions Cup. Build your legacy.</p>
+            <p>League, cup and continental titles.</p>
           </div>
         </li>
       </ol>

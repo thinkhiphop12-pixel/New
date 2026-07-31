@@ -12,6 +12,8 @@ import { statusLabel, STATUS_ORDER } from '@/engine/negotiation';
 import { getSquad } from '@/engine/teamManagement';
 import { formatMoney } from '@/engine/utils';
 import PlayerModal from './PlayerModal';
+import type { Tab } from './HubScreen';
+import { Icon } from './Icon';
 
 type MarketTab = 'market' | 'negotiations' | 'incoming' | 'squad' | 'loans';
 const POSITIONS: (Position | 'ALL')[] = ['ALL', 'GK', 'DEF', 'MID', 'FWD'];
@@ -26,9 +28,11 @@ const AVAIL: { key: string; label: string }[] = [
 export default function TransfersScreen({
   state,
   onChange,
+  onNavigate,
 }: {
   state: GameState;
   onChange: (next: GameState) => void;
+  onNavigate: (tab: Tab) => void;
 }) {
   const [tab, setTab] = useState<MarketTab>('market');
   const [posFilter, setPosFilter] = useState<Position | 'ALL'>('ALL');
@@ -228,6 +232,10 @@ export default function TransfersScreen({
 
       {tab === 'squad' && (
         <div className="fm-player-list">
+          {/* This list is read-only here; selection and roles live in Squad. */}
+          <button className="fm-inline-link" onClick={() => onNavigate('squad')}>
+            Pick your XI and set roles in Squad <Icon name="chevron" size={12} />
+          </button>
           {mySquad.map((p) => (
             <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
               <span className="fm-player-row__badge">{p.role}</span>

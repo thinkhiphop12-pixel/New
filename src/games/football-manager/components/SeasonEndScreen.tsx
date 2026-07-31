@@ -158,7 +158,14 @@ export default function SeasonEndScreen({
             You&apos;re out at {club.name}.
             {state.jobOffers.length > 0 ? ' Take a rescue job above, or walk away.' : ''}
           </p>
-          <button className="fm-btn fm-btn--danger fm-btn--large" onClick={onRetire}>
+          {/* Retiring deletes the save. With no job offers this used to be the
+              only button on the screen, and it fired without confirmation. */}
+          <button
+            className="fm-btn fm-btn--danger fm-btn--large"
+            onClick={() => {
+              if (window.confirm('Retire from management? This career save will be deleted.')) onRetire();
+            }}
+          >
             Retire from management
           </button>
         </>

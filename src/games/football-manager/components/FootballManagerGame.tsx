@@ -18,7 +18,7 @@ import MainMenuScreen from './MainMenuScreen';
 import NationSelectScreen from './NationSelectScreen';
 import ClubSelectScreen from './ClubSelectScreen';
 import ScenarioPickScreen from './ScenarioPickScreen';
-import HubScreen from './HubScreen';
+import HubScreen, { type Tab } from './HubScreen';
 import MatchScreen from './match/MatchScreen';
 import SeasonEndScreen from './SeasonEndScreen';
 import SettingsPanel, { loadSettings } from './SettingsPanel';
@@ -38,6 +38,10 @@ export default function FootballManagerGame() {
   const [gs, setGs] = useState<GameState | null>(null);
   const [slot, setSlot] = useState(0);
   const [view, setView] = useState<View>('menu');
+  // Owned here, not in HubScreen: the `key={view}` fade wrapper below remounts
+  // HubScreen on every view change, so a tab held in that component was reset
+  // to 'hub' every single time the player came back from a match.
+  const [hubTab, setHubTab] = useState<Tab>('hub');
   const [summary, setSummary] = useState<SeasonSummary | null>(null);
   const [saves, setSaves] = useState<(SaveMeta | null)[]>(Array(SAVE_SLOTS).fill(null));
   const [settings, setSettings] = useState<GameSettings | null>(null);
@@ -234,12 +238,31 @@ export default function FootballManagerGame() {
   const backToMenu = () => {
     setGs(null);
     setSaves(listSaves());
+    setHubTab('hub');
     setView('menu');
   };
 
   const handleAbandon = () => {
     pendingSave.current = null;
     clearSave(slot).then(backToMenu);
+  };
+
+  /* Every route back to the menu used to run through `handleAbandon`, which
+   * deletes the save first — so there was no way to stop playing without
+   * losing the career. Flush the pending write, then leave the slot intact. */
+  const handleQuitToMenu = () => {
+    const job = pendingSave.current;
+    pendingSave.current = null;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    const written = job
+      ? saveGame(job.state, job.slot).catch((e: Error) => {
+          pushToast(`Save failed: ${e.message}`, 'error');
+        })
+      : Promise.resolve();
+    written.then(() => {
+      setShowSettings(false);
+      backToMenu();
+    });
   };
 
   const handlePlayMatch = () => {
@@ -310,6 +333,10 @@ export default function FootballManagerGame() {
             </text>
           </svg>
           BALLKNW
+          {/* This link leaves the game entirely, and sits exactly where a back
+              button would — mark it as an outbound link so it doesn't read as
+              in-game navigation. */}
+          <span aria-hidden="true" style={{ opacity: 0.6, fontSize: 11 }}>↗</span>
         </a>
         <span className="fm-header__title">Gaffa</span>
         <span className="fm-header__spacer" />
@@ -362,7 +389,13 @@ export default function FootballManagerGame() {
             onRetire={handleAbandon}
           />
         ) : gs ? (
-          <HubScreen state={gs} onChange={apply} onAbandon={handleAbandon} />
+          <HubScreen
+            state={gs}
+            onChange={apply}
+            onAbandon={handleAbandon}
+            tab={hubTab}
+            onTabChange={setHubTab}
+          />
         ) : (
           <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} onCharacterCustomizer={handleCharacterCustomizerOpen} />
         )}
@@ -421,6 +454,7 @@ export default function FootballManagerGame() {
           settings={settings}
           onChange={setSettings}
           onClose={() => setShowSettings(false)}
+          onQuitToMenu={gs ? handleQuitToMenu : undefined}
         />
       )}
     </div>

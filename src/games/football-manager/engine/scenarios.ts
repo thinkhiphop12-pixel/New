@@ -29,7 +29,6 @@ export interface ScenarioDef {
   icon: string;
   name: string;
   tagline: string;
-  blurb: string;
   objective: string;
   /** Restricts the club picker. Absent = any club. */
   clubFilter?: (club: Club, state: GameState) => boolean;
@@ -55,7 +54,6 @@ export const SCENARIOS: ScenarioDef[] = [
     icon: 'warning',
     name: 'Relegation Battle',
     tagline: 'A bottom-half side with a horror start — take over at Christmas, points deducted.',
-    blurb: 'A horrid first half of the season was already sinking a side that had no business being down there — and now the league has docked points on top of it. The previous manager paid the price; you inherit the crisis at the season\'s halfway point with everything to do.',
     objective: 'Survive relegation this season.',
     clubFilter: isBottomHalfClub,
   },
@@ -64,7 +62,6 @@ export const SCENARIOS: ScenarioDef[] = [
     icon: 'movie',
     name: 'Hollywood Story',
     tagline: 'Pick any non-top-flight club — a real war chest, and promotion every season, all the way up.',
-    blurb: 'New celebrity money buys a script straight out of the movies: a genuine transfer kitty plus a mandate for automatic promotion, season after season, however many rungs it takes to reach the top flight. Slip up even once and the story is over.',
     objective: 'Win promotion every season in a row, all the way to the top flight.',
     clubFilter: nonTopFlight,
   },
@@ -73,7 +70,6 @@ export const SCENARIOS: ScenarioDef[] = [
     icon: 'money-out',
     name: 'Broke',
     tagline: 'Any club — deep in debt before you\'ve picked a team.',
-    blurb: 'The last regime spent recklessly and left the books in ruins. Whatever club you pick, the debt is scaled to match — a fortune for a small side, still a real crisis for a giant.',
     objective: 'Get the club\'s balance back into the black.',
   },
   {
@@ -81,7 +77,6 @@ export const SCENARIOS: ScenarioDef[] = [
     icon: 'money-in',
     name: 'The Takeover',
     tagline: 'Any non-top-flight club — a huge war chest and a board that expects a lasting project.',
-    blurb: 'A mystery consortium buys the club and hands you a war chest sized to how transformative that kind of money would actually be at this level. They expect promotion soon, and they expect the club to stay there once it arrives.',
     objective: 'Win promotion within 2 seasons, then stay up the following season.',
     clubFilter: nonTopFlight,
   },
@@ -90,7 +85,6 @@ export const SCENARIOS: ScenarioDef[] = [
     icon: 'sprout',
     name: 'Wonderkid Factory',
     tagline: 'Any club — a first-class academy, whatever it takes to build one.',
-    blurb: 'Whatever club you pick, the board is putting its money into the academy instead of the transfer kitty: facilities are already built out, reputation is strong, and a promising crop of prospects is waiting. The job is to develop them and sell high.',
     objective: 'Sell 3 academy graduates for a profit within 3 seasons.',
   },
   {
@@ -98,7 +92,6 @@ export const SCENARIOS: ScenarioDef[] = [
     icon: 'trophy',
     name: 'Against All Odds',
     tagline: 'A bottom-half club that nobody thinks can win anything at all.',
-    blurb: 'Whatever club you pick, it\'s a genuine bottom-half side — the kind whose fans would settle for a quiet mid-table finish. Winning the league from here isn\'t just unlikely, it\'s the sort of story nobody would believe.',
     objective: 'Win the league title within 3 seasons.',
     clubFilter: isBottomHalfClub,
   },
@@ -107,7 +100,6 @@ export const SCENARIOS: ScenarioDef[] = [
     icon: 'block',
     name: 'Points Deduction',
     tagline: 'Any club — a severe points deduction before a ball is even kicked.',
-    blurb: 'The league has handed down its punishment before the season has even started: a heavy points deduction for financial breaches, wiping out any hope of a normal start.',
     objective: 'Avoid relegation despite starting the season on -24 points.',
   },
 ];

@@ -159,7 +159,7 @@ export default function InboxScreen({
           <span className="fm-inbox__date">{articleDate(current)}</span>
         </div>
         <button className="fm-btn fm-btn--primary fm-btn--small" onClick={() => setOpenId(null)}>
-          Continue
+          Back to inbox
         </button>
       </div>
 
@@ -193,7 +193,7 @@ export default function InboxScreen({
         )}
         <span className="fm-inbox__nav-spacer" />
         <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setOpenId(null)}>
-          Inbox
+          Back to inbox
         </button>
         <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => step(-1)} disabled={openIndex <= 0}>
           <Icon name="chevron" size={13} style={{ transform: 'rotate(180deg)' }} /> Previous

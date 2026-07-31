@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { GameData, ScenarioId } from '@/engine/types';
-import { SIMULATED_LEAGUE_IDS, formatLeagueBlurb, leagueIdForDivision, leagueName, startingBudget } from '@/engine/gameRules';
+import { SIMULATED_LEAGUE_IDS, leagueIdForDivision, leagueName, startingBudget } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
 import { Crest } from './Crest';
 
@@ -113,7 +113,7 @@ export default function ClubSelectScreen({
       </div>
       {division !== null && (
         <p className="fm-hint">
-          {formatLeagueBlurb(division)} Budget {formatMoney(startingBudget(division))}.
+          Transfer budget {formatMoney(startingBudget(division))}
         </p>
       )}
       <input

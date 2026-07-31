@@ -27,10 +27,7 @@ export default function ScenarioPickScreen({
 }) {
   return (
     <div className="fm-scenario-pick">
-      <p className="fm-label" style={{ marginTop: 0, textAlign: 'center' }}>Starting Challenge</p>
-      <p className="fm-hint" style={{ textAlign: 'center', marginBottom: 14 }}>
-        Optional — pick a scripted premise to build a career around, or start a normal career.
-      </p>
+      <p className="fm-label" style={{ marginTop: 0, textAlign: 'center', marginBottom: 14 }}>Starting Challenge</p>
       <div className="fm-scenario-grid">
         {SCENARIOS.map((s) => (
           <button key={s.id} className="fm-scenario-card" onClick={() => onPick(s.id)}>

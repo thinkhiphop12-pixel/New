@@ -100,9 +100,8 @@ export default function EuropeanScreen({ state }: { state: GameState }) {
             Knockout progress
           </p>
           <p className="fm-hint" style={{ textAlign: 'left' }}>
-            The top 8 seeds go straight to the Round of 16; the rest fight through a two-legged
-            playoff round for the other 8 places. Every round from the playoff to the semi-final
-            is two-legged; the final is a single match.
+            Top 8 seeds go straight to the Round of 16; the rest play a two-legged playoff for
+            the other 8 places. Two legs per round up to the semi-final; the final is one match.
           </p>
           {c.ties.map((ties, i) => {
             const played = ties.some((t) => t.legs.length > 0);

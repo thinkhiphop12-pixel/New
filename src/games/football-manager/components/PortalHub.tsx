@@ -13,6 +13,7 @@ import { Crest } from './Crest';
 import PressConferenceModal from './PressConferenceModal';
 import ManagerAvatar from './ManagerAvatar';
 import { Icon } from './Icon';
+import type { Tab } from './HubScreen';
 
 type Filter = 'all' | 'new' | 'tasks';
 
@@ -20,10 +21,12 @@ export default function PortalHub({
   state,
   onChange,
   onAbandon,
+  onNavigate,
 }: {
   state: GameState;
   onChange: (next: GameState) => void;
   onAbandon: () => void;
+  onNavigate: (tab: Tab) => void;
 }) {
   const [filter, setFilter] = useState<Filter>('all');
   const [showPress, setShowPress] = useState(false);
@@ -45,11 +48,13 @@ export default function PortalHub({
   const offerCount = state.incomingOffers.length + pendingBids;
   const newCount = (state.news.length > 0 ? 1 : 0) + (offerCount > 0 ? 1 : 0) + (unreadInbox > 0 ? 1 : 0);
 
-  const tasks: string[] = [];
-  if (!lineupOk) tasks.push('Fix your lineup');
-  if (fixture) tasks.push(`Play Week ${state.week}`);
-  if (state.morale < 40) tasks.push('Morale is low');
-  if (state.budget < 0) tasks.push('Club in the red');
+  // Each task is a destination, not a note — the list read like a to-do list
+  // but couldn't be acted on. "Play Week N" is deliberately absent: the action
+  // dock already carries that CTA on every tab.
+  const tasks: { label: string; tab: Tab }[] = [];
+  if (!lineupOk) tasks.push({ label: 'Fix your lineup', tab: 'squad' });
+  if (state.morale < 40) tasks.push({ label: 'Morale is low', tab: 'training' });
+  if (state.budget < 0) tasks.push({ label: 'Club in the red', tab: 'finances' });
 
   const show = (type: string) => {
     if (filter === 'all') return true;
@@ -142,9 +147,14 @@ export default function PortalHub({
             </div>
             {cupWeek && <p className="fm-card__note">+ Cup tie midweek</p>}
             {!lineupOk && (
-              <p className="fm-card__note" style={{ color: 'var(--red)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <Icon name="warning" size={13} /> Lineup needs 11 fit players — fix it in Squad or Tactics.
-              </p>
+              <button
+                className="fm-card__note fm-card__note--action"
+                style={{ color: 'var(--red)' }}
+                onClick={() => onNavigate('squad')}
+              >
+                <Icon name="warning" size={13} /> Lineup needs 11 fit players
+                <Icon name="chevron" size={13} />
+              </button>
             )}
             {opponent && (
               <div className="fm-actions" style={{ marginBottom: 0, justifyContent: 'flex-start' }}>
@@ -190,8 +200,12 @@ export default function PortalHub({
               <span className="fm-badge fm-badge--alert">{tasks.length}</span>
             </div>
             <ul className="fm-card__list">
-              {tasks.map((t, i) => (
-                <li key={i} className="fm-card__list-item">{t}</li>
+              {tasks.map((t) => (
+                <li key={t.tab} className="fm-card__list-item">
+                  <button className="fm-card__list-link" onClick={() => onNavigate(t.tab)}>
+                    {t.label}
+                  </button>
+                </li>
               ))}
             </ul>
           </div>
@@ -236,13 +250,16 @@ export default function PortalHub({
 
         {/* Transfer offers */}
         {show('offers') && offerCount > 0 && (
-          <div className="fm-mod">
+          <button className="fm-mod fm-mod--action" onClick={() => onNavigate('transfers')}>
             <div className="fm-mod__head">
               <h2 className="fm-mod__title">Offers</h2>
               <span className="fm-badge fm-badge--new">{offerCount}</span>
             </div>
-            <p className="fm-card__hint">Check the Transfers tab for details.</p>
-          </div>
+            <p className="fm-card__hint">
+              {offerCount === 1 ? '1 bid awaiting your reply' : `${offerCount} bids awaiting your reply`}
+              <Icon name="chevron" size={13} />
+            </p>
+          </button>
         )}
 
         {/* Board objective */}

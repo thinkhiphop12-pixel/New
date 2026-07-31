@@ -11,6 +11,7 @@ import { traitNames } from '@/engine/traits';
 import { formatMoney } from '@/engine/utils';
 import { StatTile } from './visuals';
 import { Icon } from './Icon';
+import type { Tab } from './HubScreen';
 
 const STAFF_LABELS: Record<keyof Staff, string> = { coach: 'Assistant coach', physio: 'Physio', scout: 'Chief scout' };
 const STAFF_BLURB: Record<keyof Staff, string> = {
@@ -35,9 +36,11 @@ function Bar({ value, label }: { value: number; label: string }) {
 export default function ClubScreen({
   state,
   onChange,
+  onNavigate,
 }: {
   state: GameState;
   onChange: (next: GameState) => void;
+  onNavigate: (tab: Tab) => void;
 }) {
   const m = state.manager;
   const wages = weeklyWageBill(state);
@@ -116,6 +119,12 @@ export default function ClubScreen({
           </ul>
         )}
       </div>
+
+      {/* Facilities runs the same academy/staff/stadium upgrades as timed
+          building projects. Two views of one club, so link them explicitly. */}
+      <button className="fm-inline-link" onClick={() => onNavigate('facilities')}>
+        Plan longer-term building projects in Facilities <Icon name="chevron" size={12} />
+      </button>
 
       <div className="fm-panel">
         <p className="fm-label" style={{ marginTop: 0 }}>
