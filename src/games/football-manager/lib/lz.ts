@@ -212,10 +212,10 @@ export function decompressFromUTF16(compressed: string): string {
  *  the Next.js build. */
 export const WORKER_SOURCE = `
 ${compressCore.toString()}
-${compressToUTF16.toString().replace('export function', 'function')}
+const __compressToUTF16 = ${compressToUTF16.toString().replace('export function', 'function')};
 self.onmessage = (e) => {
   try {
-    self.postMessage({ id: e.data.id, ok: true, result: compressToUTF16(e.data.payload) });
+    self.postMessage({ id: e.data.id, ok: true, result: __compressToUTF16(e.data.payload) });
   } catch (err) {
     self.postMessage({ id: e.data.id, ok: false, error: String(err) });
   }
