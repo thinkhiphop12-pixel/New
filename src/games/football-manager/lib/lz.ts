@@ -209,13 +209,20 @@ export function decompressFromUTF16(compressed: string): string {
 
 /** Source for the compression worker. Kept as a string so it can be turned into
  *  a Blob URL at runtime — this avoids adding a separate worker entry point to
- *  the Next.js build. */
+ *  the Next.js build.
+ *
+ *  Calls the inlined function via `${compressToUTF16.name}`, not the literal
+ *  text "compressToUTF16": a production minifier renames the actual function
+ *  (so its `.toString()` below comes out under a different identifier) but
+ *  can't reach into this template string to rename a hardcoded call —
+ *  hardcoding it caused every save to fail in the built/static-export app
+ *  with "compressToUTF16 is not defined" while working fine under `tsx`. */
 export const WORKER_SOURCE = `
 ${compressCore.toString()}
-${compressToUTF16.toString().replace('export function', 'function')}
+${compressToUTF16.toString()}
 self.onmessage = (e) => {
   try {
-    self.postMessage({ id: e.data.id, ok: true, result: compressToUTF16(e.data.payload) });
+    self.postMessage({ id: e.data.id, ok: true, result: ${compressToUTF16.name}(e.data.payload) });
   } catch (err) {
     self.postMessage({ id: e.data.id, ok: false, error: String(err) });
   }

@@ -27,7 +27,8 @@ const staticFiles = [
   'verification.html',
   'robots.txt',
   'sitemap.xml',
-  'llms.txt'
+  'llms.txt',
+  'ads.txt'
 ];
 
 staticFiles.forEach(file => {
