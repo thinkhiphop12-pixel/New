@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Icon } from '../Icon';
 import { teamTalkEffect, type TeamTalkOutcome, type TeamTalkTone } from '@/engine/teamTalk';
 
 const OPTIONS: { tone: TeamTalkTone; label: string; hint: string }[] = [
@@ -33,7 +34,7 @@ export default function TeamTalkModal({
       <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
         <div className="fm-matchx-modal__head">
           <span className="fm-matchx-modal__title">{moment === 'pre' ? 'Pre-Match Talk' : 'Half-Time Talk'}</span>
-          <button className="fm-matchx-modal__close" onClick={onClose} aria-label="Close">✕</button>
+          <button className="fm-matchx-modal__close" onClick={onClose} aria-label="Close"><Icon name="cross" size={15} /></button>
         </div>
         {!outcome ? (
           <>

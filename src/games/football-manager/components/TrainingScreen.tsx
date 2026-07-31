@@ -7,12 +7,13 @@ import { getStaff, upgradeStaff } from '@/engine/seasonProgression';
 import { STAFF_MAX_LEVEL, STAFF_UPGRADE_COST } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
 import { StatTile } from './visuals';
+import { Icon, type IconName } from './Icon';
 
-const TRAINING_TYPES: { id: TrainingFocus; label: string; icon: string; desc: string }[] = [
-  { id: 'balanced', label: 'Balanced', icon: '⚖️', desc: 'Develop all aspects equally' },
-  { id: 'attack', label: 'Attack', icon: '⚽', desc: 'Focus on attacking play (MID/FWD)' },
-  { id: 'defense', label: 'Defense', icon: '🛡️', desc: 'Focus on defensive stability (GK/DEF)' },
-  { id: 'fitness', label: 'Fitness', icon: '💪', desc: 'Faster injury recovery, no growth focus' },
+const TRAINING_TYPES: { id: TrainingFocus; label: string; icon: IconName; desc: string }[] = [
+  { id: 'balanced', label: 'Balanced', icon: 'balanced', desc: 'Develop all aspects equally' },
+  { id: 'attack', label: 'Attack', icon: 'attack', desc: 'Focus on attacking play (MID/FWD)' },
+  { id: 'defense', label: 'Defense', icon: 'defense', desc: 'Focus on defensive stability (GK/DEF)' },
+  { id: 'fitness', label: 'Fitness', icon: 'fitness', desc: 'Faster injury recovery, no growth focus' },
 ];
 // Prose moved to `title` tooltips only — the pills' icon + label plus the
 // intensity donut already carry the same information.
@@ -172,7 +173,7 @@ export default function TrainingScreen({
               style={{ padding: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}
               title={t.desc}
             >
-              <span style={{ fontSize: 18 }}>{t.icon}</span>
+              <Icon name={t.icon} size={18} />
               <span>{t.label}</span>
             </button>
           ))}
@@ -185,9 +186,9 @@ export default function TrainingScreen({
       </div>
 
       <div className="fm-attr-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-        <StatTile icon="👥" value={squad.length} label="Total squad" />
-        <StatTile icon="🏥" value={injuredCount} label="Injured" />
-        <StatTile icon="⚠️" value={atRiskCount} label="Unhappy" />
+        <StatTile icon={<Icon name="squad" />} value={squad.length} label="Total squad" />
+        <StatTile icon={<Icon name="injury" />} value={injuredCount} label="Injured" />
+        <StatTile icon={<Icon name="warning" />} value={atRiskCount} label="Unhappy" />
       </div>
 
       <div className="fm-mod">
@@ -220,7 +221,7 @@ export default function TrainingScreen({
                 </p>
                 {maxed ? (
                   <p className="fm-hint" style={{ textAlign: 'left', margin: 0 }}>
-                    ✓ Fully upgraded
+                    <Icon name="check" size={13} /> Fully upgraded
                   </p>
                 ) : (
                   <button

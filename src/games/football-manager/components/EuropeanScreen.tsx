@@ -9,6 +9,7 @@ import {
   userContinentalTie,
 } from '@/engine/europeanCup';
 import { StatTile } from './visuals';
+import { Icon } from './Icon';
 
 type EuroTab = 'standings' | 'fixtures' | 'stats';
 
@@ -62,7 +63,7 @@ export default function EuropeanScreen({ state }: { state: GameState }) {
           {c.name || 'Continental Champions Cup'}
         </p>
         {wonIt ? (
-          <p className="fm-cup-status">🏆 Winners: {clubName(c.winnerId!)}</p>
+          <p className="fm-cup-status" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="trophy" size={14} /> Winners: {clubName(c.winnerId!)}</p>
         ) : !enteredThisSeason ? (
           <p className="fm-cup-status">
             Did not qualify this season.{' '}
@@ -182,12 +183,12 @@ export default function EuropeanScreen({ state }: { state: GameState }) {
             {clubName(state.userClubId)} in Europe this season
           </p>
           <div className="fm-attr-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-            <StatTile icon="⚽" value={legsPlayed} label="Played" />
-            <StatTile icon="✅" value={wins} label="Wins" />
-            <StatTile icon="➖" value={draws} label="Draws" />
-            <StatTile icon="❌" value={losses} label="Losses" />
-            <StatTile icon="🥅" value={`${gf}-${ga}`} label="Goals for-against" />
-            <StatTile icon="📈" value={gf - ga >= 0 ? `+${gf - ga}` : gf - ga} label="Goal difference" />
+            <StatTile icon={<Icon name="goal" />} value={legsPlayed} label="Played" />
+            <StatTile icon={<Icon name="check" />} value={wins} label="Wins" />
+            <StatTile icon={<Icon name="dash" />} value={draws} label="Draws" />
+            <StatTile icon={<Icon name="cross" />} value={losses} label="Losses" />
+            <StatTile icon={<Icon name="net" />} value={`${gf}-${ga}`} label="Goals for-against" />
+            <StatTile icon={<Icon name="trend" />} value={gf - ga >= 0 ? `+${gf - ga}` : gf - ga} label="Goal difference" />
           </div>
           {!enteredThisSeason && <p className="fm-hint">No European matches played this season.</p>}
         </div>

@@ -23,7 +23,7 @@ const BLURBS: Record<string, string> = {
 const NATIONS = COUNTRIES.map((country) => ({
   id: country.toLowerCase(),
   name: country,
-  flag: FLAGS[country] ?? '🏳',
+  flag: FLAGS[country] ?? '—',
   leagueIds: pyramidOf(country).filter((l) => !l.phantom).map((l) => l.id),
   description: BLURBS[country] ?? `${leagueName(pyramidOf(country)[0].id)} and the tiers below it`,
 })).filter((n) => n.leagueIds.length > 0);

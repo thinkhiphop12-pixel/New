@@ -1,5 +1,7 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 /** Shared visual primitives used across match/squad/tactics screens so the
  *  game reads as a pitch-and-player sim instead of stacked text lists. */
 
@@ -139,7 +141,7 @@ export function AttrBars({
 }
 
 /** Icon + big number + tiny label — replaces a prose stat line. */
-export function StatTile({ icon, value, label }: { icon: string; value: string | number; label: string }) {
+export function StatTile({ icon, value, label }: { icon: ReactNode; value: string | number; label: string }) {
   return (
     <div className="fm-stat-tile">
       <span className="fm-stat-tile__icon">{icon}</span>

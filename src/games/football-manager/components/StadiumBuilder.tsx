@@ -1,6 +1,7 @@
 'use client';
 
 import type { FacilitiesState, GameState, Stand, StandId } from '@/engine/types';
+import { Icon } from './Icon';
 import { STAND_IDS, standUpgradeCost, totalCapacity } from '@/engine/facilities';
 import { formatMoney } from '@/engine/utils';
 
@@ -71,9 +72,14 @@ export default function StadiumBuilder({
                 opacity={building ? 0.55 : 0.9}
               />
               {building && (
-                <text x={box.x + box.w / 2} y={box.y + box.h / 2 + 4} textAnchor="middle" fontSize="9" fill="#fff">
-                  🚧
-                </text>
+                <use
+                  href="#fmi-facilities"
+                  x={box.x + box.w / 2 - 6}
+                  y={box.y + box.h / 2 - 6}
+                  width={12}
+                  height={12}
+                  style={{ color: '#fff' }}
+                />
               )}
             </g>
           );
@@ -88,7 +94,7 @@ export default function StadiumBuilder({
             className={`fm-pill${selected === id ? ' active' : ''}`}
             onClick={() => onSelect(selected === id ? null : id)}
           >
-            {id.toUpperCase()}{inFlight.has(id) ? ' 🚧' : ''}
+            {id.toUpperCase()}{inFlight.has(id) && <Icon name="facilities" size={12} style={{ marginLeft: 4, verticalAlign: -1 }} />}
           </button>
         ))}
       </div>

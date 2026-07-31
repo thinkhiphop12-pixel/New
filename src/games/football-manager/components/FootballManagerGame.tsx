@@ -25,6 +25,7 @@ import SettingsPanel, { loadSettings } from './SettingsPanel';
 import CharacterCustomizerScreen from './CharacterCustomizerScreen';
 import { readableTextOn } from './visuals';
 import { ToastHost, pushToast } from './ToastQueue';
+import { Icon, IconSprite } from './Icon';
 
 type View = 'menu' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonend' | 'character';
 
@@ -288,6 +289,7 @@ export default function FootballManagerGame() {
 
   return (
     <div className="fm-app" style={brandStyle}>
+      <IconSprite />
       <ToastHost />
       <header className="fm-header">
         <a
@@ -397,7 +399,15 @@ export default function FootballManagerGame() {
                 onClick={handlePlayMatch}
                 disabled={!lineupOk}
               >
-                {lineupOk ? `▶ Play Week ${gs.week}` : '⚠ Fix your lineup'}
+                {lineupOk ? (
+                  <>
+                    <Icon name="play" size={15} /> Play Week {gs.week}
+                  </>
+                ) : (
+                  <>
+                    <Icon name="warning" size={15} /> Fix your lineup
+                  </>
+                )}
               </button>
             ) : (
               <span className="fm-hint" style={{ margin: 0 }}>No fixture this week</span>

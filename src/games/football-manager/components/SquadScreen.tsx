@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Icon } from './Icon';
 import type { GameState, Player, Pressing, TacticStyle, Tempo, TrainingFocus, Width } from '@/engine/types';
 import { FORMATIONS, getFormation } from '@/engine/gameRules';
 import { autoPickLineup, getSquad, isOnLoan, lineupStrength, setPlayerRole } from '@/engine/teamManagement';
@@ -232,7 +233,7 @@ export default function SquadScreen({
                 <span className="fm-player-row__sub">
                   {p.age}y{inLineup ? ' · XI' : ''}
                   {p.tacticalRole ? ` · ${getRole(p.tacticalRole)?.name}` : ''}
-                  {p.contractYears <= 1 ? ' · ⚠ expiring' : ''}
+                  {p.contractYears <= 1 && <> · <Icon name="warning" size={11} style={{ verticalAlign: -1 }} /> expiring</>}
                 </span>
               </span>
               <span className="fm-player-row__tag">{formTag(p)}</span>

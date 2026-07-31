@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Icon } from './Icon';
 import type { GameState } from '@/engine/types';
 import { respondPress, type PressResult, type PressTone } from '@/engine/seasonProgression';
 import ManagerAvatar from './ManagerAvatar';
@@ -35,7 +36,7 @@ export default function PressConferenceModal({
       <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
         <div className="fm-matchx-modal__head">
           <span className="fm-matchx-modal__title">Press Conference</span>
-          <button className="fm-matchx-modal__close" onClick={onClose} aria-label="Close">✕</button>
+          <button className="fm-matchx-modal__close" onClick={onClose} aria-label="Close"><Icon name="cross" size={15} /></button>
         </div>
         {!result ? (
           <>

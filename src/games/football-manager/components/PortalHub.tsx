@@ -12,6 +12,7 @@ import { ReputationStars, tint } from './visuals';
 import { Crest } from './Crest';
 import PressConferenceModal from './PressConferenceModal';
 import ManagerAvatar from './ManagerAvatar';
+import { Icon } from './Icon';
 
 type Filter = 'all' | 'new' | 'tasks';
 
@@ -140,7 +141,11 @@ export default function PortalHub({
               </div>
             </div>
             {cupWeek && <p className="fm-card__note">+ Cup tie midweek</p>}
-            {!lineupOk && <p className="fm-card__note" style={{ color: 'var(--red)' }}>⚠ Lineup needs 11 fit players — fix it in Squad or Tactics.</p>}
+            {!lineupOk && (
+              <p className="fm-card__note" style={{ color: 'var(--red)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <Icon name="warning" size={13} /> Lineup needs 11 fit players — fix it in Squad or Tactics.
+              </p>
+            )}
             {opponent && (
               <div className="fm-actions" style={{ marginBottom: 0, justifyContent: 'flex-start' }}>
                 <button
@@ -148,7 +153,7 @@ export default function PortalHub({
                   onClick={() => setShowPress(true)}
                   disabled={state.pressWeek === state.week}
                 >
-                  🎙️ {state.pressWeek === state.week ? 'Press done' : 'Press Conference'}
+                  <Icon name="mic" size={14} /> {state.pressWeek === state.week ? 'Press done' : 'Press Conference'}
                 </button>
               </div>
             )}

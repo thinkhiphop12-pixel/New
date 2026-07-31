@@ -16,24 +16,25 @@ import FacilitiesScreen from './FacilitiesScreen';
 import FinancesScreen from './FinancesScreen';
 import EuropeanScreen from './EuropeanScreen';
 import TrainingScreen from './TrainingScreen';
+import { Icon, type IconName } from './Icon';
 
 type Tab = 'hub' | 'inbox' | 'squad' | 'tactics' | 'transfers' | 'table' | 'fixtures' | 'cups' | 'club' | 'scout' | 'facilities' | 'finances' | 'european' | 'training';
 
-const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: 'hub', label: 'Hub', icon: '🏠' },
-  { id: 'inbox', label: 'Inbox', icon: '📰' },
-  { id: 'squad', label: 'Squad', icon: '👥' },
-  { id: 'tactics', label: 'Tactics', icon: '📐' },
-  { id: 'transfers', label: 'Transfers', icon: '💰' },
-  { id: 'scout', label: 'Scout', icon: '🔍' },
-  { id: 'table', label: 'Table', icon: '📊' },
-  { id: 'fixtures', label: 'Fixtures', icon: '📅' },
-  { id: 'cups', label: 'Cups', icon: '🏆' },
-  { id: 'training', label: 'Training', icon: '🏋️' },
-  { id: 'facilities', label: 'Facilities', icon: '🏗️' },
-  { id: 'finances', label: 'Finances', icon: '💵' },
-  { id: 'european', label: 'European', icon: '🌍' },
-  { id: 'club', label: 'Club', icon: '🏢' },
+const TABS: { id: Tab; label: string; icon: IconName }[] = [
+  { id: 'hub', label: 'Hub', icon: 'home' },
+  { id: 'inbox', label: 'Inbox', icon: 'inbox' },
+  { id: 'squad', label: 'Squad', icon: 'squad' },
+  { id: 'tactics', label: 'Tactics', icon: 'tactics' },
+  { id: 'transfers', label: 'Transfers', icon: 'transfers' },
+  { id: 'scout', label: 'Scout', icon: 'scout' },
+  { id: 'table', label: 'Table', icon: 'table' },
+  { id: 'fixtures', label: 'Fixtures', icon: 'fixtures' },
+  { id: 'cups', label: 'Cups', icon: 'trophy' },
+  { id: 'training', label: 'Training', icon: 'training' },
+  { id: 'facilities', label: 'Facilities', icon: 'facilities' },
+  { id: 'finances', label: 'Finances', icon: 'finances' },
+  { id: 'european', label: 'European', icon: 'european' },
+  { id: 'club', label: 'Club', icon: 'club' },
 ];
 
 // Pocket (<900px): only these five sit in the fixed bottom dock. The rest
@@ -87,7 +88,7 @@ export default function HubScreen({
         aria-current={tab === t.id ? 'page' : undefined}
         title={t.label}
       >
-        <span className="fm-rail__icon" aria-hidden="true">{t.icon}</span>
+        <Icon name={t.icon} size={19} className="fm-rail__icon" />
         <span className="fm-rail__label">{t.label}</span>
         {count > 0 && <span className="fm-rail__badge">{count}</span>}
       </button>
@@ -114,7 +115,7 @@ export default function HubScreen({
           aria-label="More sections"
           title="More"
         >
-          <span className="fm-rail__icon" aria-hidden="true">⋯</span>
+          <Icon name="more" size={19} className="fm-rail__icon" />
           <span className="fm-rail__label">More</span>
         </button>
       </nav>
@@ -127,7 +128,7 @@ export default function HubScreen({
               onClick={() => pick(t.id)}
               role="menuitem"
             >
-              <span aria-hidden="true">{t.icon}</span> {t.label}
+              <Icon name={t.icon} size={16} /> {t.label}
               {badgeFor(t.id) > 0 && <span className="fm-rail__badge fm-rail__badge--inline">{badgeFor(t.id)}</span>}
             </button>
           ))}

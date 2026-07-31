@@ -4,6 +4,7 @@ import type { GameState, SeasonSummary } from '@/engine/types';
 import { leagueName } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
 import ManagerAvatar from './ManagerAvatar';
+import { Icon, type IconName } from './Icon';
 
 export default function SeasonEndScreen({
   state,
@@ -19,19 +20,21 @@ export default function SeasonEndScreen({
   onRetire: () => void;
 }) {
   const club = state.clubs.find((c) => c.id === state.userClubId)!;
-  const banner = summary.sacked
-    ? { cls: 'fm-banner--red', text: '❌ SACKED' }
+  const banner: { cls: string; icon: IconName | null; text: string } = summary.sacked
+    ? { cls: 'fm-banner--red', icon: 'cross', text: 'SACKED' }
     : summary.champions
-      ? { cls: 'fm-banner--gold', text: '🏆 CHAMPIONS!' }
+      ? { cls: 'fm-banner--gold', icon: 'trophy', text: 'CHAMPIONS!' }
       : summary.promoted
-        ? { cls: 'fm-banner--green', text: '⬆ PROMOTED!' }
+        ? { cls: 'fm-banner--green', icon: 'arrow-up', text: 'PROMOTED!' }
         : summary.relegated
-          ? { cls: 'fm-banner--red', text: '⬇ RELEGATED' }
-          : { cls: 'fm-banner--plain', text: 'SEASON COMPLETE' };
+          ? { cls: 'fm-banner--red', icon: 'arrow-down', text: 'RELEGATED' }
+          : { cls: 'fm-banner--plain', icon: null, text: 'SEASON COMPLETE' };
 
   return (
     <div className="fm-screen fm-start">
-      <span className={`fm-banner ${banner.cls}`}>{banner.text}</span>
+      <span className={`fm-banner ${banner.cls}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        {banner.icon && <Icon name={banner.icon} size={20} />} {banner.text}
+      </span>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 4 }}>
         {state.managerProfile && (
           <ManagerAvatar
@@ -71,8 +74,17 @@ export default function SeasonEndScreen({
           Season review
         </p>
         <ul className="fm-news">
-          <li>
-            Board objective: {summary.objective} — {summary.objectiveMet ? '✅ achieved' : '❌ missed'}
+          <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            Board objective: {summary.objective} —
+            {summary.objectiveMet ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--green)' }}>
+                <Icon name="check" size={12} /> achieved
+              </span>
+            ) : (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--red)' }}>
+                <Icon name="cross" size={12} /> missed
+              </span>
+            )}
           </li>
           {summary.cupRun && <li>BALLKNW Cup: {summary.cupRun}</li>}
           {summary.continentalRun && <li>Continental Champions Cup: {summary.continentalRun}</li>}
@@ -86,7 +98,7 @@ export default function SeasonEndScreen({
           </p>
           <ul className="fm-news">
             {summary.awards.map((a, i) => (
-              <li key={i}>🏅 {a}</li>
+              <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="medal" size={13} /> {a}</li>
             ))}
           </ul>
         </div>
@@ -125,8 +137,14 @@ export default function SeasonEndScreen({
               <li key={h.year}>
                 {h.year}/{(h.year + 1) % 100}: {leagueName(h.leagueId)}, {h.position}
                 {ordinal(h.position)} — {h.pts} pts
-                {h.champions ? ' 🏆' : h.promoted ? ' ⬆' : h.relegated ? ' ⬇' : ''}
-                {h.sacked ? ' ❌' : ''}
+                {h.champions ? (
+                  <Icon name="trophy" size={12} style={{ marginLeft: 5, verticalAlign: -1 }} />
+                ) : h.promoted ? (
+                  <Icon name="arrow-up" size={12} style={{ marginLeft: 5, verticalAlign: -1 }} />
+                ) : h.relegated ? (
+                  <Icon name="arrow-down" size={12} style={{ marginLeft: 5, verticalAlign: -1 }} />
+                ) : null}
+                {h.sacked && <Icon name="cross" size={12} style={{ marginLeft: 5, verticalAlign: -1 }} />}
               </li>
             ))}
           </ul>
