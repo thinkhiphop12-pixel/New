@@ -1,7 +1,7 @@
 'use client';
 
 import type { GameState, Staff } from '@/engine/types';
-import { ACADEMY_UPGRADE_COST, STADIUM_UPGRADE_COST, STAFF_MAX_LEVEL, STAFF_UPGRADE_COST } from '@/engine/gameRules';
+import { ACADEMY_UPGRADE_COST, STADIUM_UPGRADE_COST, STAFF_MAX_LEVEL, STAFF_UPGRADE_COST, leagueName } from '@/engine/gameRules';
 import {
   gateIncome, getStadiumLevel, getStaff, setCaptain, staffWageBill, upgradeAcademy, upgradeStadium,
   upgradeStaff, weeklyWageBill,
@@ -208,7 +208,7 @@ export default function ClubScreen({
           <StatTile
             icon="🏅"
             value={state.records.bestFinish ? `${state.records.bestFinish.position}${ord(state.records.bestFinish.position)}` : '—'}
-            label={state.records.bestFinish ? `Div ${state.records.bestFinish.division}, ${state.records.bestFinish.year}` : 'Best finish'}
+            label={state.records.bestFinish ? `${leagueName(state.records.bestFinish.leagueId)}, ${state.records.bestFinish.year}` : 'Best finish'}
           />
           <StatTile
             icon="⚽"

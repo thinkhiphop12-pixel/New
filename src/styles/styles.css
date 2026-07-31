@@ -146,7 +146,6 @@ button{ font-family:inherit; cursor:pointer; border:none; }
 }
 .ad-slot-label{ font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--ink-dim); }
 .ad-slot.is-filled .ad-slot-label{ display:none; }
-.ad-slot ins.adsbygoogle{ width:100%; }
 
 .ad-slot.ad-load-failed{ opacity:.4; }
 

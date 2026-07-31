@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
-import Script from 'next/script';
+import { Inter, Space_Grotesk } from 'next/font/google';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 
@@ -8,6 +7,16 @@ const inter = Inter({
   subsets: ['latin'],
   preload: true,
   display: 'swap',
+});
+
+// Phase 14: display face for headings (--font-display in globals.css),
+// loaded the same way as the existing Inter body font — next/font/google,
+// self-hosted at build time, no extra network request or new dependency.
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  preload: true,
+  display: 'swap',
+  variable: '--font-display-loaded',
 });
 
 export const metadata: Metadata = {
@@ -39,21 +48,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.className}>
+    <html lang="en" className={`${inter.className} ${spaceGrotesk.variable}`}>
       <body>
         {children}
         <SpeedInsights />
-        {/* Google AdSense loader (site verification + library) */}
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2741492847457362"
-          crossOrigin="anonymous"
-          data-adsense="1"
-          strategy="afterInteractive"
-        />
-        {/* Shared consent banner + consent-gated ads, served from the site root */}
-        <Script src="/shared/consent.js" strategy="afterInteractive" />
-        <Script src="/shared/ads.js" strategy="afterInteractive" />
       </body>
     </html>
   );

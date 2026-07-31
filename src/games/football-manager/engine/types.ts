@@ -1,5 +1,79 @@
 export type Position = 'GK' | 'DEF' | 'MID' | 'FWD';
+
+/** Named play-style identity. `balanced` and `parkbus` need no drilling — they
+ *  are the fallbacks a side reverts to. See engine/familiarity.ts. */
+export type PlayStyle =
+  | 'balanced' | 'parkbus'
+  | 'direct' | 'possession' | 'tiki-taka' | 'counter'
+  | 'gegenpressing' | 'longball' | 'catenaccio';
+
+/** Per-club drilling state: how familiar the squad is with each style and
+ *  shape, 0–100. */
+export interface TacFam {
+  styles: Partial<Record<PlayStyle, number>>;
+  formations: Record<string, number>;
+  lastStyle: PlayStyle | null;
+  lastFormation: string | null;
+}
+
+/** Legacy division number, kept only for the raw dataset (gamedata.json) and
+ *  the pre-v4 save migration. Live game state keys off `LeagueDef.id`. */
 export type Division = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+
+/**
+ * One league in the pyramid. Structure, promotion/relegation counts, UEFA slot
+ * allocation and TV equal share are ported from the reference implementation;
+ * see LEAGUES in engine/gameRules.ts.
+ */
+export interface LeagueDef {
+  id: string;
+  name: string;
+  country: string;
+  /** 1 = top flight of its country. */
+  level: number;
+  /** How many clubs the league holds. */
+  clubCount: number;
+  /** Times every club plays every other club (2 = normal double round-robin,
+   *  3 = Scottish Premiership pre-split, 4 = Scottish Championship). */
+  rounds: number;
+  /** Scotland only: after `rounds` full rounds the league splits into a top
+   *  and bottom half of this size, who play each other once more and cannot
+   *  cross the split. */
+  splitSize?: number;
+  /** Clubs promoted automatically from the top of the table. */
+  autoPromotion: number;
+  /** Clubs entering the promotion play-off bracket, below the auto spots. */
+  playoffSpots: number;
+  /** Clubs relegated automatically from the bottom of the table. */
+  relegation: number;
+  /** Set on the UPPER league: id of the league below whose qualifier its
+   *  lowest safe club faces (Bundesliga Relegationsspiele, Ligue 1 barrage). */
+  interPlayoff?: string;
+  /** Set on the LOWER league: id of the league above it feeds a challenger to. */
+  interPlayoffFeeder?: string;
+  /** How many clubs below the auto-promotion spots contest that challenger
+   *  place (1 = straight into the tie, 3 = a 3rd–5th mini bracket). */
+  interPlayoffFeederSpots?: number;
+  /** UEFA slot allocation. */
+  championsLeague: number;
+  clPlayoff: number;
+  europaLeague: number;
+  conferenceLeague: number;
+  /** Broadcast equal share, £m per club per season. */
+  tvEqualShare: number;
+
+  /* --- engine extensions (not in the reference's own LEAGUES map) --------- */
+  /** Not simulated: no fixtures, hidden from the UI. Exists as a dormant pool
+   *  feeding the league above with promotion/relegation churn. */
+  phantom?: boolean;
+  /** Transfer budget a club in this league starts with. */
+  startingBudget: number;
+  /** Weekly gate income baseline. */
+  gateBase: number;
+  /** Prize money for finishing 1st, and the reduction per place below that. */
+  prizeTop: number;
+  prizeStep: number;
+}
 
 /** One season of a player's career, recorded at season end. */
 export interface CareerEntry {
@@ -20,21 +94,65 @@ export interface Player {
   /** Specialized tactical role (e.g., 'cb_playmaker', 'st_poacher'). Overrides basic role if set. */
   tacticalRole?: string;
   rating: number;
+  /** Ceiling this player can develop toward. Never exceeded by `rating`. Cap 99. */
+  potential: number;
   pac: number;
   sho: number;
   pas: number;
   dri: number;
   def: number;
   phy: number;
+  /** Keeper-only attributes (low filler values for outfield players). */
+  gkReflexes: number;
+  gkPositioning: number;
+  /** Height in cm. */
+  height: number;
+  /** Secondary detailed roles the player can cover naturally (e.g. ['LM']). */
+  altPos: string[];
   age: number;
   value: number;
   wage: number; // weekly wage
   clubId: number; // 0 = free agent
   form: number; // 0.85–1.15 multiplier, drifts weekly
   injuryWeeks: number; // 0 = fit
+  /** Remaining layoff in DAYS — the real precision behind `injuryWeeks`,
+   *  which is kept in sync as `ceil(injuryDays / 7)`. */
+  injuryDays?: number;
+  /** `INJURY_TYPES` id of the current layoff (null/undefined when fit). */
+  injuryType?: string | null;
   contractYears: number; // seasons left on contract
+  /** Contract expiry as an ISO date (YYYY-MM-DD), always snapped to a
+   *  31 Jan / 30 Jun transfer window. Kept in sync with `contractYears`. */
+  contractEnd: string;
+  /** Fee that automatically buys the player out of his contract. 0 = none. */
+  releaseClause: number;
+  /** A loyal player resists moves and accepts smaller pay rises. */
+  loyal: boolean;
+  /** Placed on the transfer list by his club. */
+  transferListed: boolean;
+  /** Has asked to leave. */
+  wantsMove: boolean;
+  /** Squad status promised to him ('star' | 'important' | 'rotation' | …). */
+  promisedStatus: string | null;
+  /** Personal retirement age (35–43 outfield, 35–47 GK). */
+  retireAge: number;
+  /** Individual morale 0–100. */
+  morale: number;
+  /** Physical condition 0–100. */
+  fitness: number;
+  /** Match sharpness 0–100. */
+  sharpness: number;
+  /** Squad familiarity 0–100. */
+  chem: number;
   apps: number; // appearances this season
   goals: number; // goals this season
+  assists: number; // assists this season
+  cleanSheets: number; // clean sheets this season (GK/DEF)
+  saves: number; // saves this season (GK)
+  /** Domestic-league-only mirrors of apps/goals, so national awards ignore
+   *  cup and European games. */
+  lgApps: number;
+  lgGoals: number;
   /** Season year the loan ends; while set the player is away on loan. */
   onLoanUntil?: number;
   career: CareerEntry[];
@@ -43,9 +161,182 @@ export interface Player {
   seasonRatingCount?: number;
   /** Wants more minutes or a move — attracts extra transfer interest. */
   unhappy?: boolean;
+
+  /* --- Phase 7: transfers. All optional; absent means "nothing going on". --- */
+  /** Why he asked to leave. */
+  wantsMoveReason?: 'ability' | 'ambition' | 'game_time';
+  /** Price his club has advertised him at (user club only). */
+  listingPrice?: number | null;
+  /** Made available for loan by his club. */
+  loanListed?: boolean;
+  /** Set while he is at a club that does not own him. */
+  loan?: LoanDeal;
+  /** Weeks since the squad-status promise was made, and how long it's been broken. */
+  promiseWeeks?: number;
+  promiseBreachWeeks?: number;
+  /** Consecutive weeks he has gone without an appearance. */
+  benchWeeks?: number;
+}
+
+/** A live loan spell, held on the player while he sits in the borrower's squad. */
+export interface LoanDeal {
+  parentClubId: number;
+  parentClubName: string;
+  /** Season year the loan runs until (returns at the start of that season). */
+  untilSeason: number;
+  /** Share of his wage the PARENT still pays (0 = borrower covers everything). */
+  wageShare: number;
+  /** Agreed playing-time clause, or null for a no-strings loan. */
+  playingTime: 'regular' | 'occasional' | null;
+  /** Pre-agreed permanent fee the borrower may trigger. 0 = none. */
+  optionToBuy: number;
+  /** Snapshot of the player's counters the week the loan began. */
+  startApps: number;
+  startGoals: number;
+  /** Borrowing club's games played when the loan began. */
+  startClubPlayed: number;
+  /** The playing-time clause is currently unmet. */
+  clauseBroken?: boolean;
+  /** Borrower games played when the warning was issued. */
+  warnedGames?: number | null;
+}
+
+export type MoveVerdict = 'keen' | 'open' | 'reluctant' | 'refuses';
+export type SquadStatusKey = 'star' | 'key' | 'first_team' | 'rotation' | 'fringe';
+
+export interface MoveFactor {
+  label: string;
+  delta: number;
+  detail?: string;
+}
+
+export interface MoveAssessment {
+  score: number;
+  verdict: MoveVerdict;
+  factors: MoveFactor[];
+  /** What he'd want to be talked into it: squad_status / wage_premium / … */
+  demands: string[];
+  projectedStatus: SquadStatusKey;
+  /** Wage premium a reluctant player prices in. */
+  wageMult: number;
+}
+
+/** How available a player is, from the buying club's point of view. */
+export interface MarketStatus {
+  listed: boolean;
+  unsettled: boolean;
+  unsettledReason: string | null;
+  expiring: boolean;
+  monthsLeft: number;
+}
+
+/** The selling club's and the player's negotiating positions. */
+export interface NegotiationTerms {
+  asking: number;
+  minFee: number;
+  wageDemand: number;
+  minWage: number;
+  feeRound: number;
+  wageRound: number;
+  /** One-shot chance the club rebuffs a bid that clears its minimum. */
+  holdOut: number;
+  wageHoldOut: number;
+}
+
+export type NegotiationStage = 'fee' | 'terms' | 'outbid';
+export type NegotiationTone = 'info' | 'good' | 'bad' | 'you';
+
+export interface NegotiationMsg {
+  text: string;
+  tone: NegotiationTone;
+}
+
+/** One live transfer negotiation — the user buying, or a club bidding for one
+ *  of the user's players. */
+export interface Negotiation {
+  id: string;
+  /** `outgoing` = the user is buying; `incoming` = a club is bidding for ours. */
+  type: 'outgoing' | 'incoming';
+  playerId: number;
+  /** The other club: the seller (outgoing) or the bidder (incoming). */
+  clubId: number;
+  clubName: string;
+  playerName: string;
+  playerPos: Position;
+  playerRating: number;
+  stage: NegotiationStage;
+  /** Whose move it is. `club` means a reply lands on `responseWeek`. */
+  awaiting: 'user' | 'club';
+  responseWeek: number | null;
+  /** Season round the deal was last touched — stale deals lapse. */
+  lastTouchWeek: number;
+  neg: NegotiationTerms;
+  lastFee: number | null;
+  lastWage: number | null;
+  agreedFee: number | null;
+  agreedWage: number | null;
+  contractYears: number;
+  promisedStatus: SquadStatusKey | null;
+  signingBonus: number;
+  releaseClause: number;
+  stance: MoveVerdict;
+  stanceScore: number;
+  demands: string[];
+  projectedStatus: SquadStatusKey;
+  /** Set once a rival club joins the race for an outgoing target. */
+  rival?: { clubId: number; clubName: string; offer: number } | null;
+  /** Settles as a pre-contract that activates next season instead of now. */
+  preContract?: boolean;
+  /** Incoming-only. */
+  isLoan?: boolean;
+  fee?: number;
+  maxWilling?: number;
+  lastCounter?: number | null;
+  playoffFloor?: number | null;
+  marketValue?: number;
+  loanWageShare?: number;
+  loanPlayingTime?: 'regular' | 'occasional' | null;
+  log: NegotiationMsg[];
+}
+
+/** A deal agreed for a player who joins for free when his contract lapses. */
+export interface PreContract {
+  id: string;
+  playerId: number;
+  playerName: string;
+  fromClubId: number;
+  agreedWage: number;
+  agreedYears: number;
+  /** Season year the player actually arrives. */
+  activatesSeason: number;
 }
 
 export interface Club {
+  id: number;
+  name: string;
+  code: string;
+  color: string;
+  /** LeagueDef.id this club is registered in. Exactly one, always. */
+  leagueId: string;
+  playerIds: number[];
+  /** Dormant club sitting in a phantom league's pool — no fixtures, no
+   *  transfer activity, waiting to rotate up. */
+  dormant?: boolean;
+
+  /* --- Phase 5: tactical identity and drilling. All optional; a save without
+     them behaves as a 'balanced' side, which needs no drilling. --- */
+  /** Named play-style this club is drilled in. */
+  playStyle?: PlayStyle;
+  /** Formation this club habitually sets up in. */
+  formationId?: string;
+  /** Club standing 1–5, used to scale AI drilling speed. */
+  reputation?: number;
+  /** Per-style and per-formation familiarity, 0–100. */
+  tacFam?: TacFam;
+}
+
+/** A club as it appears in the raw dataset, still keyed by division number. */
+export interface DataClub {
   id: number;
   name: string;
   code: string;
@@ -79,7 +370,50 @@ export interface Tactics {
   width: Width;
   /** Team mentality (tick engine). Defaults to 'balanced' for older saves. */
   mentality?: 'ultra-defensive' | 'defensive' | 'balanced' | 'attacking' | 'ultra-attacking';
+
+  /* --- Phase 4: the instructions the tactical xG chain reads. All optional
+     with a neutral default so pre-v5 saves behave exactly as before. --- */
+  /** How high the back line holds. */
+  defLine?: DefLine;
+  /** Which channel play is aimed through — matched against opponent width. */
+  focus?: AttackFocus;
+  /** Playing out from the back vs going long — gated on the XI's passing. */
+  buildUp?: BuildUp;
+  /** Passing directness — gated on the XI's passers. Named `passingStyle` to
+   *  avoid colliding with the `pressing` field's naming. */
+  passingStyle?: PassingStyle;
+  /** Forward runs — gated on the XI's pace and the opponent's line. */
+  runs?: RunStyle;
+  /** Challenge intensity: card risk traded for recoveries. */
+  tackling?: Tackling;
+
+  /* --- Phase 5: set pieces. Optional throughout — an absent block means
+     "pick sensible defaults", which is what every pre-v6 save gets. --- */
+  setPieces?: SetPieceSetup;
 }
+
+/** Dead-ball setup: who takes them, how they're delivered, and who does what
+ *  in the box at both ends. */
+export interface SetPieceSetup {
+  /** Designated takers, by player id. Ignored if the man isn't in the XI. */
+  penalties?: number;
+  corners?: number;
+  fkShoot?: number;
+  fkDeliver?: number;
+  cornerRoutine?: 'near-post' | 'far-post' | 'drilled' | 'short' | 'edge-of-box';
+  cornerDefense?: 'zonal' | 'man' | 'mixed';
+  /** Attacking box assignment per player id. */
+  boxJobs?: Record<number, 'far' | 'near' | 'six' | 'edge' | 'back'>;
+  /** Defensive box assignment per player id. */
+  defJobs?: Record<number, 'post' | 'mark' | 'zone' | 'edge' | 'up'>;
+}
+
+export type DefLine = 'deep' | 'normal' | 'high';
+export type AttackFocus = 'flanks' | 'mixed' | 'middle';
+export type BuildUp = 'play-out' | 'balanced' | 'long';
+export type PassingStyle = 'short' | 'mixed' | 'through-balls';
+export type RunStyle = 'into-feet' | 'balanced' | 'in-behind';
+export type Tackling = 'cautious' | 'normal' | 'aggressive';
 
 export type TrainingFocus = 'balanced' | 'attack' | 'defense' | 'fitness';
 
@@ -100,6 +434,27 @@ export interface MatchEvent {
   clubId: number; // 0 for neutral events (kickoff etc.)
   text: string;
   playerId?: number; // scorer for goal events
+
+  /* --- Phase 4: shot-level detail, so PitchCanvas can plot true positions
+     and the season loop can apply real injuries. All optional — pre-v5
+     reports simply lack them. --- */
+  /** Metres out from the goal being attacked (0 = on the line). */
+  gx?: number;
+  /** Metres left/right of the middle of that goal (0 = dead centre). */
+  gy?: number;
+  /** Expected goals for this shot, 0–1. Never exceeds 1.0. */
+  xg?: number;
+  /** Shot archetype id (`tap_in`, `one_on_one`, `header_cross`, …). */
+  archetype?: string;
+  /** How the ball was struck. */
+  contact?: 'header' | 'volley' | 'foot';
+  /** Assisting player for a goal. */
+  assistId?: number;
+  /** Injury detail (injury events only). */
+  injuryType?: string;
+  injuryDays?: number;
+  /** Potential the injury permanently costs (ACL: 3). */
+  potDrop?: number;
 }
 
 export interface MatchReport {
@@ -114,6 +469,35 @@ export interface MatchReport {
   awayLineup: number[];
   /** Event-weighted match ratings from the tick engine (absent in old saves). */
   ratings?: Record<number, number>;
+
+  /* --- Phase 6: stoppage time, extra time, penalty shootouts (gaps 17-18, 27-29). --- */
+  /** Added time at the end of the first half, in minutes. */
+  stoppage1?: number;
+  /** Added time at the end of the second half (or the match, if no ET), in minutes. */
+  stoppage2?: number;
+  /** Final whistle minute, including all stoppage and (if played) extra time. */
+  matchEnd?: number;
+  /** True when a decisive-result match went to extra time (still level after 90+stoppage). */
+  wentToExtraTime?: boolean;
+  /** Present when the match needed a penalty shootout to produce a winner. */
+  shootout?: ShootoutResult;
+}
+
+/** One kick in a penalty shootout. */
+export interface ShootoutKick {
+  side: 'home' | 'away';
+  playerId: number;
+  playerName: string;
+  outcome: 'scored' | 'saved' | 'missed';
+  round: number; // 0-4 for the first five rounds, 5+ for sudden death
+}
+
+/** The full result of a penalty shootout. */
+export interface ShootoutResult {
+  homeScore: number;
+  awayScore: number;
+  winnerId: number;
+  kicks: ShootoutKick[];
 }
 
 export interface TableRow {
@@ -144,6 +528,10 @@ export interface CupTie {
   awayGoals: number;
   /** Winner on penalties when the tie was drawn. */
   pensWinnerId?: number;
+  /** True when the tie needed extra time before being settled (with or without pens). */
+  wentToExtraTime?: boolean;
+  /** Penalty shootout score, when the tie was decided that way. */
+  penScore?: { home: number; away: number };
 }
 
 /** A knockout competition (domestic cup, continental cup). */
@@ -160,10 +548,222 @@ export interface Knockout {
   winnerId: number | null;
 }
 
+/**
+ * One continental tie — one match (playoff round onward for the final) or two
+ * legs (every round before it). `legs[0]` is always the first leg played;
+ * `legs[1]`, if present, has home/away reversed from `legs[0]`.
+ */
+export interface ContinentalTie {
+  id: string;
+  homeId: number;
+  awayId: number;
+  twoLegged: boolean;
+  legs: CupTie[];
+}
+
+/**
+ * The continental competition (Phase 9): a real 24-club bracket rather than a
+ * flat top-8 knockout — the top 8 seeds go straight to the Round of 16, the
+ * other 16 (seeds 9-24) fight through a two-legged playoff round for the
+ * remaining 8 places. Every round from the playoff to the semi-final is
+ * two-legged; the final is a single match, standard continental format.
+ *
+ * Deliberately still a pure knockout, not the reference's full Swiss-model
+ * league phase (a round-robin-lite group stage with its own weekly fixture
+ * calendar) — that is a substantially larger rewrite than the bracket size,
+ * seeding and two-legged ties that actually change how a European run plays
+ * out. Left for a later pass; see docs/PFM26_COMPARISON_AND_HANDOVER.md.
+ */
+export interface Continental {
+  name: string;
+  /** Calendar week each round's first leg is played; two-legged rounds use
+   *  this week and the very next one for leg two. */
+  weeks: number[];
+  /** ties[i] exists once round i is drawn. Empty until the playoff round or
+   *  Round of 16 is reached. */
+  ties: ContinentalTie[][];
+  /** Seed rank at kickoff (1 = top seed), kept for the whole run so a low
+   *  seed that wins through still carries their original ranking into the
+   *  next draw's country-protection check. */
+  seedRank: Record<number, number>;
+  /** The 8 clubs who went straight to the Round of 16. */
+  directQualifiers: number[];
+  round: number;
+  winnerId: number | null;
+}
+
 export interface LedgerEntry {
   week: number;
   desc: string;
   amount: number; // positive = income
+}
+
+/* =========================================================================
+   Phase 8 — finances. Everything below is optional on GameState (`finances?`)
+   and lazily initialised by engine/finances.ts, so it is additive and
+   version-agnostic: an old save picks it up on the first tick or the first
+   render of the Finances screen without a save-version bump.
+   ========================================================================= */
+
+/** The three commercial inventory slots a club can sell. */
+export type SponsorSlotId = 'shirt' | 'sleeve' | 'stadium';
+
+/** Ticket pricing tier the club sets for home league fixtures. */
+export type TicketTier = 'cheap' | 'standard' | 'high' | 'premium';
+
+/** Performance bonus written into a sponsor contract. */
+export interface SponsorClause {
+  type: 'win' | 'title' | 'topHalf' | 'promotion';
+  /** Payout in £. */
+  amount: number;
+}
+
+export interface SponsorDeal {
+  name: string;
+  /** 1 regional, 2 national, 3 global — drives the name pool. */
+  tier: 1 | 2 | 3;
+  slot: SponsorSlotId;
+  /** £ per week. */
+  weeklyValue: number;
+  /** Seasons still to run; decremented at each season rollover. */
+  seasonsLeft: number;
+  /** Length the deal was signed for, kept for the UI. */
+  termSeasons: number;
+  clauses: SponsorClause[];
+}
+
+export interface KitDeal {
+  name: string;
+  /** £ per season. */
+  annualValue: number;
+  seasonsLeft: number;
+  termSeasons: number;
+}
+
+/** A deal on the table. `negotiated`/`withdrawn` track one negotiation attempt. */
+export type SponsorOffer = SponsorDeal & { negotiated?: boolean; withdrawn?: boolean };
+export type KitOffer = KitDeal & { negotiated?: boolean; withdrawn?: boolean };
+
+export interface SeasonIncome {
+  tv: number;
+  matchday: number;
+  sponsorship: number;
+  merchandise: number;
+  prizes: number;
+  sales: number;
+  parachute: number;
+  grants: number;
+}
+
+export interface SeasonExpenses {
+  wages: number;
+  staff: number;
+  transfers: number;
+  agentFees: number;
+  academyUpkeep: number;
+  stadiumMaint: number;
+}
+
+/** A transfer fee spread across the signed contract length. Accounting only —
+ *  the cash left the balance at signing, this only feeds the squad cost ratio. */
+export interface Amortization {
+  /** £ per week. */
+  weeklyCost: number;
+  weeksLeft: number;
+}
+
+export interface FinanceSeasonRecord {
+  year: number;
+  leagueId: string;
+  position: number;
+  income: number;
+  expenses: number;
+  profit: number;
+  balance: number;
+  confidence: number;
+}
+
+/** One point on the balance sparkline. */
+export interface BalancePoint {
+  year: number;
+  week: number;
+  balance: number;
+}
+
+export interface FinanceState {
+  /** Season this state was last rolled over into — drives lazy season-end
+   *  finalisation without a second hook in seasonProgression. */
+  seasonYear: number;
+  /** League the club was in at the last rollover, for parachute detection. */
+  leagueId: string;
+  /** Board confidence 0–100 (mirrors and drives `board.confidence`). */
+  boardConfidence: number;
+
+  shirt: SponsorDeal | null;
+  sleeve: SponsorDeal | null;
+  stadium: SponsorDeal | null;
+  kitDeal: KitDeal | null;
+  /** Slots whose deal expired and need re-selling. */
+  needsRenewal: SponsorSlotId[];
+  kitNeedsRenewal: boolean;
+  /** Live offer sheets, so a negotiation attempt survives a re-render. */
+  offers: Partial<Record<SponsorSlotId, SponsorOffer[]>>;
+  kitOffers: KitOffer[] | null;
+
+  ticketPricing: TicketTier;
+
+  seasonIncome: SeasonIncome;
+  seasonExpenses: SeasonExpenses;
+  balanceHistory: BalancePoint[];
+  history: FinanceSeasonRecord[];
+
+  /** Net profit for each of the last three completed seasons, oldest first. */
+  ffpRolling: number[];
+  ffpBreachWeeks: number;
+  ffpDeductedThisBreach: boolean;
+
+  amortizations: Amortization[];
+  /** Last computed squad cost ratio. */
+  scr: number;
+  scrOverWeeks: number;
+  transferEmbargo: boolean;
+  /** Weeks spent under embargo, for the follow-up deduction. */
+  embargoWeeks: number;
+
+  /** Points docked this season, applied to the table exactly once. */
+  pointsDeduction: number;
+  /** Ledger entries already folded into transfers/amortization, so the
+   *  ledger scan is idempotent across ticks. */
+  seenLedger: string[];
+
+  parachuteYears: number;
+  boardFundsRequested: boolean;
+  weeksElapsed: number;
+}
+
+export type ScenarioId =
+  | 'relegation_battle' | 'hollywood' | 'broke' | 'takeover'
+  | 'wonderkid_factory' | 'underdog_title' | 'points_deduction';
+
+export type ScenarioStatus = 'active' | 'success' | 'failed';
+
+/** Free-form per-scenario progress data — shape varies by scenario id, kept
+ *  as a loose record rather than a discriminated union so evalScenario can
+ *  read/write it without a switch on every field access. */
+export interface ScenarioState {
+  id: ScenarioId;
+  status: ScenarioStatus;
+  /** Current objective text, shown on the hub — some scenarios rewrite this
+   *  as progress is made (Hollywood counts down promotions still needed). */
+  objective: string;
+  startedSeason: number;
+  meta: {
+    streak?: number;
+    promosNeeded?: number;
+    deadlineSeason?: number;
+    academySales?: number;
+    deduction?: number;
+  };
 }
 
 export interface Manager {
@@ -189,7 +789,7 @@ export interface JobOffer {
 
 export interface ClubRecords {
   biggestWin: { text: string; margin: number } | null;
-  bestFinish: { year: number; division: Division; position: number } | null;
+  bestFinish: { year: number; leagueId: string; level: number; position: number } | null;
   topSeasonScorer: { name: string; goals: number; year: number } | null;
 }
 
@@ -202,7 +802,7 @@ export interface LegacyEntry {
 
 export interface SeasonSummary {
   year: number;
-  division: Division;
+  leagueId: string;
   position: number;
   pts: number;
   champions: boolean;
@@ -232,8 +832,112 @@ export interface DualFormation {
   outOfPossessionId: string;
 }
 
+/* --- Phase 10: facilities, staff and scouting. All optional so a save from
+   before this phase loads and behaves exactly as it did (instant-purchase
+   stadium/academy/staff levels stay live and readable; the new timed-projects
+   layer sits alongside, not on top of, them). See engine/facilities.ts. */
+
+/** The eight named zones of the ground: four sides plus four corners. */
+export type StandId = 'north' | 'south' | 'east' | 'west' | 'ne' | 'nw' | 'se' | 'sw';
+
+/** One buildable zone of the stadium. Tier 0 = undeveloped (no capacity). */
+export interface Stand {
+  id: StandId;
+  tier: 0 | 1 | 2 | 3;
+  type: 'seating' | 'terrace' | 'hospitality';
+  capacity: number;
+}
+
+/** Kinds of facility work that go through the timed-project system. */
+export type ProjectKind = 'stand' | 'training' | 'medical' | 'academy';
+
+/** A single in-progress (or just-completed) facility upgrade. Every upgrade
+ *  is a project now — see gap item 66 — rather than an instant purchase. */
+export interface FacilityProject {
+  id: number;
+  kind: ProjectKind;
+  /** Which stand this project targets; only set when kind === 'stand'. */
+  standId?: StandId;
+  label: string;
+  startWeek: number;
+  startYear: number;
+  /** Total weeks scheduled, 2–10, scaled by spend. */
+  durationWeeks: number;
+  /** Weeks of work banked so far — partial-credit accounting. */
+  weeksElapsed: number;
+  spend: number;
+  complete: boolean;
+}
+
+/** A named coach hired into a backroom slot. Head coach quality feeds
+ *  `coachDrillMult` in familiarity.ts (via the legacy `staff.coach` level)
+ *  and player development speed. */
+export interface Coach {
+  id: number;
+  name: string;
+  role: 'head' | 'fitness' | 'goalkeeping';
+  /** 1–99, like a player attribute. */
+  quality: number;
+  wage: number;
+}
+
+export interface FacilitiesState {
+  stands: Record<StandId, Stand>;
+  /** Real ground capacity ceiling this club can build toward, derived from
+   *  its league's stature (DIVERGENCE: no per-club real capacities were
+   *  seeded in the Phase 1 dataset, so this is computed, not looked up —
+   *  see groundCapacityCap() in engine/facilities.ts). */
+  groundCapacityCap: number;
+  trainingLevel: number; // 1-5
+  medicalLevel: number; // 1-5
+  academyReputation: number; // 0-100
+  coaches: Coach[];
+  projects: FacilityProject[];
+  nextProjectId: number;
+  nextCoachId: number;
+}
+
+export type ScoutAssignmentKind = 'opponent' | 'player-search' | 'youth';
+
+export interface ScoutAssignment {
+  id: number;
+  scoutName: string;
+  kind: ScoutAssignmentKind;
+  /** Opponent-report assignments target a club. */
+  targetClubId?: number;
+  startWeek: number;
+  startYear: number;
+  dueWeek: number;
+  dueYear: number;
+  weeksRemaining: number;
+  complete: boolean;
+  /** Populated once complete: opponent report id, or discovered player ids. */
+  reportId?: number;
+  foundPlayerIds?: number[];
+}
+
+export interface OpponentReport {
+  id: number;
+  clubId: number;
+  weekGenerated: number;
+  yearGenerated: number;
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+}
+
+export interface ScoutingState {
+  assignments: ScoutAssignment[];
+  /** Persisted shortlist of scouted player ids — was local-only React state
+   *  before this phase (gap item 67). */
+  shortlist: number[];
+  reports: OpponentReport[];
+  nextAssignmentId: number;
+  nextReportId: number;
+}
+
 export interface GameState {
-  version: 2;
+  version: 6 | 7;
   userClubId: number;
   seasonYear: number;
   /** Next round to be played, 1..SEASON_ROUNDS. > SEASON_ROUNDS means season over. */
@@ -248,27 +952,69 @@ export interface GameState {
   tactics: Tactics;
   training: TrainingFocus;
   chemistry: number; // 0–100 team chemistry
+  /** Phase 5: the user club's named play-style identity. Optional so pre-v6
+   *  saves default to 'balanced', which needs no drilling. */
+  playStyle?: PlayStyle;
   fanConfidence: number; // 0–100
   board: Board;
   manager: Manager;
+  /** Cosmetic manager avatar + name, travels with the save slot (per career,
+   *  not per device — a manager who moves clubs keeps his face). Optional so
+   *  older saves without one still load. */
+  managerProfile?: ManagerProfile;
+  /** Phase 11: the starting challenge this career was set up under, if any.
+   *  Absent entirely for a normal career — optional rather than a 'none'
+   *  variant so nothing else has to special-case the common path. */
+  scenario?: ScenarioState;
   academyLevel: number; // 1–3
   /** Squad captain (player id). Leaders make better captains. */
   captainId?: number | null;
   staff?: Staff;
   stadiumLevel?: number; // 1–3, scales gate income
   ledger: LedgerEntry[];
+  /** Phase 8 finances. Optional and lazily initialised (see engine/finances.ts)
+   *  so pre-Phase-8 saves migrate additively with no version bump. */
+  finances?: FinanceState;
   cup: Knockout;
-  continental: Knockout;
+  continental: Continental;
   jobOffers: JobOffer[];
   records: ClubRecords;
   legacy: Record<number, LegacyEntry>;
   nextPlayerId: number; // for youth academy generation
   players: Record<number, Player>;
   clubs: Club[];
-  fixtures: { d1: Fixture[]; d2: Fixture[]; d3: Fixture[]; d4: Fixture[]; d5: Fixture[]; d6: Fixture[]; d7: Fixture[]; d8: Fixture[]; d9: Fixture[]; d10: Fixture[] };
+  /** League fixtures keyed by LeagueDef.id. Phantom leagues hold none. */
+  fixtures: Record<string, Fixture[]>;
+  /** Dormant club ids queued in each phantom league's pool, front first. */
+  phantomPools?: Record<string, number[]>;
+  /** For split leagues: the frozen [top half, bottom half] club ids, once the
+   *  pre-split programme has finished. Clubs cannot cross the split. */
+  splitGroups?: Record<string, number[][]>;
+  /** Set when the user's club drops out of the bottom of the pyramid the game
+   *  simulates — there is nowhere lower to send them. */
+  relegatedOutOfPyramid?: boolean;
+  /** Next id for a generated filler club. */
+  nextClubId?: number;
   incomingOffers: TransferOffer[];
+
+  /* --- Phase 7: transfers. All optional so pre-Phase-7 saves load unchanged;
+     lib/storage.ts migrate() back-fills them additively. --- */
+  /** Live fee/terms negotiations, both directions. */
+  negotiations?: Negotiation[];
+  /** Deals agreed for players arriving free at the next season rollover. */
+  preContracts?: PreContract[];
+  /** playerId → season year he refused to talk to us. Cleared each season. */
+  transferBans?: Record<number, number>;
+  /** Headlines about transfer business elsewhere in the league. */
+  transferNews?: string[];
+
   history: SeasonSummary[];
   news: string[];
+  /** Phase 12: per-story-type cooldown tracker (week each type last fired),
+   *  so the weekly press desk doesn't repeat the same headline every round.
+   *  Optional and lazily initialized — absent entirely on any save from
+   *  before this system existed. */
+  newsCooldowns?: Record<string, number>;
   /** Structured inbox items (news you can open into a full article + player card). */
   inbox: InboxItem[];
   nextInboxId: number;
@@ -276,6 +1022,13 @@ export interface GameState {
   pressWeek: number;
   /** User display/gameplay preferences. */
   settings?: GameSettings;
+  /** Phase 10: stadium/training/medical/academy timed-project state. Optional
+   *  so pre-v7 saves migrate in with a freshly-derived default (see
+   *  engine/facilities.ts newFacilities() + lib/storage.ts migrate()). */
+  facilities?: FacilitiesState;
+  /** Phase 10: scout assignments, opponent reports and the persisted
+   *  shortlist. */
+  scouting?: ScoutingState;
 }
 
 export type InboxCategory = 'club' | 'transfer' | 'injury' | 'contract' | 'youth' | 'board' | 'match' | 'press';
@@ -311,8 +1064,15 @@ export interface GameSettings {
 
 export interface AvatarConfig {
   skinTone: string;
+  /** Paired shadow tone for `skinTone`, so shading reads correctly across
+   *  every skin colour instead of one flat fill. Optional — falls back to
+   *  a computed darken of `skinTone` when absent (older saves). */
+  skinShadow?: string;
   eyeColor: string;
   hairColor: string;
+  /** Eyebrow colour as its own axis, independent of hair colour. Optional —
+   *  falls back to a computed shade of `hairColor` when absent. */
+  eyebrowColor?: string;
   hairStyle: string;
   facialHair: string;
   mouth: string;
@@ -331,8 +1091,14 @@ export interface ManagerProfile {
 
 export interface GameData {
   meta: { attribution: string; clubCount: number; playerCount: number };
-  clubs: Club[];
-  players: (Omit<Player, 'form' | 'injuryWeeks' | 'contractYears' | 'apps' | 'goals' | 'career' | 'wage'> & {
+  clubs: DataClub[];
+  players: (Omit<
+    Player,
+    | 'form' | 'injuryWeeks' | 'contractYears' | 'contractEnd' | 'apps' | 'goals'
+    | 'assists' | 'cleanSheets' | 'saves' | 'lgApps' | 'lgGoals' | 'career' | 'wage'
+    | 'transferListed' | 'wantsMove' | 'promisedStatus' | 'morale' | 'fitness'
+    | 'sharpness' | 'chem'
+  > & {
     wage?: number;
   })[];
 }

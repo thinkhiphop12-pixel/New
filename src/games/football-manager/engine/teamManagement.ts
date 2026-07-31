@@ -1,6 +1,9 @@
 import type { GameState, Player, Position, Tactics, FormationDef } from './types';
-import { FORMATIONS, getFormation } from './gameRules';
+import { FORMATIONS, getFormation, getLeague } from './gameRules';
+import { styleExec, styleFamiliarity } from './familiarity';
 import { traitsFor } from './traits';
+import { buildXI, calcMatchXG } from './tickEngine/xgModel';
+import { normalizeMentality } from './tickEngine/tacticsData';
 import { clamp } from './utils';
 import { getRole } from '@/lib/playerRoles';
 
@@ -162,30 +165,188 @@ export function squadAvgRating(state: GameState, clubId: number): number {
 }
 
 /**
- * The AI's setup for a club. Smarter than a fixed 4-3-3: each club has its own
- * preferred formation, and adapts style to the opponent's quality.
+ * Opponent-contextual AI tactics (gap 23). Reads the reputation/quality gap
+ * to the specific opponent this match, plus whether the club has actually
+ * drilled a counter-attacking setup, rather than a single "flip to attacking
+ * at 70' if losing" rule with no opponent awareness at all.
+ *
+ * Blends squad-rating gap (dominant, always populated) with reputation gap
+ * (1-5 stars, worth roughly 4 rating points a star) into one score. The
+ * thresholds below are calibrated against a real measured spread, not
+ * guessed: `reputation` is derived from a squad-rating banding
+ * (`clubReputation` in engine/clubIdentity.ts) that saturates at 5 stars for
+ * most of a top division — measured directly, 20 of 24 Premier League clubs
+ * in a fresh career all carry `reputation: 5`, so reputation alone cannot
+ * distinguish an in-league quality gap and the squad-rating term has to do
+ * the real work. Measured top-to-bottom squad-rating spread in that same
+ * division is 12.6 (Arsenal 82.6 vs Charlton Athletic 70.0); Liverpool vs
+ * Burnley — a clear "big club vs relegation candidate" gap, not the most
+ * extreme possible one — measures 7.3. Thresholds are set so that gap
+ * qualifies as "elite/underdog", not just the most extreme top-to-bottom
+ * case:
+ *   - A big lead (>6): play like the better side — attacking, high press,
+ *     high line, quick direct football. An elite club should never park
+ *     the bus.
+ *   - A big deficit (<-6): go deep and cautious rather than try to trade
+ *     evenly with a side that outclasses this one.
+ *   - Anywhere in between: a plain balanced approach, UNLESS this club has
+ *     genuinely drilled a counter-attacking setup (`styleFamiliarity` >= 50)
+ *     and is still a moderate underdog (gap < -2), in which case it leans
+ *     into it — sitting in and hitting on the break only pays off for a
+ *     side that has actually practiced it.
+ */
+export function contextualizeTactics(state: GameState, clubId: number, opponentId?: number): Tactics {
+  const club = state.clubs.find((c) => c.id === clubId);
+  const BALANCED: Tactics = {
+    style: 'balanced', pressing: 'mid', tempo: 'normal', width: 'standard',
+    defLine: 'normal', focus: 'mixed', buildUp: 'balanced', passingStyle: 'mixed', runs: 'balanced', tackling: 'normal',
+  };
+  if (!opponentId || !club) return BALANCED;
+
+  const opp = state.clubs.find((c) => c.id === opponentId);
+  const ratingGap = squadAvgRating(state, clubId) - squadAvgRating(state, opponentId);
+  const repGap = (club.reputation ?? 3) - (opp?.reputation ?? 3);
+  const gap = ratingGap + repGap * 4;
+
+  if (gap > 6) {
+    return {
+      style: 'attacking', pressing: 'high', tempo: 'fast', width: 'wide',
+      defLine: 'high', focus: 'mixed', buildUp: 'play-out', passingStyle: 'short', runs: 'in-behind', tackling: 'aggressive',
+    };
+  }
+  if (gap < -6) {
+    // Every one of defLine/tempo/width/tackling/pressing independently
+    // suppresses this side's OWN attack in calcMatchXG's tactical chain
+    // (LINE_ATK.deep=0.95, TEMPO_ATK.slow=0.96, WIDTH_ATK.narrow=0.97,
+    // TACKLE_BOOST.cautious=-0.02, PRESS_PRESET.low.ownBoost=-0.10) on top of
+    // the rating gap this side is already losing on — stacking four or five
+    // of them multiplicatively on the weaker side pushed whole-league
+    // goals/game below the 2.4-3.2 regression band across repeated runs
+    // (measured as low as 2.28, and failing roughly 1 in 3 smoke-test runs
+    // even after an earlier partial fix). Keeping only `defLine: 'deep'` +
+    // `tackling: 'cautious'` — the two levers a real deep-block underdog
+    // actually needs — reads as clearly cautious without compounding every
+    // available suppressor into a side that barely creates anything at all.
+    return {
+      style: 'defensive', pressing: 'mid', tempo: 'normal', width: 'standard',
+      defLine: 'deep', focus: 'flanks', buildUp: 'long', passingStyle: 'mixed', runs: 'balanced', tackling: 'cautious',
+    };
+  }
+  const canCounter = styleFamiliarity(club, 'counter') >= 50;
+  if (canCounter && gap < -2) {
+    return { ...BALANCED, pressing: 'mid', defLine: 'deep', runs: 'in-behind', passingStyle: 'through-balls' };
+  }
+  return BALANCED;
+}
+
+/**
+ * The AI's setup for a club. Each club has its own preferred formation
+ * (falling back to a rotation of the classic five for clubs that predate
+ * Phase 5's identity system), and its tactics adapt to this specific
+ * opponent via `contextualizeTactics` above.
  */
 export function aiMatchSetup(state: GameState, clubId: number, opponentId?: number): {
   lineup: (number | null)[];
   formation: FormationDef;
   tactics: Tactics;
 } {
-  const formation = getFormation(FORMATIONS[clubId % FORMATIONS.length].id);
-  let style: Tactics['style'] = 'balanced';
-  let pressing: Tactics['pressing'] = 'mid';
-  if (opponentId) {
-    const diff = squadAvgRating(state, clubId) - squadAvgRating(state, opponentId);
-    if (diff > 3) {
-      style = 'attacking';
-      pressing = 'high';
-    } else if (diff < -3) {
-      style = 'defensive';
-      pressing = 'low';
-    }
-  }
+  const club = state.clubs.find((c) => c.id === clubId);
+  const formation = getFormation(club?.formationId ?? FORMATIONS[clubId % FORMATIONS.length].id);
   return {
     formation,
     lineup: autoPickLineup(state, clubId, formation),
-    tactics: { style, pressing, tempo: 'normal', width: 'standard' },
+    tactics: contextualizeTactics(state, clubId, opponentId),
   };
+}
+
+/**
+ * Live xG readout for the tactics screen (gap 32): "if this match kicked off
+ * right now with this lineup/formation/tactics, what would each side's xG
+ * budget be?" Reuses the match engine's own `calcMatchXG` chain — the exact
+ * function `initShotModel` calls when a real match is simulated — rather
+ * than a parallel estimate that could silently drift from what actually
+ * happens on kickoff.
+ *
+ * Overrides let the tactics screen preview a change (a different formation,
+ * a tweaked instruction) before it's saved to `GameState`.
+ */
+export function previewEffectiveXG(
+  state: GameState,
+  opponentId: number,
+  overrides?: { tactics?: Tactics; formationId?: string; lineup?: (number | null)[] },
+): { userXG: number; oppXG: number } {
+  const userClub = state.clubs.find((c) => c.id === state.userClubId);
+  const oppClub = state.clubs.find((c) => c.id === opponentId);
+  if (!userClub || !oppClub) return { userXG: 0, oppXG: 0 };
+
+  const userFormationId = overrides?.formationId ?? state.dualFormation?.inPossessionId ?? state.formationId;
+  const userFormation = getFormation(userFormationId);
+  const userLineup = overrides?.lineup ?? state.lineup;
+  const userTactics = overrides?.tactics ?? state.tactics;
+  const userXi = buildXI(state, userLineup, userFormation);
+
+  const oppSetup = aiMatchSetup(state, opponentId, state.userClubId);
+  const oppXi = buildXI(state, oppSetup.lineup, oppSetup.formation);
+
+  const userLevel = getLeague(userClub.leagueId)?.level ?? 3;
+  const oppLevel = getLeague(oppClub.leagueId)?.level ?? 3;
+  const userStyle = state.playStyle ?? 'balanced';
+  const oppStyle = oppClub.playStyle ?? 'balanced';
+
+  const userExec = styleExec(userClub, userXi.map((s) => s.p), userStyle, userLevel, { xi: oppXi.map((s) => s.p) });
+  const oppExec = styleExec(oppClub, oppXi.map((s) => s.p), oppStyle, oppLevel, { xi: userXi.map((s) => s.p) });
+
+  const userMentality = normalizeMentality(userTactics.mentality);
+  const oppMentality = oppSetup.tactics.style === 'attacking' ? 'attacking'
+    : oppSetup.tactics.style === 'defensive' ? 'defensive' : 'balanced';
+
+  const xg = calcMatchXG(
+    { xi: userXi, tactics: userTactics, mentality: userMentality, qualityMult: 1, styleExec: userExec },
+    { xi: oppXi, tactics: oppSetup.tactics, mentality: oppMentality, qualityMult: 1, styleExec: oppExec },
+  );
+  return { userXG: Math.round(xg.homeXG * 100) / 100, oppXG: Math.round(xg.awayXG * 100) / 100 };
+}
+
+/**
+ * Estimated xG for any fixture between two clubs (either may be the user's),
+ * reusing the same real `calcMatchXG` chain as `previewEffectiveXG` above.
+ * Built for the odds model (gap 75), which needs a scoreline estimate for
+ * arbitrary AI-vs-AI fixtures, not just the user's next match.
+ */
+export function estimateMatchXG(state: GameState, homeId: number, awayId: number): { homeXG: number; awayXG: number } {
+  const homeClub = state.clubs.find((c) => c.id === homeId);
+  const awayClub = state.clubs.find((c) => c.id === awayId);
+  if (!homeClub || !awayClub) return { homeXG: 1, awayXG: 1 };
+
+  const setupFor = (clubId: number, oppId: number) =>
+    clubId === state.userClubId
+      ? {
+          formation: getFormation(state.dualFormation?.inPossessionId ?? state.formationId),
+          lineup: state.lineup,
+          tactics: state.tactics,
+        }
+      : aiMatchSetup(state, clubId, oppId);
+
+  const homeSetup = setupFor(homeId, awayId);
+  const awaySetup = setupFor(awayId, homeId);
+  const homeXi = buildXI(state, homeSetup.lineup, homeSetup.formation);
+  const awayXi = buildXI(state, awaySetup.lineup, awaySetup.formation);
+
+  const mentalityOf = (clubId: number, tactics: Tactics) =>
+    clubId === state.userClubId
+      ? normalizeMentality(tactics.mentality)
+      : tactics.style === 'attacking' ? 'attacking' : tactics.style === 'defensive' ? 'defensive' : 'balanced';
+
+  const homeLevel = getLeague(homeClub.leagueId)?.level ?? 3;
+  const awayLevel = getLeague(awayClub.leagueId)?.level ?? 3;
+  const homeStyle = homeId === state.userClubId ? (state.playStyle ?? 'balanced') : (homeClub.playStyle ?? 'balanced');
+  const awayStyle = awayId === state.userClubId ? (state.playStyle ?? 'balanced') : (awayClub.playStyle ?? 'balanced');
+  const homeExec = styleExec(homeClub, homeXi.map((s) => s.p), homeStyle, homeLevel, { xi: awayXi.map((s) => s.p) });
+  const awayExec = styleExec(awayClub, awayXi.map((s) => s.p), awayStyle, awayLevel, { xi: homeXi.map((s) => s.p) });
+
+  const xg = calcMatchXG(
+    { xi: homeXi, tactics: homeSetup.tactics, mentality: mentalityOf(homeId, homeSetup.tactics), qualityMult: 1, styleExec: homeExec },
+    { xi: awayXi, tactics: awaySetup.tactics, mentality: mentalityOf(awayId, awaySetup.tactics), qualityMult: 1, styleExec: awayExec },
+  );
+  return { homeXG: xg.homeXG, awayXG: xg.awayXG };
 }

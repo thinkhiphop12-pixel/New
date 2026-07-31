@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameSettings, GameState, MatchReport, Player } from '@/engine/types';
 import { nextUserFixture } from '@/engine/seasonProgression';
 import { availableSquad } from '@/engine/teamManagement';
-import { DIVISION_NAMES, MAX_SUBS } from '@/engine/gameRules';
+import { MAX_SUBS, leagueName } from '@/engine/gameRules';
 import { computeHighlights } from '@/engine/highlights';
 import { simulateTickMatch } from '@/engine/tickEngine/sim';
 import { MENTALITIES, MENTALITY_ORDER, normalizeMentality, type MentalityId } from '@/engine/tickEngine/tacticsData';
@@ -13,6 +13,7 @@ import type { MatchTimeline, MinuteSnapshot, ResumeContext, TeamSide, TickMatchE
 import type { TeamTalkOutcome } from '@/engine/teamTalk';
 import MatchHighlights from '../MatchHighlights';
 import { Crest } from '../Crest';
+import ManagerAvatar from '../ManagerAvatar';
 import { StatTile } from '../visuals';
 import PitchCanvas from './PitchCanvas';
 import LineupScreen from './LineupScreen';
@@ -23,6 +24,18 @@ import TeamTalkModal from './TeamTalkModal';
 const SPEEDS = [1, 2, 4, 8];
 const MS_PER_MINUTE = 640;
 const HIGHLIGHT_DOTS = 14;
+
+/** Broadcast-style minute label: "45+2'" in first-half stoppage, "90+4'" in
+ *  second-half stoppage — replaces a flat "90'" once added time is real
+ *  (gap 18). Extra time isn't reachable from league fixtures, so this only
+ *  needs to cover the two 45-minute halves. */
+function formatMinute(min: number, stoppage1: number): string {
+  if (min <= 45) return `${min}'`;
+  const halfEnd = 45 + stoppage1;
+  if (min <= halfEnd) return `45+${min - 45}'`;
+  if (min <= 90) return `${min}'`;
+  return `90+${min - 90}'`;
+}
 
 function eventIcon(e: TickMatchEvent): string {
   if (e.type === 'goal') return '⚽';
@@ -74,28 +87,34 @@ export default function MatchScreen({
     setTimeline(tl);
     if (settings.matchSpeed === 'instant') {
       setKickedOff(true);
-      setMinute(90);
+      setMinute(tl.report.matchEnd ?? 90);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const finished = minute >= 90;
+  // The engine's real final whistle — 90 plus whatever stoppage time this
+  // match actually earned (gap 18), not a hardcoded 90 that silently
+  // truncated any added-time goals from ever being shown.
+  const matchEnd = timeline?.report.matchEnd ?? 90;
+  const stoppage1 = timeline?.report.stoppage1 ?? 0;
+  const halfEnd = 45 + stoppage1;
+  const finished = minute >= matchEnd;
   const overlayOpen = showTactics || showSubs || showHt || showMenu || showEvents || showTeamTalk !== null;
 
   // Replay clock.
   useEffect(() => {
     if (!timeline || !kickedOff || paused || finished || overlayOpen) return;
-    const t = setInterval(() => setMinute((m) => Math.min(90, m + 1)), MS_PER_MINUTE / speed);
+    const t = setInterval(() => setMinute((m) => Math.min(matchEnd, m + 1)), MS_PER_MINUTE / speed);
     return () => clearInterval(t);
-  }, [timeline, kickedOff, paused, finished, overlayOpen, speed]);
+  }, [timeline, kickedOff, paused, finished, overlayOpen, speed, matchEnd]);
 
-  // Half-time pause.
+  // Half-time pause, once real added time for the first half has played out.
   useEffect(() => {
-    if (minute >= 45 && !htShown && !finished) {
+    if (minute >= halfEnd && !htShown && !finished) {
       setHtShown(true);
       setShowHt(true);
     }
-  }, [minute, htShown, finished]);
+  }, [minute, halfEnd, htShown, finished]);
 
   const snap: MinuteSnapshot | undefined = useMemo(() => {
     if (!timeline) return undefined;
@@ -112,11 +131,35 @@ export default function MatchScreen({
     [timeline, minute]
   );
 
+  // Momentum over time, up to the current minute — feeds the SVG momentum
+  // graph in StatsOverlay (previously just a single live bar).
+  const momentumSeries = useMemo(
+    () => (timeline ? timeline.snapshots.filter((sn) => sn.minute <= minute).map((sn) => ({ minute: sn.minute, value: sn.momentum })) : []),
+    [timeline, minute]
+  );
+
   // Stick the feed to the newest line.
   useEffect(() => {
     const el = feedRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [shownEvents.length, showEvents]);
+
+  // Brief scoreboard flash on a goal (Phase 14's .fm-flash keyframe, first
+  // real wiring of it — it shipped as a ready utility with nothing using it
+  // yet). Tracks total goals rather than home/away separately so an own
+  // goal or a goal for either side both trigger it.
+  const [scoreFlash, setScoreFlash] = useState(false);
+  const prevGoalsRef = useRef(0);
+  useEffect(() => {
+    const total = (snap?.score.home ?? 0) + (snap?.score.away ?? 0);
+    if (total > prevGoalsRef.current) {
+      setScoreFlash(true);
+      const t = setTimeout(() => setScoreFlash(false), 700);
+      prevGoalsRef.current = total;
+      return () => clearTimeout(t);
+    }
+    prevGoalsRef.current = total;
+  }, [snap?.score.home, snap?.score.away]);
 
   const liveRatings = useMemo(() => {
     if (!snap) return {};
@@ -247,14 +290,14 @@ export default function MatchScreen({
     setKickedOff(true);
     setPaused(false);
     setShowHt(false);
-    setMinute(90);
+    setMinute(matchEnd);
   };
 
   const exitMatch = () => {
     if (finished || window.confirm('Leave the touchline? The result will stand as simulated.')) onDone(timeline.report);
   };
 
-  const minuteLabel = !kickedOff ? 'KO' : finished ? 'FT' : minute === 45 && showHt ? 'HT' : `${minute}'`;
+  const minuteLabel = !kickedOff ? 'KO' : finished ? 'FT' : minute >= halfEnd && showHt ? 'HT' : formatMinute(minute, stoppage1);
 
   // Highlight progress dots: key moments already revealed light up in order.
   const highlights = timeline.events.filter(
@@ -286,15 +329,31 @@ export default function MatchScreen({
           <span /><span /><span />
         </button>
         <div className="fm-fmbar__seg fm-fmbar__seg--home">
+          {userIsHome && state.managerProfile && (
+            <ManagerAvatar
+              config={state.managerProfile.avatarConfig}
+              size={20}
+              title={state.managerProfile.name}
+              style={{ borderRadius: '50%', flexShrink: 0 }}
+            />
+          )}
           <Crest name={home?.name} code={home?.code ?? ''} color={home?.color ?? 'var(--panel-3)'} size={22} />
           <span className="fm-fmbar__team">{home?.code}</span>
         </div>
-        <div className="fm-fmbar__seg fm-fmbar__seg--score">
+        <div className={`fm-fmbar__seg fm-fmbar__seg--score${scoreFlash ? ' fm-flash' : ''}`}>
           {score.home} - {score.away}
         </div>
         <div className="fm-fmbar__seg fm-fmbar__seg--away">
           <Crest name={away?.name} code={away?.code ?? ''} color={away?.color ?? 'var(--panel-3)'} size={22} />
           <span className="fm-fmbar__team">{away?.code}</span>
+          {!userIsHome && state.managerProfile && (
+            <ManagerAvatar
+              config={state.managerProfile.avatarConfig}
+              size={20}
+              title={state.managerProfile.name}
+              style={{ borderRadius: '50%', flexShrink: 0 }}
+            />
+          )}
         </div>
         <div className="fm-fmbar__seg fm-fmbar__seg--clock">{minuteLabel}</div>
         <div className="fm-fmbar__dots">
@@ -356,9 +415,10 @@ export default function MatchScreen({
             stats={stats}
             score={score}
             momentum={snap?.momentum ?? 0}
+            momentumSeries={momentumSeries}
             week={state.week}
             seasonYear={state.seasonYear}
-            competition={DIVISION_NAMES[home?.division ?? 1]}
+            competition={leagueName(home?.leagueId ?? 'premier_league')}
             teamRatings={{ home: teamRating('home'), away: teamRating('away') }}
             cards={{ home: cardCount('home'), away: cardCount('away') }}
             corners={{ home: stats.home.corners, away: stats.away.corners }}

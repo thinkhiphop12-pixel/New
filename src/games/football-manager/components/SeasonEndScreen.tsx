@@ -1,7 +1,9 @@
 'use client';
 
 import type { GameState, SeasonSummary } from '@/engine/types';
+import { leagueName } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
+import ManagerAvatar from './ManagerAvatar';
 
 export default function SeasonEndScreen({
   state,
@@ -30,14 +32,24 @@ export default function SeasonEndScreen({
   return (
     <div className="fm-screen fm-start">
       <span className={`fm-banner ${banner.cls}`}>{banner.text}</span>
-      <h2 style={{ margin: '4px 0 0' }}>
-        {club.name} — {summary.year}/{(summary.year + 1) % 100}
-      </h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 4 }}>
+        {state.managerProfile && (
+          <ManagerAvatar
+            config={state.managerProfile.avatarConfig}
+            size={40}
+            title={state.managerProfile.name}
+            style={{ borderRadius: '50%', flexShrink: 0 }}
+          />
+        )}
+        <h2 style={{ margin: 0 }}>
+          {club.name} — {summary.year}/{(summary.year + 1) % 100}
+        </h2>
+      </div>
       <div className="fm-panel">
         <div style={{ display: 'flex', justifyContent: 'space-around' }}>
           <div className="fm-stat" style={{ border: 'none', background: 'transparent' }}>
-            <span className="fm-stat__label">Division</span>
-            <span className="fm-stat__value">{summary.division}</span>
+            <span className="fm-stat__label">League</span>
+            <span className="fm-stat__value">{leagueName(summary.leagueId)}</span>
           </div>
           <div className="fm-stat" style={{ border: 'none', background: 'transparent' }}>
             <span className="fm-stat__label">Finished</span>
@@ -111,7 +123,7 @@ export default function SeasonEndScreen({
           <ul className="fm-news">
             {[...state.history].reverse().map((h) => (
               <li key={h.year}>
-                {h.year}/{(h.year + 1) % 100}: D{h.division}, {h.position}
+                {h.year}/{(h.year + 1) % 100}: {leagueName(h.leagueId)}, {h.position}
                 {ordinal(h.position)} — {h.pts} pts
                 {h.champions ? ' 🏆' : h.promoted ? ' ⬆' : h.relegated ? ' ⬇' : ''}
                 {h.sacked ? ' ❌' : ''}

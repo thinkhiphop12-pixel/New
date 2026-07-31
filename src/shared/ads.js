@@ -1,19 +1,18 @@
 /* ==============================================================
-   Ads engine — legit monetization only.
-   - In-content AdSense banners (rendered only when a slot has a REAL
-     numeric ad-slot ID; the placeholder "XXXX" slots stay a fallback).
-   - Amazon affiliate fallback card fills any slot no ad network claimed,
-     so a visitor never sees an empty box. Earns via the Associates tag,
-     needs no approval.
+   Ads engine — legit monetization only. Google AdSense removed entirely
+   (deliberately, not just disabled) — Amazon Associates and eBay Partner
+   Network affiliate cards are the sole ad-slot fill now.
+   - Amazon/eBay affiliate card fills every ad slot, so a visitor never
+     sees an empty box. Earns via the Associates tag / ePN campaign ID,
+     needs no ad-network approval.
    - Lazy load on real viewport visibility. No auto-scroll, no idle
-     impression manipulation, no cookie stuffing — those violate Google
-     AdSense / Amazon Associates policy and get accounts banned.
+     impression manipulation, no cookie stuffing — those violate the
+     Associates/ePN program terms and get accounts banned.
    All loading stays consent-gated (getConsent() === 'all').
    ============================================================== */
 
 // ========== CONFIGURATION ==========
 const CONFIG = {
-  ADSENSE_CLIENT: 'ca-pub-2741492847457362',
   AMAZON_TAG: 'lloydevans01-21',
   EBAY_CAMPID: '5338345975',   // eBay Partner Network campaign ID
   AFFILIATE_ROTATE: true,       // alternate Amazon/eBay so both programs earn
@@ -84,7 +83,6 @@ function injectBaseAdStyles() {
       border-radius:16px;position:relative;overflow:hidden;}
     .ad-slot-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#93a099;}
     .ad-slot.is-filled .ad-slot-label{display:none;}
-    .ad-slot ins.adsbygoogle{width:100%;}
     .ad-slot .ad-load-error{color:#666;font-size:12px;padding:10px;}
     /* Amazon affiliate fallback card (fills any slot no ad network claimed) */
     .ad-slot.is-affiliate{background:rgba(255,255,255,.03);
@@ -104,16 +102,6 @@ function injectBaseAdStyles() {
       font-size:13px;color:#e8e8ea;box-shadow:0 8px 24px rgba(0,0,0,.4);}
     .soft-banner-dismiss{background:transparent;border:none;cursor:pointer;color:#93a099;font-size:18px;line-height:1;flex-shrink:0;}`;
   document.head.appendChild(style);
-}
-
-// ========== SLOT ID CHECK ==========
-// A real AdSense slot ID is all digits. The pages currently ship placeholder
-// "XXXXXXXXXXXXXXXX" ids (no real ad units created yet) — those must NOT be
-// pushed to AdSense (invalid slot = policy warning + a broken empty box), so
-// they fall through to the affiliate card until real ids are pasted in.
-function hasRealSlotId(slot) {
-  const id = (slot.dataset.adSlot || '').trim();
-  return /^\d{6,}$/.test(id);
 }
 
 // ========== AMAZON AFFILIATE FALLBACK ==========
@@ -154,54 +142,23 @@ function fillSlotWithAffiliate(slot) {
 }
 
 // ========== RENDER A SLOT ==========
-const pushedSlots = new WeakSet();
-
-function renderAdSenseSlot(slot) {
-  if (!slot || pushedSlots.has(slot) || slot.classList.contains('is-filled')) return;
+function renderAdSlot(slot) {
+  if (!slot || slot.classList.contains('is-filled')) return;
   if (adsRemoved() || getConsent() !== 'all') return;
-
-  // No real ad unit yet (placeholder id) or AdSense library unavailable →
-  // show the affiliate card instead of an empty/broken box.
-  if (!hasRealSlotId(slot) || typeof window.adsbygoogle === 'undefined') {
-    fillSlotWithAffiliate(slot);
-    return;
-  }
-
-  let ins = slot.querySelector('ins.adsbygoogle');
-  if (!ins) {
-    ins = document.createElement('ins');
-    ins.className = 'adsbygoogle';
-    ins.style.display = 'block';
-    ins.setAttribute('data-ad-client', CONFIG.ADSENSE_CLIENT);
-    ins.setAttribute('data-ad-slot', slot.dataset.adSlot);
-    ins.setAttribute('data-ad-format', slot.dataset.adFormat || 'auto');
-    ins.setAttribute('data-full-width-responsive', 'true');
-    slot.prepend(ins);
-  }
-  try {
-    (window.adsbygoogle = window.adsbygoogle || []).push({});
-    pushedSlots.add(slot);
-    slot.classList.add('is-filled');
-    recordAdEvent(slot.id || 'banner', 'impression');
-  } catch (e) {
-    // AdSense failed to render — fall back to the affiliate card.
-    const oldIns = slot.querySelector('ins.adsbygoogle');
-    if (oldIns) oldIns.remove();
-    fillSlotWithAffiliate(slot);
-  }
+  fillSlotWithAffiliate(slot);
 }
 
 // ========== LAZY LOAD (real viewport visibility only) ==========
 function initLazyAds() {
   if (!('IntersectionObserver' in window)) {
-    document.querySelectorAll('.ad-slot:not(.is-filled)').forEach(renderAdSenseSlot);
+    document.querySelectorAll('.ad-slot:not(.is-filled)').forEach(renderAdSlot);
     return;
   }
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         const slot = entry.target;
-        if (!slot.classList.contains('is-filled')) renderAdSenseSlot(slot);
+        if (!slot.classList.contains('is-filled')) renderAdSlot(slot);
         observer.unobserve(slot);
       }
     });
@@ -241,7 +198,7 @@ function initAds() {
   // Fill anything already in (or near) the viewport right away.
   document.querySelectorAll('.ad-slot:not(.is-filled)').forEach(slot => {
     if (slot.getBoundingClientRect().top < window.innerHeight + CONFIG.PRELOAD_OFFSET) {
-      renderAdSenseSlot(slot);
+      renderAdSlot(slot);
     }
   });
 }
@@ -256,5 +213,5 @@ if (document.readyState === 'loading') {
   bkAdsBoot();
 }
 
-window.renderAdSenseSlot = renderAdSenseSlot;
+window.renderAdSlot = renderAdSlot;
 window.initAds = initAds;

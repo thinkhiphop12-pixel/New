@@ -2,14 +2,16 @@
 
 import { useState } from 'react';
 import type { GameState } from '@/engine/types';
-import { DIVISION_NAMES, SEASON_ROUNDS } from '@/engine/gameRules';
-import { computeTable, nextUserFixture, userDivision } from '@/engine/seasonProgression';
+import { SEASON_ROUNDS, leagueName } from '@/engine/gameRules';
+import { computeTable, nextUserFixture, userLeagueId } from '@/engine/seasonProgression';
 import { isClubAlive, knockoutRoundDue } from '@/engine/cups';
+import { continentalRoundDue, isContinentalClubAlive } from '@/engine/europeanCup';
 import { isLineupValid } from '@/engine/teamManagement';
 import { formatMoney } from '@/engine/utils';
-import { tint } from './visuals';
+import { ReputationStars, tint } from './visuals';
 import { Crest } from './Crest';
 import PressConferenceModal from './PressConferenceModal';
+import ManagerAvatar from './ManagerAvatar';
 
 type Filter = 'all' | 'new' | 'tasks';
 
@@ -28,8 +30,8 @@ export default function PortalHub({
   const [showPress, setShowPress] = useState(false);
 
   const club = state.clubs.find((c) => c.id === state.userClubId)!;
-  const div = userDivision(state);
-  const table = computeTable(state, div);
+  const leagueId = userLeagueId(state);
+  const table = computeTable(state, leagueId);
   const position = table.findIndex((r) => r.clubId === state.userClubId) + 1;
   const fixture = nextUserFixture(state);
   const opponentId = fixture ? (fixture.homeId === state.userClubId ? fixture.awayId : fixture.homeId) : null;
@@ -37,10 +39,12 @@ export default function PortalHub({
   const lineupOk = isLineupValid(state, state.userClubId, state.lineup);
   const cupWeek =
     (knockoutRoundDue(state.cup, state.week) && isClubAlive(state.cup, state.userClubId)) ||
-    (knockoutRoundDue(state.continental, state.week) && isClubAlive(state.continental, state.userClubId));
+    (continentalRoundDue(state.continental, state.week) && isContinentalClubAlive(state.continental, state.userClubId));
 
   const unreadInbox = state.inbox.filter((i) => !i.read).length;
-  const newCount = (state.news.length > 0 ? 1 : 0) + (state.incomingOffers.length > 0 ? 1 : 0) + (unreadInbox > 0 ? 1 : 0);
+  const pendingBids = (state.negotiations ?? []).filter((n) => n.type === 'incoming' && n.awaiting === 'user').length;
+  const offerCount = state.incomingOffers.length + pendingBids;
+  const newCount = (state.news.length > 0 ? 1 : 0) + (offerCount > 0 ? 1 : 0) + (unreadInbox > 0 ? 1 : 0);
 
   const tasks: string[] = [];
   if (!lineupOk) tasks.push('Fix your lineup');
@@ -64,11 +68,23 @@ export default function PortalHub({
       <div className="fm-portal__header">
         <Crest name={club.name} code={club.code} color={club.color} size={48} />
         <div className="fm-portal__club-info">
-          <h1 className="fm-portal__club-name">{club.name}</h1>
+          <h1 className="fm-portal__club-name">
+            {club.name}
+            {club.reputation != null && <ReputationStars value={club.reputation} />}
+          </h1>
           <p className="fm-portal__club-meta">
-            {state.seasonYear}/{(state.seasonYear + 1) % 100} · {position}{ord(position)} in {DIVISION_NAMES[div]}
+            {state.seasonYear}/{(state.seasonYear + 1) % 100} · {position}{ord(position)} in the {leagueName(leagueId)}
           </p>
         </div>
+        {state.managerProfile && (
+          <ManagerAvatar
+            config={state.managerProfile.avatarConfig}
+            size={40}
+            title={state.managerProfile.name}
+            className="fm-portal__manager-avatar"
+            style={{ borderRadius: '50%', border: '2px solid rgba(90, 242, 184, 0.3)', flexShrink: 0 }}
+          />
+        )}
         <div className="fm-portal__week-badge">
           <span className="week-num">{Math.min(state.week, SEASON_ROUNDS)}</span>
           <span className="week-lbl">Wk {Math.min(state.week, SEASON_ROUNDS)}/{SEASON_ROUNDS}</span>
@@ -184,6 +200,31 @@ export default function PortalHub({
           </div>
         )}
 
+        {/* Starting scenario status — always visible while active, regardless of
+            filter, since it's a standing objective rather than a transient item. */}
+        {state.scenario && state.scenario.status === 'active' && (
+          <div className="fm-card">
+            <div className="fm-card__header">
+              <h2 className="fm-card__title">🎯 Scenario</h2>
+            </div>
+            <div className="fm-card__body">
+              <p className="fm-card__hint">{state.scenario.objective}</p>
+              {typeof state.scenario.meta.streak === 'number' && (
+                <p className="fm-card__hint">Promotion streak: {state.scenario.meta.streak}</p>
+              )}
+              {typeof state.scenario.meta.academySales === 'number' && (
+                <p className="fm-card__hint">Academy graduates sold for profit: {state.scenario.meta.academySales} / 3</p>
+              )}
+              {typeof state.scenario.meta.deadlineSeason === 'number' && (
+                <p className="fm-card__hint">Deadline: end of {state.scenario.meta.deadlineSeason}</p>
+              )}
+              {typeof state.scenario.meta.deduction === 'number' && (
+                <p className="fm-card__hint">Starting deduction: −{state.scenario.meta.deduction} pts</p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* News */}
         {show('news') && state.news.length > 0 && (
           <div className="fm-card">
@@ -203,11 +244,11 @@ export default function PortalHub({
         )}
 
         {/* Transfer offers */}
-        {show('offers') && state.incomingOffers.length > 0 && (
+        {show('offers') && offerCount > 0 && (
           <div className="fm-card">
             <div className="fm-card__header">
               <h2 className="fm-card__title">💰 Offers</h2>
-              <span className="fm-badge fm-badge--new">{state.incomingOffers.length}</span>
+              <span className="fm-badge fm-badge--new">{offerCount}</span>
             </div>
             <div className="fm-card__body">
               <p className="fm-card__hint">Check the Transfers tab for details.</p>

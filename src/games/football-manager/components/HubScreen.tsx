@@ -69,9 +69,13 @@ export default function HubScreen({
           >
             <span className="fm-tab__icon" aria-hidden="true">{t.icon}</span>
             <span className="fm-tab__label">{t.label}</span>
-            {t.id === 'transfers' && state.incomingOffers.length > 0 && (
-              <span className="fm-tab__badge">{state.incomingOffers.length}</span>
-            )}
+            {t.id === 'transfers' && (() => {
+              // Old flat offers plus new negotiation-based incoming bids —
+              // both still populate independently (see TransfersScreen).
+              const count = state.incomingOffers.length
+                + (state.negotiations ?? []).filter((n) => n.type === 'incoming' && n.awaiting === 'user').length;
+              return count > 0 ? <span className="fm-tab__badge">{count}</span> : null;
+            })()}
             {t.id === 'inbox' && state.inbox.some((i) => !i.read) && (
               <span className="fm-tab__badge">{state.inbox.filter((i) => !i.read).length}</span>
             )}
@@ -92,7 +96,7 @@ export default function HubScreen({
       {tab === 'cups' && <CupScreen state={state} />}
       {tab === 'training' && <TrainingScreen state={state} onChange={onChange} />}
       {tab === 'facilities' && <FacilitiesScreen state={state} onChange={onChange} />}
-      {tab === 'finances' && <FinancesScreen state={state} />}
+      {tab === 'finances' && <FinancesScreen state={state} onChange={onChange} />}
       {tab === 'european' && <EuropeanScreen state={state} />}
       {tab === 'club' && <ClubScreen state={state} onChange={onChange} />}
     </div>

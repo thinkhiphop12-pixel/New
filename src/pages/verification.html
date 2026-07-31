@@ -4,10 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Verify Site Ownership — BALLKNW</title>
-<meta name="description" content="Verify ownership of ballknw.com using AdSense code, Ads.txt, or meta tag verification methods." />
+<meta name="description" content="Verify ownership of ballknw.com using Ads.txt or meta tag verification methods." />
 <meta name="robots" content="noindex, follow" />
-<!-- Google AdSense (site verification + library load) -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2741492847457362" crossorigin="anonymous" data-adsense="1"></script>
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="/assets/favicon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -573,15 +571,10 @@ footer {
   </div>
 </section>
 
-<!-- TOP AD BANNER -->
+<!-- TOP AD BANNER (Amazon/eBay affiliate fallback via shared/ads.js) -->
 <section class="section" style="padding:20px 0">
   <div class="wrap">
-    <ins class="adsbygoogle ad-slot"
-         style="display:block"
-         data-ad-client="ca-pub-2741492847457362"
-         data-ad-slot="XXXXXXXXXXXXXXXX"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
+    <div class="ad-slot"></div>
   </div>
 </section>
 
@@ -589,21 +582,12 @@ footer {
 <section class="section">
   <div class="wrap verification-container">
 
-    <!-- MIDDLE AD BANNER -->
-    <ins class="adsbygoogle ad-slot"
-         style="display:block"
-         data-ad-client="ca-pub-2741492847457362"
-         data-ad-slot="XXXXXXXXXXXXXXXX"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
+    <!-- MIDDLE AD BANNER (Amazon/eBay affiliate fallback via shared/ads.js) -->
+    <div class="ad-slot"></div>
 
     <!-- METHOD TABS -->
     <div class="method-tabs" style="margin-top:32px">
-      <div class="method-tab active" data-method="adsense">
-        <div class="label">AdSense Code Snippet</div>
-        <div class="desc">Add a JavaScript snippet to your page header</div>
-      </div>
-      <div class="method-tab" data-method="adstxt">
+      <div class="method-tab active" data-method="adstxt">
         <div class="label">Ads.txt Snippet</div>
         <div class="desc">Create a file in your root directory</div>
       </div>
@@ -613,49 +597,8 @@ footer {
       </div>
     </div>
 
-    <!-- ADSENSE METHOD -->
-    <div class="method-content active" data-method="adsense">
-      <div class="status-badge">✓ Currently implemented</div>
-      <h3>AdSense Code Snippet</h3>
-      <p>To get your site ready to show ads, copy and paste this code between the &lt;head&gt;&lt;/head&gt; tags on each page of your site.</p>
-
-      <p><strong>What this does:</strong></p>
-      <ul class="step-list">
-        <li>Loads the Google AdSense library on your page</li>
-        <li>Enables Google to verify site ownership and content quality</li>
-        <li>Allows ad slots to display content from the AdSense network</li>
-        <li>Required before ad units will serve on your site</li>
-      </ul>
-
-      <p><strong>Your AdSense code:</strong></p>
-      <div class="code-block">
-        <button class="copy-btn" onclick="copyToClipboard(this)">Copy</button>
-&lt;script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2741492847457362"
-     crossorigin="anonymous"&gt;&lt;/script&gt;
-      </div>
-
-      <p><strong>Steps to implement:</strong></p>
-      <ul class="step-list">
-        <li>Copy the code above</li>
-        <li>Paste it in the &lt;head&gt; section of your HTML</li>
-        <li>Make sure it appears before any ad slots</li>
-        <li>Verify the code is live on all pages of your site</li>
-        <li>Wait for Google to verify ownership (can take a few days)</li>
-      </ul>
-
-      <div class="check-status">
-        <span class="dot"></span>
-        Verification in progress — Google is reviewing your site
-      </div>
-
-      <div class="cta-section">
-        <p>After verification, you'll be able to create ad units and configure placements.</p>
-        <a href="https://support.google.com/adsense" target="_blank" class="btn btn-ghost">Learn more about AdSense</a>
-      </div>
-    </div>
-
     <!-- ADS.TXT METHOD -->
-    <div class="method-content" data-method="adstxt">
+    <div class="method-content active" data-method="adstxt">
       <h3>Ads.txt File Verification</h3>
       <p>Ads.txt is a text file placed in your site's root directory that lists authorized digital sellers of your ad inventory. This helps advertisers verify you are the legitimate publisher.</p>
 
@@ -670,7 +613,6 @@ footer {
       <p><strong>Ads.txt content for ballknw.com:</strong></p>
       <div class="code-block">
         <button class="copy-btn" onclick="copyToClipboard(this)">Copy</button>
-google.com, pub-2741492847457362, DIRECT, f08c47fec0942fa0
 adsterra.com, 223876, RESELLER
 amazon-adsystem.com, 3b0db13d-5728-4d0e-81ca-4da1c1410b16, DIRECT
       </div>
@@ -681,7 +623,7 @@ amazon-adsystem.com, 3b0db13d-5728-4d0e-81ca-4da1c1410b16, DIRECT
         <li>Copy the content above into the file</li>
         <li>Upload it to the root directory of your site (e.g., <code>https://ballknw.com/ads.txt</code>)</li>
         <li>Verify the file is accessible via your web browser</li>
-        <li>Submit the file URL to Google AdSense</li>
+        <li>Submit the file URL to the ad networks you actually use</li>
       </ul>
 
       <p><strong>File location:</strong></p>
@@ -786,10 +728,6 @@ function copyToClipboard(button) {
   });
 }
 
-// Initialize AdSense ads immediately
-if (window.adsbygoogle) {
-  (adsbygoogle = window.adsbygoogle || []).push({});
-}
 </script>
 </body>
 </html>
