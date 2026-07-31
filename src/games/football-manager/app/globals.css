@@ -428,9 +428,19 @@ h1, h2, .fm-label, .fm-h1, .fm-h2, .fm-card__title {
     background: rgba(5,5,5,0.92); backdrop-filter: saturate(160%) blur(14px);
   }
   .fm-rail--pocket .fm-rail__item { flex: 1 1 0; }
+  /* Icon-only on the phone dock: on a real device this bar sits directly
+     above Safari/Chrome's own bottom toolbar, so two rows of small text
+     (the game's labels, then the browser's) read as cluttered. The name is
+     still there for a11y via the existing aria-label/title on the button —
+     dropping it visually is fine because there are only six destinations,
+     all common enough to read from their icon alone. Desktop and the "More"
+     sheet keep their labels; there's room to spare there. */
+  .fm-rail--pocket .fm-rail__label { display: none; }
+  .fm-rail--pocket .fm-rail__item { padding: 10px 2px; }
+  .fm-rail--pocket .fm-rail__icon { width: 23px; height: 23px; }
   /* The dock sits fixed at the bottom, so reserve room for it under the
      content instead of letting it cover the last card. */
-  .fm-hub-shell__main { padding-bottom: 62px; }
+  .fm-hub-shell__main { padding-bottom: 54px; }
 }
 
 /* "More" overflow sheet (Pocket only — desktop rail shows every tab
