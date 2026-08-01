@@ -25,6 +25,7 @@ import SettingsPanel, { loadSettings } from './SettingsPanel';
 import CharacterCustomizerScreen from './CharacterCustomizerScreen';
 import { readableTextOn } from './visuals';
 import { ToastHost, pushToast } from './ToastQueue';
+import { useFullscreen } from '@/lib/useFullscreen';
 import { Icon, IconSprite } from './Icon';
 
 type View = 'menu' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonend' | 'character';
@@ -42,6 +43,7 @@ export default function FootballManagerGame() {
   // HubScreen on every view change, so a tab held in that component was reset
   // to 'hub' every single time the player came back from a match.
   const [hubTab, setHubTab] = useState<Tab>('hub');
+  const fullscreen = useFullscreen();
   const [summary, setSummary] = useState<SeasonSummary | null>(null);
   const [saves, setSaves] = useState<(SaveMeta | null)[]>(Array(SAVE_SLOTS).fill(null));
   const [settings, setSettings] = useState<GameSettings | null>(null);
@@ -340,6 +342,20 @@ export default function FootballManagerGame() {
         </a>
         <span className="fm-header__title">Gaffa</span>
         <span className="fm-header__spacer" />
+        {/* Not supported at all in an iOS Safari tab — only shown where it
+            actually works (desktop, Android Chrome). iOS players get the
+            same result by adding the page to their home screen instead
+            (manifest.ts + the appleWebApp meta tags in layout.tsx). */}
+        {fullscreen.supported && (
+          <button
+            className="fm-header__settings"
+            onClick={fullscreen.toggle}
+            aria-label={fullscreen.isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            title={fullscreen.isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+          >
+            <Icon name={fullscreen.isFullscreen ? 'collapse' : 'expand'} size={15} />
+          </button>
+        )}
         <button className="fm-header__settings" onClick={() => setShowSettings(true)}>
           Settings
         </button>

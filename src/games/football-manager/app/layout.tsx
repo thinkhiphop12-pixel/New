@@ -49,11 +49,27 @@ export const metadata: Metadata = {
     title: 'Gaffa — BALLKNW',
     images: ['/assets/og-image.png'],
   },
-  icons: { icon: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/favicon.svg` },
+  icons: {
+    icon: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/favicon.svg`,
+    apple: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/icons/icon-192.png`,
+  },
+  // iOS ignores the web manifest's `display: standalone` — it needs these
+  // meta tags instead to drop browser chrome once added to the home screen.
+  // Next's `appleWebApp` field generates them from here.
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Gaffa' },
+  // Next's `appleWebApp.capable` only emits the modern `mobile-web-app-capable`
+  // tag, which iOS Safari didn't honor until 17.4 — the legacy Apple-prefixed
+  // tag is what older iOS versions actually need to drop browser chrome.
+  other: { 'apple-mobile-web-app-capable': 'yes' },
 };
 
 export const viewport: Viewport = {
   themeColor: '#09090b',
+  // Installed on iOS (standalone mode), the page draws under the notch/home
+  // indicator by default without this — the existing env(safe-area-inset-*)
+  // padding already used for the pocket nav dock (globals.css) only receives
+  // real values once the viewport opts into that with viewport-fit=cover.
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
