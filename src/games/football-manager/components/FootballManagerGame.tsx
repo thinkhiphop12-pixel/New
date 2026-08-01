@@ -26,6 +26,7 @@ import CharacterCustomizerScreen from './CharacterCustomizerScreen';
 import { readableTextOn } from './visuals';
 import { ToastHost, pushToast } from './ToastQueue';
 import { Icon, IconSprite } from './Icon';
+import type { ScreenId } from './hubNav';
 
 type View = 'menu' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonend' | 'character';
 
@@ -38,6 +39,11 @@ export default function FootballManagerGame() {
   const [gs, setGs] = useState<GameState | null>(null);
   const [slot, setSlot] = useState(0);
   const [view, setView] = useState<View>('menu');
+  // Which hub screen is open, or `null` for the Hub landing. Owned here
+  // rather than inside HubScreen because the `key={view}` fade wrapper
+  // remounts HubScreen on every view change — local state would reset the
+  // player back to the Hub every time they came out of a match.
+  const [hubRoute, setHubRoute] = useState<ScreenId | null>(null);
   const [summary, setSummary] = useState<SeasonSummary | null>(null);
   const [saves, setSaves] = useState<(SaveMeta | null)[]>(Array(SAVE_SLOTS).fill(null));
   const [settings, setSettings] = useState<GameSettings | null>(null);
@@ -221,6 +227,9 @@ export default function FootballManagerGame() {
       setView('seasonend');
     } else {
       apply(played);
+      // Land on the match dashboard, not the Hub menu — the result, the
+      // news and the next fixture are what you came back for.
+      setHubRoute('overview');
       setView('hub');
     }
   };
@@ -362,7 +371,13 @@ export default function FootballManagerGame() {
             onRetire={handleAbandon}
           />
         ) : gs ? (
-          <HubScreen state={gs} onChange={apply} onAbandon={handleAbandon} />
+          <HubScreen
+            state={gs}
+            route={hubRoute}
+            onRoute={setHubRoute}
+            onChange={apply}
+            onAbandon={handleAbandon}
+          />
         ) : (
           <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} onCharacterCustomizer={handleCharacterCustomizerOpen} />
         )}
@@ -396,8 +411,7 @@ export default function FootballManagerGame() {
             {fixture ? (
               <button
                 className={`fm-actiondock__cta${lineupOk ? '' : ' fm-actiondock__cta--warn'}`}
-                onClick={handlePlayMatch}
-                disabled={!lineupOk}
+                onClick={lineupOk ? handlePlayMatch : () => setHubRoute('tactics')}
               >
                 {lineupOk ? (
                   <>

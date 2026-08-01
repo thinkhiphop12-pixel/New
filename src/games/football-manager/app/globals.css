@@ -360,19 +360,24 @@ h1, h2, .fm-label, .fm-h1, .fm-h2, .fm-card__title {
 .fm-stat__value--red { color: var(--red); }
 
 /* ── Navigation: Touchline (rail, ≥900px) / Pocket (bottom dock, <900px) ──
-   Replaces the old horizontally-scrolling `.fm-tabs` pill strip. Structure
-   borrowed from the BALLKNW hub mockups (docs/ballknw-hub-mockups.html):
-   a persistent icon rail at desktop widths, collapsing to a thumb-reach
-   dock on phones. `.fm-hub-shell` is the flex row that holds the rail
-   beside the tab content; below 900px it stacks to a single column and
-   `.fm-rail` restyles itself into the fixed bottom dock. */
+   Structure borrowed from the BALLKNW hub mockups
+   (docs/ballknw-hub-mockups.html): a persistent icon rail at desktop widths,
+   collapsing to a thumb-reach dock on phones. `.fm-hub-shell` is the flex row
+   that holds the rail beside the screen content; below 900px it stacks to a
+   single column and `.fm-rail` restyles itself into the fixed bottom dock.
+
+   The rail carries five destinations — Hub plus the four groups in
+   components/hubNav.ts — not the fourteen individual screens it used to.
+   Five fit a phone dock directly, so there is only one `.fm-rail` in the
+   markup now and no "More" overflow sheet; the screens within a group are
+   reached through `.fm-subnav` instead. */
 .fm-hub-shell { display: flex; align-items: flex-start; gap: 12px; width: 100%; }
 .fm-hub-shell__main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 
 .fm-rail {
   flex: 0 0 auto; display: flex; flex-direction: column; align-items: stretch; gap: 3px;
   background: var(--panel); border: 1px solid var(--border-soft);
-  border-radius: var(--r-lg); padding: 6px; width: 64px;
+  border-radius: var(--r-lg); padding: 6px; width: 72px;
   position: sticky; top: 64px;
 }
 .fm-rail__item {
@@ -388,57 +393,153 @@ h1, h2, .fm-label, .fm-h1, .fm-h2, .fm-card__title {
   box-shadow: inset 0 0 0 1.5px var(--brand);
 }
 .fm-rail__icon { width: 19px; height: 19px; }
-.fm-rail__label { font-size: 8.5px; line-height: 1.1; letter-spacing: 0.2px; }
+.fm-rail__label { font-size: 9px; line-height: 1.1; letter-spacing: 0.2px; }
 .fm-rail__badge {
   background: var(--red); color: #fff; border-radius: 999px;
   font-size: 9px; padding: 1px 5px; font-weight: 900;
   position: absolute; top: 2px; right: 2px;
 }
 
-/* Pocket: below 900px, HubScreen.tsx renders a second `.fm-rail--pocket`
-   (five primary destinations + More) instead of the full desktop rail —
-   CSS just swaps which one is visible at the breakpoint. */
-.fm-rail--pocket { display: none; }
+/* Pocket: below 900px the same rail becomes the fixed thumb dock. There is
+   no second nav element and no overflow sheet — five items fit across a
+   phone, which is the whole point of grouping the fourteen screens. */
 @media (max-width: 899px) {
   .fm-hub-shell { flex-direction: column; }
-  .fm-rail:not(.fm-rail--pocket) { display: none; }
-  .fm-rail--pocket {
-    display: flex !important;
+  .fm-rail {
     position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 45;
     flex-direction: row; width: auto; border-radius: 0;
     border: none; border-top: 1px solid var(--border-soft);
-    padding: 4px calc(env(safe-area-inset-left, 0px) + 4px) calc(env(safe-area-inset-bottom, 0px) + 4px) calc(env(safe-area-inset-right, 0px) + 4px);
+    padding: 4px calc(env(safe-area-inset-right, 0px) + 4px) calc(env(safe-area-inset-bottom, 0px) + 4px) calc(env(safe-area-inset-left, 0px) + 4px);
     background: rgba(5,5,5,0.92); backdrop-filter: saturate(160%) blur(14px);
   }
-  .fm-rail--pocket .fm-rail__item { flex: 1 1 0; }
+  .fm-rail__item { flex: 1 1 0; }
   /* The dock sits fixed at the bottom, so reserve room for it under the
      content instead of letting it cover the last card. */
   .fm-hub-shell__main { padding-bottom: 62px; }
 }
 
-/* "More" overflow sheet (Pocket only — desktop rail shows every tab
-   directly and never renders this). Simple anchored list, not a full-screen
-   modal, so it never competes with `.fm-matchx`'s overlay stack. */
-.fm-rail__more {
-  display: none;
+/* ── Sub-tabs (the screens inside a group) ──
+   Second navigation level, rendered by HubScreen.tsx at the top of the
+   content column whenever a group is open. Sticky under the 52px
+   `.fm-header` so the group's siblings stay reachable down a long Squad or
+   Table screen. z-index 5 clears sibling content but stays far below the
+   pocket ladder (actiondock 44 < rail 45 < .fm-matchx 60), so it never
+   enters that fight. */
+.fm-subnav {
+  position: sticky; top: 52px; z-index: 5;
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+  padding: 8px 0 6px; margin-top: -8px;
+  background: linear-gradient(var(--bg) 72%, transparent);
 }
-@media (max-width: 899px) {
-  .fm-rail__more {
-    display: flex; flex-direction: column; gap: 2px;
-    position: fixed; left: 8px; right: 8px; bottom: 62px; z-index: 46;
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: var(--r-lg); padding: 6px; box-shadow: var(--shadow-lg);
-    max-height: 55vh; overflow-y: auto;
-  }
+/* The group name is redundant with the rail's active item, which is only
+   visible at desktop widths — so show it exactly where the rail isn't. */
+.fm-subnav__group {
+  display: none; align-items: center; gap: 6px; flex-shrink: 0;
+  font-size: 10px; font-weight: 800; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--muted-dim);
 }
-.fm-rail__more-item {
-  display: flex; align-items: center; gap: 8px;
-  border: none; background: transparent; color: var(--text-2);
-  font-weight: 700; font-size: 13px; font-family: inherit; cursor: pointer;
-  padding: 10px 12px; border-radius: var(--r-md); text-align: left;
+@media (min-width: 900px) { .fm-subnav__group { display: inline-flex; } }
+
+/* Horizontally scrollable so Matchday's five entries never wrap on a phone;
+   the scrollbar is hidden for the same reason `.fm-portal__filters` hides
+   its own. */
+.fm-subnav__tabs {
+  display: flex; gap: 6px; min-width: 0; overflow-x: auto; padding: 2px 0;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
 }
-.fm-rail__more-item:hover, .fm-rail__more-item.active { background: var(--glass); color: var(--text); }
-.fm-rail__badge--inline { position: static; margin-left: auto; }
+.fm-subnav__tabs::-webkit-scrollbar { display: none; }
+
+.fm-subtab {
+  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
+  border: 1.5px solid var(--border-soft); background: var(--panel);
+  color: var(--muted); font-family: inherit; font-weight: 700; font-size: 12.5px;
+  border-radius: var(--r-full); padding: 7px 14px; cursor: pointer;
+  transition: color var(--transition), background var(--transition), border-color var(--transition);
+}
+.fm-subtab:hover { color: var(--text); border-color: var(--border-bright); }
+/* "Active tab pills" is one of the three uses --brand is permitted for by
+   the token contract at :root — nothing semantic is expressed here. */
+.fm-subtab.active {
+  color: var(--text); background: var(--brand-dim); border-color: var(--brand);
+}
+.fm-subtab__icon { flex-shrink: 0; }
+.fm-subtab__label { line-height: 1; }
+.fm-subtab__badge {
+  background: var(--red); color: #fff; border-radius: 999px;
+  font-size: 9px; padding: 1px 5px; font-weight: 900; line-height: 1.4;
+}
+@media (max-width: 420px) { .fm-subtab { padding: 7px 11px; font-size: 12px; gap: 5px; } }
+
+.fm-hub-panel { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+/* ── Hub landing: the four group cards ──
+   components/GroupHub.tsx. Big tap targets carrying one live line each,
+   replacing the wall of dashboard modules that used to be the first thing
+   a returning manager saw. Two columns from 560px — four cards read as a
+   2×2 block rather than a long list. */
+.fm-groupgrid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 560px) { .fm-groupgrid { grid-template-columns: repeat(2, 1fr); } }
+
+.fm-groupcard {
+  display: flex; align-items: center; gap: 13px; width: 100%; text-align: left;
+  background: var(--card-gradient); border: 1px solid var(--border);
+  border-radius: var(--r-xl); padding: 16px 15px; cursor: pointer;
+  font-family: inherit; color: var(--text); position: relative; overflow: hidden;
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+/* Group tint: a hairline down the leading edge, the one place each group
+   gets its own colour. These are the fixed semantic accents, not --brand,
+   which stays reserved for active nav state and primary buttons. */
+.fm-groupcard::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--groupcard-tint, var(--green));
+}
+.fm-groupcard--matchday { --groupcard-tint: var(--green); }
+.fm-groupcard--team { --groupcard-tint: var(--blue); }
+.fm-groupcard--market { --groupcard-tint: var(--gold); }
+.fm-groupcard--club { --groupcard-tint: var(--accent-purple); }
+
+.fm-groupcard:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-bright);
+  box-shadow: var(--shadow-md);
+}
+.fm-groupcard:active { transform: translateY(0); }
+
+.fm-groupcard__icon {
+  display: flex; align-items: center; justify-content: center; flex: 0 0 44px;
+  height: 44px; border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--groupcard-tint) 14%, transparent);
+  color: var(--groupcard-tint);
+}
+.fm-groupcard__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.fm-groupcard__name {
+  font-family: var(--font-display);
+  font-size: 17px; font-weight: 900; line-height: 1.1; letter-spacing: -0.2px;
+}
+.fm-groupcard__line {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 12px; color: var(--muted); font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fm-groupcard__line--warn { color: var(--gold-2); }
+.fm-groupcard__badge {
+  background: var(--red); color: #fff; border-radius: 999px;
+  font-size: 10px; font-weight: 900; padding: 2px 7px; flex-shrink: 0;
+}
+.fm-groupcard__chev { color: var(--text-dim); flex-shrink: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fm-groupcard { transition: none; }
+  .fm-groupcard:hover, .fm-groupcard:active { transform: none; }
+}
+
+/* Screen-reader-only text. No such utility existed in this stylesheet; the
+   nav badge counts need one so a bare "3" reads as "3 needing attention". */
+.fm-u-sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
 
 /* ── Persistent action dock (date pod + Play Week / Fix lineup CTA) ──
    Rendered once in FootballManagerGame.tsx, hub view only — never
