@@ -477,6 +477,38 @@ h1, h2, .fm-label, .fm-h1, .fm-h2, .fm-card__title {
    replacing the wall of dashboard modules that used to be the first thing
    a returning manager saw. Two columns from 560px — four cards read as a
    2×2 block rather than a long list. */
+/* Hub landing: news card + league table preview, above the group list */
+.fm-hubnews {
+  display: flex; flex-direction: column; gap: 6px; text-align: left;
+  background: var(--card-gradient); border: 1px solid var(--border);
+  border-radius: var(--r-xl); padding: 12px 14px; cursor: pointer;
+  font-family: inherit; color: inherit; box-shadow: var(--shadow-md);
+}
+.fm-hubnews__head {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
+  color: var(--muted-dim);
+}
+.fm-hubnews__tag {
+  background: var(--accent-purple); color: #fff; border-radius: 999px;
+  padding: 1px 7px; font-size: 9px; font-weight: 900; letter-spacing: 0.3px;
+}
+.fm-hubnews__cat { color: var(--accent-purple); }
+.fm-hubnews__title { font-size: 14px; font-weight: 800; line-height: 1.25; }
+
+.fm-hubtable {
+  display: block; width: 100%; text-align: left;
+  background: var(--card-gradient); border: 1px solid var(--border);
+  border-radius: var(--r-xl); padding: 12px 14px; cursor: pointer;
+  font-family: inherit; color: inherit; box-shadow: var(--shadow-md);
+}
+.fm-hubtable__head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; font-weight: 800; color: var(--text-2); margin-bottom: 6px;
+}
+.fm-hubtable__table { font-size: 11.5px; }
+.fm-hubtable__table td { padding: 5px 6px; }
+
 .fm-groupgrid { display: grid; grid-template-columns: 1fr; gap: 10px; }
 @media (min-width: 560px) { .fm-groupgrid { grid-template-columns: repeat(2, 1fr); } }
 
