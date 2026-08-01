@@ -15,6 +15,82 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC = join(__dirname, 'fc26-source.json');
 const OUT = join(__dirname, '..', 'public', 'data', 'gamedata.json');
 
+/* Deterministic PRNG (mulberry32) — regenerating the dataset must produce the
+ * same file, otherwise every rebuild churns gamedata.json and invalidates saves. */
+let _seed = 0x9e3779b9;
+function rnd() {
+  _seed |= 0;
+  _seed = (_seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(_seed ^ (_seed >>> 15), 1 | _seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+/** Inclusive integer in [lo, hi]. */
+function rand(lo, hi) {
+  return lo + Math.floor(rnd() * (hi - lo + 1));
+}
+
+/* --- Derived player fields (ported from their data.js / players.js) -------- */
+
+/** Realistic remaining headroom above current ability, banded by age — not by
+ *  current quality, so a low-rated teen still has real upside. Hits a hard 0 at
+ *  30: development is over, only decline is left. (their generatePlayer potGap) */
+function potentialFor(rating, age) {
+  const gap =
+    age >= 30 ? 0
+      : age <= 17 ? rand(12, Math.round((44 - age) * 1.1))
+      : age <= 19 ? rand(12, 24)
+      : age <= 21 ? rand(10, 20)
+      : age <= 23 ? rand(6, 15)
+      : age <= 25 ? rand(3, 10)
+      : age <= 27 ? rand(1, 6)
+      : rand(0, 3); // 28–29: fading, occasionally still a point or two
+  return Math.min(99, rating + gap);
+}
+
+/** Height in cm, varying loosely by position (GKs/CBs tall, wide players shorter). */
+function heightFor(pos, role) {
+  if (pos === 'GK') return rand(185, 200);
+  if (pos === 'DEF') return role === 'CB' ? rand(180, 196) : rand(172, 186);
+  if (pos === 'MID') return rand(168, 190);
+  return rand(166, 192);
+}
+
+/** Secondary positions: ~1 in 4 players covers one related role naturally.
+ *  Pools skip roles our position fit already treats as synonyms. */
+const ALT_POS_POOLS = {
+  CB: ['CDM', 'RB', 'LB'],
+  RB: ['CB', 'RM', 'LB'], LB: ['CB', 'LM', 'RB'],
+  CDM: ['CB', 'CAM'], CM: ['LM', 'RM'],
+  CAM: ['LW', 'RW', 'ST'],
+  LM: ['LW', 'LB'], RM: ['RW', 'RB'],
+  LW: ['RW', 'ST', 'CAM'], RW: ['LW', 'ST', 'CAM'],
+  ST: ['LW', 'RW', 'CAM'],
+};
+function altPosFor(role) {
+  const pool = ALT_POS_POOLS[role] ?? [];
+  return pool.length && rand(0, 99) < 25 ? [pool[rand(0, pool.length - 1)]] : [];
+}
+
+/** Keeper-specific attributes; outfield players carry low filler values. */
+function gkAttrs(pos, rating) {
+  if (pos !== 'GK') return { gkReflexes: rand(5, 20), gkPositioning: rand(5, 20) };
+  const sc = () => Math.max(10, Math.min(99, rating + rand(-4, 5)));
+  return { gkReflexes: sc(), gkPositioning: sc() };
+}
+
+/** Release clauses are common in Spain (division 5 = La Liga here) and for
+ *  highly-rated young players everywhere. A clause sits ABOVE market value —
+ *  it's an escape hatch, not a discount. Rates and multipliers are theirs. */
+function seedReleaseClause(rating, potential, age, value, division) {
+  const spanish = division === 5;
+  const prospect = age <= 23 && potential - rating >= 6;
+  const chance = spanish ? 0.55 : prospect ? 0.2 : rating >= 80 ? 0.12 : 0.05;
+  if (rnd() > chance) return 0;
+  const mult = spanish ? 1.7 + rnd() * 1.6 : 1.5 + rnd() * 1.2;
+  return Math.round((value * mult) / 100_000) * 100_000;
+}
+
 function marketValue(rating, age) {
   const base = 50_000 * Math.pow(1.135, rating - 50);
   const ageMult = age <= 23 ? 1.35 : age <= 28 ? 1.1 : age <= 31 ? 0.8 : 0.5;
@@ -63,8 +139,9 @@ const players = [];
 const clubs = [];
 const seenCodes = new Set();
 
-function addPlayer(p, clubId) {
+function addPlayer(p, clubId, division) {
   const value = p.value ?? marketValue(p.rating, p.age);
+  const potential = potentialFor(p.rating, p.age);
   players.push({
     id: nextId++,
     name: p.name,
@@ -72,11 +149,20 @@ function addPlayer(p, clubId) {
     pos: p.pos,
     role: p.role,
     rating: p.rating,
+    potential,
     pac: p.pac, sho: p.sho, pas: p.pas, dri: p.dri, def: p.def, phy: p.phy,
+    ...gkAttrs(p.pos, p.rating),
+    height: heightFor(p.pos, p.role),
+    altPos: altPosFor(p.role),
     age: p.age,
     value,
     wage: weeklyWage(value, p.rating),
     clubId,
+    releaseClause: seedReleaseClause(p.rating, potential, p.age, value, division),
+    loyal: rand(0, 99) < 60,
+    // Rolled once here and persisted, rather than lazily at first use, so a
+    // squad's retirement profile is fixed for the whole career.
+    retireAge: 35 + Math.round(Math.pow(rnd(), 1.5) * (p.pos === 'GK' ? 12 : 8)),
   });
   return nextId - 1;
 }
@@ -100,10 +186,10 @@ for (const [i, c] of raw.clubs.entries()) {
     division: c.division,
     playerIds: [],
   };
-  for (const p of c.players) club.playerIds.push(addPlayer(p, club.id));
+  for (const p of c.players) club.playerIds.push(addPlayer(p, club.id, club.division));
   clubs.push(club);
 }
-for (const p of raw.freeAgents) addPlayer(p, 0);
+for (const p of raw.freeAgents) addPlayer(p, 0, 0);
 
 const out = {
   meta: {

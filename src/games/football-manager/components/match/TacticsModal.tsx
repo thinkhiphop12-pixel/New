@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Icon } from '../Icon';
 import type { Player } from '@/engine/types';
 import { ALL_FORMATIONS, getFormation } from '@/engine/gameRules';
 import { MENTALITIES, MENTALITY_ORDER, type MentalityId } from '@/engine/tickEngine/tacticsData';
@@ -62,7 +63,7 @@ export default function TacticsModal({
       <div className="fm-matchx-modal__panel" onClick={(e) => e.stopPropagation()}>
         <div className="fm-matchx-modal__head">
           <span className="fm-matchx-modal__title">Tactics</span>
-          <button className="fm-matchx-modal__close" onClick={onClose} aria-label="Close">✕</button>
+          <button className="fm-matchx-modal__close" onClick={onClose} aria-label="Close"><Icon name="cross" size={15} /></button>
         </div>
 
         <p className="fm-label">Mentality</p>

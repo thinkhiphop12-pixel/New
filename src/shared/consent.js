@@ -1,10 +1,11 @@
-/* Shared consent / PostHog / AdSense foundation, used by every Ball Knowledge
-   page (homepage, 700, lineup). Fill in real IDs below before going live;
-   until then loadPostHog/loadAdSense/fillAllAdSlots stay no-ops, and any
-   element with class="ad-slot" just shows its placeholder label. */
+/* Shared consent / PostHog foundation, used by every Ball Knowledge page
+   (homepage, 700, lineup). Fill in a real PostHog key below before going
+   live; until then loadPostHog stays a no-op. Ad monetization (Amazon/eBay
+   affiliate fallback in ads.js, Monetag vignette below) is unaffected by
+   this — Google AdSense has been removed entirely, deliberately, not just
+   disabled: no client ID, no loader, no ad-slot fill path for it. */
 const POSTHOG_KEY = ''; // e.g. 'phc_xxxxxxxx'
 const POSTHOG_HOST = 'https://us.i.posthog.com';
-const ADSENSE_CLIENT_ID = 'ca-pub-2741492847457362';
 
 const CONSENT_KEY = 'bk_consent'; // 'all' | 'essential'
 
@@ -29,48 +30,6 @@ function loadPostHog(){
   document.head.appendChild(s);
 }
 
-function loadAdSense(){
-  // Skip if disabled, or if the library is already present — either via a
-  // previous call (data-adsense) or the loader snippet hard-coded in <head>
-  // for AdSense site verification (matched by its googlesyndication src).
-  if (!ADSENSE_CLIENT_ID) return;
-  if (document.querySelector('script[data-adsense]') ||
-      document.querySelector('script[src*="adsbygoogle.js"]')) { fillAllAdSlots(); return; }
-  const s = document.createElement('script');
-  s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`;
-  s.async = true;
-  s.crossOrigin = 'anonymous';
-  s.dataset.adsense = '1';
-  s.onload = fillAllAdSlots;
-  document.head.appendChild(s);
-}
-
-/* Fills any visible .ad-slot / .ad-placeholder[data-ad-slot] with a real
-   AdSense unit, once consent + a real client/slot ID exist. Safe no-op
-   until those IDs are filled in above. */
-function fillAllAdSlots(){
-  if (!ADSENSE_CLIENT_ID || getConsent() !== 'all') return;
-  document.querySelectorAll('.ad-slot, .ad-placeholder[data-ad-slot]').forEach(slot => {
-    const adSlotId = (slot.dataset.adSlot || '').trim();
-    // Only push a REAL (all-digit) AdSense unit. Placeholder ids like
-    // "XXXXXXXXXXXXXXXX" (no ad unit created yet) must NOT be pushed — an
-    // invalid slot renders an empty box and triggers AdSense policy warnings.
-    // Those slots fall through to the Amazon affiliate fallback in ads.js.
-    if (!/^\d{6,}$/.test(adSlotId) || slot.classList.contains('is-filled') || slot.offsetParent === null) return;
-    const ins = document.createElement('ins');
-    ins.className = 'adsbygoogle';
-    ins.style.display = 'block';
-    ins.dataset.adClient = ADSENSE_CLIENT_ID;
-    ins.dataset.adSlot = adSlotId;
-    ins.dataset.adFormat = 'auto';
-    ins.dataset.fullWidthResponsive = 'true';
-    slot.innerHTML = '';
-    slot.appendChild(ins);
-    slot.classList.add('is-filled');
-    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e){}
-  });
-}
-
 /* Monetag Vignette (impression-based, between-page-navigation banner) —
    opt-in per page via `window.BK_VIGNETTE_ZONE` set BEFORE this script loads,
    so it only runs on pages that explicitly want it, not site-wide. */
@@ -88,7 +47,7 @@ function applyConsent(choice){
   const banner = document.getElementById('consentBanner');
   if (banner) banner.classList.add('hidden');
   if (choice === 'all') {
-    loadPostHog(); loadAdSense(); fillAllAdSlots(); loadMonetagVignette();
+    loadPostHog(); loadMonetagVignette();
     if (typeof initAds === 'function') initAds();
   }
 }
@@ -136,7 +95,7 @@ function initConsent(){
   const banner = document.getElementById('consentBanner');
   if (existing) {
     if (existing === 'all') {
-      loadPostHog(); loadAdSense(); fillAllAdSlots(); loadMonetagVignette();
+      loadPostHog(); loadMonetagVignette();
       if (typeof initAds === 'function') initAds();
     }
     return;

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameSettings, GameState, MatchReport, Player } from '@/engine/types';
 import { nextUserFixture } from '@/engine/seasonProgression';
 import { availableSquad } from '@/engine/teamManagement';
-import { DIVISION_NAMES, MAX_SUBS } from '@/engine/gameRules';
+import { MAX_SUBS, leagueName } from '@/engine/gameRules';
 import { computeHighlights } from '@/engine/highlights';
 import { simulateTickMatch } from '@/engine/tickEngine/sim';
 import { MENTALITIES, MENTALITY_ORDER, normalizeMentality, type MentalityId } from '@/engine/tickEngine/tacticsData';
@@ -13,7 +13,9 @@ import type { MatchTimeline, MinuteSnapshot, ResumeContext, TeamSide, TickMatchE
 import type { TeamTalkOutcome } from '@/engine/teamTalk';
 import MatchHighlights from '../MatchHighlights';
 import { Crest } from '../Crest';
+import ManagerAvatar from '../ManagerAvatar';
 import { StatTile } from '../visuals';
+import { Icon } from '../Icon';
 import PitchCanvas from './PitchCanvas';
 import LineupScreen from './LineupScreen';
 import StatsOverlay from './StatsOverlay';
@@ -24,13 +26,25 @@ const SPEEDS = [1, 2, 4, 8];
 const MS_PER_MINUTE = 640;
 const HIGHLIGHT_DOTS = 14;
 
-function eventIcon(e: TickMatchEvent): string {
-  if (e.type === 'goal') return '⚽';
-  if (e.type === 'card') return e.card === 'red' ? '🟥' : '🟨';
-  if (e.type === 'injury') return '🚑';
-  if (e.kind === 'sub') return '🔁';
-  if (e.kind === 'corner') return '🚩';
-  return '▶';
+/** Broadcast-style minute label: "45+2'" in first-half stoppage, "90+4'" in
+ *  second-half stoppage — replaces a flat "90'" once added time is real
+ *  (gap 18). Extra time isn't reachable from league fixtures, so this only
+ *  needs to cover the two 45-minute halves. */
+function formatMinute(min: number, stoppage1: number): string {
+  if (min <= 45) return `${min}'`;
+  const halfEnd = 45 + stoppage1;
+  if (min <= halfEnd) return `45+${min - 45}'`;
+  if (min <= 90) return `${min}'`;
+  return `90+${min - 90}'`;
+}
+
+function eventIcon(e: TickMatchEvent) {
+  if (e.type === 'goal') return <Icon name="goal" size={14} />;
+  if (e.type === 'card') return <Icon name="card" size={14} style={{ color: e.card === 'red' ? 'var(--red)' : 'var(--gold)' }} />;
+  if (e.type === 'injury') return <Icon name="injury" size={14} />;
+  if (e.kind === 'sub') return <Icon name="sub" size={14} />;
+  if (e.kind === 'corner') return <Icon name="corner" size={14} />;
+  return <Icon name="play" size={14} />;
 }
 
 export default function MatchScreen({
@@ -74,28 +88,34 @@ export default function MatchScreen({
     setTimeline(tl);
     if (settings.matchSpeed === 'instant') {
       setKickedOff(true);
-      setMinute(90);
+      setMinute(tl.report.matchEnd ?? 90);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const finished = minute >= 90;
+  // The engine's real final whistle — 90 plus whatever stoppage time this
+  // match actually earned (gap 18), not a hardcoded 90 that silently
+  // truncated any added-time goals from ever being shown.
+  const matchEnd = timeline?.report.matchEnd ?? 90;
+  const stoppage1 = timeline?.report.stoppage1 ?? 0;
+  const halfEnd = 45 + stoppage1;
+  const finished = minute >= matchEnd;
   const overlayOpen = showTactics || showSubs || showHt || showMenu || showEvents || showTeamTalk !== null;
 
   // Replay clock.
   useEffect(() => {
     if (!timeline || !kickedOff || paused || finished || overlayOpen) return;
-    const t = setInterval(() => setMinute((m) => Math.min(90, m + 1)), MS_PER_MINUTE / speed);
+    const t = setInterval(() => setMinute((m) => Math.min(matchEnd, m + 1)), MS_PER_MINUTE / speed);
     return () => clearInterval(t);
-  }, [timeline, kickedOff, paused, finished, overlayOpen, speed]);
+  }, [timeline, kickedOff, paused, finished, overlayOpen, speed, matchEnd]);
 
-  // Half-time pause.
+  // Half-time pause, once real added time for the first half has played out.
   useEffect(() => {
-    if (minute >= 45 && !htShown && !finished) {
+    if (minute >= halfEnd && !htShown && !finished) {
       setHtShown(true);
       setShowHt(true);
     }
-  }, [minute, htShown, finished]);
+  }, [minute, halfEnd, htShown, finished]);
 
   const snap: MinuteSnapshot | undefined = useMemo(() => {
     if (!timeline) return undefined;
@@ -112,11 +132,35 @@ export default function MatchScreen({
     [timeline, minute]
   );
 
+  // Momentum over time, up to the current minute — feeds the SVG momentum
+  // graph in StatsOverlay (previously just a single live bar).
+  const momentumSeries = useMemo(
+    () => (timeline ? timeline.snapshots.filter((sn) => sn.minute <= minute).map((sn) => ({ minute: sn.minute, value: sn.momentum })) : []),
+    [timeline, minute]
+  );
+
   // Stick the feed to the newest line.
   useEffect(() => {
     const el = feedRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [shownEvents.length, showEvents]);
+
+  // Brief scoreboard flash on a goal (Phase 14's .fm-flash keyframe, first
+  // real wiring of it — it shipped as a ready utility with nothing using it
+  // yet). Tracks total goals rather than home/away separately so an own
+  // goal or a goal for either side both trigger it.
+  const [scoreFlash, setScoreFlash] = useState(false);
+  const prevGoalsRef = useRef(0);
+  useEffect(() => {
+    const total = (snap?.score.home ?? 0) + (snap?.score.away ?? 0);
+    if (total > prevGoalsRef.current) {
+      setScoreFlash(true);
+      const t = setTimeout(() => setScoreFlash(false), 700);
+      prevGoalsRef.current = total;
+      return () => clearTimeout(t);
+    }
+    prevGoalsRef.current = total;
+  }, [snap?.score.home, snap?.score.away]);
 
   const liveRatings = useMemo(() => {
     if (!snap) return {};
@@ -247,14 +291,14 @@ export default function MatchScreen({
     setKickedOff(true);
     setPaused(false);
     setShowHt(false);
-    setMinute(90);
+    setMinute(matchEnd);
   };
 
   const exitMatch = () => {
     if (finished || window.confirm('Leave the touchline? The result will stand as simulated.')) onDone(timeline.report);
   };
 
-  const minuteLabel = !kickedOff ? 'KO' : finished ? 'FT' : minute === 45 && showHt ? 'HT' : `${minute}'`;
+  const minuteLabel = !kickedOff ? 'KO' : finished ? 'FT' : minute >= halfEnd && showHt ? 'HT' : formatMinute(minute, stoppage1);
 
   // Highlight progress dots: key moments already revealed light up in order.
   const highlights = timeline.events.filter(
@@ -286,15 +330,31 @@ export default function MatchScreen({
           <span /><span /><span />
         </button>
         <div className="fm-fmbar__seg fm-fmbar__seg--home">
+          {userIsHome && state.managerProfile && (
+            <ManagerAvatar
+              config={state.managerProfile.avatarConfig}
+              size={20}
+              title={state.managerProfile.name}
+              style={{ borderRadius: '50%', flexShrink: 0 }}
+            />
+          )}
           <Crest name={home?.name} code={home?.code ?? ''} color={home?.color ?? 'var(--panel-3)'} size={22} />
           <span className="fm-fmbar__team">{home?.code}</span>
         </div>
-        <div className="fm-fmbar__seg fm-fmbar__seg--score">
+        <div className={`fm-fmbar__seg fm-fmbar__seg--score${scoreFlash ? ' fm-flash' : ''}`}>
           {score.home} - {score.away}
         </div>
         <div className="fm-fmbar__seg fm-fmbar__seg--away">
           <Crest name={away?.name} code={away?.code ?? ''} color={away?.color ?? 'var(--panel-3)'} size={22} />
           <span className="fm-fmbar__team">{away?.code}</span>
+          {!userIsHome && state.managerProfile && (
+            <ManagerAvatar
+              config={state.managerProfile.avatarConfig}
+              size={20}
+              title={state.managerProfile.name}
+              style={{ borderRadius: '50%', flexShrink: 0 }}
+            />
+          )}
         </div>
         <div className="fm-fmbar__seg fm-fmbar__seg--clock">{minuteLabel}</div>
         <div className="fm-fmbar__dots">
@@ -310,15 +370,15 @@ export default function MatchScreen({
         {teamTalksOn && !kickedOff && (
           <button className="fm-fmbar__icon" onClick={() => setShowTeamTalk('pre')} disabled={preTalkDone}
             aria-label="Team talk" title={preTalkDone ? 'Team talk given' : 'Team talk'}>
-            🗣️
+            <Icon name="mic" size={16} />
           </button>
         )}
         <button className="fm-fmbar__icon" onClick={() => { setSubOut(null); setShowSubs(true); }}
           disabled={finished || subsUsed >= MAX_SUBS} aria-label="Substitutions" title={`Subs ${subsUsed}/${MAX_SUBS}`}>
-          ⇅
+          <Icon name="sub" size={16} />
         </button>
         <button className="fm-fmbar__icon" onClick={() => setShowTactics(true)} disabled={finished} aria-label="Tactics" title="Tactics">
-          ⚙
+          <Icon name="settings" size={16} />
         </button>
         <button
           className="fm-fmbar__play"
@@ -329,7 +389,7 @@ export default function MatchScreen({
           disabled={finished}
           aria-label={!kickedOff || paused ? 'Play' : 'Pause'}
         >
-          {!kickedOff || paused ? '▶' : '❚❚'}
+          {!kickedOff || paused ? <Icon name="play" size={15} /> : <Icon name="pause" size={15} />}
         </button>
       </div>
 
@@ -356,9 +416,10 @@ export default function MatchScreen({
             stats={stats}
             score={score}
             momentum={snap?.momentum ?? 0}
+            momentumSeries={momentumSeries}
             week={state.week}
             seasonYear={state.seasonYear}
-            competition={DIVISION_NAMES[home?.division ?? 1]}
+            competition={leagueName(home?.leagueId ?? 'premier_league')}
             teamRatings={{ home: teamRating('home'), away: teamRating('away') }}
             cards={{ home: cardCount('home'), away: cardCount('away') }}
             corners={{ home: stats.home.corners, away: stats.away.corners }}
@@ -369,14 +430,14 @@ export default function MatchScreen({
       {/* Commentary ticker */}
       <div className="fm-fmticker">
         <button className="fm-fmticker__btn" onClick={() => setShowTactics(true)} disabled={finished} aria-label="Tactics">
-          ⚙
+          <Icon name="settings" size={15} />
         </button>
         <button className="fm-fmticker__text" onClick={() => setShowEvents(true)}>
           {commentary}
         </button>
         <button className="fm-fmticker__btn" onClick={() => { setSubOut(null); setShowSubs(true); }}
           disabled={finished || subsUsed >= MAX_SUBS} aria-label="Substitutions">
-          ⇅
+          <Icon name="sub" size={15} />
         </button>
       </div>
 
@@ -386,7 +447,7 @@ export default function MatchScreen({
           <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
             <div className="fm-matchx-modal__head">
               <span className="fm-matchx-modal__title">Match Menu</span>
-              <button className="fm-matchx-modal__close" onClick={() => setShowMenu(false)} aria-label="Close">✕</button>
+              <button className="fm-matchx-modal__close" onClick={() => setShowMenu(false)} aria-label="Close"><Icon name="cross" size={15} /></button>
             </div>
             <div className="fm-menu-list">
               <button className="fm-btn fm-btn--secondary" onClick={() => { setShowMenu(false); cycleMentality(); }} disabled={finished}>
@@ -415,7 +476,7 @@ export default function MatchScreen({
           <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
             <div className="fm-matchx-modal__head">
               <span className="fm-matchx-modal__title">Match Events</span>
-              <button className="fm-matchx-modal__close" onClick={() => setShowEvents(false)} aria-label="Close">✕</button>
+              <button className="fm-matchx-modal__close" onClick={() => setShowEvents(false)} aria-label="Close"><Icon name="cross" size={15} /></button>
             </div>
             <div className="fm-matchx__feed" ref={feedRef}>
               {shownEvents.length === 0 && <p className="fm-hint">The teams are out…</p>}
@@ -445,7 +506,7 @@ export default function MatchScreen({
             <p className="fm-hint">Adjust your tactics or make substitutions before the restart.</p>
             <div className="fm-actions">
               {teamTalksOn && (
-                <button className="fm-btn fm-btn--secondary" onClick={() => setShowTeamTalk('ht')}>🗣️ Team Talk</button>
+                <button className="fm-btn fm-btn--secondary" onClick={() => setShowTeamTalk('ht')}><Icon name="mic" size={14} /> Team Talk</button>
               )}
               <button className="fm-btn fm-btn--secondary" onClick={() => { setShowHt(false); setShowTactics(true); }}>Tactics</button>
               <button className="fm-btn fm-btn--secondary" onClick={() => { setShowHt(false); setShowSubs(true); }} disabled={subsUsed >= MAX_SUBS}>
@@ -463,7 +524,7 @@ export default function MatchScreen({
           <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
             <div className="fm-matchx-modal__head">
               <span className="fm-matchx-modal__title">Substitution ({subsUsed}/{MAX_SUBS})</span>
-              <button className="fm-matchx-modal__close" onClick={() => setShowSubs(false)} aria-label="Close">✕</button>
+              <button className="fm-matchx-modal__close" onClick={() => setShowSubs(false)} aria-label="Close"><Icon name="cross" size={15} /></button>
             </div>
             <div className="fm-sub-grid">
               <div>
@@ -539,10 +600,10 @@ export default function MatchScreen({
               </span>
             </div>
             <div className="fm-attr-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 10 }}>
-              <StatTile icon="⚽" value={score.home + score.away} label="Goals" />
-              <StatTile icon="📊" value={(timeline.report.homeXG + timeline.report.awayXG).toFixed(1)} label="xG" />
-              <StatTile icon="🟨" value={timeline.events.filter((e) => e.type === 'card').length} label="Cards" />
-              <StatTile icon="🚑" value={timeline.events.filter((e) => e.type === 'injury').length} label="Injuries" />
+              <StatTile icon={<Icon name="goal" />} value={score.home + score.away} label="Goals" />
+              <StatTile icon={<Icon name="stat" />} value={(timeline.report.homeXG + timeline.report.awayXG).toFixed(1)} label="xG" />
+              <StatTile icon={<Icon name="card" style={{ color: 'var(--gold)' }} />} value={timeline.events.filter((e) => e.type === 'card').length} label="Cards" />
+              <StatTile icon={<Icon name="injury" />} value={timeline.events.filter((e) => e.type === 'injury').length} label="Injuries" />
             </div>
             <MatchHighlights events={computeHighlights(timeline.report)} />
             <div className="fm-actions">

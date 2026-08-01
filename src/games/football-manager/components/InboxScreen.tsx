@@ -5,16 +5,17 @@ import type { GameState, InboxCategory, InboxItem, Player } from '@/engine/types
 import { markAllInboxRead, markInboxRead, setCaptain } from '@/engine/seasonProgression';
 import { formatMoney } from '@/engine/utils';
 import { tint } from './visuals';
+import { Icon, type IconName } from './Icon';
 
-const CATEGORY_ICON: Record<InboxCategory, string> = {
-  club: '🏟️',
-  transfer: '💰',
-  injury: '🚑',
-  contract: '📄',
-  youth: '🌱',
-  board: '🎯',
-  match: '🏆',
-  press: '🎙️',
+const CATEGORY_ICON: Record<InboxCategory, IconName> = {
+  club: 'stadium',
+  transfer: 'transfers',
+  injury: 'injury',
+  contract: 'document',
+  youth: 'sprout',
+  board: 'target',
+  match: 'trophy',
+  press: 'mic',
 };
 
 const CATEGORY_LABEL: Record<InboxCategory, string> = {
@@ -55,7 +56,7 @@ function PlayerCard({ p, club, seasonYear }: { p: Player; club: { name: string; 
         <span className="fm-newscard__nat">{p.nat}</span>
       </div>
       <div className="fm-newscard__portrait">
-        <span className="fm-newscard__silhouette">👤</span>
+        <Icon name="person" size={32} className="fm-newscard__silhouette" />
       </div>
       <div className="fm-newscard__crests">
         <span className="fm-newscard__crest" style={{ background: club?.color ?? '#555' }}>
@@ -74,9 +75,9 @@ function PlayerCard({ p, club, seasonYear }: { p: Player; club: { name: string; 
         <div className="fm-newscard__row"><span>Contract Expiry</span><strong>{contractExpiry}</strong></div>
       </div>
       <div className="fm-newscard__foot">
-        <span className="fm-newscard__star">⭐ {(p.rating / 10).toFixed(2)}</span>
-        <span className="fm-newscard__stat">🥅 {p.goals}</span>
-        <span className="fm-newscard__stat">👟 {p.apps}</span>
+        <span className="fm-newscard__star"><Icon name="star" size={13} /> {(p.rating / 10).toFixed(2)}</span>
+        <span className="fm-newscard__stat"><Icon name="net" size={13} /> {p.goals}</span>
+        <span className="fm-newscard__stat"><Icon name="boot" size={13} /> {p.apps}</span>
       </div>
     </div>
   );
@@ -130,7 +131,7 @@ export default function InboxScreen({
           <div className="fm-inbox__list">
             {items.map((item) => (
               <button key={item.id} className={`fm-inbox__row${item.read ? '' : ' unread'}`} onClick={() => openItem(item.id)}>
-                <span className="fm-inbox__row-icon">{CATEGORY_ICON[item.category]}</span>
+                <span className="fm-inbox__row-icon"><Icon name={CATEGORY_ICON[item.category]} size={16} /></span>
                 <span className="fm-inbox__row-main">
                   <span className="fm-inbox__row-title">{item.title}</span>
                   <span className="fm-inbox__row-meta">{CATEGORY_LABEL[item.category]} · Week {item.week}</span>
@@ -152,7 +153,9 @@ export default function InboxScreen({
     <div className="fm-inbox">
       <div className="fm-inbox__article-head">
         <div>
-          <span className="fm-inbox__cat-chip">{CATEGORY_ICON[current.category]} {CATEGORY_LABEL[current.category]}</span>
+          <span className="fm-inbox__cat-chip" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <Icon name={CATEGORY_ICON[current.category]} size={13} /> {CATEGORY_LABEL[current.category]}
+          </span>
           <span className="fm-inbox__date">{articleDate(current)}</span>
         </div>
         <button className="fm-btn fm-btn--primary fm-btn--small" onClick={() => setOpenId(null)}>
@@ -193,10 +196,10 @@ export default function InboxScreen({
           Inbox
         </button>
         <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => step(-1)} disabled={openIndex <= 0}>
-          ◀ Previous
+          <Icon name="chevron" size={13} style={{ transform: 'rotate(180deg)' }} /> Previous
         </button>
         <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => step(1)} disabled={openIndex >= items.length - 1}>
-          Next ▶
+          Next <Icon name="chevron" size={13} />
         </button>
       </div>
     </div>

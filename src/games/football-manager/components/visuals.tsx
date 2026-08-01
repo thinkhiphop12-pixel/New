@@ -1,5 +1,7 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 /** Shared visual primitives used across match/squad/tactics screens so the
  *  game reads as a pitch-and-player sim instead of stacked text lists. */
 
@@ -22,11 +24,18 @@ export function PitchMarkings({ className = '' }: { className?: string }) {
         {/* bottom (own) box */}
         <rect x="27" y="82" width="46" height="16" />
         <rect x="38" y="92" width="24" height="6" />
+        <circle cx="50" cy="90" r="0.5" fill="#ffffff" fillOpacity="0.3" stroke="none" />
         <path d="M 40 82 A 9 9 0 0 0 60 82" />
         {/* top (attacking) box */}
         <rect x="27" y="2" width="46" height="16" />
         <rect x="38" y="2" width="24" height="6" />
+        <circle cx="50" cy="10" r="0.5" fill="#ffffff" fillOpacity="0.3" stroke="none" />
         <path d="M 40 18 A 9 9 0 0 1 60 18" />
+        {/* Goal frames: 7.32m of a ~68m pitch width is ~10.8% — a 10.8-wide
+            rect straddling each end line at true relative scale, rather than
+            a schematic notch. */}
+        <rect x="44.6" y="0.6" width="10.8" height="1.4" />
+        <rect x="44.6" y="98" width="10.8" height="1.4" />
       </g>
     </svg>
   );
@@ -132,7 +141,7 @@ export function AttrBars({
 }
 
 /** Icon + big number + tiny label — replaces a prose stat line. */
-export function StatTile({ icon, value, label }: { icon: string; value: string | number; label: string }) {
+export function StatTile({ icon, value, label }: { icon: ReactNode; value: string | number; label: string }) {
   return (
     <div className="fm-stat-tile">
       <span className="fm-stat-tile__icon">{icon}</span>
@@ -148,4 +157,33 @@ export function StatTile({ icon, value, label }: { icon: string; value: string |
 export function tint(hex: string, alpha: string): string {
   if (!hex || !hex.startsWith('#')) return hex;
   return `${hex}${alpha}`;
+}
+
+/** Club reputation as stars (gap 80), 1-5. Reputation is coarse by design
+ *  (see `clubReputation` in engine/clubIdentity.ts) — five filled/empty stars
+ *  is the right resolution for it, not a number that implies more precision
+ *  than the underlying value actually has. */
+export function ReputationStars({ value, title }: { value: number; title?: string }) {
+  const stars = Math.max(0, Math.min(5, Math.round(value)));
+  return (
+    <span className="fm-rep-stars" title={title ?? `Reputation ${stars}/5`} aria-label={`Reputation ${stars} of 5 stars`}>
+      {'★'.repeat(stars)}
+      <span className="fm-rep-stars__empty">{'★'.repeat(5 - stars)}</span>
+    </span>
+  );
+}
+
+/** Readable text color (near-black or near-white) for text sitting directly
+ *  on a club's color — the reference's `textOn`. Relative luminance via the
+ *  standard sRGB coefficients, not a library, matching `tint`'s no-deps
+ *  approach above. Used by the club-theming pass (gap 82) so `--brand-text`
+ *  stays legible across every club's color, not just the game's own accent
+ *  green. */
+export function readableTextOn(hex: string): string {
+  if (!hex || !hex.startsWith('#') || hex.length < 7) return '#04140d';
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance > 0.55 ? '#04140d' : '#f5f5f5';
 }

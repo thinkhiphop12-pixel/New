@@ -1,15 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { Icon } from './Icon';
 import type { GameState, Player, Pressing, TacticStyle, Tempo, TrainingFocus, Width } from '@/engine/types';
 import { FORMATIONS, getFormation } from '@/engine/gameRules';
 import { autoPickLineup, getSquad, isOnLoan, lineupStrength, setPlayerRole } from '@/engine/teamManagement';
-import { canLoanOut, loanOut, renewContract } from '@/engine/transferMarket';
-import { traitNames } from '@/engine/traits';
-import { formatMoney } from '@/engine/utils';
-import { getRole, getRolesByPosition } from '@/lib/playerRoles';
-import { AttrBars, PitchMarkings, PlayerToken } from './visuals';
+import { getRole } from '@/lib/playerRoles';
+import { PitchMarkings, PlayerToken } from './visuals';
 import { PlayerFace } from './PlayerFace';
+import PlayerModal from './PlayerModal';
 
 function lastName(name: string): string {
   const parts = name.split(' ').filter((w) => !/^jr\.?$/i.test(w));
@@ -23,11 +22,6 @@ function formTag(p: Player): React.ReactNode {
   if (p.form >= 1.06) return <span className="hot">In form</span>;
   if (p.form <= 0.94) return <span className="cold">Poor form</span>;
   return null;
-}
-
-function avgRating(p: Player): number | null {
-  if (!p.seasonRatingCount) return null;
-  return Math.round((p.seasonRatingSum! / p.seasonRatingCount) * 10) / 10;
 }
 
 export default function SquadScreen({
@@ -210,93 +204,13 @@ export default function SquadScreen({
       </p>
 
       {detail && selectedSlot === null && (
-        <div className="fm-panel fm-player-detail">
-          <div className="fm-player-detail__head">
-            <PlayerFace playerId={detail.id} size={48} />
-            <p className="fm-label" style={{ margin: 0 }}>
-              {detail.name} — {detail.role}, {detail.age}y
-            </p>
-          </div>
-          <p className="fm-club-line">
-            {detail.nat} · {detail.rating} OVR · {formatMoney(detail.value)} · {formatMoney(detail.wage)}/w ·{' '}
-            {detail.contractYears}y contract · {detail.apps} apps, {detail.goals} goals
-            {avgRating(detail) !== null ? ` · ${avgRating(detail)} avg` : ''}
-            {detail.unhappy ? ' · ⚠ unhappy' : ''}
-          </p>
-          <AttrBars pac={detail.pac} sho={detail.sho} pas={detail.pas} dri={detail.dri} def={detail.def} phy={detail.phy} />
-          {traitNames(detail).length > 0 && (
-            <div className="fm-pills" style={{ marginBottom: 8 }}>
-              {traitNames(detail).map((t) => (
-                <span key={t} className="fm-trait">
-                  {t}
-                </span>
-              ))}
-            </div>
-          )}
-          <p className="fm-label">Tactical role</p>
-          <div className="fm-role-grid">
-            <button
-              className={`fm-role-tile${!detail.tacticalRole ? ' active' : ''}`}
-              onClick={() => onChange(setPlayerRole(state, detail.id, null))}
-            >
-              <span className="fm-role-tile__name">Balanced</span>
-              <span className="fm-role-tile__desc">No specialism</span>
-            </button>
-            {getRolesByPosition(detail.pos).map((role) => (
-              <button
-                key={role.id}
-                className={`fm-role-tile${detail.tacticalRole === role.id ? ' active' : ''}`}
-                onClick={() => onChange(setPlayerRole(state, detail.id, role.id))}
-              >
-                <span className="fm-role-tile__name">{role.name}</span>
-                <span className="fm-role-tile__desc">{role.description}</span>
-              </button>
-            ))}
-          </div>
-          <p className="fm-hint" style={{ marginBottom: 0 }}>
-            Playing a player in their assigned role and correct position gives a small strength boost.
-          </p>
-          {detail.career.length > 0 && (
-            <>
-              <p className="fm-label">Career history</p>
-              <ul className="fm-news">
-                {[...detail.career].reverse().slice(0, 6).map((c, i) => (
-                  <li key={i}>
-                    {c.year}/{(c.year + 1) % 100} {c.club}: {c.apps} apps, {c.goals} goals
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-          <div className="fm-actions" style={{ justifyContent: 'flex-start', marginTop: 10 }}>
-            {detail.contractYears <= 1 && (
-              <button
-                className="fm-btn fm-btn--primary fm-btn--small"
-                disabled={detail.wage * 10 > state.budget}
-                onClick={() => onChange(renewContract(state, detail.id))}
-              >
-                Renew contract ({formatMoney(detail.wage * 10)} bonus)
-              </button>
-            )}
-            {!isOnLoan(detail) && (
-              <button
-                className="fm-btn fm-btn--secondary fm-btn--small"
-                disabled={!canLoanOut(state, detail.id).ok}
-                onClick={() => onChange(loanOut(state, detail.id))}
-              >
-                Loan out for the season
-              </button>
-            )}
-            <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setDetailId(null)}>
-              Close
-            </button>
-          </div>
-          {detail.contractYears <= 1 && (
-            <span className="fm-trait" style={{ display: 'inline-block', marginTop: 8 }}>
-              ⚠ Contract expiring
-            </span>
-          )}
-        </div>
+        <PlayerModal
+          state={state}
+          player={detail}
+          club={state.clubs.find((c) => c.id === detail.clubId)}
+          onChange={onChange}
+          onClose={() => setDetailId(null)}
+        />
       )}
 
       <div className="fm-player-list">
@@ -319,7 +233,7 @@ export default function SquadScreen({
                 <span className="fm-player-row__sub">
                   {p.age}y{inLineup ? ' · XI' : ''}
                   {p.tacticalRole ? ` · ${getRole(p.tacticalRole)?.name}` : ''}
-                  {p.contractYears <= 1 ? ' · ⚠ expiring' : ''}
+                  {p.contractYears <= 1 && <> · <Icon name="warning" size={11} style={{ verticalAlign: -1 }} /> expiring</>}
                 </span>
               </span>
               <span className="fm-player-row__tag">{formTag(p)}</span>

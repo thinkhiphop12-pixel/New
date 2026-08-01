@@ -1,7 +1,7 @@
 'use client';
 
 import type { GameState, Staff } from '@/engine/types';
-import { ACADEMY_UPGRADE_COST, STADIUM_UPGRADE_COST, STAFF_MAX_LEVEL, STAFF_UPGRADE_COST } from '@/engine/gameRules';
+import { ACADEMY_UPGRADE_COST, STADIUM_UPGRADE_COST, STAFF_MAX_LEVEL, STAFF_UPGRADE_COST, leagueName } from '@/engine/gameRules';
 import {
   gateIncome, getStadiumLevel, getStaff, setCaptain, staffWageBill, upgradeAcademy, upgradeStadium,
   upgradeStaff, weeklyWageBill,
@@ -10,6 +10,7 @@ import { getSquad } from '@/engine/teamManagement';
 import { traitNames } from '@/engine/traits';
 import { formatMoney } from '@/engine/utils';
 import { StatTile } from './visuals';
+import { Icon } from './Icon';
 
 const STAFF_LABELS: Record<keyof Staff, string> = { coach: 'Assistant coach', physio: 'Physio', scout: 'Chief scout' };
 const STAFF_BLURB: Record<keyof Staff, string> = {
@@ -66,7 +67,7 @@ export default function ClubScreen({
         {m.trophies.length > 0 ? (
           <ul className="fm-news">
             {m.trophies.slice(-6).map((t, i) => (
-              <li key={i}>🏆 {t}</li>
+              <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="trophy" size={13} /> {t}</li>
             ))}
           </ul>
         ) : (
@@ -149,7 +150,7 @@ export default function ClubScreen({
               onClick={() => onChange(setCaptain(state, state.captainId === p.id ? null : p.id))}
             >
               {p.name}
-              {traitNames(p).includes('Leader') ? ' ⭐' : ''}
+              {traitNames(p).includes('Leader') && <Icon name="star" size={11} style={{ marginLeft: 4, verticalAlign: -1 }} />}
             </button>
           ))}
         </div>
@@ -204,14 +205,14 @@ export default function ClubScreen({
           Records & legends
         </p>
         <div className="fm-attr-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-          <StatTile icon="🥅" value={state.records.biggestWin?.text ?? '—'} label="Biggest win" />
+          <StatTile icon={<Icon name="net" />} value={state.records.biggestWin?.text ?? '—'} label="Biggest win" />
           <StatTile
-            icon="🏅"
+            icon={<Icon name="medal" />}
             value={state.records.bestFinish ? `${state.records.bestFinish.position}${ord(state.records.bestFinish.position)}` : '—'}
-            label={state.records.bestFinish ? `Div ${state.records.bestFinish.division}, ${state.records.bestFinish.year}` : 'Best finish'}
+            label={state.records.bestFinish ? `${leagueName(state.records.bestFinish.leagueId)}, ${state.records.bestFinish.year}` : 'Best finish'}
           />
           <StatTile
-            icon="⚽"
+            icon={<Icon name="goal" />}
             value={state.records.topSeasonScorer ? state.records.topSeasonScorer.goals : '—'}
             label={state.records.topSeasonScorer ? `${state.records.topSeasonScorer.name} (${state.records.topSeasonScorer.year})` : 'Top scorer'}
           />

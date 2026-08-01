@@ -22,10 +22,13 @@ const staticFiles = [
   'privacy.html',
   'about.html',
   'gaffer-guide.html',
+  'scout-guide.html',
+  'draft-xi-guide.html',
   'verification.html',
   'robots.txt',
   'sitemap.xml',
-  'llms.txt'
+  'llms.txt',
+  'ads.txt'
 ];
 
 staticFiles.forEach(file => {

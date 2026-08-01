@@ -20,7 +20,6 @@
 <meta name="twitter:description" content="Manage a real club, draft the perfect XI, guess the mystery player. Free, no login." />
 <meta name="twitter:image" content="https://ballknw.com/assets/og-image.png" />
 <!-- Google AdSense (site verification + library load) -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2741492847457362" crossorigin="anonymous" data-adsense="1"></script>
 <!-- Monetag (site verification only — no ad units wired in yet) -->
 <meta name="monetag" content="6675004eb2036a506cf516c061791522">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
@@ -189,13 +188,6 @@ body::before{
 .feat{font-size:13px;color:var(--white);background:var(--glass);border:1px solid var(--border);padding:9px 15px;border-radius:11px}
 .feat span{color:var(--emerald);font-weight:700}
 
-/* AMAZON SHOP SECTION */
-.shop-section{position:relative;z-index:1;margin-top:40px;text-align:center}
-.shop-section h3{font-size:14px;font-weight:700;color:var(--lime);text-transform:uppercase;letter-spacing:.16em;margin-bottom:12px}
-.shop-links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-.shop-links a{font-size:13px;color:var(--white);background:var(--glass);border:1px solid var(--border);padding:8px 14px;border-radius:10px;transition:background .2s,border-color .2s}
-.shop-links a:hover{background:rgba(255,255,255,.08);border-color:var(--border-bright)}
-
 /* COLUMN AD RAIL — single right column only */
 .col-ad-rail{position:fixed;top:90px;right:calc(50% - 540px - 180px);width:160px;display:flex;flex-direction:column;gap:16px;z-index:5;pointer-events:none;}
 .col-ad-rail .ad-slot{pointer-events:auto;margin:0;max-width:160px;min-height:600px;width:160px;position:sticky;top:90px;}
@@ -220,32 +212,15 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 .faq-item[open] summary::after{content:"–"}
 .faq-item p{color:var(--muted);font-size:14px;padding:0 18px 16px;line-height:1.6}
 
-/* PROMO BANNER — single kit sale banner only */
-.promo-banners{position:relative;z-index:1;margin:22px 0}
-.promo-banner{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--border);background:var(--surface);transition:transform .18s,box-shadow .25s,border-color .2s}
-.promo-banner:hover{transform:translateY(-2px);border-color:var(--border-bright)}
-.promo-h:hover{box-shadow:0 16px 40px -18px rgba(42,178,72,.35)}
-.promo-link{display:flex;align-items:center;gap:16px;padding:18px 56px 18px 22px;text-decoration:none;color:inherit}
-.promo-img{flex-shrink:0;width:72px;height:52px;border-radius:8px;object-fit:cover;border:1px solid var(--border);opacity:.85}
-.promo-badge{flex-shrink:0;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border-radius:999px;white-space:nowrap;color:var(--muted);background:var(--glass);border:1px solid var(--border)}
-.promo-badge-lime{color:var(--muted);background:var(--glass);border:1px solid var(--border)}
-.promo-text{flex:1;min-width:0}
-.promo-text h3{font-size:14.5px;font-weight:700;letter-spacing:-.01em;margin-bottom:3px}
-.promo-text p{font-size:12.5px;color:var(--muted);line-height:1.4}
-.promo-fine{display:block;font-size:10.5px;color:var(--muted);margin-top:4px;opacity:.8}
-.promo-cta{flex-shrink:0;font-size:12.5px;font-weight:700;color:var(--lime);background:none;padding:8px 4px;border-radius:0;white-space:nowrap}
-.promo-banner:hover .promo-cta{text-decoration:underline}
-.promo-close{position:absolute;top:10px;right:10px;width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;cursor:pointer;z-index:2;transition:background .2s,transform .15s}
-.promo-close:hover{background:rgba(0,0,0,.75);transform:scale(1.1)}
-@media(max-width:640px){.promo-link{flex-direction:column;align-items:center;text-align:center;padding:20px 40px}.promo-img{width:140px;height:90px}.promo-text{width:100%}}
-
 /* Ad slot styling — reserved height prevents CLS */
-.ad-slot{background:var(--surface);border:1px solid var(--border);border-radius:12px;position:relative;display:flex;align-items:center;justify-content:center;min-height:90px;aspect-ratio:auto;color:var(--muted);font-size:12px;}
+.ad-slot{background:var(--surface);border:1px solid var(--border);border-radius:12px;position:relative;display:flex;align-items:center;justify-content:center;min-height:90px;aspect-ratio:auto;color:var(--muted);font-size:12px;overflow:hidden;}
 .ad-slot-label{opacity:0.5;}
 .ad-slot:empty::before{content:"Advertisement";opacity:0.4;font-size:11px;letter-spacing:0.05em;}
+.ad-slot iframe{display:block;width:100%;max-width:100%;border:0;background:transparent;}
 #rightColAd{min-height:600px;width:160px;aspect-ratio:160/600}
 #topAdBanner{min-height:90px}
 #middleAdBanner{min-height:90px}
+#bottomAdBanner{min-height:90px}
 </style>
 <script type="application/ld+json">
 {
@@ -365,7 +340,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 
 <!-- COLUMN AD RAIL (right side only, desktop ≥1440px) -->
 <aside class="col-ad-rail" aria-label="Advertisement">
-  <div class="ad-slot" id="rightColAd" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="vertical"></div>
+  <div class="ad-slot" id="rightColAd"></div>
 </aside>
 
 <!-- NAV -->
@@ -441,31 +416,11 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </section>
 
-<!-- SPONSORED (affiliate) -->
-<section class="section" style="padding-top:10px">
-  <div class="wrap">
-    <div class="sponsored-kicker">Sponsored</div>
-    <div class="promo-banners" style="margin:0">
-      <div class="promo-banner promo-h" id="promoKitsSale" data-promo-id="kits-sale" data-rotate="kits">
-        <button class="promo-close" type="button" aria-label="Dismiss offer" data-close-promo>&times;</button>
-        <a class="promo-link" href="https://www.amazon.co.uk/s?k=football+kits&tag=lloydevans01-21" target="_blank" rel="sponsored noopener">
-          <img class="promo-img" src="/assets/promo-kits.svg" alt="Football kits and training gear" width="72" height="52" loading="lazy" decoding="async">
-          <span class="promo-text">
-            <h3 class="promo-title">Football kits &amp; training gear</h3>
-            <p class="promo-desc">Shirts, boots and training kit — prices set by retailer.</p>
-          </span>
-          <span class="promo-cta">Browse →</span>
-        </a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ADVERTISEMENT (separate from sponsored content above) -->
+<!-- ADVERTISEMENT -->
 <section class="section" style="padding-top:0">
   <div class="wrap">
     <div class="sponsored-kicker">Advertisement</div>
-    <div class="ad-slot" id="middleAdBanner" data-ad-slot="XXXXXXXXXXXXXXXX" data-ad-format="auto"><span class="ad-slot-label">Advertisement</span></div>
+    <div class="ad-slot" id="middleAdBanner"><span class="ad-slot-label">Advertisement</span></div>
   </div>
 </section>
 
@@ -502,6 +457,14 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </section>
 
+<!-- ADVERTISEMENT (bottom of page) -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="sponsored-kicker">Advertisement</div>
+    <div class="ad-slot" id="bottomAdBanner"><span class="ad-slot-label">Advertisement</span></div>
+  </div>
+</section>
+
 <!-- FOOTER -->
 <footer>
   <div class="wrap">
@@ -517,7 +480,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <a href="mailto:thinkhiphop12@gmail.com">Contact</a>
       </nav>
     </div>
-    <p class="foot-meta">Made for football heads. Data from public sources. © BALLKNW · ballknw.com · Updated July 8, 2026 | <a href="https://www.amazon.com/s?k=football&tag=lloydevans01-21" target="_blank" rel="sponsored noopener noreferrer" style="color:var(--muted)">Shop on Amazon</a></p>
+    <p class="foot-meta">Made for football heads. Data from public sources. © BALLKNW · ballknw.com · Updated July 8, 2026</p>
     <p class="foot-meta" style="margin-top:6px">Guides: <a href="/best-football-manager-games-pc.html" style="color:var(--muted)">Best football manager games on PC</a> · <a href="/best-football-manager-games-android.html" style="color:var(--muted)">Android</a> · <a href="/best-football-manager-games-iphone.html" style="color:var(--muted)">iPhone</a></p>
   </div>
 </footer>

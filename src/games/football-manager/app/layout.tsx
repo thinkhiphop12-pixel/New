@@ -1,13 +1,32 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
-import Script from 'next/script';
+import { Inter, Space_Grotesk } from 'next/font/google';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import Script from 'next/script';
 import './globals.css';
+
+// The shared consent/ads scripts live at /shared/*.js, resolved from the
+// site root. That path only exists once this app is exported into the
+// `gaffa/` static folder under ballknw.com — in `next dev` it 404s (which is
+// exactly why these were pulled from this layout before, in c65ebb6). Gate
+// on the same NEXT_PUBLIC_BASE_PATH the static export sets
+// (scripts/export-static.sh), so dev stays clean and only the real deployed
+// build loads them.
+const IS_STATIC_EXPORT = !!process.env.NEXT_PUBLIC_BASE_PATH;
 
 const inter = Inter({
   subsets: ['latin'],
   preload: true,
   display: 'swap',
+});
+
+// Phase 14: display face for headings (--font-display in globals.css),
+// loaded the same way as the existing Inter body font — next/font/google,
+// self-hosted at build time, no extra network request or new dependency.
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  preload: true,
+  display: 'swap',
+  variable: '--font-display-loaded',
 });
 
 export const metadata: Metadata = {
@@ -39,21 +58,18 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.className}>
+    <html lang="en" className={`${inter.className} ${spaceGrotesk.variable}`}>
       <body>
         {children}
         <SpeedInsights />
-        {/* Google AdSense loader (site verification + library) */}
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2741492847457362"
-          crossOrigin="anonymous"
-          data-adsense="1"
-          strategy="afterInteractive"
-        />
-        {/* Shared consent banner + consent-gated ads, served from the site root */}
-        <Script src="/shared/consent.js" strategy="afterInteractive" />
-        <Script src="/shared/ads.js" strategy="afterInteractive" />
+        {IS_STATIC_EXPORT && (
+          <>
+            {/* consent.js self-injects the cookie banner and only calls
+                initAds() after "Accept all" — ads.js stays inert until then. */}
+            <Script src="/shared/consent.js" strategy="afterInteractive" />
+            <Script src="/shared/ads.js" strategy="afterInteractive" />
+          </>
+        )}
       </body>
     </html>
   );

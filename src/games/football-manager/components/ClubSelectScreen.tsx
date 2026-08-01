@@ -1,47 +1,62 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { Division, GameData } from '@/engine/types';
-import { DIVISION_NAMES, STARTING_BUDGET } from '@/engine/gameRules';
-import { ALL_DIVISIONS } from '@/engine/seasonProgression';
+import type { GameData, ScenarioId } from '@/engine/types';
+import { SIMULATED_LEAGUE_IDS, formatLeagueBlurb, leagueIdForDivision, leagueName, startingBudget } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
 import { Crest } from './Crest';
 
-const DIV_BLURB: Record<Division, string> = {
-  1: 'Top flight. Stronger squads, higher expectations, continental football.',
-  2: 'Second tier. Weaker squads but a promotion push awaits.',
-  3: 'Third tier. Tiny budgets, big dreams — the ultimate rebuild.',
-  4: 'Fourth tier. Semi-pro grit, shoestring budgets — a true test.',
-  5: 'Spain\'s finest. Technical football, world-class talent, and El Clasico.',
-  6: 'Italian elite. Tactical chess, defensive masters, and the Scudetto.',
-  7: 'German powerhouse. High pressing, incredible atmospheres, and the Meisterschale.',
-  8: 'French top flight. Physical football, emerging superstars, and PSG dominance.',
-  9: 'Dutch top flight. Attacking football and a famous youth conveyor belt.',
-  10: 'Portuguese top flight. Technical quality and Europe\'s best scouting network.',
-};
+/** Scenario club restrictions, applied here on the raw pre-newGame dataset —
+ *  isBottomHalfClub in engine/scenarios.ts needs a live GameState (squad
+ *  ratings computed from it), which doesn't exist yet at this point in the
+ *  flow, so bottom-half ranking is recomputed directly from clubInfo below
+ *  rather than reused. "Top flight" is division 1 — the only nation with
+ *  more than one simulated tier is England, so this is a no-op restriction
+ *  (nothing qualifies) for every other nation, which is correct: there is no
+ *  "non-top-flight" club to promote from in a single-division country. */
+function scenarioAllowsClub(
+  scenarioId: ScenarioId | undefined,
+  division: number,
+  rankInDivision: number,
+  divisionSize: number,
+): boolean {
+  if (!scenarioId) return true;
+  if (scenarioId === 'relegation_battle' || scenarioId === 'underdog_title') {
+    return rankInDivision > Math.ceil(divisionSize / 2);
+  }
+  if (scenarioId === 'hollywood' || scenarioId === 'takeover') {
+    return division !== 1;
+  }
+  return true;
+}
 
 export default function ClubSelectScreen({
   data,
-  divisions: allowedDivisions,
+  divisions: allowedLeagueIds,
+  scenarioId,
   onPick,
   onBack,
 }: {
   data: GameData;
-  divisions?: Division[];
+  divisions?: string[];
+  scenarioId?: ScenarioId;
   onPick: (clubId: number, managerName: string) => void;
   onBack: () => void;
 }) {
-  const [division, setDivision] = useState<Division | null>(null);
+  const [division, setDivision] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [managerName, setManagerName] = useState('');
+  // Gap 81: a real club search — the existing "fm-search" input just above
+  // this one is actually the manager-name field, not a club filter at all,
+  // despite the plan calling for "a searchable club grid with crests."
+  const [clubQuery, setClubQuery] = useState('');
 
   const divisions = useMemo(() => {
-    const set = new Set(data.clubs.map((c) => c.division));
-    const available = ALL_DIVISIONS.filter(
-      (d) => set.has(d) && (!allowedDivisions || allowedDivisions.includes(d))
+    const set = new Set(data.clubs.map((c) => leagueIdForDivision(c.division)));
+    return SIMULATED_LEAGUE_IDS.filter(
+      (id) => set.has(id) && (!allowedLeagueIds || allowedLeagueIds.includes(id))
     );
-    return available;
-  }, [data, allowedDivisions]);
+  }, [data, allowedLeagueIds]);
 
   // Set default division on first render
   useMemo(() => {
@@ -60,7 +75,21 @@ export default function ClubSelectScreen({
     });
   }, [data]);
 
-  const shown = division !== null ? clubInfo.filter((x) => x.club.division === division) : [];
+  const shownUnfiltered = division !== null ? clubInfo.filter((x) => leagueIdForDivision(x.club.division) === division) : [];
+  // Rank within this division by squad rating, best first, so a "bottom half"
+  // scenario check has something to rank against — same measure the engine
+  // uses post-newGame (squadAvgRating), just computed on the raw dataset here.
+  // Ranked BEFORE the name search filters it down, so the scenario gate still
+  // sees the whole division's real bottom-half/top-flight shape rather than
+  // a shape distorted by whatever the player has typed so far.
+  const rankedInDivision = [...shownUnfiltered].sort((a, b) => b.avg - a.avg);
+  const scenarioFiltered = shownUnfiltered.filter((x) =>
+    scenarioAllowsClub(scenarioId, x.club.division, rankedInDivision.findIndex((r) => r.club.id === x.club.id) + 1, rankedInDivision.length)
+  );
+  const query = clubQuery.trim().toLowerCase();
+  const shown = query
+    ? scenarioFiltered.filter((x) => x.club.name.toLowerCase().includes(query))
+    : scenarioFiltered;
 
   return (
     <div className="fm-screen">
@@ -78,14 +107,24 @@ export default function ClubSelectScreen({
       <div className="fm-division-toggle">
         {divisions.map((d) => (
           <button key={d} className={division === d ? 'active' : ''} onClick={() => setDivision(d)}>
-            {DIVISION_NAMES[d]}
+            {leagueName(d)}
           </button>
         ))}
       </div>
       {division !== null && (
         <p className="fm-hint">
-          {DIV_BLURB[division]} Budget {formatMoney(STARTING_BUDGET[division])}.
+          {formatLeagueBlurb(division)} Budget {formatMoney(startingBudget(division))}.
         </p>
+      )}
+      <input
+        className="fm-search"
+        style={{ alignSelf: 'center', maxWidth: 320, marginBottom: 4 }}
+        placeholder="Search clubs…"
+        value={clubQuery}
+        onChange={(e) => setClubQuery(e.target.value)}
+      />
+      {query && shown.length === 0 && (
+        <p className="fm-hint" style={{ textAlign: 'center' }}>No clubs match &quot;{clubQuery}&quot; in this division.</p>
       )}
       <div className="fm-club-grid">
         {shown.map(({ club, avg, star }) => (

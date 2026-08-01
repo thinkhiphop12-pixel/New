@@ -22,6 +22,22 @@ As the Orchestrator (Top Model), delegate tasks strictly as follows:
 
 Only these four tiers exist in this environment — do not reference or route to models that aren't wired up here (e.g. Codex, Kimi, DeepSeek), even if seen in outside articles or prompts.
 
+### Parallel subagents on one working tree
+Running multiple subagents at once against the same checked-out working tree
+is fine as long as their file sets are disjoint. If two agents run in
+parallel and their edits land in the *same file* (e.g. both touch
+`engine/types.ts`), whichever agent commits first can sweep up the other's
+still-unstaged edits into its own commit — breaking the "migration lands in
+the same commit as its model change" rule even though the resulting code is
+still correct. To avoid this:
+- Before launching parallel agents, check their instructions for shared
+  files. If two tasks both need to touch a file like `engine/types.ts` or
+  `lib/storage.ts`, don't run them in parallel — serialize them (finish and
+  commit one before starting the next).
+- If parallel agents must share a file, have each `git add <its own files>`
+  explicitly before committing rather than `git add -A`, so an in-progress
+  neighbor's unstaged edits can't get swept in.
+
 ### Autonomous Loop Rules
 When I give you a `/goal`, follow this exact loop:
 1. Decompose the goal into tasks.

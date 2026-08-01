@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { Icon } from './Icon';
 import type { GameState } from '@/engine/types';
 import { respondPress, type PressResult, type PressTone } from '@/engine/seasonProgression';
+import ManagerAvatar from './ManagerAvatar';
 
 const OPTIONS: { tone: PressTone; label: string; hint: string }[] = [
   { tone: 'confident', label: 'We can get a result', hint: 'Lifts squad morale, fans respond well.' },
@@ -34,13 +36,23 @@ export default function PressConferenceModal({
       <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
         <div className="fm-matchx-modal__head">
           <span className="fm-matchx-modal__title">Press Conference</span>
-          <button className="fm-matchx-modal__close" onClick={onClose} aria-label="Close">✕</button>
+          <button className="fm-matchx-modal__close" onClick={onClose} aria-label="Close"><Icon name="cross" size={15} /></button>
         </div>
         {!result ? (
           <>
-            <p className="fm-hint" style={{ textAlign: 'left', marginTop: 0 }}>
-              &quot;Ahead of the visit of {opponentName}, how are you feeling about this one, boss?&quot;
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              {state.managerProfile && (
+                <ManagerAvatar
+                  config={state.managerProfile.avatarConfig}
+                  size={36}
+                  title={state.managerProfile.name}
+                  style={{ borderRadius: '50%', flexShrink: 0 }}
+                />
+              )}
+              <p className="fm-hint" style={{ textAlign: 'left', marginTop: 0, marginBottom: 0 }}>
+                &quot;Ahead of the visit of {opponentName}, how are you feeling about this one, boss?&quot;
+              </p>
+            </div>
             <div className="fm-press-options">
               {OPTIONS.map((o) => (
                 <button key={o.tone} className="fm-press-option" onClick={() => pick(o.tone)}>
