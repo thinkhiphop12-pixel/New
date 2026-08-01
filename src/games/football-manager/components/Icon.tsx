@@ -74,6 +74,7 @@ export function IconSprite() {
       <symbol id="fmi-block" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M6.5 6.5l11 11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></symbol>
       <symbol id="fmi-expand" viewBox="0 0 24 24"><path d="M9 3H3v6M15 3h6v6M15 21h6v-6M9 21H3v-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></symbol>
       <symbol id="fmi-collapse" viewBox="0 0 24 24"><path d="M3 9h6V3M21 9h-6V3M21 15h-6v6M3 15h6v6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></symbol>
+      <symbol id="fmi-share-ios" viewBox="0 0 24 24"><path d="M12 15V3M8 7l4-4 4 4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M6 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></symbol>
     </svg>
   );
 }
@@ -89,7 +90,7 @@ export type IconName =
   | 'chance' | 'info' | 'sub' | 'corner'
   | 'settings' | 'flag' | 'dice' | 'download' | 'palette' | 'flame'
   | 'movie' | 'money-out' | 'money-in' | 'block'
-  | 'expand' | 'collapse';
+  | 'expand' | 'collapse' | 'share-ios';
 
 export function Icon({
   name,

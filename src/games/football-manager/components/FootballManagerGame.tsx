@@ -26,6 +26,7 @@ import CharacterCustomizerScreen from './CharacterCustomizerScreen';
 import { readableTextOn } from './visuals';
 import { ToastHost, pushToast } from './ToastQueue';
 import { useFullscreen } from '@/lib/useFullscreen';
+import FullscreenTip from './FullscreenTip';
 import { Icon, IconSprite } from './Icon';
 
 type View = 'menu' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonend' | 'character';
@@ -316,6 +317,7 @@ export default function FootballManagerGame() {
     <div className="fm-app" style={brandStyle}>
       <IconSprite />
       <ToastHost />
+      {view === 'menu' && <FullscreenTip />}
       <header className="fm-header">
         <a
           className="fm-header__brand"
