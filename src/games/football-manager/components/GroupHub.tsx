@@ -29,7 +29,14 @@ export default function GroupHub({
 }) {
   const club = state.clubs.find((c) => c.id === state.userClubId)!;
   const leagueId = userLeagueId(state);
-  const position = computeTable(state, leagueId).findIndex((r) => r.clubId === state.userClubId) + 1;
+  const table = computeTable(state, leagueId);
+  const position = table.findIndex((r) => r.clubId === state.userClubId) + 1;
+  // A short window of the table centred on the user's club — three rows
+  // either side where possible, otherwise pinned to the top/bottom edge.
+  const tableStart = Math.min(Math.max(position - 1 - 3, 0), Math.max(table.length - 7, 0));
+  const tableSlice = table.slice(tableStart, tableStart + 7);
+
+  const latestNews = [...state.inbox].sort((a, b) => b.id - a.id)[0] ?? null;
 
   const fixture = nextUserFixture(state);
   const opponentId = fixture ? (fixture.homeId === state.userClubId ? fixture.awayId : fixture.homeId) : null;
@@ -85,6 +92,49 @@ export default function GroupHub({
           </span>
         </div>
       </div>
+
+      {latestNews && (
+        <button
+          type="button"
+          className="fm-hubnews"
+          onClick={() => onOpen('club')}
+        >
+          <span className="fm-hubnews__head">
+            <Icon name="inbox" size={12} />
+            {!latestNews.read && <span className="fm-hubnews__tag">New</span>}
+            <span className="fm-hubnews__cat">{latestNews.category}</span>
+          </span>
+          <span className="fm-hubnews__title">{latestNews.title}</span>
+        </button>
+      )}
+
+      <button type="button" className="fm-hubtable" onClick={() => onOpen('matchday')}>
+        <span className="fm-hubtable__head">
+          <span>{leagueName(leagueId)}</span>
+          <Icon name="chevron" size={14} />
+        </span>
+        <table className="fm-table fm-hubtable__table">
+          <tbody>
+            {tableSlice.map((row, i) => {
+              const c = state.clubs.find((cl) => cl.id === row.clubId)!;
+              const isMe = row.clubId === state.userClubId;
+              return (
+                <tr key={row.clubId} className={isMe ? 'me' : ''}>
+                  <td>{tableStart + i + 1}</td>
+                  <td>
+                    <span className="fm-table__club-inner">
+                      <Crest name={c.name} code={c.code} color={c.color} size={16} />
+                      <span className="fm-table__club-name">{c.name}</span>
+                    </span>
+                  </td>
+                  <td>{row.played}</td>
+                  <td className="pts">{row.pts}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </button>
 
       <div className="fm-groupgrid">
         {GROUPS.map((g) => {
