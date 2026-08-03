@@ -301,9 +301,8 @@ export default function FootballManagerGame() {
       <IconSprite />
       <ToastHost />
       <header className="fm-header">
-        <a
+        <div
           className="fm-header__brand"
-          href="https://ballknw.com"
           style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
         >
           <svg width="18" height="18" viewBox="0 0 512 512" style={{ flexShrink: 0 }}>
@@ -319,7 +318,7 @@ export default function FootballManagerGame() {
             </text>
           </svg>
           BALL<b>KNW</b>
-        </a>
+        </div>
         <span className="fm-header__title">Gaffa</span>
         <span className="fm-header__spacer" />
         <button className="fm-header__settings" onClick={() => setShowSettings(true)}>
