@@ -6,7 +6,8 @@
     "src/games/football-manager"
   ],
   "scripts": {
-    "dev": "next dev -H 0.0.0.0 -p 3000",
+    "dev": "npm -w src/games/football-manager run dev -- -H 0.0.0.0 -p 3000",
+    "dev:blink": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build && npm run postbuild",
     "postbuild": "node scripts/postbuild.js",
     "start": "next start",
