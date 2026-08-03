@@ -30,7 +30,7 @@
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
   font-family:inherit;font-weight:700;font-size:14px;
   border:1px solid transparent;border-radius:10px;cursor:pointer;line-height:1;
-  min-height:40px;padding:10px 16px;
+  min-height:44px;padding:10px 16px;
   transition:transform .12s,box-shadow .18s,border-color .15s,opacity .15s;
 }
 .btn-primary{background:var(--cta);color:#04200d}
@@ -168,7 +168,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 .foot-brand .mark{width:24px;height:24px;font-size:13px}
 .foot-brand b{color:var(--lime)}
 .foot-links{display:flex;gap:2px;flex-wrap:wrap}
-.foot-links a{color:var(--muted);font-size:12.5px;padding:9px 7px;display:flex;align-items:center;min-height:40px;transition:color .15s}
+.foot-links a{color:var(--muted);font-size:12.5px;padding:9px 7px;display:flex;align-items:center;min-height:44px;transition:color .15s}
 .foot-links a:hover{color:var(--white)}
 .foot-meta{color:var(--muted);font-size:11px;margin-top:12px;line-height:1.6}
 .foot-meta a{color:var(--muted)}

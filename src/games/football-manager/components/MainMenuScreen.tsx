@@ -45,7 +45,7 @@ export default function MainMenuScreen({
       <p className="fm-label">A BALLKNW GAME</p>
       <h1 className="fm-start__title">
         <img
-          src="/gaffa-logo.png"
+          src={`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/gaffa-logo.png`}
           alt="Gaffa"
           style={{ height: 56, width: 'auto', display: 'block', margin: '0 auto' }}
         />
