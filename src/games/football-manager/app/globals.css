@@ -113,6 +113,39 @@
   --league-netherlands: #e2001a; /* Eredivisie red */
   --league-portugal: #0f8a5f;    /* Primeira Liga green */
   --league-scotland: #003087;    /* Scottish Premiership blue */
+
+  /* ── Layout system (new) ── */
+  /* Spacing — 4px base */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+
+  /* Type scale — 25 sizes → 7 tokens */
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-base: 13px;
+  --fs-md: 15px;
+  --fs-lg: 18px;
+  --fs-xl: 24px;
+  --fs-2xl: 32px;
+
+  /* Breakpoints (mobile-first) */
+  --bp-sm: 560px;
+  --bp-md: 900px;
+  --bp-lg: 1200px;
+
+  /* Container widths */
+  --w-narrow: 480px;
+  --w-screen: 740px;
+  --w-wide: 1100px;
+
+  /* Touch target minimum */
+  --tap-min: 44px;
 }
 
 :focus-visible {
@@ -126,7 +159,7 @@
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100vh; overflow-x: hidden; }
+html, body { margin: 0; min-height: 100dvh; overflow-x: hidden; }
 
 body {
   background: var(--bg);
@@ -138,11 +171,11 @@ body {
 }
 
 /* ── App shell ── */
-.fm-app { display: flex; flex-direction: column; min-height: 100vh; }
+.fm-app { display: flex; flex-direction: column; min-height: 100dvh; }
 
 .fm-header {
   display: flex; align-items: center; gap: 10px;
-  padding: 0 20px; height: 52px;
+  padding: env(safe-area-inset-top, 0px) 20px 0 20px; height: 52px;
   border-bottom: 1px solid var(--border-soft);
   background: rgba(5,5,5,0.72);
   backdrop-filter: saturate(160%) blur(14px);
@@ -166,12 +199,13 @@ body {
   background: transparent; border: 1px solid var(--border);
   color: var(--muted); border-radius: var(--r-sm);
   padding: 5px 10px; font-size: 11px; cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.15s; min-height: var(--tap-min); min-width: var(--tap-min);
+  display: flex; align-items: center; justify-content: center;
 }
 .fm-header__settings:hover { border-color: var(--border-bright); color: var(--text); }
 
 .fm-main { flex: 1; display: flex; justify-content: center; padding: 16px 12px 80px; }
-.fm-screen { width: 100%; max-width: 740px; display: flex; flex-direction: column; gap: 12px; }
+.fm-screen { width: 100%; max-width: var(--w-screen); display: flex; flex-direction: column; gap: 12px; }
 
 /* Phase 14: main view-swap fade, keyed per view in FootballManagerGame.tsx
    (a fresh key remounts this wrapper, replaying the transition). The
@@ -209,10 +243,11 @@ body {
 
 /* ── Buttons ── */
 .fm-btn {
-  border: none; border-radius: var(--r-full); padding: 11px 20px;
+  border: none; border-radius: var(--r-full); padding: var(--s-3) var(--s-5);
   font-weight: 700; font-size: 14px; cursor: pointer; font-family: inherit;
   transition: transform 0.12s ease, opacity 0.12s ease, box-shadow 0.2s ease;
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: var(--tap-min);
 }
 .fm-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important; }
 .fm-btn:not(:disabled):hover { transform: translateY(-1px); }
@@ -230,9 +265,9 @@ body {
 .fm-btn--ghost:not(:disabled):hover { border-color: var(--border-bright); color: var(--text); }
 .fm-btn--danger { background: var(--red-soft); color: var(--red); border: 1px solid rgba(242, 102, 122, 0.3); }
 .fm-btn--gold { background: var(--gold-gradient); color: #1a0f00; }
-.fm-btn--large { padding: 15px 28px; font-size: 16px; width: 100%; }
-.fm-btn--small { padding: 6px 14px; font-size: 12px; }
-.fm-btn--icon { padding: 8px; border-radius: var(--r-sm); }
+.fm-btn--large { padding: var(--s-4) var(--s-6); font-size: 16px; width: 100%; }
+.fm-btn--small { padding: var(--s-2) var(--s-4); font-size: var(--fs-sm); }
+.fm-btn--icon { padding: var(--s-2); border-radius: var(--r-sm); min-width: var(--tap-min); }
 
 /* ── Panels / Cards ── */
 .fm-panel {
@@ -451,6 +486,7 @@ body {
   color: var(--muted); font-family: inherit; font-weight: 700; font-size: 12.5px;
   border-radius: var(--r-full); padding: 7px 14px; cursor: pointer;
   transition: color var(--transition), background var(--transition), border-color var(--transition);
+  min-height: var(--tap-min);
 }
 .fm-subtab:hover { color: var(--text); border-color: var(--border-bright); }
 /* "Active tab pills" is one of the three uses --brand is permitted for by
@@ -575,7 +611,7 @@ body {
    screen owns its own bottom control bar (`.fm-fmticker`). */
 .fm-actiondock {
   display: flex; align-items: center; gap: 10px;
-  max-width: 740px; margin: 8px auto 0; padding: 10px 14px;
+  max-width: var(--w-screen); margin: 8px auto 0; padding: 10px 14px;
   background: var(--panel); border: 1px solid var(--border);
   border-radius: var(--r-lg); box-shadow: var(--shadow-md);
 }
@@ -620,7 +656,7 @@ body {
    bottom margin on Pocket widths clears the fixed rail dock (~56px) plus
    the fixed action dock (~60px) stacked above it, so the ad is never
    rendered unreachable behind them. */
-.fm-bottom-ad { max-width: 740px; margin: 16px auto 24px; }
+.fm-bottom-ad { max-width: var(--w-screen); margin: 16px auto 24px; }
 @media (max-width: 899px) { .fm-bottom-ad { margin-bottom: 132px; } }
 
 /* ── News ── */
@@ -952,7 +988,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-error-text { color: var(--red); font-size: 13px; text-align: center; }
 
 /* --- Negotiation panel (Transfers > Negotiations) ------------------------ */
-.fm-negotiation { padding: 4px 2px 12px; max-width: 480px; margin: 0 auto; }
+.fm-negotiation { padding: 4px 2px 12px; max-width: var(--w-narrow); margin: 0 auto; }
 .fm-negotiation__log {
   display: flex; flex-direction: column; gap: 6px;
   margin: 10px 0 14px; padding: 10px 12px;
@@ -1039,7 +1075,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-ffp-status--bad { color: var(--red); }
 
 /* --- Starting scenario picker (new game flow) ----------------------------- */
-.fm-scenario-pick { max-width: 720px; margin: 0 auto; padding: 8px; }
+.fm-scenario-pick { max-width: var(--w-screen); margin: 0 auto; padding: var(--s-2); }
 .fm-scenario-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
@@ -1112,18 +1148,6 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   border-top: 1px solid var(--border-soft); padding: 8px 0 3px; font-size: 13.5px;
 }
 .fm-job-offer:first-of-type { border-top: none; }
-
-/* Pause overlay */
-.fm-pause-overlay {
-  position: fixed; inset: 0; z-index: 40;
-  background: rgba(5,5,5,0.88);
-  backdrop-filter: blur(6px);
-  display: flex; align-items: flex-start; justify-content: center;
-  overflow-y: auto; padding: 20px 12px;
-}
-.fm-pause-overlay__panel {
-  width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 10px;
-}
 
 /* Tactics screen */
 .fm-tactics { padding: 0; }
@@ -1269,7 +1293,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   padding: 20px 12px; overflow-y: auto;
 }
 .fm-settings-panel {
-  width: 100%; max-width: 480px;
+  width: 100%; max-width: var(--w-narrow);
   background: var(--card-gradient);
   border: 1px solid var(--border);
   border-radius: var(--r-xl);
@@ -1420,8 +1444,10 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 /* ── Match screen (FM Mobile-style landscape replay) ── */
 .fm-matchx {
   position: fixed; inset: 0; z-index: 60;
+  height: 100dvh;
   display: flex; flex-direction: column;
-  background: #1c0b2e;
+  background: var(--panel);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 .fm-matchx__stage { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; }
 .fm-matchx__canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -1538,7 +1564,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-menu-list { display: flex; flex-direction: column; gap: 8px; }
 .fm-menu-list .fm-btn { width: 100%; }
 
-.fm-matchx__feed { flex: 1; max-height: 55vh; overflow-y: auto; padding: 8px 10px; display: flex; flex-direction: column; gap: 5px; }
+.fm-matchx__feed { flex: 1; max-height: 55dvh; overflow-y: auto; padding: 8px 10px; display: flex; flex-direction: column; gap: 5px; }
 .fm-matchx__event { display: flex; align-items: baseline; gap: 6px; font-size: 12px; color: var(--text-2); }
 .fm-matchx__event.goal { color: var(--gold-2); font-weight: 700; }
 .fm-matchx__event.card { color: var(--red); }
@@ -1554,11 +1580,11 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); padding: 16px;
 }
 .fm-matchx-modal__panel {
-  width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto;
+  width: 100%; max-width: var(--w-screen); max-height: 92dvh; overflow-y: auto;
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-lg);
   padding: 16px; box-shadow: var(--shadow-lg);
 }
-.fm-matchx-modal__panel--narrow { max-width: 460px; }
+.fm-matchx-modal__panel--narrow { max-width: var(--w-narrow); }
 .fm-matchx-modal__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .fm-matchx-modal__title { font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); }
 .fm-matchx-modal__close { background: transparent; border: none; color: var(--muted); font-size: 16px; cursor: pointer; }
@@ -1802,18 +1828,18 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 /* ── Landscape / Wide Screen Responsive ── */
 @media (min-width: 920px) {
   /* On wide desktops, increase max-width to use available space */
-  .fm-screen { max-width: 1100px; }
+  .fm-screen { max-width: var(--w-wide); }
   .fm-main { padding: 16px 16px 80px; }
 }
 
 @media (min-width: 1200px) {
   /* Extra wide screens */
-  .fm-screen { max-width: 1200px; }
+  .fm-screen { max-width: var(--w-lg-screen, 1200px); }
   .fm-main { padding: 20px 20px 80px; }
 
   /* Improve tab layout for many tabs */
   .fm-tabs { gap: 4px; padding: 6px; }
-  .fm-tab { padding: 10px 16px; font-size: 13px; }
+  .fm-tab { padding: 10px 16px; font-size: 13px; min-height: var(--tap-min); }
 }
 
 /* Landscape orientation improvements */
@@ -1822,7 +1848,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   .fm-screen { gap: 10px; }
   .fm-panel { padding: 12px; }
   .fm-tabs { gap: 1px; padding: 2px; }
-  .fm-tab { padding: 6px 12px; font-size: 11px; }
+  .fm-tab { padding: 6px 12px; font-size: 11px; min-height: var(--tap-min); }
 }
 
 /* Grid/Multi-column layouts for wider screens */
@@ -1840,11 +1866,51 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   .fm-tab {
     padding: 9px 13px;
     font-size: 11.5px;
+    min-height: var(--tap-min);
   }
   .fm-tab__label {
     /* Keep labels visible on desktop even if there are many tabs */
     display: inline;
   }
+}
+
+/* ── Rotate Prompt — mobile landscape suggestion ── */
+.fm-rotate-overlay {
+  position: fixed; inset: 0; z-index: 70;
+  background: rgba(5, 5, 5, 0.92);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--s-4);
+}
+.fm-rotate-panel {
+  width: 100%; max-width: var(--w-narrow);
+  background: var(--card-gradient);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: var(--s-6) var(--s-5);
+  display: flex; flex-direction: column; gap: var(--s-4);
+  align-items: center; text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+.fm-rotate-icon {
+  font-size: 56px; line-height: 1;
+}
+@keyframes fm-rotate-pulse {
+  0%, 100% { transform: rotateZ(0deg); }
+  25% { transform: rotateZ(-15deg); }
+  75% { transform: rotateZ(15deg); }
+}
+.fm-rotate-title {
+  margin: 0; font-size: var(--fs-lg); font-weight: 800; color: var(--text);
+}
+.fm-rotate-text {
+  margin: 0; font-size: var(--fs-base); color: var(--muted); line-height: 1.5;
+}
+.fm-rotate-panel .fm-btn {
+  width: 100%;
+}
+.fm-rotate-panel .fm-btn:disabled {
+  opacity: 0.5; cursor: default;
 }
 
 /* Player modal (Phase 3) */

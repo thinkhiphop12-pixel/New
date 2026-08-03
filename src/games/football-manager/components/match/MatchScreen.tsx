@@ -16,6 +16,7 @@ import { Crest } from '../Crest';
 import ManagerAvatar from '../ManagerAvatar';
 import { StatTile } from '../visuals';
 import { Icon } from '../Icon';
+import { RotatePrompt } from '../RotatePrompt';
 import PitchCanvas from './PitchCanvas';
 import LineupScreen from './LineupScreen';
 import StatsOverlay from './StatsOverlay';
@@ -324,6 +325,7 @@ export default function MatchScreen({
 
   return (
     <div className="fm-matchx">
+      <RotatePrompt />
       {/* FM-style angled scoreboard bar */}
       <div className="fm-fmbar">
         <button className="fm-fmbar__menu" onClick={() => setShowMenu(true)} aria-label="Match menu">
