@@ -14,6 +14,18 @@ const nextConfig = {
     // Allow TypeScript errors during build if needed (dev fallback)
     ignoreBuildErrors: false,
   },
+  // Allow the v0 / Blink / E2B preview domains to talk to the dev server (Next 16),
+  // so the game renders inside the hosted preview iframe.
+  allowedDevOrigins: [
+    '*.e2b.dev',
+    '*.e2b.app',
+    '*.preview-blink.com',
+    '*.sites.blink.new',
+    '*.blink.new',
+    '*.vusercontent.net',
+    '*.v0.app',
+    '*.v0.dev',
+  ],
 };
 
 export default nextConfig;
