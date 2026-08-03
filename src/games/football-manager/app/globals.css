@@ -26,6 +26,10 @@
   --text-dim: #4c525d;
   --text-neg: #ff6b6b;
 
+  /* Site brand green — matches landing page BALLKNW logo */
+  --lime: #2cb94e;
+  --emerald: #12b380;
+
   /* Accents — lime/emerald replace the old FM green */
   --green: #b8ff3c;
   --green-600: #00d68f;

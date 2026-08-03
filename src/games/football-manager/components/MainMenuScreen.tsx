@@ -44,7 +44,11 @@ export default function MainMenuScreen({
       <div className="fm-screen fm-start" style={{ position: 'relative', zIndex: 1 }}>
       <p className="fm-label">A BALLKNW GAME</p>
       <h1 className="fm-start__title">
-        <span className="fm-start__accent">Gaffa</span>
+        <img
+          src="/gaffa-logo.png"
+          alt="Gaffa"
+          style={{ height: 56, width: 'auto', display: 'block', margin: '0 auto' }}
+        />
       </h1>
       <p className="fm-start__tagline">
         Take charge of a club across three divisions. Set your tactics, work the market, bring
