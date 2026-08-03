@@ -87,13 +87,6 @@
   --transition: 0.16s ease;
   color-scheme: dark;
 
-  /* Phase 14: Space Grotesk display face for headings (--font-display),
-     falling back to the body Inter stack if the font file hasn't loaded
-     yet or JS hasn't hydrated the next/font class onto <html>. Set from
-     app/layout.tsx via next/font/google, same pattern as the existing
-     Inter load. */
-  --font-display: var(--font-display-loaded), Inter, system-ui, -apple-system, sans-serif;
-
   /* Phase 14: per-league identity colours (gap — "per-league brand
      colours" item). Real, recognisable colours per country's top flight,
      covering every country this game actually simulates (engine/gameRules.ts
@@ -251,13 +244,7 @@ body {
 }
 
 /* ── Labels / Typography ── */
-/* Phase 14: Space Grotesk display face on headings/section titles — a
-   distinct heading voice from Inter body text, same idea as the reference's
-   display face. Applied to real h1/h2 elements plus this codebase's own
-   heading-equivalent classes (.fm-label, .fm-h1/.fm-h2, .fm-card__title). */
-h1, h2, .fm-label, .fm-h1, .fm-h2, .fm-card__title {
-  font-family: var(--font-display);
-}
+/* All text now uses Inter for consistency across the site */
 .fm-label {
   font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase;
   color: var(--muted-dim); font-weight: 800;
