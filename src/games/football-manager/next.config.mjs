@@ -14,9 +14,6 @@ const nextConfig = {
     // Allow TypeScript errors during build if needed (dev fallback)
     ignoreBuildErrors: false,
   },
-  turbopack: {
-    root: '.', // Ensure Turbopack builds from this directory
-  },
   // Allow the v0 / Blink / E2B preview domains to talk to the dev server (Next 16),
   // so the game renders inside the hosted preview iframe.
   allowedDevOrigins: [
