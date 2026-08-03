@@ -145,12 +145,13 @@ body {
   position: sticky; top: 0; z-index: 40;
 }
 .fm-header__brand {
-  font-weight: 900; letter-spacing: 2px; color: white;
-  text-decoration: none; font-size: 12px; text-transform: uppercase;
-  display: flex; align-items: center; gap: 6px;
+  font-weight: 800; letter-spacing: 0.5px; color: white;
+  font-size: 14px; text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px;
+  cursor: default;
 }
 .fm-header__brand b {
-  font-weight: 900; color: var(--lime);
+  font-weight: 800; color: var(--lime);
 }
 .fm-header__title {
   font-weight: 600; color: var(--muted); font-size: 12px;
