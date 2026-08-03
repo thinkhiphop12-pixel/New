@@ -1881,7 +1881,14 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   background: rgba(5, 5, 5, 0.92);
   backdrop-filter: blur(8px);
   display: flex; align-items: center; justify-content: center;
-  padding: var(--s-4);
+  /* viewportFit:'cover' (layout.tsx) means this fixed, inset:0 overlay extends
+     under the notch and home indicator, so pad by the insets as well as --s-4
+     — same contract as .fm-header and the mobile dock. */
+  padding:
+    calc(var(--s-4) + env(safe-area-inset-top, 0px))
+    calc(var(--s-4) + env(safe-area-inset-right, 0px))
+    calc(var(--s-4) + env(safe-area-inset-bottom, 0px))
+    calc(var(--s-4) + env(safe-area-inset-left, 0px));
 }
 .fm-rotate-panel {
   width: 100%; max-width: var(--w-narrow);
