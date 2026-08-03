@@ -301,11 +301,7 @@ export default function FootballManagerGame() {
       <IconSprite />
       <ToastHost />
       <header className="fm-header">
-        <a
-          className="fm-header__brand"
-          href="https://ballknw.com"
-          style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-        >
+        <div className="fm-header__brand">
           <svg width="18" height="18" viewBox="0 0 512 512" style={{ flexShrink: 0 }}>
             <defs>
               <linearGradient id="fmBrandMark" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -314,12 +310,10 @@ export default function FootballManagerGame() {
               </linearGradient>
             </defs>
             <rect x="20" y="20" width="472" height="472" rx="123" fill="url(#fmBrandMark)" />
-            <text x="150" y="345" fontFamily="Inter, system-ui, sans-serif" fontWeight="900" fontSize="286" fill="#052411">
-              B
-            </text>
+            <text x="150" y="345" fontFamily="Inter, system-ui, sans-serif" fontWeight="900" fontSize="286" fill="#052411">B</text>
           </svg>
-          BALLKNW
-        </a>
+          <span>{"BALL"}<b>{"KNW"}</b></span>
+        </div>
         <span className="fm-header__title">Gaffa</span>
         <span className="fm-header__spacer" />
         <button className="fm-header__settings" onClick={() => setShowSettings(true)}>

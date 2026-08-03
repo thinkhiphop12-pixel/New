@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import Script from 'next/script';
 import './globals.css';
@@ -17,16 +17,6 @@ const inter = Inter({
   subsets: ['latin'],
   preload: true,
   display: 'swap',
-});
-
-// Phase 14: display face for headings (--font-display in globals.css),
-// loaded the same way as the existing Inter body font — next/font/google,
-// self-hosted at build time, no extra network request or new dependency.
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  preload: true,
-  display: 'swap',
-  variable: '--font-display-loaded',
 });
 
 export const metadata: Metadata = {
@@ -58,7 +48,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.className} ${spaceGrotesk.variable}`}>
+    <html lang="en" className={inter.className}>
       <body>
         {children}
         <SpeedInsights />

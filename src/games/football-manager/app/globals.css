@@ -26,6 +26,10 @@
   --text-dim: #4c525d;
   --text-neg: #ff6b6b;
 
+  /* Site brand green — matches landing page BALLKNW logo */
+  --lime: #2cb94e;
+  --emerald: #12b380;
+
   /* Accents — lime/emerald replace the old FM green */
   --green: #b8ff3c;
   --green-600: #00d68f;
@@ -87,13 +91,6 @@
   --transition: 0.16s ease;
   color-scheme: dark;
 
-  /* Phase 14: Space Grotesk display face for headings (--font-display),
-     falling back to the body Inter stack if the font file hasn't loaded
-     yet or JS hasn't hydrated the next/font class onto <html>. Set from
-     app/layout.tsx via next/font/google, same pattern as the existing
-     Inter load. */
-  --font-display: var(--font-display-loaded), Inter, system-ui, -apple-system, sans-serif;
-
   /* Phase 14: per-league identity colours (gap — "per-league brand
      colours" item). Real, recognisable colours per country's top flight,
      covering every country this game actually simulates (engine/gameRules.ts
@@ -152,8 +149,13 @@ body {
   position: sticky; top: 0; z-index: 40;
 }
 .fm-header__brand {
-  font-weight: 900; letter-spacing: 2px; color: var(--green);
-  text-decoration: none; font-size: 12px; text-transform: uppercase;
+  font-weight: 800; letter-spacing: 0.5px; color: white;
+  font-size: 14px; text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px;
+  cursor: default;
+}
+.fm-header__brand b {
+  font-weight: 800; color: var(--lime);
 }
 .fm-header__title {
   font-weight: 600; color: var(--muted); font-size: 12px;
@@ -251,13 +253,7 @@ body {
 }
 
 /* ── Labels / Typography ── */
-/* Phase 14: Space Grotesk display face on headings/section titles — a
-   distinct heading voice from Inter body text, same idea as the reference's
-   display face. Applied to real h1/h2 elements plus this codebase's own
-   heading-equivalent classes (.fm-label, .fm-h1/.fm-h2, .fm-card__title). */
-h1, h2, .fm-label, .fm-h1, .fm-h2, .fm-card__title {
-  font-family: var(--font-display);
-}
+/* All text now uses Inter for consistency across the site */
 .fm-label {
   font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase;
   color: var(--muted-dim); font-weight: 800;
@@ -272,7 +268,7 @@ h1, h2, .fm-label, .fm-h1, .fm-h2, .fm-card__title {
   font-size: clamp(2.4rem, 11vw, 3.8rem); font-weight: 900;
   letter-spacing: -1.5px; margin: 8px 0 0; line-height: 1.02; color: #f3f7f4;
 }
-.fm-start__accent { color: var(--gold); }
+.fm-start__accent { color: var(--lime); font-style: normal; }
 .fm-start__tagline { color: var(--muted); font-size: 15px; line-height: 1.55; margin: 4px 0 8px; }
 .fm-howto { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; text-align: left; }
 .fm-howto__step {
