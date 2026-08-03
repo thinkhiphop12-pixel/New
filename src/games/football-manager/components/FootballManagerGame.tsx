@@ -317,7 +317,7 @@ export default function FootballManagerGame() {
               B
             </text>
           </svg>
-          BALL<b>KNW</b>
+          {"BALL"}<b>{"KNW"}</b>
         </div>
         <span className="fm-header__title">Gaffa</span>
         <span className="fm-header__spacer" />

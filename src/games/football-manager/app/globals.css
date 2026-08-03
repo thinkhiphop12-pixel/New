@@ -263,7 +263,7 @@ body {
   font-size: clamp(2.4rem, 11vw, 3.8rem); font-weight: 900;
   letter-spacing: -1.5px; margin: 8px 0 0; line-height: 1.02; color: #f3f7f4;
 }
-.fm-start__accent { color: var(--gold); }
+.fm-start__accent { color: var(--lime); font-style: normal; }
 .fm-start__tagline { color: var(--muted); font-size: 15px; line-height: 1.55; margin: 4px 0 8px; }
 .fm-howto { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; text-align: left; }
 .fm-howto__step {
