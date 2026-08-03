@@ -143,6 +143,7 @@
   --w-narrow: 480px;
   --w-screen: 740px;
   --w-wide: 1100px;
+  --w-xwide: 1200px;
 
   /* Touch target minimum */
   --tap-min: 44px;
@@ -1834,7 +1835,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 
 @media (min-width: 1200px) {
   /* Extra wide screens */
-  .fm-screen { max-width: var(--w-lg-screen, 1200px); }
+  .fm-screen { max-width: var(--w-xwide); }
   .fm-main { padding: 20px 20px 80px; }
 
   /* Improve tab layout for many tabs */
@@ -1908,9 +1909,6 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-rotate-panel .fm-btn {
   width: 100%;
-}
-.fm-rotate-panel .fm-btn:disabled {
-  opacity: 0.5; cursor: default;
 }
 
 /* Player modal (Phase 3) */

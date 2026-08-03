@@ -28,7 +28,7 @@ export function RotatePrompt() {
       setIsPortrait(portraitQuery.matches);
 
       // Create listener
-      const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      const handleChange = (e: MediaQueryListEvent) => {
         setIsPortrait(e.matches);
       };
 
@@ -69,9 +69,6 @@ export function RotatePrompt() {
         <p className="fm-rotate-text">
           The match view works best in landscape orientation for the full pitch and tactics bar.
         </p>
-        <button className="fm-btn fm-btn--primary" disabled>
-          Rotate to Play
-        </button>
         <button className="fm-btn fm-btn--ghost" onClick={handleDismiss}>
           Play in Portrait Anyway
         </button>
