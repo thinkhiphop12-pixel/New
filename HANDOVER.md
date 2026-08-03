@@ -134,7 +134,31 @@ Edit directly and refresh the preview (`npm run dev` keeps serving).
 
 ---
 
-**Questions for the next chat:**
-- Which page do you want to visually edit first? (landing, game, guides)
-- Are there specific sections, colors, layouts, or content you want to change?
-- Any design references or inspiration you'd like to follow?
+## Visual Editing Goals (APPROVED)
+
+The user wants to do a **comprehensive redesign** across the entire BALLKNW site. The focus areas are:
+
+### Scope
+- **Entire site** — landing page, game hub, guides, all pages together for cohesive visual experience
+- **Holistic redesign** — not just isolated tweaks
+
+### Changes Planned
+1. **Layout & Reordering** — rearrange sections on landing, game hub, guides; adjust grid/flex structures
+2. **UI Components & Cards** — redesign buttons, cards (player cards, matchday cards, etc.), badges, interactive elements
+3. **Responsive & Mobile** — improve mobile layout, viewport handling, ensure cohesive experience on all devices
+4. **Typography & Text** — adjust fonts, sizes, line heights, headings; possibly update copy
+5. **Colors & Theme Refresh** — update color scheme, backgrounds, text colors, accents; maintain or improve visual hierarchy
+
+### Approach for Next Chat
+1. **Start with design inspiration** — use `GenerateDesignInspiration` to develop a cohesive visual direction before making changes
+2. **Landing page first** — set the visual tone, then apply consistency to game hub and guides
+3. **Use Design Mode** in preview for styling experiments, then code changes for structural edits
+4. **Iterate on desktop + mobile viewports** to ensure responsive consistency
+5. **Leverage existing utilities** — check `styles.css`, `theme.css`, game's Tailwind config for patterns before creating new styles
+6. **Build in stages** — landing → game UI → guides → final polish and responsive tuning
+
+### Key Constraints to Keep
+- **Static site structure** — landing is HTML/CSS, game is React (separate Tailwind v4), guides are HTML
+- **Production mirrors** — changes must look good both locally (preview) and deployed
+- **Existing assets** — `assets/`, `shared/`, fonts available; create new if needed
+- **Game export** — after editing game source, run `npm run build` to update `/gaffa/`
