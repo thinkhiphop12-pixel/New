@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, type CSSProperties } from 'react';
-import type { GameState, PlayStyle, Pressing, TacticStyle, Tempo, Width } from '@/engine/types';
+import type {
+  AttackFocus, BuildUp, DefLine, GameState, PassingStyle, PlayStyle, Pressing,
+  RunStyle, Tackling, TacticStyle, Tempo, Width,
+} from '@/engine/types';
 import { ALL_FORMATIONS, buildCustomFormation, getFormation, getLeague, parseCustomFormationId } from '@/engine/gameRules';
 import { autoPickLineup, previewEffectiveXG } from '@/engine/teamManagement';
 import { nextUserFixture } from '@/engine/seasonProgression';
@@ -206,12 +209,41 @@ export default function TacticsScreen({
     update({ tactics: { ...state.tactics, width } });
   };
 
+  /* The six instructions below are all read by `engine/tickEngine/xgModel.ts`
+     (see its `t()` reducer and steps 3–3c) but had no UI at all until now —
+     the player could not reach levers that were already moving their xG. */
+
+  const setDefLine = (defLine: DefLine) => {
+    update({ tactics: { ...state.tactics, defLine } });
+  };
+
+  const setTackling = (tackling: Tackling) => {
+    update({ tactics: { ...state.tactics, tackling } });
+  };
+
+  const setFocus = (focus: AttackFocus) => {
+    update({ tactics: { ...state.tactics, focus } });
+  };
+
+  const setBuildUp = (buildUp: BuildUp) => {
+    update({ tactics: { ...state.tactics, buildUp } });
+  };
+
+  const setPassingStyle = (passingStyle: PassingStyle) => {
+    update({ tactics: { ...state.tactics, passingStyle } });
+  };
+
+  const setRuns = (runs: RunStyle) => {
+    update({ tactics: { ...state.tactics, runs } });
+  };
+
   const previewFormation = getFormation(previewShape === 'ip' ? currentIPFormation : currentOOPFormation);
 
-  // Decorative defensive-line height on the Defence sub-screen's pitch —
-  // driven by the real `pressing` setting (the closest engine knob to the
-  // mock's "Defensive Line"), not a separate fabricated attribute.
-  const defenceLineTop = state.tactics.pressing === 'high' ? 25 : state.tactics.pressing === 'low' ? 75 : 50;
+  // Defensive-line height on the Defence sub-screen's pitch, driven by the
+  // real `defLine` instruction the xG chain reads (`LINE_ATK`, and the
+  // through-ball/in-behind matchups that key off a high line).
+  const defLine = state.tactics.defLine ?? 'normal';
+  const defenceLineTop = defLine === 'high' ? 25 : defLine === 'deep' ? 75 : 50;
 
   const captain = state.captainId != null ? state.players[state.captainId] : null;
 
@@ -455,7 +487,7 @@ export default function TacticsScreen({
 
           <div className="fm-mod">
             <div className="fm-mod__head"><h2 className="fm-mod__title">Team Instructions</h2></div>
-            <p className="fm-label fm-label--sm" style={{ marginTop: 0 }}>Defensive Line &amp; Pressing</p>
+            <p className="fm-label fm-label--sm" style={{ marginTop: 0 }}>Pressing</p>
             <Segmented
               options={(['low', 'mid', 'high'] as Pressing[]).map((p) => ({
                 id: p, label: p === 'low' ? 'Low block' : p === 'mid' ? 'Standard' : 'High press',
@@ -463,7 +495,36 @@ export default function TacticsScreen({
               value={state.tactics.pressing}
               onChange={setPressing}
             />
-            <p className="fm-hint">This engine ties defensive-line height directly to pressing intensity, rather than modelling them as separate knobs.</p>
+            <p className="fm-hint">
+              How hard you hunt the ball back. Pressing high only pays off if the XI has the
+              engine for it — the chain gates its boost on your pressing fit.
+            </p>
+
+            <p className="fm-label fm-label--sm" style={{ marginTop: 16 }}>Defensive Line</p>
+            <Segmented
+              options={(['deep', 'normal', 'high'] as DefLine[]).map((d) => ({
+                id: d, label: d === 'deep' ? 'Deep' : d === 'normal' ? 'Standard' : 'High',
+              }))}
+              value={defLine}
+              onChange={setDefLine}
+            />
+            <p className="fm-hint">
+              A high line squeezes the pitch and lifts your own attack, but hands the opponent
+              more from through-balls and runners in behind. Separate from pressing.
+            </p>
+
+            <p className="fm-label fm-label--sm" style={{ marginTop: 16 }}>Tackling</p>
+            <Segmented
+              options={(['cautious', 'normal', 'aggressive'] as Tackling[]).map((t) => ({
+                id: t, label: t[0].toUpperCase() + t.slice(1),
+              }))}
+              value={state.tactics.tackling ?? 'normal'}
+              onChange={setTackling}
+            />
+            <p className="fm-hint">
+              Aggressive challenges win the ball back more often and add to your attacking
+              output — at roughly half again the fouls, and the cards that come with them.
+            </p>
 
             <p className="fm-label fm-label--sm" style={{ marginTop: 16 }}>Defending Corners</p>
             <Segmented
@@ -483,10 +544,62 @@ export default function TacticsScreen({
       {subTab === 'attack' && (
         <div role="tabpanel">
           <div className="fm-tactics__content">
-          <p className="fm-label fm-label--sm" style={{ marginTop: 0 }}>Team Identity</p>
+          <p className="fm-label fm-label--sm" style={{ marginTop: 0 }}>Attacking Focus</p>
+          <Segmented
+            options={(['flanks', 'mixed', 'middle'] as AttackFocus[]).map((f) => ({
+              id: f, label: f === 'flanks' ? 'Flanks' : f === 'mixed' ? 'Mixed' : 'Middle',
+            }))}
+            value={state.tactics.focus ?? 'mixed'}
+            onChange={setFocus}
+          />
+          <p className="fm-hint">
+            Which channel you attack through, scored against the opponent&apos;s width rather than
+            as a flat bonus — going down the flanks pays best against a narrow side.
+          </p>
+
+          <p className="fm-label fm-label--sm" style={{ marginTop: 16 }}>Build-up</p>
+          <Segmented
+            options={(['play-out', 'balanced', 'long'] as BuildUp[]).map((bu) => ({
+              id: bu, label: bu === 'play-out' ? 'Play out' : bu === 'balanced' ? 'Balanced' : 'Direct',
+            }))}
+            value={state.tactics.buildUp ?? 'balanced'}
+            onChange={setBuildUp}
+          />
+          <p className="fm-hint">
+            Playing out from the back against a high press is the highest-risk, highest-reward
+            option in the chain — it is gated on the passing ability of the XI asked to do it.
+          </p>
+
+          <p className="fm-label fm-label--sm" style={{ marginTop: 16 }}>Passing</p>
+          <Segmented
+            options={(['short', 'mixed', 'through-balls'] as PassingStyle[]).map((ps) => ({
+              id: ps, label: ps === 'short' ? 'Short' : ps === 'mixed' ? 'Mixed' : 'Through balls',
+            }))}
+            value={state.tactics.passingStyle ?? 'mixed'}
+            onChange={setPassingStyle}
+          />
+          <p className="fm-hint">
+            Through balls scale with your passers and cut open a high line; short passing is the
+            safe, slightly lower-output choice.
+          </p>
+
+          <p className="fm-label fm-label--sm" style={{ marginTop: 16 }}>Forward Runs</p>
+          <Segmented
+            options={(['into-feet', 'balanced', 'in-behind'] as RunStyle[]).map((r) => ({
+              id: r, label: r === 'into-feet' ? 'Into feet' : r === 'balanced' ? 'Balanced' : 'In behind',
+            }))}
+            value={state.tactics.runs ?? 'balanced'}
+            onChange={setRuns}
+          />
+          <p className="fm-hint">
+            Running in behind needs pace up front and feasts on a high line, and shifts your
+            chances toward one-on-ones; into feet trades those for shots around the box.
+          </p>
+
+          <p className="fm-label fm-label--sm" style={{ marginTop: 20 }}>Team Identity</p>
           <p className="fm-hint" style={{ marginTop: 0 }}>
-            The mock's granular passing-style/flank-focus knobs collapse into this engine's single
-            named identity — the real attacking-approach lever this game models (see PROGRESS.md).
+            The named style your squad is drilled in. It sits above the instructions above —
+            those are per-match levers, this is what the club practises week to week.
           </p>
           <div className="fm-identity-grid">
             {IDENTITY_ORDER.map((id) => {
