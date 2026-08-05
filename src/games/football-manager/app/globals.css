@@ -450,6 +450,20 @@ body {
   .fm-hub-shell__main { padding-bottom: 62px; }
 }
 
+/* Desktop (≥1200px): the 72px icon rail widens into a labeled sidebar —
+   icon + label side-by-side per row, trailing badge at the row's right
+   edge — instead of the icon-over-label stack Landscape uses. Same markup,
+   no JSX change: this is a pure CSS variant of `.fm-rail__item`. */
+@media (min-width: 1200px) {
+  .fm-rail { width: 208px; padding: 10px; gap: 2px; }
+  .fm-rail__item {
+    flex-direction: row; justify-content: flex-start; gap: 12px;
+    padding: 11px 12px; text-align: left;
+  }
+  .fm-rail__label { font-size: 13px; font-weight: 700; letter-spacing: 0; flex: 1; }
+  .fm-rail__badge { position: static; margin-left: auto; }
+}
+
 /* ── Sub-tabs (the screens inside a group) ──
    Second navigation level, rendered by HubScreen.tsx at the top of the
    content column whenever a group is open. Sticky under the 52px
@@ -1983,3 +1997,91 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* =====================================================================
+   Gaffa restyle — Phase 0 shared component classes
+   Patterns repeated across the Gaffa design spec (docs/gaffa-restyle/PLAN.md)
+   and used by more than one screen: an icon-tile chip, a rating ring, a
+   ledger/comparison card, a segmented instruction row, and a bracket-round
+   column. Defined once here and reused rather than redefined per screen.
+   Every colour below comes from the existing token set — no new hex values.
+   ===================================================================== */
+
+/* ── Icon-tile chip: rounded-square tinted-bg icon container ──
+   Inbox rows, More Menu, Settings groups, filter cards. Tint follows the
+   same var(--tile-tint) pattern `.fm-groupcard__icon` already uses. */
+.fm-icon-tile {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 40px; height: 40px; border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--tile-tint, var(--green)) 14%, transparent);
+  color: var(--tile-tint, var(--green));
+}
+.fm-icon-tile--sm { width: 32px; height: 32px; border-radius: var(--r-sm); }
+.fm-icon-tile--lg { width: 52px; height: 52px; border-radius: var(--r-lg); }
+
+/* ── Rating ring: conic-gradient circular badge ──
+   Player Profile header, Club Overview reputation, budget-used ring. Value
+   driven by `--ring-pct` (0–100) set inline per instance; `--ring-color`
+   defaults to brand green but callers pass gold/red for status meaning. */
+.fm-ring {
+  --ring-pct: 0;
+  --ring-color: var(--green);
+  position: relative; display: flex; align-items: center; justify-content: center;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: conic-gradient(var(--ring-color) calc(var(--ring-pct) * 1%), var(--border-soft) 0);
+}
+.fm-ring::before {
+  content: ''; position: absolute; inset: 5px; border-radius: 50%; background: var(--panel);
+}
+.fm-ring__value {
+  position: relative; font-size: 17px; font-weight: 900; font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.fm-ring--sm { width: 44px; height: 44px; }
+.fm-ring--sm .fm-ring__value { font-size: 13px; }
+.fm-ring--lg { width: 88px; height: 88px; }
+.fm-ring--lg .fm-ring__value { font-size: 22px; }
+
+/* ── Ledger card: two-column "current vs offer" comparison ──
+   Negotiation Detail, Offers Sent — a term-by-term row split into a left
+   (current/asking) and right (proposed/offer) value. */
+.fm-ledger { display: flex; flex-direction: column; gap: 1px; border-radius: var(--r-md); overflow: hidden; }
+.fm-ledger__row {
+  display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px;
+  background: var(--panel); padding: 9px 12px; font-size: 12.5px;
+}
+.fm-ledger__label { color: var(--muted); font-weight: 600; }
+.fm-ledger__current { color: var(--muted); font-variant-numeric: tabular-nums; }
+.fm-ledger__offer { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+.fm-ledger__offer--up { color: var(--green); }
+.fm-ledger__offer--down { color: var(--red); }
+
+/* ── Segmented instruction row: 3–5 option pills sharing one row ──
+   Tactics sub-screens (defensive line, flank focus, mentality). Reuses the
+   `.fm-pill` visual language but forces equal-width segments instead of a
+   flowing pill list. */
+.fm-segmented { display: flex; background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-full); padding: 3px; gap: 2px; }
+.fm-segmented__opt {
+  flex: 1; border: none; background: transparent; color: var(--muted);
+  font-family: inherit; font-weight: 700; font-size: 12px; padding: 7px 6px;
+  border-radius: var(--r-full); cursor: pointer; transition: all 0.15s;
+}
+.fm-segmented__opt.active { background: var(--brand-dim); color: var(--text); box-shadow: inset 0 0 0 1.5px var(--brand); }
+
+/* ── Bracket round column: Cups knockout tree ──
+   Each round is a vertically-centered column of tie cards; columns sit in a
+   horizontally scrollable row so the full bracket never forces the page
+   itself to scroll sideways. */
+.fm-bracket { display: flex; gap: 14px; overflow-x: auto; padding: 4px 2px 10px; -webkit-overflow-scrolling: touch; }
+.fm-bracket__round { display: flex; flex-direction: column; justify-content: space-around; gap: 10px; flex: 0 0 200px; }
+.fm-bracket__round-label { font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted-dim); text-align: center; margin-bottom: 2px; }
+.fm-bracket__tie {
+  background: var(--panel); border: 1px solid var(--border-soft); border-radius: var(--r-md);
+  padding: 8px 10px; display: flex; flex-direction: column; gap: 4px;
+}
+.fm-bracket__tie.me { border-color: var(--gold); background: var(--gold-dim); }
+.fm-bracket__side { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 12px; }
+.fm-bracket__side-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.fm-bracket__side-score { font-weight: 900; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.fm-bracket__side.winner .fm-bracket__side-name { color: var(--text); font-weight: 800; }
+.fm-bracket__side.winner .fm-bracket__side-score { color: var(--green); }
