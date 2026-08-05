@@ -147,6 +147,22 @@ export default function SettingsPanel({
 
             <div className="fm-settings-row">
               <div className="fm-settings-row__head">
+                <SettingTile icon="tactics" tint="var(--green-600)" />
+                <div>
+                  <div className="fm-settings-label">2D pitch</div>
+                  <div className="fm-settings-desc">Animate the match, or follow commentary only</div>
+                </div>
+              </div>
+              <button
+                className={`fm-toggle${settings.show2DPitch ? ' on' : ''}`}
+                onClick={() => update({ show2DPitch: !settings.show2DPitch })}
+                aria-pressed={settings.show2DPitch}
+                aria-label="Toggle 2D pitch"
+              />
+            </div>
+
+            <div className="fm-settings-row">
+              <div className="fm-settings-row__head">
                 <SettingTile icon="mic" tint="var(--gold)" />
                 <div>
                   <div className="fm-settings-label">Half-time team talks</div>

@@ -93,6 +93,10 @@ export interface Player {
   role: string; // detailed role: GK, CB, LB, RB, CDM, CM, CAM, LM, RM, LW, RW, ST
   /** Specialized tactical role (e.g., 'cb_playmaker', 'st_poacher'). Overrides basic role if set. */
   tacticalRole?: string;
+  /** Shirt number, 1–99, unique within the player's current club. Assigned by
+   *  `ensureSquadNumbers` and re-filled after transfers; optional so pre-v7
+   *  saves load unchanged and simply get numbered on the next week tick. */
+  squadNumber?: number;
   rating: number;
   /** Ceiling this player can develop toward. Never exceeded by `rating`. Cap 99. */
   potential: number;
@@ -943,6 +947,11 @@ export interface GameState {
   /** Next round to be played, 1..SEASON_ROUNDS. > SEASON_ROUNDS means season over. */
   week: number;
   budget: number;
+  /** Weekly wage ceiling the board sanctions, separate from the transfer
+   *  budget above — a signing can be affordable to buy and still unaffordable
+   *  to pay. Optional so pre-v7 saves load; `wageCeiling()` supplies a
+   *  fallback derived from the current bill when it is absent. */
+  wageBudget?: number;
   morale: number; // 30–95 team morale
   formationId: string; // legacy, keep for backwards compat
   /** Player id per formation slot (11 entries). null = empty slot. */

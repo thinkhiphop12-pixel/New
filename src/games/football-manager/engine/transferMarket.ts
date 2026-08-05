@@ -2,8 +2,10 @@ import type {
   Club, GameState, MarketStatus, MoveAssessment, Negotiation, Player, Position,
   PreContract, SquadStatusKey, TransferOffer,
 } from './types';
-import { MAX_SQUAD_SIZE, MIN_SQUAD_SIZE } from './gameRules';
-import { availableSquad, getSquad, isOnLoan, squadAvgRating } from './teamManagement';
+import { MAX_SQUAD_SIZE, MIN_SQUAD_SIZE, transferWindow, windowShutReason } from './gameRules';
+import {
+  availableSquad, clubWageBill, ensureSquadNumbers, getSquad, isOnLoan, squadAvgRating, wageCeiling,
+} from './teamManagement';
 import { clamp, contractEndFor, weeklyWage } from './utils';
 import { pushInbox } from './inbox';
 import { recordScenarioSale } from './scenarios';
@@ -33,7 +35,18 @@ export function canBuy(state: GameState, playerId: number): BuyResult {
   const p = state.players[playerId];
   if (!p) return { ok: false, error: 'Unknown player.' };
   if (p.clubId === state.userClubId) return { ok: false, error: 'Already in your squad.' };
+  // A free agent is registerable outside the window, the same as in the real
+  // game — only deals with a selling club are gated on it.
+  if (p.clubId !== 0) {
+    if (!transferWindow(state.week).open) {
+      return { ok: false, error: windowShutReason(state.week) };
+    }
+  }
   if (askingPrice(p) > state.budget) return { ok: false, error: 'Not enough budget.' };
+  const ceiling = wageCeiling(state);
+  if (clubWageBill(state, state.userClubId) + p.wage > ceiling) {
+    return { ok: false, error: `Over the wage budget — ${money(ceiling)}/wk is the board's ceiling.` };
+  }
   if (getSquad(state, state.userClubId).length >= MAX_SQUAD_SIZE)
     return { ok: false, error: `Squad is full (max ${MAX_SQUAD_SIZE}).` };
   return { ok: true };
@@ -50,6 +63,7 @@ export function buyPlayer(state: GameState, playerId: number): GameState {
   const mine = s.clubs.find((c) => c.id === s.userClubId)!;
   mine.playerIds.push(playerId);
   p.clubId = s.userClubId;
+  ensureSquadNumbers(s);
   p.contractYears = 3;
   p.contractEnd = contractEndFor(s.seasonYear, 3);
   delete p.onLoanUntil;
@@ -158,6 +172,9 @@ export function loanOut(state: GameState, playerId: number): GameState {
  * you fund a rebuild.
  */
 export function generateWeeklyOffers(state: GameState): TransferOffer[] {
+  // Rival clubs can only bid when the market is open, so the window reads the
+  // same in both directions rather than only restricting the user.
+  if (!transferWindow(state.week).open) return [];
   const squad = getSquad(state, state.userClubId).filter((p) => !isOnLoan(p));
   const others = state.clubs.filter((c) => c.id !== state.userClubId);
   const offers: TransferOffer[] = [];
@@ -465,6 +482,9 @@ export function openNegotiation(state: GameState, playerId: number): TransferRes
   const p = s.players[playerId];
   if (!p) return fail(state, 'Unknown player.');
   if (p.clubId === s.userClubId) return fail(state, 'He is already yours.');
+  if (p.clubId !== 0 && !transferWindow(s.week).open) {
+    return fail(state, windowShutReason(s.week));
+  }
   if (p.loan) return fail(state, `${p.name} is only there on loan — ${p.loan.parentClubName} own him.`);
   if (isTransferBanned(s, playerId)) {
     return fail(state, "That player won't entertain a move to your club again this season.");
@@ -677,6 +697,7 @@ function completeTransfer(s: GameState, N: Negotiation): string {
   const mine = clubOf(s, s.userClubId)!;
   mine.playerIds.push(p.id);
   p.clubId = s.userClubId;
+  ensureSquadNumbers(s);
   p.wage = wage;
   p.contractYears = N.contractYears;
   p.contractEnd = contractEndFor(s.seasonYear, N.contractYears);
@@ -909,6 +930,9 @@ export function requestLoanIn(state: GameState, playerId: number): TransferResul
   const p = s.players[playerId];
   if (!p) return fail(state, 'Unknown player.');
   if (p.loan) return fail(state, "He's already out on loan.");
+  if (!transferWindow(s.week).open) {
+    return fail(state, windowShutReason(s.week, 'Loan market'));
+  }
   const owner = clubOf(s, p.clubId);
   if (!owner || owner.id === s.userClubId) return fail(state, 'He is not available to borrow.');
   if (isTransferBanned(s, playerId)) return fail(state, `${owner.name} have already said no this season.`);
@@ -950,6 +974,7 @@ export function requestLoanIn(state: GameState, playerId: number): TransferResul
   owner.playerIds = owner.playerIds.filter((id) => id !== p.id);
   mine.playerIds.push(p.id);
   p.clubId = s.userClubId;
+  ensureSquadNumbers(s);
   // Development loans (a young player below the owner's level) come with the
   // parent chipping in on wages but a firm expectation he plays.
   const devLoan = p.age <= 23 && p.rating < ownerRating;

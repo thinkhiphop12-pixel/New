@@ -142,7 +142,10 @@ export default function PlayerModal({
             </div>
           </div>
           <div className="pm-info">
-            <h2 className="pm-name">{p.name}</h2>
+            <h2 className="pm-name">
+              {p.squadNumber !== undefined && <span className="pm-num">{p.squadNumber}</span>}
+              {p.name}
+            </h2>
             <p className="pm-subline">
               {p.nat} · Age {p.age}
               {p.height != null ? ` · ${p.height}cm` : ''}
