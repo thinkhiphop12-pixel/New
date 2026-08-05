@@ -11,7 +11,7 @@ import { getSquad } from '@/engine/teamManagement';
 import { totalCapacity } from '@/engine/facilities';
 import { traitNames } from '@/engine/traits';
 import { formatMoney } from '@/engine/utils';
-import { StatTile, ReputationStars, ordinalSuffix } from './visuals';
+import { StatTile, ReputationStars, ordinalSuffix, Bar } from './visuals';
 import { Icon } from './Icon';
 
 const STAFF_LABELS: Record<keyof Staff, string> = { coach: 'Assistant coach', physio: 'Physio', scout: 'Chief scout' };
@@ -20,19 +20,6 @@ const STAFF_BLURB: Record<keyof Staff, string> = {
   physio: 'Fewer injuries.',
   scout: 'Better scouting leads.',
 };
-
-function Bar({ value, label }: { value: number; label: string }) {
-  const tone = value >= 65 ? 'good' : value >= 35 ? 'mid' : 'bad';
-  return (
-    <div className="fm-bar-row">
-      <span className="fm-bar-row__label">{label}</span>
-      <div className="fm-bar">
-        <div className={`fm-bar__fill ${tone}`} style={{ width: `${value}%` }} />
-      </div>
-      <span className="fm-bar-row__value">{value}</span>
-    </div>
-  );
-}
 
 /** Last `count` league results for the user's club — the recent-form strip
  *  (mock: five W/D/L chips). Derived from played fixtures, same pattern TableScreen
