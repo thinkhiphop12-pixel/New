@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { GameState, Coach, StandId } from '@/engine/types';
 import {
   gateIncome, getStadiumLevel, getStaff, upgradeAcademy, upgradeStadium, upgradeStaff,
@@ -10,7 +10,7 @@ import {
 } from '@/engine/gameRules';
 import {
   ACADEMY_PROJECT_COST, ACADEMY_REPUTATION_CAP, MEDICAL_UPGRADE_COST, TRAINING_UPGRADE_COST,
-  fireCoach, hireCoach, newFacilities, startFacilityProject, startStandProject, tickFacilitiesWeek,
+  fireCoach, hireCoach, newFacilities, startFacilityProject, startStandProject,
 } from '@/engine/facilities';
 import { formatMoney } from '@/engine/utils';
 import { Icon } from './Icon';
@@ -29,16 +29,9 @@ export default function FacilitiesScreen({
   const [profileCoachId, setProfileCoachId] = useState<number | null>(null);
   const fs = state.facilities ?? newFacilities(state);
 
-  const lastTickWeekKey = `${state.seasonYear}-${state.week}`;
-  useEffect(() => {
-    if (!state.facilities) {
-      onChange({ ...state, facilities: fs });
-      return;
-    }
-    const anyInFlight = fs.projects.some((p) => !p.complete);
-    if (anyInFlight) onChange(tickFacilitiesWeek(state));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastTickWeekKey]);
+  if (!state.facilities) {
+    onChange({ ...state, facilities: fs });
+  }
 
   const activeProjects = fs.projects.filter((p) => !p.complete);
 

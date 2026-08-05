@@ -26,6 +26,7 @@ import { evalScenarioAtSeasonEnd } from './scenarios';
 import { pushInbox } from './inbox';
 import { tickFinances, weeklyMatchdayIncome } from './finances';
 import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
+import { tickFacilitiesWeek } from './facilities';
 
 export { markInboxRead, markAllInboxRead } from './inbox';
 
@@ -1014,6 +1015,9 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   // programme is complete and the halves are known.
   applySplits(s);
   s.incomingOffers = generateWeeklyOffers(s);
+
+  // Advance facilities projects and scouting assignments by one week.
+  Object.assign(s, tickFacilitiesWeek(s));
 
   // Repair the lineup if injuries/sales/loans broke it.
   if (!isLineupValid(s, s.userClubId, s.lineup)) {
