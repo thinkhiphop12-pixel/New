@@ -17,6 +17,7 @@ import FacilitiesScreen from './FacilitiesScreen';
 import FinancesScreen from './FinancesScreen';
 import EuropeanScreen from './EuropeanScreen';
 import TrainingScreen from './TrainingScreen';
+import SettingsScreen from './SettingsScreen';
 import { Icon } from './Icon';
 import {
   GROUPS,
@@ -104,6 +105,7 @@ export default function HubScreen({
       case 'club': return <ClubScreen state={state} onChange={onChange} />;
       case 'facilities': return <FacilitiesScreen state={state} onChange={onChange} />;
       case 'finances': return <FinancesScreen state={state} onChange={onChange} />;
+      case 'settings': return <SettingsScreen />;
       default: return null;
     }
   };
