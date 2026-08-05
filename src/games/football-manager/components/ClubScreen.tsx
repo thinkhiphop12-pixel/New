@@ -5,13 +5,13 @@ import type { GameState, Staff } from '@/engine/types';
 import { ACADEMY_UPGRADE_COST, STADIUM_UPGRADE_COST, STAFF_MAX_LEVEL, STAFF_UPGRADE_COST, leagueName } from '@/engine/gameRules';
 import {
   gateIncome, getStaff, getStadiumLevel, setCaptain, staffWageBill, upgradeAcademy, upgradeStadium,
-  upgradeStaff, weeklyWageBill, computeTable, leagueFixtures, userLeague, userLeagueId,
+  upgradeStaff, weeklyWageBill, computeTable, userLeague, userLeagueId,
 } from '@/engine/seasonProgression';
 import { getSquad } from '@/engine/teamManagement';
 import { totalCapacity } from '@/engine/facilities';
 import { traitNames } from '@/engine/traits';
 import { formatMoney } from '@/engine/utils';
-import { StatTile, ReputationStars, ordinalSuffix, Bar } from './visuals';
+import { StatTile, ReputationStars, ordinalSuffix, Bar, clubForm, FormChip } from './visuals';
 import { Icon } from './Icon';
 
 const STAFF_LABELS: Record<keyof Staff, string> = { coach: 'Assistant coach', physio: 'Physio', scout: 'Chief scout' };
@@ -20,31 +20,6 @@ const STAFF_BLURB: Record<keyof Staff, string> = {
   physio: 'Fewer injuries.',
   scout: 'Better scouting leads.',
 };
-
-/** Last `count` league results for the user's club — the recent-form strip
- *  (mock: five W/D/L chips). Derived from played fixtures, same pattern TableScreen
- *  uses, since the engine doesn't store a running form string per club. */
-function clubForm(state: GameState, clubId: number, count = 5): ('W' | 'D' | 'L')[] {
-  const leagueId = userLeagueId(state);
-  const played = leagueFixtures(state, leagueId)
-    .filter((f) => f.played && (f.homeId === clubId || f.awayId === clubId))
-    .sort((a, b) => a.round - b.round);
-  return played.slice(-count).map((f) => {
-    const isHome = f.homeId === clubId;
-    const gf = isHome ? f.homeGoals : f.awayGoals;
-    const ga = isHome ? f.awayGoals : f.homeGoals;
-    return gf > ga ? 'W' : gf < ga ? 'L' : 'D';
-  });
-}
-
-
-function FormChip({ result }: { result: 'W' | 'D' | 'L' }) {
-  return (
-    <span className={`fm-form-chip fm-form-chip--${result.toLowerCase()}`}>
-      {result}
-    </span>
-  );
-}
 
 export default function ClubScreen({
   state,

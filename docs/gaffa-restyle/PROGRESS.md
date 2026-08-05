@@ -38,15 +38,15 @@ committed alongside that phase's code changes.
 - [x] Staff Profile (new detail view) — StaffProfileModal.tsx
 
 ## Phase 5 — App Shell utility screens
-- [ ] Inbox (`InboxScreen.tsx`)
-- [ ] Message Detail
-- [ ] More Menu (new)
-- [ ] Settings (`SettingsPanel.tsx`)
-- [ ] Club Select (`ClubSelectScreen.tsx`)
-- [ ] Match Preview
-- [ ] Match Detail
-- [ ] Match Menu / Pause
-- [ ] Match Day Live chrome
+- [x] Inbox (`InboxScreen.tsx`) — `.fm-icon-tile` message rows + All/Unread/category filter strip
+- [x] Message Detail — already its own view; formalized with the category icon-tile header
+- [x] More Menu (new) — `MoreMenu.tsx`, opened from the app header
+- [x] Settings (`SettingsPanel.tsx`) — grouped icon-tile rows, still a modal
+- [x] Club Select (`ClubSelectScreen.tsx`) — crest-forward tile grid + settled header block
+- [x] Match Preview — `match/MatchPreview.tsx`, pre-kick-off above the team sheet
+- [x] Match Detail — events sheet restructured to scoreline banner + minute timeline
+- [x] Match Menu / Pause — segmented speed + `.fm-menurow` icon-tile actions
+- [x] Match Day Live chrome — scoreboard bar/ticker re-skinned off the spec's purple
 
 ## Phase 6 — Marketing & Onboarding
 - [ ] Landing page polish pass
@@ -301,3 +301,92 @@ the Phase 4 spec.
 - **CSS palette** restricted to lime/green tokens (`--green`, `--green-600`, `--gold`).
   Red is used only for negative financial values (expenses, losses) as a conventional
   data-visualization color — no purple.
+
+---
+
+### Phase 5 — App Shell utility screens
+
+- **New shared classes** (`app/globals.css`, "Phase 5 shared component classes"): `.fm-msg-list`/
+  `.fm-msg-row` (icon-tile message rows), `.fm-setgroup` (titled section of settings rows) +
+  `.fm-settings-row--stacked`/`.fm-settings-row__head`, `.fm-sheet-body`, `.fm-moregrid`/
+  `.fm-moretile`, `.fm-preview`/`.fm-preview-facts` (crest-vs-crest banner, shared by Match
+  Preview and Match Detail), `.fm-prekick`, `.fm-timeline` (minute rail), `.fm-menurow`, and the
+  Club Select tile bits (`.fm-club-card__crest`/`__foot`/`__rating`/`__star`, `.fm-pick-head`).
+  No Phase 0–4 class was removed or repurposed.
+
+- **Inbox filter tabs are built from the messages that exist**, not from the full `InboxCategory`
+  union — an empty "Youth" tab would read as a broken screen rather than an empty inbox. Tabs are
+  All / Unread / one per category actually present, in `CATEGORY_LABEL` declaration order so the
+  strip doesn't reshuffle as news arrives. Category tints come from the existing token set
+  (`--green`/`--blue`/`--red`/`--gold`/`--green-600`/`--gold-2`/`--lime`/`--emerald`); the spec's
+  purple is not in this game's palette.
+
+- **Message Detail was already a separate view**, so this was a formalization rather than a split:
+  the article head gained the same category icon-tile the list rows use. Prev/Next now walk the
+  list you opened the message *from*, captured at open time (`navIds`) instead of recomputed —
+  reading a message under the "Unread" filter drops it out of the live filtered list, which would
+  otherwise strand the detail view the instant it marked itself read.
+
+- **More Menu lives in the app header, replacing the bare "Settings" text button.** The spec's
+  version is the overflow sheet for its flat 8-item dock; this game keeps the two-level group nav
+  (decision 2), so there is no dock overflow to absorb. What it holds instead is the genuinely
+  global set the rail never carried: Settings, Customize Manager, and Abandon Career — all three
+  already existed, none was reachable from more than one screen. Settings is one tap deeper than
+  before, which is the mock's own IA (Settings sits inside More there too). Outside a career
+  (`state === null`) the sheet drops its career header and the Abandon tile.
+
+- **Customizer return path fixed as part of wiring the More Menu.** `handleCharacterSave`/
+  `handleCharacterBack` hard-coded `setView('menu')`, which was correct while the main menu was the
+  only entrance; opening the customizer mid-career from the More Menu would have dumped the manager
+  out of a live save. Now recorded in `characterReturn` when the customizer opens. This is view
+  routing only — no engine state touched.
+
+- **Club Select's "pick team later" was NOT built.** The engine has no unemployed/no-club state:
+  `newGame` requires a `userClubId` and every screen reads `state.userClubId` unconditionally, so
+  the affordance would either dead-end or need a fabricated club. The crest-tile grid half of the
+  spec is fully implemented (crest-forward tiles with the real squad-rating chip and star player,
+  and the manager-name/club-search/division controls gathered into one `.fm-pick-head` block).
+
+- **Match Preview is the pre-kick-off state of `MatchScreen`, not a new route.** There is no
+  separate pre-match screen in this game — `handlePlayMatch` goes straight to `view='match'`, which
+  already rendered both XIs before kickoff. `MatchPreview.tsx` now sits above that team sheet with
+  the crest-vs-crest banner, both sides' form (from played fixtures), each side's leading scorer
+  (`Player.goals`) and the user's availability (`Player.injuryWeeks`). Every figure is real season
+  state; nothing is invented to fill the layout.
+
+- **Match Detail is the events sheet, restructured — not a view of a past fixture.** `Fixture`
+  persists only `homeGoals`/`awayGoals`, so a minute-timeline for a finished league match would
+  have to fabricate the events. The timeline is therefore attached to the live match's real
+  `timeline.events`, with the scoreline banner reusing `.fm-preview` and goal/card/injury rows
+  taking coloured markers.
+
+- **Recent-form helper moved to `visuals.tsx`.** Match Preview needs form for *both* clubs, and
+  `ClubScreen`'s local `clubForm` keyed off `userLeagueId`, which is wrong for an opponent in
+  another division. The shared version reads each club's own `leagueId`; `ClubScreen` now imports
+  it plus `FormChip` and dropped its duplicates (same dedupe pattern as Phase 4's `Bar`/
+  `ordinalSuffix` move).
+
+- **Purple leakage cleaned off the match screens** (decision 1, and verification step 4 — these are
+  Phase 5's own screens): the pre-kick-off pitch (`.fm-ko__pitch`) was a purple gradient and is now
+  the two greens `PitchCanvas` checkers the live pitch with, so the team sheet and the match agree;
+  the scoreboard bar (`.fm-fmbar`) and commentary ticker (`.fm-fmticker`) went from purple to deep
+  green; and `PitchCanvas`'s pitch-side ad boards went from purple/yellow to BALLKNW's own lime on
+  deep green. Canvas drawing only — no sim logic touched. The `--accent-purple` Club-group tint
+  decision 1 explicitly sanctions is untouched.
+
+- **Pre-existing responsive bug fixed: `.fm-view-fade` needed `min-width: 0`.** It is the flex item
+  inside `.fm-main` (a centred row flex), so its default `min-width: auto` refused to shrink below
+  the min-content of whatever view it wrapped. Club Select's four league pills have
+  `white-space: nowrap`, so at 390px the screen sized itself to 453px and — being centred —
+  clipped at *both* edges instead of scrolling. Confirmed present before this phase's changes
+  (measured 453px on the unmodified tree, 483px with the larger crest tiles). One line, and it
+  fixes every `.fm-screen` view at narrow widths, not just Club Select.
+
+- **`show2DPitch` deliberately has no Settings control.** It is declared in `GameSettings` and
+  defaulted in `SettingsPanel`, but nothing in the codebase reads it — a switch that does nothing
+  is worse than no switch.
+
+- **Verification**: `tsc --noEmit` clean, `next build` clean, and every screen above driven in a
+  real browser (Chromium/Playwright) at Desktop 1280×900 and Portrait 390×844 with no console or
+  page errors. Match screens verified at Desktop; Portrait correctly shows the existing
+  `RotatePrompt` for matches rather than rendering a squeezed pitch.

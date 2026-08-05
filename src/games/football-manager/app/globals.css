@@ -201,7 +201,7 @@ body {
   color: var(--muted); border-radius: var(--r-sm);
   padding: 5px 10px; font-size: 11px; cursor: pointer;
   transition: all 0.15s; min-height: var(--tap-min); min-width: var(--tap-min);
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
 }
 .fm-header__settings:hover { border-color: var(--border-bright); color: var(--text); }
 
@@ -213,7 +213,13 @@ body {
    `.screen { transition: opacity .3s, transform .3s }` pattern from the
    original plan, as an animation instead of a transition since there's no
    persistent element to transition FROM across a full unmount/remount. */
-.fm-view-fade { animation: fm-view-fade 0.3s ease; }
+/* `min-width: 0` because this is the flex item inside `.fm-main` (a centred
+   row flex): its default `min-width: auto` refused to shrink below the
+   min-content of whatever view it wrapped, so any screen containing a
+   nowrap row — Club Select's four league pills, for one — pushed itself
+   wider than the viewport and, being centred, got clipped at BOTH edges on
+   Portrait instead of scrolling. */
+.fm-view-fade { animation: fm-view-fade 0.3s ease; min-width: 0; }
 @keyframes fm-view-fade {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
@@ -1518,7 +1524,9 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 /* Angled scoreboard bar */
 .fm-fmbar {
   display: flex; align-items: stretch; flex: 0 0 44px; height: 44px;
-  background: linear-gradient(90deg, #45125f 0%, #5a1b7d 55%, #45125f 100%);
+  /* Deep green broadcast chrome, not the design spec's purple (PLAN.md
+     decision 1). Same family as the pitch-side ad boards. */
+  background: linear-gradient(90deg, #0b2a16 0%, #12401f 55%, #0b2a16 100%);
   overflow: hidden; user-select: none;
 }
 .fm-fmbar__menu {
@@ -1559,17 +1567,17 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 /* Commentary ticker */
 .fm-fmticker {
   flex: 0 0 46px; display: flex; align-items: stretch; gap: 8px;
-  background: linear-gradient(90deg, #45125f, #38104e); padding: 6px 8px;
+  background: linear-gradient(90deg, #0b2a16, #071d0f); padding: 6px 8px;
 }
 .fm-fmticker__btn {
   flex: 0 0 44px; display: flex; align-items: center; justify-content: center;
-  background: #2c0a3f; border: none; border-radius: 4px; color: #fff; font-size: 17px; cursor: pointer;
+  background: #071d0f; border: none; border-radius: 4px; color: #fff; font-size: 17px; cursor: pointer;
 }
 .fm-fmticker__btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .fm-fmticker__text {
   flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center;
   background: #f4f5f7; border: none; border-radius: 3px; cursor: pointer;
-  color: #1d2c6b; font-weight: 800; font-size: 15px;
+  color: #123a1c; font-weight: 800; font-size: 15px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 14px;
 }
 
@@ -1577,7 +1585,9 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-ko { position: absolute; inset: 0; background: #4c8a38; padding: 12px 4%; }
 .fm-ko__pitch {
   position: relative; width: 100%; height: 100%;
-  background: linear-gradient(180deg, #43155f 0%, #381050 100%);
+  /* Grass, not the spec's purple — the same two greens PitchCanvas checkers
+     the live pitch with, so the team sheet and the match itself agree. */
+  background: linear-gradient(180deg, #54923f 0%, #4c8a38 100%);
   box-shadow: inset 0 0 60px rgba(0,0,0,0.35);
 }
 .fm-ko__lines { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -2276,3 +2286,195 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-obj-item__dot--open { background: var(--muted); }
 .fm-obj-item__text { font-size: 12px; color: var(--text); line-height: 1.4; }
 .fm-obj-item__status { font-size: 10px; font-weight: 800; color: var(--muted-dim); text-transform: uppercase; }
+
+/* =====================================================================
+   Gaffa restyle — Phase 5 shared component classes
+   App-shell utility screens (Inbox / Message Detail / More Menu /
+   Settings / Club Select / Match Preview / Match Detail / Match Menu).
+   Every colour comes from the existing token set — no new hex values.
+   ===================================================================== */
+
+/* ── Message list: icon-tile rows ──
+   Inbox. The tile carries the category colour via `--tile-tint`, so the
+   row itself stays neutral and unread state is the only other signal. */
+.fm-msg-list { display: flex; flex-direction: column; gap: 6px; }
+.fm-msg-row {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-radius: var(--r-lg); padding: 11px 13px;
+  font-family: inherit; color: inherit; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.fm-msg-row:hover { border-color: var(--border-bright); background: var(--panel-2); }
+.fm-msg-row.unread { border-color: color-mix(in srgb, var(--green) 28%, transparent); }
+.fm-msg-row__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.fm-msg-row__title {
+  font-size: 13px; font-weight: 700; color: var(--text-2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fm-msg-row.unread .fm-msg-row__title { color: var(--text); font-weight: 800; }
+.fm-msg-row__meta { font-size: 11px; color: var(--muted-dim); }
+.fm-msg-row__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+/* ── Settings group: titled section of icon-tile rows ──
+   Settings modal, More Menu. Groups the flat row list the panel used to be
+   into labelled sections so related switches read together. */
+/* The panel itself is unpadded (its rows used to carry `12px 16px`), so the
+   group takes over the horizontal inset for the title and its rows alike. */
+.fm-setgroup { margin-bottom: 18px; padding: 0 16px; }
+.fm-setgroup:last-child { margin-bottom: 16px; }
+/* Sheet body for panels that aren't row lists (More Menu). */
+.fm-sheet-body { padding: 0 16px 16px; }
+.fm-setgroup__title {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase;
+  color: var(--muted-dim); margin: 0 0 8px;
+}
+/* Grouped rows own their horizontal padding from the panel, not the row. */
+.fm-setgroup .fm-settings-row { padding-left: 0; padding-right: 0; }
+.fm-setgroup .fm-settings-row:last-child { border-bottom: none; }
+.fm-settings-row__head { display: flex; align-items: center; gap: 12px; min-width: 0; }
+/* Multi-option controls (match speed, difficulty) get the full row width
+   below their label instead of being squeezed into the right-hand slot. */
+.fm-settings-row--stacked { flex-direction: column; align-items: stretch; gap: 10px; }
+.fm-settings-row--stacked .fm-settings-control { margin-left: 0; }
+
+/* ── More Menu: icon-tile action grid ──
+   Secondary destinations that sit outside the four nav groups. */
+.fm-moregrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+@media (min-width: 560px) { .fm-moregrid { grid-template-columns: repeat(3, 1fr); } }
+.fm-moretile {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-radius: var(--r-lg); padding: 16px 10px;
+  font-family: inherit; color: inherit; cursor: pointer; transition: border-color 0.15s, transform 0.15s;
+}
+.fm-moretile:hover { border-color: var(--border-bright); transform: translateY(-1px); }
+.fm-moretile__label { font-size: 12.5px; font-weight: 800; color: var(--text-2); }
+.fm-moretile__sub { font-size: 10.5px; color: var(--muted-dim); text-align: center; line-height: 1.3; }
+.fm-moretile--danger:hover { border-color: color-mix(in srgb, var(--red) 45%, transparent); }
+.fm-moretile--danger .fm-moretile__label { color: var(--red); }
+
+/* ── Match preview banner: crest vs crest ──
+   Pre-kickoff, above the two starting XIs. Also used by the Match Detail
+   sheet as its scoreline header, where `--score` segments replace `v`. */
+.fm-preview {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--s-3);
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-radius: var(--r-lg); padding: 14px var(--s-3);
+}
+.fm-preview__side { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+.fm-preview__name {
+  font-size: 13px; font-weight: 800; text-align: center; line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
+.fm-preview__mid { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
+.fm-preview__vs { font-size: 12px; font-weight: 900; color: var(--muted-dim); letter-spacing: 1px; }
+.fm-preview__score { font-size: 26px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+.fm-preview__venue { font-size: 10px; color: var(--muted-dim); text-transform: uppercase; letter-spacing: 0.5px; text-align: center; }
+
+/* Pre-kick-off stage: the preview banner scrolls with the team sheet rather
+   than stealing fixed height from it, so Portrait still gets a usable pitch. */
+.fm-prekick {
+  position: absolute; inset: 0; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px; padding: 10px;
+}
+.fm-prekick__sheet {
+  position: relative; flex: 1 0 auto; min-height: 320px;
+  border-radius: var(--r-lg); overflow: hidden;
+}
+
+/* Preview detail row: top scorer + availability chips under the banner. */
+.fm-preview-facts { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
+@media (min-width: 700px) { .fm-preview-facts { grid-template-columns: repeat(2, 1fr); } }
+.fm-preview-fact {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--panel-2); border-radius: var(--r-md); padding: 9px 11px;
+}
+.fm-preview-fact__label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--muted-dim); }
+.fm-preview-fact__value { font-size: 12.5px; font-weight: 700; color: var(--text-2); }
+
+/* ── Minute timeline: Match Detail's event rail ──
+   One row per revealed event, minute gutter + icon marker + text, with a
+   continuous spine so the match reads chronologically at a glance. */
+.fm-timeline { position: relative; display: flex; flex-direction: column; gap: 2px; padding-left: 4px; }
+.fm-timeline__row {
+  position: relative; display: grid; grid-template-columns: 40px 26px 1fr;
+  align-items: center; gap: 8px; padding: 6px 0;
+}
+.fm-timeline__row::before {
+  content: ''; position: absolute; left: 52px; top: 0; bottom: 0;
+  width: 1px; background: var(--border-soft);
+}
+.fm-timeline__row:first-child::before { top: 50%; }
+.fm-timeline__row:last-child::before { bottom: 50%; }
+.fm-timeline__min {
+  font-size: 11px; font-weight: 800; color: var(--muted-dim);
+  font-variant-numeric: tabular-nums; text-align: right;
+}
+.fm-timeline__marker {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--panel-3); border: 1px solid var(--border-soft); color: var(--muted);
+}
+.fm-timeline__row--goal .fm-timeline__marker { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+.fm-timeline__row--card .fm-timeline__marker { background: var(--gold-dim); border-color: var(--gold); color: var(--gold-2); }
+.fm-timeline__row--injury .fm-timeline__marker { background: var(--red-soft); border-color: var(--red); color: var(--red); }
+.fm-timeline__text { font-size: 12px; color: var(--text-2); line-height: 1.35; }
+.fm-timeline__row--goal .fm-timeline__text { color: var(--text); font-weight: 700; }
+
+/* ── Match menu rows: icon-tile action list ──
+   The in-match pause menu, so its destinations read like the More Menu
+   rather than a stack of identical secondary buttons. */
+.fm-menurow {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+  border-radius: var(--r-md); padding: 10px 12px;
+  font-family: inherit; color: inherit; cursor: pointer; transition: border-color 0.15s;
+}
+.fm-menurow:hover:not(:disabled) { border-color: var(--border-bright); }
+.fm-menurow:disabled { opacity: 0.4; cursor: not-allowed; }
+.fm-menurow__main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.fm-menurow__label { font-size: 13px; font-weight: 700; color: var(--text-2); }
+.fm-menurow__value { font-size: 11px; color: var(--muted-dim); margin-top: 1px; }
+.fm-menurow--danger .fm-menurow__label { color: var(--red); }
+
+/* ── Club Select: crest-forward tile ──
+   Restructures `.fm-club-card`'s contents (crest on top, name, then a
+   squad-rating chip and star player) without changing the card shell the
+   selected/hover states already style. */
+.fm-club-card__crest { display: flex; align-items: center; justify-content: center; width: 100%; padding: 2px 0 4px; }
+/* The tile is the only user of `.fm-club-card`, so the shell centres with it
+   rather than carrying a separate modifier. */
+.fm-club-card { align-items: center; text-align: center; }
+.fm-club-card__name { line-height: 1.25; }
+.fm-club-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; margin-top: auto; }
+.fm-club-card__rating {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  min-width: 30px; height: 22px; padding: 0 7px; border-radius: var(--r-full);
+  font-size: 11px; font-weight: 900; font-variant-numeric: tabular-nums;
+  background: var(--panel-3); color: var(--text-2);
+}
+.fm-club-card__star {
+  font-size: 11px; color: var(--muted); min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Club Select header: manager name, division tabs and club search as one
+   settled block rather than four separately-centred elements. */
+.fm-pick-head {
+  display: flex; flex-direction: column; gap: 10px; align-items: stretch;
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-radius: var(--r-lg); padding: 14px; min-width: 0;
+}
+/* `.fm-division-toggle` sets `align-self: center`, which sizes it to its own
+   max-content and leaves its `max-width: 100%` resolving against an
+   indefinite width — so the four league pills pushed `.fm-screen` past the
+   viewport on Portrait (it centred the overflow, clipping both edges).
+   Stretching it here gives that max-width something definite to bite on, and
+   its existing `overflow-x: auto` then scrolls the pills instead. */
+.fm-pick-head .fm-division-toggle { align-self: stretch; justify-content: flex-start; }
+.fm-pick-head__fields {
+  display: grid; grid-template-columns: 1fr; gap: 8px;
+  width: 100%; max-width: 460px; margin-inline: auto; min-width: 0;
+}
+@media (min-width: 620px) { .fm-pick-head__fields { grid-template-columns: 1fr 1fr; } }
+.fm-pick-head .fm-search { min-width: 0; }

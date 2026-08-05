@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { GameSettings, GameState, MatchReport, Player } from '@/engine/types';
 import { nextUserFixture } from '@/engine/seasonProgression';
 import { availableSquad } from '@/engine/teamManagement';
@@ -19,6 +19,7 @@ import { Icon } from '../Icon';
 import { RotatePrompt } from '../RotatePrompt';
 import PitchCanvas from './PitchCanvas';
 import LineupScreen from './LineupScreen';
+import MatchPreview from './MatchPreview';
 import StatsOverlay from './StatsOverlay';
 import TacticsModal, { type TacticsSelection } from './TacticsModal';
 import TeamTalkModal from './TeamTalkModal';
@@ -398,16 +399,21 @@ export default function MatchScreen({
       {/* Pitch */}
       <div className="fm-matchx__stage">
         {showLineups ? (
-          <LineupScreen
-            homeClub={home}
-            awayClub={away}
-            homeLineup={homeStartCtx.lineup}
-            awayLineup={awayStartCtx.lineup}
-            homeFormationId={homeStartCtx.formationId}
-            awayFormationId={awayStartCtx.formationId}
-            players={state.players}
-            captainId={state.captainId}
-          />
+          <div className="fm-prekick">
+            <MatchPreview state={state} home={home} away={away} userIsHome={userIsHome} />
+            <div className="fm-prekick__sheet">
+              <LineupScreen
+                homeClub={home}
+                awayClub={away}
+                homeLineup={homeStartCtx.lineup}
+                awayLineup={awayStartCtx.lineup}
+                homeFormationId={homeStartCtx.formationId}
+                awayFormationId={awayStartCtx.formationId}
+                players={state.players}
+                captainId={state.captainId}
+              />
+            </div>
+          </div>
         ) : (
           <PitchCanvas snapshots={timeline.snapshots} minute={minute} homeClub={home} awayClub={away} resetKey={0} />
         )}
@@ -452,20 +458,78 @@ export default function MatchScreen({
               <button className="fm-matchx-modal__close" onClick={() => setShowMenu(false)} aria-label="Close"><Icon name="cross" size={15} /></button>
             </div>
             <div className="fm-menu-list">
-              <button className="fm-btn fm-btn--secondary" onClick={() => { setShowMenu(false); cycleMentality(); }} disabled={finished}>
-                Mentality: {MENTALITIES[currentMentality].label} → cycle
+              {/* Match speed is a fixed set of steps, so it gets the shared
+                  segmented row rather than a button that cycles blindly. */}
+              <div className="fm-setgroup" style={{ marginBottom: 12 }}>
+                <p className="fm-setgroup__title">Match speed</p>
+                <div className="fm-segmented">
+                  {SPEEDS.map((sp) => (
+                    <button
+                      key={sp}
+                      type="button"
+                      className={`fm-segmented__opt${speed === sp ? ' active' : ''}`}
+                      aria-pressed={speed === sp}
+                      onClick={() => setSpeed(sp)}
+                    >
+                      {sp}x
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="fm-menurow"
+                onClick={() => { setShowMenu(false); cycleMentality(); }}
+                disabled={finished}
+              >
+                <span className="fm-icon-tile fm-icon-tile--sm" style={{ '--tile-tint': 'var(--green)' } as CSSProperties}>
+                  <Icon name="tactics" size={15} />
+                </span>
+                <span className="fm-menurow__main">
+                  <span className="fm-menurow__label">Mentality</span>
+                  <span className="fm-menurow__value">{MENTALITIES[currentMentality].label} — tap to cycle</span>
+                </span>
+                <Icon name="chevron" size={14} />
               </button>
-              <button className="fm-btn fm-btn--secondary" onClick={() => setSpeed((sp) => SPEEDS[(SPEEDS.indexOf(sp) + 1) % SPEEDS.length])}>
-                Match speed: {speed}x
+
+              <button
+                type="button"
+                className="fm-menurow"
+                onClick={() => { setShowMenu(false); setShowEvents(true); }}
+              >
+                <span className="fm-icon-tile fm-icon-tile--sm" style={{ '--tile-tint': 'var(--blue)' } as CSSProperties}>
+                  <Icon name="stat" size={15} />
+                </span>
+                <span className="fm-menurow__main">
+                  <span className="fm-menurow__label">Key events</span>
+                  <span className="fm-menurow__value">
+                    {shownEvents.length} {shownEvents.length === 1 ? 'moment' : 'moments'} so far
+                  </span>
+                </span>
+                <Icon name="chevron" size={14} />
               </button>
-              <button className="fm-btn fm-btn--secondary" onClick={() => { setShowMenu(false); setShowEvents(true); }}>
-                Key events
+
+              <button type="button" className="fm-menurow" onClick={simToEnd} disabled={finished}>
+                <span className="fm-icon-tile fm-icon-tile--sm" style={{ '--tile-tint': 'var(--gold)' } as CSSProperties}>
+                  <Icon name="play" size={15} />
+                </span>
+                <span className="fm-menurow__main">
+                  <span className="fm-menurow__label">Sim to full time</span>
+                  <span className="fm-menurow__value">Skip straight to the final whistle</span>
+                </span>
               </button>
-              <button className="fm-btn fm-btn--secondary" onClick={simToEnd} disabled={finished}>
-                Sim to full time
-              </button>
-              <button className="fm-btn fm-btn--danger" onClick={exitMatch}>
-                {finished ? 'Continue' : 'Exit match'}
+
+              <button type="button" className="fm-menurow fm-menurow--danger" onClick={exitMatch}>
+                <span className="fm-icon-tile fm-icon-tile--sm" style={{ '--tile-tint': 'var(--red)' } as CSSProperties}>
+                  <Icon name="cross" size={15} />
+                </span>
+                <span className="fm-menurow__main">
+                  <span className="fm-menurow__label">{finished ? 'Continue' : 'Exit match'}</span>
+                  <span className="fm-menurow__value">
+                    {finished ? 'Back to the hub with the result' : 'The result will stand as simulated'}
+                  </span>
+                </span>
               </button>
             </div>
           </div>
@@ -477,21 +541,50 @@ export default function MatchScreen({
         <div className="fm-matchx-modal" onClick={() => setShowEvents(false)}>
           <div className="fm-matchx-modal__panel fm-matchx-modal__panel--narrow" onClick={(e) => e.stopPropagation()}>
             <div className="fm-matchx-modal__head">
-              <span className="fm-matchx-modal__title">Match Events</span>
+              <span className="fm-matchx-modal__title">Match Detail</span>
               <button className="fm-matchx-modal__close" onClick={() => setShowEvents(false)} aria-label="Close"><Icon name="cross" size={15} /></button>
             </div>
+
+            {/* Scoreline banner: the same crest-vs-crest block the preview
+                uses, with the live score in place of its "v". */}
+            <div className="fm-preview" style={{ marginBottom: 12 }}>
+              <div className="fm-preview__side">
+                <Crest name={home?.name} code={home?.code ?? ''} color={home?.color ?? 'var(--panel-3)'} size={36} />
+                <span className="fm-preview__name">{home?.name}</span>
+              </div>
+              <div className="fm-preview__mid">
+                <span className="fm-preview__score">{score.home} – {score.away}</span>
+                <span className="fm-preview__venue">{minuteLabel}</span>
+              </div>
+              <div className="fm-preview__side">
+                <Crest name={away?.name} code={away?.code ?? ''} color={away?.color ?? 'var(--panel-3)'} size={36} />
+                <span className="fm-preview__name">{away?.name}</span>
+              </div>
+            </div>
+
             <div className="fm-matchx__feed" ref={feedRef}>
-              {shownEvents.length === 0 && <p className="fm-hint">The teams are out…</p>}
-              {shownEvents.map((e, i) => (
-                <div
-                  key={i}
-                  className={`fm-matchx__event${e.type === 'goal' ? ' goal' : ''}${e.type === 'card' ? ' card' : ''}${e.assistant ? ' asst' : ''}`}
-                >
-                  <span className="fm-matchx__event-min">{e.minute}&apos;</span>
-                  {e.assistant ? <span className="fm-matchx__asst-chip">ASST</span> : <span className="fm-matchx__event-icon">{eventIcon(e)}</span>}
-                  <span className="fm-matchx__event-text">{e.text}</span>
+              {shownEvents.length === 0 ? (
+                <p className="fm-hint">The teams are out…</p>
+              ) : (
+                <div className="fm-timeline">
+                  {shownEvents.map((e, i) => (
+                    <div
+                      key={i}
+                      className={`fm-timeline__row${
+                        e.type === 'goal' ? ' fm-timeline__row--goal' : ''
+                      }${e.type === 'card' ? ' fm-timeline__row--card' : ''}${
+                        e.type === 'injury' ? ' fm-timeline__row--injury' : ''
+                      }`}
+                    >
+                      <span className="fm-timeline__min">{formatMinute(e.minute, stoppage1)}</span>
+                      <span className="fm-timeline__marker">
+                        {e.assistant ? <Icon name="mic" size={13} /> : eventIcon(e)}
+                      </span>
+                      <span className="fm-timeline__text">{e.text}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
