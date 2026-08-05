@@ -107,7 +107,14 @@ export default function PortalHub({
           reason the player opened the hub); everything else is a 3-up card
           row. The Play Week / Fix-lineup action itself lives in the
           persistent action dock (FootballManagerGame.tsx) so it's reachable
-          from every tab, not just this one. */}
+          from every tab, not just this one.
+
+          Fixtures also carries a next-match banner (mock: "Gaffa - Hub &
+          Matchday.dc.html#fixtures"). Deliberately not deduplicated into
+          one: this hero is the actionable version — lineup warning, press
+          conference, cup-week note — the reason a player opens Overview at
+          all, while Fixtures' banner is a plain informational crest-vs-crest
+          leading into that tab's results list. See PROGRESS.md. */}
       <div className="fm-hub-grid">
         {fixture && (
           <div

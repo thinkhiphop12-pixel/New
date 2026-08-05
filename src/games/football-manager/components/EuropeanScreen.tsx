@@ -10,8 +10,19 @@ import {
 } from '@/engine/europeanCup';
 import { StatTile } from './visuals';
 import { Icon } from './Icon';
+import { Crest } from './Crest';
 
 type EuroTab = 'standings' | 'fixtures' | 'stats';
+
+/** Ties expected in a future (not-yet-drawn) round — halves each round from
+ *  the last known one, same estimate CupScreen uses for its bracket. The
+ *  continental competition is a real (re-seeded) knockout, not a group
+ *  stage — see engine/types.ts's Continental doc comment — so "standings"
+ *  here means bracket progress, shown with the same `.fm-bracket` columns
+ *  as the domestic cup rather than a fabricated points table. */
+function placeholderCount(lastKnownCount: number, roundsAhead: number): number {
+  return Math.max(1, Math.round(lastKnownCount / 2 ** roundsAhead));
+}
 
 export default function EuropeanScreen({ state }: { state: GameState }) {
   const [tab, setTab] = useState<EuroTab>('standings');
@@ -104,61 +115,96 @@ export default function EuropeanScreen({ state }: { state: GameState }) {
             playoff round for the other 8 places. Every round from the playoff to the semi-final
             is two-legged; the final is a single match.
           </p>
-          {c.ties.map((ties, i) => {
-            const played = ties.some((t) => t.legs.length > 0);
-            if (!played && i !== c.round) return null;
-            return (
-              <div key={i} style={{ marginTop: 10 }}>
-                <p className="fm-label">{continentalRoundName(c, i)}</p>
-                <ul className="fm-cup-ties">
-                  {ties.map((t) => {
-                    const mine = t.homeId === state.userClubId || t.awayId === state.userClubId;
-                    const done = tieComplete(t);
-                    const w = done ? continentalTieWinner(t) : 0;
-                    const agg = tieAggregate(t);
-                    const tag = t.twoLegged && !done && t.legs.length === 1 ? ' (1st leg)' : t.twoLegged ? ' agg' : '';
-                    return (
-                      <li key={t.id} className={mine ? 'me' : ''}>
-                        <span className={w === t.homeId ? 'w' : ''}>{clubName(t.homeId)}</span>
-                        <span className="score">
-                          {t.legs.length ? `${agg.home}–${agg.away}${tag}${t.legs[t.legs.length - 1].pensWinnerId ? ' p' : ''}` : 'vs'}
-                        </span>
-                        <span className={w === t.awayId ? 'w' : ''}>{clubName(t.awayId)}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            );
-          })}
+          {enteredThisSeason ? (
+            <div className="fm-bracket">
+              {Array.from({ length: c.weeks.length }, (_, i) => {
+                const ties = c.ties[i];
+                const lastKnown = c.ties.length - 1;
+                const rows = ties && ties.length
+                  ? ties
+                  : Array.from({ length: placeholderCount(c.ties[lastKnown]?.length ?? 1, i - lastKnown) }, () => null);
+                return (
+                  <div className="fm-bracket__round" key={i}>
+                    <p className="fm-bracket__round-label">{continentalRoundName(c, i)}</p>
+                    {rows.map((t, j) => {
+                      if (!t) {
+                        return (
+                          <div className="fm-bracket__tie" key={j}>
+                            <div className="fm-bracket__side"><span className="fm-bracket__side-name">TBD</span></div>
+                            <div className="fm-bracket__side"><span className="fm-bracket__side-name">TBD</span></div>
+                          </div>
+                        );
+                      }
+                      const mine = t.homeId === state.userClubId || t.awayId === state.userClubId;
+                      const done = tieComplete(t);
+                      const w = done ? continentalTieWinner(t) : 0;
+                      const agg = tieAggregate(t);
+                      const played = t.legs.length > 0;
+                      return (
+                        <div className={`fm-bracket__tie${mine ? ' me' : ''}`} key={t.id}>
+                          <div className={`fm-bracket__side${w === t.homeId ? ' winner' : ''}`}>
+                            <span className="fm-bracket__side-name">{clubName(t.homeId)}</span>
+                            <span className="fm-bracket__side-score">{played ? agg.home : ''}</span>
+                          </div>
+                          <div className={`fm-bracket__side${w === t.awayId ? ' winner' : ''}`}>
+                            <span className="fm-bracket__side-name">{clubName(t.awayId)}</span>
+                            <span className="fm-bracket__side-score">
+                              {played ? `${agg.away}${t.legs[t.legs.length - 1].pensWinnerId ? ' p' : ''}` : ''}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="fm-hint">No bracket to show — not entered this season.</p>
+          )}
           {c.round === 0 && c.directQualifiers.length > 0 && (
             <p className="fm-hint" style={{ textAlign: 'left' }}>
               Byes to the Round of 16 (top seeds): {c.directQualifiers.map(clubName).join(', ')}
             </p>
           )}
-          {!enteredThisSeason && <p className="fm-hint">No bracket to show — not entered this season.</p>}
         </div>
       )}
 
       {tab === 'fixtures' && (
         <div className="fm-panel">
           <p className="fm-label" style={{ marginTop: 0 }}>
-            Upcoming
+            {currentTie ? continentalRoundName(c, c.round) : 'Upcoming'}
           </p>
           {currentTie ? (
-            <ul className="fm-cup-ties">
-              <li className="me">
-                {/* Leg 2 (if this tie has played exactly one leg) reverses venue. */}
-                <span>{clubName(currentTie.legs.length === 1 ? currentTie.awayId : currentTie.homeId)}</span>
-                <span className="score">vs</span>
-                <span>{clubName(currentTie.legs.length === 1 ? currentTie.homeId : currentTie.awayId)}</span>
-              </li>
+            <>
+              {(() => {
+                // Leg 2 (if this tie has played exactly one leg) reverses venue.
+                const homeId = currentTie.legs.length === 1 ? currentTie.awayId : currentTie.homeId;
+                const awayId = currentTie.legs.length === 1 ? currentTie.homeId : currentTie.awayId;
+                const home = state.clubs.find((cl) => cl.id === homeId);
+                const away = state.clubs.find((cl) => cl.id === awayId);
+                return (
+                  <div className="fm-card__fixture">
+                    <div className="fm-card__team">
+                      <Crest name={clubName(homeId)} code={home?.code ?? ''} color={home?.color ?? 'var(--panel-3)'} size={32} />
+                      <span className="fm-card__team-name fm-card__team-name--home">{clubName(homeId)}</span>
+                      <span className="fm-card__team-label">HOME</span>
+                    </div>
+                    <div className="fm-card__vs">VS</div>
+                    <div className="fm-card__team">
+                      <Crest name={clubName(awayId)} code={away?.code ?? ''} color={away?.color ?? 'var(--panel-3)'} size={32} />
+                      <span className="fm-card__team-name fm-card__team-name--away">{clubName(awayId)}</span>
+                      <span className="fm-card__team-label">AWAY</span>
+                    </div>
+                  </div>
+                );
+              })()}
               {currentTie.twoLegged && currentTie.legs.length === 1 && (
                 <p className="fm-hint" style={{ textAlign: 'left' }}>
                   2nd leg — venue reverses from the 1st.
                 </p>
               )}
-            </ul>
+            </>
           ) : (
             <p className="fm-hint">No tie currently scheduled.</p>
           )}

@@ -5,7 +5,24 @@ import type { GameState } from '@/engine/types';
 import { getLeague, leagueColor, leagueName } from '@/engine/gameRules';
 import { activeLeagueIds, computeTable, nextUserFixture, userLeagueId } from '@/engine/seasonProgression';
 import { computeMarkets, scoreGrid, seasonOutrights, toOdds, type SeasonOutrights } from '@/engine/odds';
+import { leagueFixtures } from '@/engine/seasonProgression';
 import { Crest } from './Crest';
+
+/** Last `count` league results for a club, oldest first — the "form" strip
+ *  (mock: five W/D/L chips per row). Derived from played fixtures rather
+ *  than stored anywhere, since the engine doesn't track a running form
+ *  string per club. */
+function clubForm(state: GameState, leagueId: string, clubId: number, count = 5): ('W' | 'D' | 'L')[] {
+  const played = leagueFixtures(state, leagueId)
+    .filter((f) => f.played && (f.homeId === clubId || f.awayId === clubId))
+    .sort((a, b) => a.round - b.round);
+  return played.slice(-count).map((f) => {
+    const isHome = f.homeId === clubId;
+    const gf = isHome ? f.homeGoals : f.awayGoals;
+    const ga = isHome ? f.awayGoals : f.homeGoals;
+    return gf > ga ? 'W' : gf < ga ? 'L' : 'D';
+  });
+}
 
 export default function TableScreen({ state }: { state: GameState }) {
   const [tab, setTab] = useState<'table' | 'odds'>('table');
@@ -67,6 +84,7 @@ export default function TableScreen({ state }: { state: GameState }) {
               <th>W</th>
               <th>D</th>
               <th>L</th>
+              <th className="fm-table__form-th">Form</th>
               <th>GD</th>
               <th>Pts</th>
             </tr>
@@ -91,6 +109,13 @@ export default function TableScreen({ state }: { state: GameState }) {
                   <td>{row.won}</td>
                   <td>{row.drawn}</td>
                   <td>{row.lost}</td>
+                  <td>
+                    <span className="fm-form-row">
+                      {clubForm(state, active, row.clubId).map((r, fi) => (
+                        <span key={fi} className={`fm-form-dot fm-form-dot--${r.toLowerCase()}`}>{r}</span>
+                      ))}
+                    </span>
+                  </td>
                   <td>{row.gd > 0 ? `+${row.gd}` : row.gd}</td>
                   <td className="pts">{row.pts}</td>
                 </tr>
