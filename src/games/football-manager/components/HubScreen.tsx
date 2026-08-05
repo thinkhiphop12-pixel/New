@@ -12,7 +12,6 @@ import TableScreen from './TableScreen';
 import FixturesScreen from './FixturesScreen';
 import CupScreen from './CupScreen';
 import ClubScreen from './ClubScreen';
-import ScoutScreen from './ScoutScreen';
 import FacilitiesScreen from './FacilitiesScreen';
 import FinancesScreen from './FinancesScreen';
 import EuropeanScreen from './EuropeanScreen';
@@ -99,7 +98,6 @@ export default function HubScreen({
       case 'tactics': return <TacticsScreen state={state} onChange={onChange} />;
       case 'training': return <TrainingScreen state={state} onChange={onChange} />;
       case 'transfers': return <TransfersScreen state={state} onChange={onChange} />;
-      case 'scout': return <ScoutScreen state={state} onChange={onChange} />;
       case 'inbox': return <InboxScreen state={state} onChange={onChange} />;
       case 'club': return <ClubScreen state={state} onChange={onChange} />;
       case 'facilities': return <FacilitiesScreen state={state} onChange={onChange} />;

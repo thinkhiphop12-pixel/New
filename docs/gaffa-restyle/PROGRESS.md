@@ -25,9 +25,9 @@ committed alongside that phase's code changes.
 - [x] Player Profile (`PlayerModal.tsx`)
 
 ## Phase 3 — Market
-- [ ] Transfers (`TransfersScreen.tsx`) restructured to 5-tab IA
-- [ ] Scout (`ScoutScreen.tsx`) folded into Search/Shortlist
-- [ ] Negotiation Detail restructured
+- [x] Transfers (`TransfersScreen.tsx`) restructured to 5-tab IA
+- [x] Scout (`ScoutScreen.tsx`) folded into Search/Shortlist
+- [x] Negotiation Detail restructured
 
 ## Phase 4 — Club
 - [ ] Club Overview (`ClubScreen.tsx`)
@@ -153,3 +153,80 @@ committed alongside that phase's code changes.
   it, so the ring and the bars read on one consistent scale. Everything else — attribute bars,
   the spider chart (kept, per the brief, as the supplementary detail view), traits, tactical-role
   picker, Stats tab — is untouched.
+
+### Phase 3 — Market
+
+- **`TransfersScreen.tsx` replaced its old market/negotiations/incoming/squad/loans tab set with
+  the mock's 5-tab IA** — Hub / Search / Shortlist / Offers Sent / Offers Received, in a
+  `.fm-subnav__tabs`/`.fm-subtab` row (the same in-page sub-tab pattern Phase 2's Tactics
+  sub-screens established). Every button still calls the exact same `engine/transferMarket.ts` /
+  `engine/facilities.ts` handlers as before (`openNegotiation`, `submitFeeOffer`,
+  `submitTermsOffer`, `walkAwayNegotiation`, `acceptIncomingOffer`, `counterIncomingOffer`,
+  `rejectIncomingOffer`, `dismissNegotiation`, `delistPlayer`, `listForSale`, `toggleLoanList`,
+  `requestLoanIn`, `triggerReleaseClause`, `buyPlayer`/`canBuy`, `toggleShortlist`,
+  `assignScout`) — this was a re-layout, not new game logic.
+  - **Hub** = a new `TransferHub` sub-component: a `.fm-ring` + two stat cells (`TRANSFER` /
+    `WAGES`) card, and a scouting-assignments card (both moved wholesale out of the old
+    `ScoutScreen.tsx`), plus quick-link pills into the other four tabs. The mock's ring tracks a
+    literal transfer-deadline day-count and a `78%/22%` budget-allocation split; neither exists
+    in `GameState` (no separate transfer-window/deadline field, no wage-budget-vs-transfer-budget
+    split — see `engine/types.ts`). Rather than invent one, the ring now tracks the real,
+    honest analogue already in the sim: `state.week / SEASON_ROUNDS` (season-progress), with its
+    center value showing real weeks remaining this season; the two stat cells show the real
+    `state.budget` and `weeklyWageBill(state)` (an already-existing engine function, previously
+    unsurfaced here) instead of a fabricated wages-budget figure.
+  - **Search** = the old "Market" tab's player list, but its filter row became four
+    `.fm-filtercard` icon-tile cards (Position / Nationality / Status / Age) matching the mock's
+    grid, each holding a `<select>`. Position and Status map straight onto the existing
+    `MarketFilters.pos`/`.avail` engine filters; Nationality and Age have no server-side filter
+    param in `getTransferMarket`, so they filter the already-fetched result client-side (Age
+    reuses the same 21/24/28/40 bands `ScoutScreen.tsx` used for its leads; Nationality is
+    populated from the nations actually present in this week's market, not a fabricated list).
+    Each row also gained a Shortlist/Shortlisted toggle (`toggleShortlist`) so shortlisting no
+    longer requires a separate screen. The old Market tab's Loan Market and My Squad
+    list/list-for-sale/loan-list sections were kept underneath Search's results (real
+    functionality with no home anywhere else in the new 5-tab set — the mock doesn't cover
+    them, but nothing in the brief called for deleting them).
+  - **Shortlist** = `ScoutScreen.tsx`'s persisted `state.scouting.shortlist` list (via
+    `transferTargets`/shortlist merge, byte-for-byte the same logic that screen used), now with
+    the mock's per-player scouting-status dot: green ("scouted") when the player already appears
+    in `scoutRecommendations(state)`'s picks (a completed lead), dim grey ("report pending")
+    otherwise — an honest proxy for "has scouting coverage" since there's no separate per-player
+    scouting-completeness field on `Player`.
+  - **Offers Sent** = outgoing negotiations list (left) + a `.fm-ledger` card (right, `.fm-split`
+    at ≥900px) showing the selected deal's Fee/Wage/Contract rows as current-vs-offer, reusing
+    `Negotiation.neg.asking`/`.wageDemand` for "current" and `.lastFee`/`.lastWage`/
+    `.contractYears` for "offer" — both already-existing fields, no new state. The interactive
+    fee/terms form and message transcript (`NegotiationPanel`, unchanged logic) sits below the
+    ledger, since a live negotiation is a back-and-forth the mock's static ledger card doesn't
+    fully model — the ledger is a summary header, not a replacement for the real turn-based form.
+  - **Offers Received** = incoming negotiations as `.fm-received-row` cards (bid summary +
+    rival-bid note + Accept/Counter/Reject), replacing the old flat `.fm-player-row` list —
+    same handlers (`acceptIncomingOffer`, `counterIncomingOffer`, `rejectIncomingOffer`,
+    `dismissNegotiation`). The mock's optional desktop-only 3-panel "Full Review Desk" (offer
+    list / negotiation actions / player detail panels, plus a "Delegate to Staff"/"View Swap
+    Player" action set) was **not** built — those two actions have no engine equivalent
+    (no delegate-to-staff flow, no swap-player-in-a-deal mechanic), and duplicating a whole
+    second desktop-only layout for the same data the simpler list already presents cleanly
+    across all three tiers wasn't judged worth the added surface for this pass.
+  - **Negotiation Detail**: there wasn't a separate standalone route for this — the mock's
+    "11. Negotiation Detail" screen is exactly what `TransfersScreen.tsx`'s existing
+    `NegotiationPanel` already was (opened from Search via "Guide £Xm" or from the Offers Sent
+    list). It's now restructured with the `.fm-ledger` deal-terms card described above (Offers
+    Sent bullet) plus the unchanged log/status/action-form beneath it, and is shared by both the
+    Search→talks flow and the Offers Sent tab rather than being two separate implementations.
+- **`ScoutScreen.tsx` deleted.** Its three pieces of real functionality all moved into
+  `TransfersScreen.tsx` rather than being cut: the scouting-assignment cards + assign/opponent
+  dropdown + opponent-reports list → Hub tab; the position-grouped leads list with
+  rating/age filters → folded into Search (Position/Age filter cards + Shortlist toggle
+  replace the old per-position accordion); the persisted shortlist with Drop/Sign actions →
+  Shortlist tab. No `engine/*` scouting or shortlist logic was touched — `engine/facilities.ts`
+  (`assignScout`, `newScouting`, `tickFacilitiesWeek`, `toggleShortlist`) and
+  `engine/transferMarket.ts` (`scoutRecommendations`, `transferTargets`, `askingPrice`,
+  `buyPlayer`, `canBuy`) are called exactly as before, just from the new screen.
+- **Nav**: `hubNav.ts`'s `market` group's `screens` array drops the `scout` entry (now just
+  `[transfers]`), and its `ScreenId` union drops `'scout'`. `HubScreen.tsx` drops the
+  `ScoutScreen` import and its `case 'scout'` switch arm. `screenBadge`/`groupBadge` needed no
+  changes — they never keyed off `'scout'` to begin with (only `transfers`/`inbox`/`tactics`
+  carry badges). The `scout` `IconName` variant in `Icon.tsx` was left in place — it's still used
+  by `FacilitiesScreen.tsx`'s staff-role icons, an unrelated Phase 4 screen.
