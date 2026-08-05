@@ -7,7 +7,15 @@ import {
 } from '@/engine/europeanCup';
 import { Icon } from './Icon';
 
-function Bracket({ state, k }: { state: GameState; k: Knockout }) {
+/** Ties expected in a future (not-yet-drawn) round — halves each round from
+ *  the last known round, same as a standard single-elimination bracket.
+ *  The live draw is redrawn round-by-round (not a fixed tree), so this is a
+ *  visual estimate for the "TBD" placeholder column, not real pairing data. */
+function placeholderCount(lastKnownCount: number, roundsAhead: number): number {
+  return Math.max(1, Math.round(lastKnownCount / 2 ** roundsAhead));
+}
+
+function DomesticBracket({ state, k }: { state: GameState; k: Knockout }) {
   const clubName = (id: number) => state.clubs.find((c) => c.id === id)?.name ?? '—';
   const winner = k.winnerId ? clubName(k.winnerId) : null;
   const alive = isClubAlive(k, state.userClubId);
@@ -15,13 +23,14 @@ function Bracket({ state, k }: { state: GameState; k: Knockout }) {
     alive || k.byes.includes(state.userClubId) ||
     k.rounds.some((r) => r.some((t) => t.homeId === state.userClubId || t.awayId === state.userClubId));
 
+  const totalRounds = k.weeks.length;
+  const lastKnown = k.rounds.length - 1;
+
   return (
     <div className="fm-panel">
-      <p className="fm-label" style={{ marginTop: 0 }}>
-        {k.name}
-      </p>
+      <p className="fm-label" style={{ marginTop: 0 }}>{k.name}</p>
       {winner ? (
-        <p className="fm-cup-status" style={{ display: "flex", alignItems: "center", gap: 6 }}><Icon name="trophy" size={14} /> Winners: {winner}</p>
+        <p className="fm-cup-status" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="trophy" size={14} /> Winners: {winner}</p>
       ) : (
         <p className="fm-cup-status">
           {!inComp
@@ -31,31 +40,49 @@ function Bracket({ state, k }: { state: GameState; k: Knockout }) {
               : 'Knocked out.'}
         </p>
       )}
-      {[...k.rounds].map((ties, i) => {
-        // Only show the user's tie plus a compact list for played rounds.
-        const played = ties.some((t) => t.played);
-        if (!played && i !== k.round) return null;
-        return (
-          <div key={i} style={{ marginBottom: 10 }}>
-            <p className="fm-label">{roundName(k, i)}</p>
-            <ul className="fm-cup-ties">
-              {ties.map((t, j) => {
+
+      <div className="fm-bracket">
+        {Array.from({ length: totalRounds }, (_, i) => {
+          const ties = k.rounds[i];
+          const rows = ties && ties.length
+            ? ties
+            : Array.from({ length: placeholderCount(k.rounds[lastKnown]?.length ?? 1, i - lastKnown) }, () => null);
+          return (
+            <div className="fm-bracket__round" key={i}>
+              <p className="fm-bracket__round-label">{roundName(k, i)}</p>
+              {rows.map((t, j) => {
+                if (!t) {
+                  return (
+                    <div className="fm-bracket__tie" key={j}>
+                      <div className="fm-bracket__side"><span className="fm-bracket__side-name">TBD</span></div>
+                      <div className="fm-bracket__side"><span className="fm-bracket__side-name">TBD</span></div>
+                    </div>
+                  );
+                }
                 const mine = t.homeId === state.userClubId || t.awayId === state.userClubId;
                 const w = tieWinner(t);
                 return (
-                  <li key={j} className={mine ? 'me' : ''}>
-                    <span className={w === t.homeId ? 'w' : ''}>{clubName(t.homeId)}</span>
-                    <span className="score">
-                      {t.played ? `${t.homeGoals}–${t.awayGoals}${t.pensWinnerId ? ' p' : ''}` : 'vs'}
-                    </span>
-                    <span className={w === t.awayId ? 'w' : ''}>{clubName(t.awayId)}</span>
-                  </li>
+                  <div className={`fm-bracket__tie${mine ? ' me' : ''}`} key={j}>
+                    <div className={`fm-bracket__side${w === t.homeId ? ' winner' : ''}`}>
+                      <span className="fm-bracket__side-name">{clubName(t.homeId)}</span>
+                      <span className="fm-bracket__side-score">
+                        {t.played ? `${t.homeGoals}${t.pensWinnerId === t.homeId ? ' p' : ''}` : ''}
+                      </span>
+                    </div>
+                    <div className={`fm-bracket__side${w === t.awayId ? ' winner' : ''}`}>
+                      <span className="fm-bracket__side-name">{clubName(t.awayId)}</span>
+                      <span className="fm-bracket__side-score">
+                        {t.played ? `${t.awayGoals}${t.pensWinnerId === t.awayId ? ' p' : ''}` : ''}
+                      </span>
+                    </div>
+                  </div>
                 );
               })}
-            </ul>
-          </div>
-        );
-      })}
+            </div>
+          );
+        })}
+      </div>
+
       {k.round === 0 && k.byes.length > 0 && (
         <p className="fm-hint" style={{ textAlign: 'left' }}>
           Byes into round two: {k.byes.map(clubName).join(', ')}
@@ -65,9 +92,9 @@ function Bracket({ state, k }: { state: GameState; k: Knockout }) {
   );
 }
 
-/** Compact continental bracket — the full breakdown lives in EuropeanScreen.
- *  Shows aggregate once a tie is decided, the current leg's score while one
- *  is still outstanding. */
+/** Continental bracket — same round-as-column treatment as the domestic cup,
+ *  but each column shows aggregate once a two-legged tie is decided, and
+ *  the outstanding leg's score while one is still to play. */
 function EuroBracket({ state }: { state: GameState }) {
   const c = state.continental;
   const clubName = (id: number) => state.clubs.find((cl) => cl.id === id)?.name ?? '—';
@@ -77,11 +104,14 @@ function EuroBracket({ state }: { state: GameState }) {
     alive || c.directQualifiers.includes(state.userClubId) ||
     c.ties.some((r) => r.some((t) => t.homeId === state.userClubId || t.awayId === state.userClubId));
 
+  const totalRounds = c.weeks.length;
+  const lastKnown = c.ties.length - 1;
+
   return (
     <div className="fm-panel">
       <p className="fm-label" style={{ marginTop: 0 }}>{c.name}</p>
       {winner ? (
-        <p className="fm-cup-status" style={{ display: "flex", alignItems: "center", gap: 6 }}><Icon name="trophy" size={14} /> Winners: {winner}</p>
+        <p className="fm-cup-status" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="trophy" size={14} /> Winners: {winner}</p>
       ) : (
         <p className="fm-cup-status">
           {!inComp
@@ -91,33 +121,52 @@ function EuroBracket({ state }: { state: GameState }) {
               : 'Knocked out.'}
         </p>
       )}
-      {c.ties.map((ties, i) => {
-        const played = ties.some((t) => t.legs.length > 0);
-        if (!played && i !== c.round) return null;
-        return (
-          <div key={i} style={{ marginBottom: 10 }}>
-            <p className="fm-label">{continentalRoundName(c, i)}</p>
-            <ul className="fm-cup-ties">
-              {ties.map((t) => {
+
+      <div className="fm-bracket">
+        {Array.from({ length: totalRounds }, (_, i) => {
+          const ties = c.ties[i];
+          const rows = ties && ties.length
+            ? ties
+            : Array.from({ length: placeholderCount(c.ties[lastKnown]?.length ?? 1, i - lastKnown) }, () => null);
+          return (
+            <div className="fm-bracket__round" key={i}>
+              <p className="fm-bracket__round-label">{continentalRoundName(c, i)}</p>
+              {rows.map((t, j) => {
+                if (!t) {
+                  return (
+                    <div className="fm-bracket__tie" key={j}>
+                      <div className="fm-bracket__side"><span className="fm-bracket__side-name">TBD</span></div>
+                      <div className="fm-bracket__side"><span className="fm-bracket__side-name">TBD</span></div>
+                    </div>
+                  );
+                }
                 const mine = t.homeId === state.userClubId || t.awayId === state.userClubId;
                 const done = tieComplete(t);
                 const w = done ? continentalTieWinner(t) : 0;
                 const agg = tieAggregate(t);
-                const legTag = t.twoLegged && !done && t.legs.length === 1 ? ' (1st leg)' : t.twoLegged ? ' agg' : '';
+                const played = t.legs.length > 0;
                 return (
-                  <li key={t.id} className={mine ? 'me' : ''}>
-                    <span className={w === t.homeId ? 'w' : ''}>{clubName(t.homeId)}</span>
-                    <span className="score">
-                      {t.legs.length ? `${agg.home}–${agg.away}${legTag}${t.legs[t.legs.length - 1].pensWinnerId ? ' p' : ''}` : 'vs'}
-                    </span>
-                    <span className={w === t.awayId ? 'w' : ''}>{clubName(t.awayId)}</span>
-                  </li>
+                  <div className={`fm-bracket__tie${mine ? ' me' : ''}`} key={t.id}>
+                    <div className={`fm-bracket__side${w === t.homeId ? ' winner' : ''}`}>
+                      <span className="fm-bracket__side-name">{clubName(t.homeId)}</span>
+                      <span className="fm-bracket__side-score">
+                        {played ? `${agg.home}${t.legs[t.legs.length - 1].pensWinnerId === t.homeId ? ' p' : ''}` : ''}
+                      </span>
+                    </div>
+                    <div className={`fm-bracket__side${w === t.awayId ? ' winner' : ''}`}>
+                      <span className="fm-bracket__side-name">{clubName(t.awayId)}</span>
+                      <span className="fm-bracket__side-score">
+                        {played ? `${agg.away}${t.legs[t.legs.length - 1].pensWinnerId === t.awayId ? ' p' : ''}` : ''}
+                      </span>
+                    </div>
+                  </div>
                 );
               })}
-            </ul>
-          </div>
-        );
-      })}
+            </div>
+          );
+        })}
+      </div>
+
       {c.round === 0 && c.directQualifiers.length > 0 && (
         <p className="fm-hint" style={{ textAlign: 'left' }}>
           Byes to the Round of 16 (top seeds): {c.directQualifiers.map(clubName).join(', ')}
@@ -130,7 +179,7 @@ function EuroBracket({ state }: { state: GameState }) {
 export default function CupScreen({ state }: { state: GameState }) {
   return (
     <>
-      <Bracket state={state} k={state.cup} />
+      <DomesticBracket state={state} k={state.cup} />
       <EuroBracket state={state} />
       <p className="fm-hint">Cup rounds play midweek. Top seeds bye to the Round of 16; the rest fight through a two-legged playoff.</p>
     </>

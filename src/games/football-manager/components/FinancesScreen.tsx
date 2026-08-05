@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import type { GameState, KitOffer, SponsorOffer, SponsorSlotId, TicketTier } from '@/engine/types';
-import { gateIncome, weeklyWageBill, staffWageBill } from '@/engine/seasonProgression';
-import { SEASON_ROUNDS } from '@/engine/gameRules';
+import type { GameState, KitOffer, SponsorOffer, SponsorSlotId, TicketTier, FinanceState } from '@/engine/types';
+import { gateIncome, weeklyWageBill, staffWageBill, userLeagueId, userPosition, userLeague } from '@/engine/seasonProgression';
+import { SEASON_ROUNDS, leagueName } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
+import { totalCapacity } from '@/engine/facilities';
+import { ReputationStars, Bar, ordinalSuffix } from './visuals';
+import { Icon } from './Icon';
 import {
   SPONSOR_SLOTS, TICKET_TIERS, acceptKitOffer, acceptSponsorOffer, canRequestBoardFunds,
   ffpStatus, financesView, genKitOffers, genSponsorOffers, requestBoardFunds, scrStatus,
@@ -46,6 +49,15 @@ export default function FinancesScreen({
           </p>
         )}
       </div>
+
+      {/* ── Income & Expenditure bars ── */}
+      <IncomeExpenseBars fin={fin} />
+
+      {/* ── Stadium attendance ── */}
+      <StadiumAttendance state={state} fin={fin} />
+
+      {/* ── Board confidence ── */}
+      <BoardConfidence state={state} />
 
       {/* --- FFP / SCR status --------------------------------------------- */}
       <div className="fm-panel">
@@ -191,7 +203,7 @@ export default function FinancesScreen({
             })}
           </div>
         )}
-        <p className="fm-hint" style={{ margin: '6px 0 0' }}>Balance over time, oldest → newest ({trend.length} points).</p>
+        <p className="fm-hint" style={{ margin: '6px 0 0' }}>Balance over time, oldest to newest ({trend.length} points).</p>
       </div>
 
       {/* --- Season breakdown ------------------------------------------------ */}
@@ -244,6 +256,173 @@ function Row({ label, value }: { label: string; value: number }) {
       <span style={{ color: value >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 700 }}>
         {value >= 0 ? '+' : ''}{formatMoney(value)}
       </span>
+    </div>
+  );
+}
+
+
+type CatDef = { key: string; label: string; color: string };
+
+const INCOME_CATS: CatDef[] = [
+  { key: 'tv', label: 'TV', color: 'var(--green)' },
+  { key: 'matchday', label: 'Matchday', color: 'var(--green-600)' },
+  { key: 'sponsorship', label: 'Sponsorship', color: 'var(--green)' },
+  { key: 'merchandise', label: 'Merch', color: 'var(--gold)' },
+  { key: 'prizes', label: 'Prizes', color: 'var(--gold-2)' },
+  { key: 'sales', label: 'Sales', color: 'var(--gold)' },
+];
+
+const EXPENSE_CATS: CatDef[] = [
+  { key: 'wages', label: 'Wages', color: 'var(--red)' },
+  { key: 'staff', label: 'Staff', color: 'var(--red)' },
+  { key: 'transfers', label: 'Transfers', color: 'var(--red)' },
+  { key: 'agentFees', label: 'Agent fees', color: 'var(--red)' },
+  { key: 'academyUpkeep', label: 'Academy', color: 'var(--red)' },
+  { key: 'stadiumMaint', label: 'Stadium', color: 'var(--red)' },
+];
+
+function finVal(fin: FinanceState, isIncome: boolean, key: string): number {
+  const src = isIncome ? fin.seasonIncome : fin.seasonExpenses;
+  return (src as unknown as Record<string, number>)[key] ?? 0;
+}
+
+function IncomeExpenseBars({ fin }: { fin: FinanceState }) {
+  const incomeTotal = fin.seasonIncome.tv + fin.seasonIncome.matchday + fin.seasonIncome.sponsorship
+    + fin.seasonIncome.merchandise + fin.seasonIncome.prizes + fin.seasonIncome.sales;
+  const expenseTotal = fin.seasonExpenses.wages + fin.seasonExpenses.staff + fin.seasonExpenses.transfers
+    + fin.seasonExpenses.agentFees + fin.seasonExpenses.academyUpkeep + fin.seasonExpenses.stadiumMaint;
+  const maxIncome = Math.max(1, ...INCOME_CATS.map((c) => finVal(fin, true, c.key)));
+  const maxExpense = Math.max(1, ...EXPENSE_CATS.map((c) => finVal(fin, false, c.key)));
+
+  return (
+    <div className="fm-panel">
+      <p className="fm-label" style={{ marginTop: 0 }}>Season Income &amp; Expenditure</p>
+      <p className="fm-hint" style={{ textAlign: 'left', marginTop: 0 }}>Season to date — sorted by size</p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px 10px', marginTop: 10 }}>
+        <div>
+          <p className="fm-label">Income</p>
+          {[...INCOME_CATS].sort((a, b) => finVal(fin, true, b.key) - finVal(fin, true, a.key)).map((c) => (
+            <div key={c.key} className="fm-cat-bar">
+              <span className="fm-cat-bar__label">{c.label}</span>
+              <div className="fm-cat-bar__track">
+                <div className="fm-cat-bar__fill" style={{
+                  width: `${Math.min(100, (finVal(fin, true, c.key) / maxIncome) * 100)}%`,
+                  background: c.color,
+                }} />
+              </div>
+              <span className="fm-cat-bar__value">{formatMoney(finVal(fin, true, c.key))}</span>
+            </div>
+          ))}
+          <div className="fm-cat-bar" style={{ marginTop: 6, borderTop: '1px solid var(--border-soft)', paddingTop: 8 }}>
+            <span className="fm-cat-bar__label">Total</span>
+            <span className="fm-cat-bar__value" style={{ color: 'var(--green)', fontWeight: 900 }}>{formatMoney(incomeTotal)}</span>
+          </div>
+        </div>
+        <div>
+          <p className="fm-label">Expenses</p>
+          {[...EXPENSE_CATS].sort((a, b) => finVal(fin, false, b.key) - finVal(fin, false, a.key)).map((c) => (
+            <div key={c.key} className="fm-cat-bar">
+              <span className="fm-cat-bar__label">{c.label}</span>
+              <div className="fm-cat-bar__track">
+                <div className="fm-cat-bar__fill" style={{
+                  width: `${Math.min(100, (finVal(fin, false, c.key) / maxExpense) * 100)}%`,
+                  background: c.color,
+                }} />
+              </div>
+              <span className="fm-cat-bar__value">{formatMoney(finVal(fin, false, c.key))}</span>
+            </div>
+          ))}
+          <div className="fm-cat-bar" style={{ marginTop: 6, borderTop: '1px solid var(--border-soft)', paddingTop: 8 }}>
+            <span className="fm-cat-bar__label">Total</span>
+            <span className="fm-cat-bar__value" style={{ color: 'var(--red)', fontWeight: 900 }}>{formatMoney(expenseTotal)}</span>
+          </div>
+        </div>
+      </div>
+      <div className="fm-cat-bar" style={{ marginTop: 12, borderTop: '1px solid var(--border-soft)', paddingTop: 8 }}>
+        <span className="fm-cat-bar__label">Net</span>
+        <div className="fm-cat-bar__track">
+          <div className="fm-cat-bar__fill" style={{
+            width: `${Math.max(2, Math.min(100, (Math.abs(incomeTotal - expenseTotal) / Math.max(incomeTotal, expenseTotal, 1)) * 100))}%`,
+            background: incomeTotal - expenseTotal >= 0 ? 'var(--green)' : 'var(--red)',
+          }} />
+        </div>
+        <span className="fm-cat-bar__value" style={{ color: incomeTotal - expenseTotal >= 0 ? 'var(--green)' : 'var(--red)' }}>
+          {incomeTotal - expenseTotal >= 0 ? '+' : ''}{formatMoney(incomeTotal - expenseTotal)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function StadiumAttendance({ state, fin }: { state: GameState; fin: FinanceState }) {
+  const fs = state.facilities;
+  const capUsed = fs ? totalCapacity(fs) : 0;
+  const capMax = fs ? fs.groundCapacityCap : 0;
+  const pos = userPosition(state);
+  const lg = userLeague(state);
+  const gate = gateIncome(state);
+  const ticketTier = fin.ticketPricing ? TICKET_TIERS[fin.ticketPricing] : null;
+  const attendancePct = capMax > 0 ? Math.min(100, (capUsed / capMax) * 100) : 0;
+  const attendanceLabel = capMax > 0 ? `${Math.round(attendancePct)}% built` : 'no stadium data';
+  const positionLabel = pos > 0 ? `${pos}${ordinalSuffix(pos)} place in ${leagueName(userLeagueId(state))}` : 'Not yet ranked';
+
+  return (
+    <div className="fm-panel">
+      <p className="fm-label" style={{ marginTop: 0 }}>Stadium Attendance</p>
+      <div className="fm-qstat" style={{ marginBottom: 12 }}>
+        <span className="fm-qstat__icon"><Icon name="stadium" size={15} /></span>
+        <span className="fm-qstat__val">{capMax > 0 ? `${capUsed.toLocaleString()} / ${capMax.toLocaleString()}` : '—'}</span>
+        <span className="fm-qstat__lbl">capacity</span>
+      </div>
+      <div className="fm-qstat" style={{ marginBottom: 12 }}>
+        <span className="fm-qstat__icon"><Icon name="finances" size={15} /></span>
+        <span className="fm-qstat__val">{gate > 0 ? formatMoney(gate) : '—'}/wk</span>
+        <span className="fm-qstat__lbl">gate income</span>
+      </div>
+      <div className="fm-qstat">
+        <span className="fm-qstat__icon"><Icon name="stadium" size={15} /></span>
+        <span className="fm-qstat__val">{ticketTier ? ticketTier.label : '—'}</span>
+        <span className="fm-qstat__lbl">ticket tier</span>
+      </div>
+      {capMax > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <div className="fm-attendance__track">
+            <div className="fm-attendance__fill" style={{ width: `${attendancePct}%` }} />
+          </div>
+          <span className="fm-hint" style={{ marginTop: 4, display: 'block' }}>
+            {attendanceLabel} · {positionLabel}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BoardConfidence({ state }: { state: GameState }) {
+  const atRisk = state.board.confidence < 30;
+  const sacked = state.board.confidence < 20;
+  return (
+    <div className="fm-panel">
+      <p className="fm-label" style={{ marginTop: 0 }}>Board Confidence</p>
+      <p className="fm-club-line">{state.board.objective}</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+        <ReputationStars value={Math.min(5, Math.max(1, Math.round(state.board.confidence / 20)))} />
+        <span className="fm-club-line" style={{ margin: 0 }}>
+          Board {state.board.confidence}/100
+        </span>
+      </div>
+      <Bar value={state.board.confidence} label="Board" />
+      <Bar value={state.fanConfidence} label="Fans" />
+      <Bar value={state.chemistry} label="Chemistry" />
+      {sacked ? (
+        <p className="fm-error-text" style={{ textAlign: 'left', marginTop: 6 }}>
+          Below 20 — you will be sacked at season end unless you recover.
+        </p>
+      ) : atRisk ? (
+        <p className="fm-hint" style={{ textAlign: 'left', marginTop: 6 }}>
+          Confidence is low — wins improve morale quickly.
+        </p>
+      ) : null}
     </div>
   );
 }

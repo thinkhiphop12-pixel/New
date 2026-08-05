@@ -96,33 +96,39 @@ export default function ClubSelectScreen({
       <p className="fm-label" style={{ textAlign: 'center' }}>
         Choose your club
       </p>
-      <input
-        className="fm-search"
-        style={{ alignSelf: 'center', maxWidth: 320 }}
-        placeholder="Your manager name (optional)"
-        value={managerName}
-        maxLength={24}
-        onChange={(e) => setManagerName(e.target.value)}
-      />
-      <div className="fm-division-toggle">
-        {divisions.map((d) => (
-          <button key={d} className={division === d ? 'active' : ''} onClick={() => setDivision(d)}>
-            {leagueName(d)}
-          </button>
-        ))}
+
+      <div className="fm-pick-head">
+        <div className="fm-division-toggle">
+          {divisions.map((d) => (
+            <button key={d} className={division === d ? 'active' : ''} onClick={() => setDivision(d)}>
+              {leagueName(d)}
+            </button>
+          ))}
+        </div>
+        {division !== null && (
+          <p className="fm-hint" style={{ margin: 0 }}>
+            {formatLeagueBlurb(division)} Budget {formatMoney(startingBudget(division))}.
+          </p>
+        )}
+        <div className="fm-pick-head__fields">
+          <input
+            className="fm-search"
+            placeholder="Your manager name (optional)"
+            aria-label="Your manager name"
+            value={managerName}
+            maxLength={24}
+            onChange={(e) => setManagerName(e.target.value)}
+          />
+          <input
+            className="fm-search"
+            placeholder="Search clubs…"
+            aria-label="Search clubs"
+            value={clubQuery}
+            onChange={(e) => setClubQuery(e.target.value)}
+          />
+        </div>
       </div>
-      {division !== null && (
-        <p className="fm-hint">
-          {formatLeagueBlurb(division)} Budget {formatMoney(startingBudget(division))}.
-        </p>
-      )}
-      <input
-        className="fm-search"
-        style={{ alignSelf: 'center', maxWidth: 320, marginBottom: 4 }}
-        placeholder="Search clubs…"
-        value={clubQuery}
-        onChange={(e) => setClubQuery(e.target.value)}
-      />
+
       {query && shown.length === 0 && (
         <p className="fm-hint" style={{ textAlign: 'center' }}>No clubs match &quot;{clubQuery}&quot; in this division.</p>
       )}
@@ -131,12 +137,16 @@ export default function ClubSelectScreen({
           <button
             key={club.id}
             className={`fm-club-card${selected === club.id ? ' selected' : ''}`}
+            aria-pressed={selected === club.id}
             onClick={() => setSelected(club.id)}
           >
-            <Crest name={club.name} code={club.code} color={club.color} size={40} />
+            <span className="fm-club-card__crest">
+              <Crest name={club.name} code={club.code} color={club.color} size={52} />
+            </span>
             <span className="fm-club-card__name">{club.name}</span>
-            <span className="fm-club-card__meta">
-              Squad {avg} · Star: {star?.name ?? '—'}
+            <span className="fm-club-card__foot">
+              <span className="fm-club-card__rating" title={`Squad rating ${avg}`}>{avg}</span>
+              <span className="fm-club-card__star">{star ? `★ ${star.name}` : '—'}</span>
             </span>
           </button>
         ))}

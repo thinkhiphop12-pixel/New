@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Icon } from './Icon';
 import type { GameState, Player, Pressing, TacticStyle, Tempo, TrainingFocus, Width } from '@/engine/types';
 import { FORMATIONS, getFormation } from '@/engine/gameRules';
@@ -73,6 +73,54 @@ export default function SquadScreen({
   };
 
   const detail = detailId !== null ? state.players[detailId] : null;
+
+  // Two rating-coded position groups, matching the design spec's "Goalkeepers
+  // & Defense" / "Midfield & Attack" split — each sorted strongest-first.
+  const groupA = squad.filter((p) => p.pos === 'GK' || p.pos === 'DEF');
+  const groupB = squad.filter((p) => p.pos === 'MID' || p.pos === 'FWD');
+
+  const renderGroup = (label: string, players: Player[]) => (
+    <div className="fm-mod">
+      <div className="fm-mod__head"><h2 className="fm-mod__title">{label}</h2></div>
+      <div className="fm-player-list">
+        {players.map((p) => {
+          const inLineup = state.lineup.includes(p.id);
+          const canPick = selectedSlot !== null && eligible(p);
+          return (
+            <button
+              key={p.id}
+              className={`fm-player-row fm-player-row--faced fm-pos-${p.pos}${canPick ? ' highlight' : ''}${inLineup ? ' in-lineup' : ''}`}
+              disabled={selectedSlot !== null && !canPick}
+              onClick={() =>
+                selectedSlot !== null ? assignToSlot(p.id) : setDetailId(detailId === p.id ? null : p.id)
+              }
+            >
+              <PlayerFace playerId={p.id} size={26} />
+              {p.squadNumber !== undefined && (
+                <span className="fm-player-row__num" aria-label={`Shirt number ${p.squadNumber}`}>
+                  {p.squadNumber}
+                </span>
+              )}
+              <span className="fm-player-row__badge">{p.role}</span>
+              <span className="fm-player-row__name">
+                {p.name}
+                <span className="fm-player-row__sub">
+                  {p.age}y{inLineup ? ' · XI' : ''}
+                  {p.tacticalRole && getRole(p.tacticalRole)?.name ? ` · ${getRole(p.tacticalRole)?.name}` : ''}
+                  {p.contractYears <= 1 && <> · <Icon name="warning" size={11} style={{ verticalAlign: -1 }} /> expiring</>}
+                </span>
+              </span>
+              <span className="fm-player-row__tag">{formTag(p)}</span>
+              <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
+                {p.rating}
+              </span>
+            </button>
+          );
+        })}
+        {players.length === 0 && <p className="fm-hint">No players in this group.</p>}
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -213,36 +261,9 @@ export default function SquadScreen({
         />
       )}
 
-      <div className="fm-player-list">
-        {squad.map((p) => {
-          const inLineup = state.lineup.includes(p.id);
-          const canPick = selectedSlot !== null && eligible(p);
-          return (
-            <button
-              key={p.id}
-              className={`fm-player-row fm-player-row--faced fm-pos-${p.pos}${canPick ? ' highlight' : ''}${inLineup ? ' in-lineup' : ''}`}
-              disabled={selectedSlot !== null && !canPick}
-              onClick={() =>
-                selectedSlot !== null ? assignToSlot(p.id) : setDetailId(detailId === p.id ? null : p.id)
-              }
-            >
-              <PlayerFace playerId={p.id} size={26} />
-              <span className="fm-player-row__badge">{p.role}</span>
-              <span className="fm-player-row__name">
-                {p.name}
-                <span className="fm-player-row__sub">
-                  {p.age}y{inLineup ? ' · XI' : ''}
-                  {p.tacticalRole ? ` · ${getRole(p.tacticalRole)?.name}` : ''}
-                  {p.contractYears <= 1 && <> · <Icon name="warning" size={11} style={{ verticalAlign: -1 }} /> expiring</>}
-                </span>
-              </span>
-              <span className="fm-player-row__tag">{formTag(p)}</span>
-              <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
-                {p.rating}
-              </span>
-            </button>
-          );
-        })}
+      <div className="fm-split" style={{ '--split-ratio': '1fr 1fr' } as CSSProperties}>
+        {renderGroup('Goalkeepers & Defense', groupA)}
+        {renderGroup('Midfield & Attack', groupB)}
       </div>
     </>
   );

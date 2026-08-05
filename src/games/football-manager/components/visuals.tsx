@@ -1,6 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import type { GameState } from '@/engine/types';
+import { leagueFixtures } from '@/engine/seasonProgression';
 
 /** Shared visual primitives used across match/squad/tactics screens so the
  *  game reads as a pitch-and-player sim instead of stacked text lists. */
@@ -186,4 +188,55 @@ export function readableTextOn(hex: string): string {
   const b = parseInt(hex.slice(5, 7), 16) / 255;
   const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   return luminance > 0.55 ? '#04140d' : '#f5f5f5';
+}
+
+/** Horizontal progress bar with label and numeric value. */
+export function Bar({ value, label }: { value: number; label: string }) {
+  const tone = value >= 65 ? 'good' : value >= 35 ? 'mid' : 'bad';
+  return (
+    <div className="fm-bar-row">
+      <span className="fm-bar-row__label">{label}</span>
+      <div className="fm-bar">
+        <div className={`fm-bar__fill ${tone}`} style={{ width: `${value}%` }} />
+      </div>
+      <span className="fm-bar-row__value">{value}</span>
+    </div>
+  );
+}
+
+/** English ordinal suffix (th, st, nd, rd) for a given number. */
+export function ordinalSuffix(n: number): string {
+  if (n % 100 >= 11 && n % 100 <= 13) return 'th';
+  return ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
+}
+
+export type FormResult = 'W' | 'D' | 'L';
+
+/**
+ * Last `count` league results for any club, newest last.
+ *
+ * Derived from played fixtures in that club's *own* league rather than the
+ * user's, so a match preview can show both sides' form even when the
+ * opponent sits in a different division. The engine stores no running form
+ * string per club, so this is recomputed on demand the same way
+ * `TableScreen` does it.
+ */
+export function clubForm(state: GameState, clubId: number, count = 5): FormResult[] {
+  const club = state.clubs.find((c) => c.id === clubId);
+  if (!club) return [];
+  return leagueFixtures(state, club.leagueId)
+    .filter((f) => f.played && (f.homeId === clubId || f.awayId === clubId))
+    .sort((a, b) => a.round - b.round)
+    .slice(-count)
+    .map((f) => {
+      const isHome = f.homeId === clubId;
+      const gf = isHome ? f.homeGoals : f.awayGoals;
+      const ga = isHome ? f.awayGoals : f.homeGoals;
+      return gf > ga ? 'W' : gf < ga ? 'L' : 'D';
+    });
+}
+
+/** One W/D/L chip in a recent-form strip (Phase 4's `.fm-form-chip`). */
+export function FormChip({ result }: { result: FormResult }) {
+  return <span className={`fm-form-chip fm-form-chip--${result.toLowerCase()}`}>{result}</span>;
 }

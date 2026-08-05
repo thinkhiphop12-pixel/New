@@ -154,11 +154,14 @@ function paintStadium(ctx: CanvasRenderingContext2D, w: number, h: number, px: n
   stand(0, 0, px - board, h, false);
   stand(w - (w - px - pw) + board, 0, w - px - pw - board, h, false);
 
-  // Ad boards hugging the pitch.
+  // Ad boards hugging the pitch. Lime on deep green — BALLKNW's own palette,
+  // replacing the design spec's purple/yellow hoardings (PLAN.md decision 1).
+  const BOARD_DARK = '#0b2a16';
+  const BOARD_LIME = '#b8ff3c';
   const segs = ['BALLKNW', 'GAFFER', 'BALLKNW', 'GAFFER'];
   const drawBoard = (x: number, y: number, bw: number, bh: number, vertical: boolean) => {
     for (let i = 0; i < 8; i++) {
-      ctx.fillStyle = i % 2 ? '#e8d31f' : '#3b1053';
+      ctx.fillStyle = i % 2 ? BOARD_LIME : BOARD_DARK;
       if (vertical) ctx.fillRect(x, y + (bh / 8) * i, bw, bh / 8);
       else ctx.fillRect(x + (bw / 8) * i, y, bw / 8, bh);
     }
@@ -167,17 +170,17 @@ function paintStadium(ctx: CanvasRenderingContext2D, w: number, h: number, px: n
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (let i = 0; i < 8; i++) {
-      if (i % 2 === 0) continue; // text on yellow reads poorly at this size
+      if (i % 2 === 0) continue; // text on the dark segments reads poorly at this size
       const label = segs[(i >> 1) % segs.length];
       if (vertical) {
         ctx.save();
         ctx.translate(x + bw / 2, y + (bh / 8) * (i + 0.5));
         ctx.rotate(-Math.PI / 2);
-        ctx.fillStyle = '#3b1053';
+        ctx.fillStyle = BOARD_DARK;
         ctx.fillText(label, 0, 0);
         ctx.restore();
       } else {
-        ctx.fillStyle = '#3b1053';
+        ctx.fillStyle = BOARD_DARK;
         ctx.fillText(label, x + (bw / 8) * (i + 0.5), y + bh / 2);
       }
     }

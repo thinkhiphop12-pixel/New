@@ -22,6 +22,7 @@ import HubScreen from './HubScreen';
 import MatchScreen from './match/MatchScreen';
 import SeasonEndScreen from './SeasonEndScreen';
 import SettingsPanel, { loadSettings } from './SettingsPanel';
+import MoreMenu from './MoreMenu';
 import CharacterCustomizerScreen from './CharacterCustomizerScreen';
 import { readableTextOn } from './visuals';
 import { ToastHost, pushToast } from './ToastQueue';
@@ -48,6 +49,7 @@ export default function FootballManagerGame() {
   const [saves, setSaves] = useState<(SaveMeta | null)[]>(Array(SAVE_SLOTS).fill(null));
   const [settings, setSettings] = useState<GameSettings | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const [selectedDivisions, setSelectedDivisions] = useState<string[]>(['premier_league', 'championship', 'league_one', 'league_two']);
   const [managerProfile, setManagerProfile] = useState<ManagerProfile | null>(null);
   const [selectedScenarioId, setSelectedScenarioId] = useState<ScenarioId | undefined>(undefined);
@@ -267,7 +269,15 @@ export default function FootballManagerGame() {
     }
   };
 
+  // Where the customizer returns to when it closes. It used to hard-code the
+  // main menu, which was correct while the main menu was the only way in;
+  // opening it from the More Menu mid-career would otherwise have dumped the
+  // manager out of a live save.
+  const [characterReturn, setCharacterReturn] = useState<View>('menu');
+
   const handleCharacterCustomizerOpen = () => {
+    if (view === 'match') return;
+    setCharacterReturn(gs ? 'hub' : 'menu');
     setView('character');
   };
 
@@ -279,11 +289,11 @@ export default function FootballManagerGame() {
     // If a career is in progress, keep the profile travelling with the save
     // slot rather than only the device-wide key.
     if (gs) apply({ ...gs, managerProfile: profile });
-    setView('menu');
+    setView(characterReturn);
   };
 
   const handleCharacterBack = () => {
-    setView('menu');
+    setView(characterReturn);
   };
 
   // Club theming (gap 82): --brand recolours sidebar/tab/button chrome only,
@@ -316,8 +326,8 @@ export default function FootballManagerGame() {
         </div>
         <span className="fm-header__title">Gaffa</span>
         <span className="fm-header__spacer" />
-        <button className="fm-header__settings" onClick={() => setShowSettings(true)}>
-          Settings
+        <button className="fm-header__settings" onClick={() => setShowMore(true)} aria-label="More">
+          <Icon name="more" size={14} /> More
         </button>
       </header>
       <main className="fm-main">
@@ -423,6 +433,21 @@ export default function FootballManagerGame() {
           </div>
         );
       })()}
+
+      {showMore && (
+        <MoreMenu
+          state={gs}
+          onSettings={() => { setShowMore(false); setShowSettings(true); }}
+          onCustomize={() => { setShowMore(false); handleCharacterCustomizerOpen(); }}
+          onAbandon={() => {
+            if (window.confirm('Abandon this career? Your save will be deleted.')) {
+              setShowMore(false);
+              handleAbandon();
+            }
+          }}
+          onClose={() => setShowMore(false)}
+        />
+      )}
 
       {showSettings && settings && (
         <SettingsPanel

@@ -19,8 +19,8 @@ import type { IconName } from './Icon';
 export type ScreenId =
   | 'overview' | 'fixtures' | 'table' | 'cups' | 'european'
   | 'squad' | 'tactics' | 'training'
-  | 'transfers' | 'scout'
-  | 'inbox' | 'club' | 'facilities' | 'finances';
+  | 'transfers'
+  | 'inbox' | 'club' | 'facilities' | 'finances' | 'board';
 
 export type GroupId = 'matchday' | 'team' | 'market' | 'club';
 
@@ -62,7 +62,6 @@ export const GROUPS: GroupDef[] = [
     icon: 'transfers',
     screens: [
       { id: 'transfers', label: 'Transfers', icon: 'transfers' },
-      { id: 'scout', label: 'Scout', icon: 'scout' },
     ],
   },
   {
@@ -74,6 +73,7 @@ export const GROUPS: GroupDef[] = [
       { id: 'club', label: 'Club', icon: 'club' },
       { id: 'facilities', label: 'Facilities', icon: 'facilities' },
       { id: 'finances', label: 'Finances', icon: 'finances' },
+      { id: 'board', label: 'Board', icon: 'club' },
     ],
   },
 ];
