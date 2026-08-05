@@ -202,7 +202,7 @@ export function makeBoardObjective(state: GameState): Board {
 
 /** Domestic cup for one season: all clubs, byes to square the bracket. */
 export function makeDomesticCup(state: Pick<GameState, 'clubs'>): Knockout {
-  // The BALLKNW Cup is the English knockout — the top three English tiers (up
+  // The Gaffa Cup is the English knockout — the top three English tiers (up
   // to 63 entrants) keep the bracket within the six scheduled CUP_WEEKS. The
   // lower tiers and every foreign league focus on their league campaign.
   const ids = state.clubs
@@ -216,7 +216,7 @@ export function makeDomesticCup(state: Pick<GameState, 'clubs'>): Knockout {
   while (bracket * 2 <= ids.length) bracket *= 2;
   const byes = ids.length === bracket ? 0 : 2 * bracket - ids.length;
   const totalRounds = Math.log2(bracket) + (byes > 0 ? 1 : 0);
-  return createKnockout('BALLKNW Cup', CUP_WEEKS.slice(-totalRounds), ids, byes);
+  return createKnockout('Gaffa Cup', CUP_WEEKS.slice(-totalRounds), ids, byes);
 }
 
 /** Continental cup for one season from the given participant clubs. */
@@ -969,7 +969,7 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   s.board.confidence = clamp(s.board.confidence + (pos <= s.board.minPosition ? 1 : -1), 1, 99);
 
   // Cup competitions this week.
-  if (knockoutRoundDue(s.cup, round)) runKnockout(s, s.cup, CUP_PRIZES, 'BALLKNW Cup');
+  if (knockoutRoundDue(s.cup, round)) runKnockout(s, s.cup, CUP_PRIZES, 'Gaffa Cup');
   if (continentalRoundDue(s.continental, round)) runContinental(s, s.continental, CONTINENTAL_PRIZES);
 
   // AI clubs work the market too.

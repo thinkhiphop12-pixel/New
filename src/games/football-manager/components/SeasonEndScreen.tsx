@@ -86,7 +86,7 @@ export default function SeasonEndScreen({
               </span>
             )}
           </li>
-          {summary.cupRun && <li>BALLKNW Cup: {summary.cupRun}</li>}
+          {summary.cupRun && <li>Gaffa Cup: {summary.cupRun}</li>}
           {summary.continentalRun && <li>Continental Champions Cup: {summary.continentalRun}</li>}
         </ul>
       </div>

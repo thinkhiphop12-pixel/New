@@ -42,7 +42,7 @@ export default function MainMenuScreen({
         }}
       />
       <div className="fm-screen fm-start" style={{ position: 'relative', zIndex: 1 }}>
-      <p className="fm-label">A BALLKNW GAME</p>
+      <p className="fm-label">A GAFFA GAME</p>
       <h1 className="fm-start__title">
         <img
           src={`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/gaffa-logo.png`}
@@ -126,7 +126,7 @@ export default function MainMenuScreen({
           <span className="fm-howto__num">4</span>
           <div>
             <h3>Chase the silverware</h3>
-            <p>League titles, the BALLKNW Cup and the Continental Champions Cup. Build your legacy.</p>
+            <p>League titles, the Gaffa Cup and the Continental Champions Cup. Build your legacy.</p>
           </div>
         </li>
       </ol>

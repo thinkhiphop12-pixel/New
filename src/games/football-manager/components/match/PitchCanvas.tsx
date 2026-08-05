@@ -155,7 +155,7 @@ function paintStadium(ctx: CanvasRenderingContext2D, w: number, h: number, px: n
   stand(w - (w - px - pw) + board, 0, w - px - pw - board, h, false);
 
   // Ad boards hugging the pitch.
-  const segs = ['BALLKNW', 'GAFFER', 'BALLKNW', 'GAFFER'];
+  const segs = ['GAFFA', 'GAFFER', 'GAFFA', 'GAFFER'];
   const drawBoard = (x: number, y: number, bw: number, bh: number, vertical: boolean) => {
     for (let i = 0; i < 8; i++) {
       ctx.fillStyle = i % 2 ? '#e8d31f' : '#3b1053';
