@@ -230,3 +230,17 @@ committed alongside that phase's code changes.
   changes — they never keyed off `'scout'` to begin with (only `transfers`/`inbox`/`tactics`
   carry badges). The `scout` `IconName` variant in `Icon.tsx` was left in place — it's still used
   by `FacilitiesScreen.tsx`'s staff-role icons, an unrelated Phase 4 screen.
+
+### Phase 3 — Code-quality & a11y fixes (PR #80)
+
+After Phase 3 implementation, CodeRabbit and SonarCloud flagged code-quality issues. All fixed:
+- **GroupHub button/flow-content violations (lines 163, 192)**: Changed outer element from `<button>` to `<div>` with onClick moved to nested header button only. Prevents invalid HTML nesting (button cannot wrap table/ul) and hydration mismatches.
+- **TransfersScreen non-interactive div violations**: Converted 3 instances of `<div onClick>` to `<button type="button">` (shortlist row, outgoing negotiation row, received row header). Preserves nested interactive elements and transparent styling for seamless integration.
+- **SquadScreen undefined role interpolation (line 104)**: Added guard `p.tacticalRole && getRole(p.tacticalRole)?.name ?` to prevent "· undefined" rendering when tactical role is not found.
+- **CupScreen & EuropeanScreen penalty markers (lines 72-74, 154-156, 151-153)**: Fixed conditional logic so 'p' marker appears only on the side matching `t.pensWinnerId` (or latest leg's `pensWinnerId` for two-leg ties). Was always appending to away side regardless of winner.
+- **TransfersScreen scouting-status dot (line 322)**: Changed data source from `scoutRecommendations(state)` (AI recommendations) to `sc.assignments` (actual scout assignments). Dot now shows based on whether scouts have been assigned to find the player, with full color for completed assignments and dim for pending.
+- **TransfersScreen fm-ledger class rename (lines 642-650)**: All `.fm-ledger*` selectors renamed to `.fm-ledger-card*` to resolve duplicate selector conflict. Old `.fm-ledger` class (line 1128 in globals.css) stays for Finances list-style; new `.fm-ledger-card` for Negotiation/Transfers card-style.
+- **globals.css Stylelint violation (line 2077)**: Added blank line between custom-property declarations (--ring-pct, --ring-color) and normal declarations (position, display) to satisfy `declaration-empty-line-before` rule.
+- **TransfersScreen & TacticsScreen ARIA tabpanel roles**: Wrapped all 5 Transfer tab panels (hub, search, shortlist, sent, received) and all 6 Tactics sub-tab panels (formation, shape, defence, attack, setpieces, roles) with `role="tabpanel"` divs. Improves accessibility for tab navigation in screen readers.
+- **TransfersScreen JSX structure (sent tab)**: Fixed duplicate closing div that was breaking fm-split nesting. Build now compiles successfully.
+- All fixes verified: **Build compiles successfully** ✅
