@@ -120,6 +120,42 @@ export default function StadiumBuilder({
           )}
         </div>
       )}
+
+      <div style={{ marginTop: 14 }}>
+        <p className="fm-label" style={{ marginTop: 0 }}>Stand Breakdown</p>
+        <div className="fm-stand-grid">
+          {STAND_IDS.map((id) => {
+            const stand = fs.stands[id];
+            const building = inFlight.has(id);
+            return (
+              <div
+                key={id}
+                className="fm-stand-card"
+                style={{
+                  border: selected === id ? '2px solid var(--gold)' : '1px solid var(--border-soft)',
+                  opacity: building ? 0.55 : 1,
+                }}
+                onClick={() => onSelect(selected === id ? null : id)}
+              >
+                <span className="fm-stand-card__name">{id.toUpperCase()}</span>
+                <span className="fm-stand-card__value">{stand.capacity.toLocaleString()}</span>
+                <span className="fm-hint">{TIER_LABEL[stand.tier]}</span>
+                {stand.tier < 3 && !building && (
+                  <button
+                    className="fm-btn fm-btn--ghost fm-btn--small"
+                    style={{ marginTop: 6, width: '100%' }}
+                    disabled={standUpgradeCost(id, stand.tier) > state.budget}
+                    onClick={(e) => { e.stopPropagation(); onStartProject(id); }}
+                  >
+                    Tier {stand.tier + 1} — {formatMoney(standUpgradeCost(id, stand.tier))}
+                  </button>
+                )}
+                {building && <span className="fm-hint">Project underway</span>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

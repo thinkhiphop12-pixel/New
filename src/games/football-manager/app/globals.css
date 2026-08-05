@@ -2194,3 +2194,85 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-received-row__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; cursor: pointer; }
 .fm-received-row__actions { display: flex; gap: 8px; margin-top: 10px; }
 .fm-received-row__actions .fm-btn { flex: 1; }
+
+/* =====================================================================
+   Gaffa restyle — Phase 4 shared component classes
+   Club screens (Overview / Finances / Facilities / Stadium / Objectives).
+   ===================================================================== */
+
+/* ── Club overview hero: three rings + form strip ── */
+.fm-hero-rings { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.fm-hero-rings__pos { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.fm-hero-rings__pos-num { font-size: 15px; font-weight: 900; color: var(--gold); }
+.fm-hero-rings__pos-sub { font-size: 10px; color: var(--muted-dim); }
+
+/* ── Recent-form strip: W/D/L dots ── */
+.fm-form-strip { display: inline-flex; gap: 4px; }
+.fm-form-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 20px; border-radius: 5px;
+  font-size: 9px; font-weight: 800; text-transform: uppercase;
+  border: 1px solid var(--border-soft);
+}
+.fm-form-chip--w { background: var(--green-dim); color: var(--green); }
+.fm-form-chip--d { background: var(--gold-dim); color: var(--gold-2); }
+.fm-form-chip--l { background: rgba(255,107,107,0.14); color: var(--red); }
+
+/* ── Quick-stat tile: icon + value + label ── */
+.fm-qstat { display: flex; align-items: center; gap: 8px; }
+.fm-qstat__icon { flex-shrink: 0; color: var(--green); }
+.fm-qstat__val { font-size: 17px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+.fm-qstat__lbl { font-size: 10px; font-weight: 700; color: var(--muted-dim); text-transform: uppercase; }
+
+/* ── Income/Expenditure category bar ── */
+.fm-cat-bar { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
+.fm-cat-bar__label { font-size: 11.5px; color: var(--muted); font-weight: 600; min-width: 90px; text-transform: capitalize; }
+.fm-cat-bar__track { flex: 1; height: 18px; border-radius: var(--r-full); background: var(--panel-2); overflow: hidden; }
+.fm-cat-bar__fill { height: 100%; border-radius: var(--r-full); }
+.fm-cat-bar__value { font-size: 11.5px; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 70px; text-align: right; }
+
+/* ── Staff roster list ── */
+.fm-staff-list { display: flex; flex-direction: column; gap: 6px; }
+.fm-staff-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 0; border-bottom: 1px solid var(--border-soft);
+}
+.fm-staff-row:last-child { border-bottom: none; }
+.fm-staff-row__name { font-weight: 700; font-size: 13px; }
+.fm-staff-row__role { font-size: 10.5px; color: var(--muted); font-weight: 800; text-transform: uppercase; }
+.fm-staff-row__quality { font-size: 11px; color: var(--muted-dim); }
+.fm-staff-row__badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 800; }
+.fm-staff-row__rating {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%;
+  font-size: 10px; font-weight: 900; font-variant-numeric: tabular-nums;
+}
+
+/* ── Per-stand card grid ── */
+.fm-stand-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 560px) { .fm-stand-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 880px) { .fm-stand-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1200px) { .fm-stand-grid { grid-template-columns: repeat(4, 1fr); } }
+.fm-stand-card {
+  display: flex; flex-direction: column; gap: 6px;
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-radius: var(--r-lg); padding: 12px;
+}
+.fm-stand-card__name { font-size: 11px; font-weight: 800; color: var(--muted-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.fm-stand-card__value { font-size: 18px; font-weight: 900; color: var(--text); }
+.fm-stand-card__sub { font-size: 11px; color: var(--muted); }
+
+/* ── Attendance bar ── */
+.fm-attendance__track { height: 8px; border-radius: var(--r-full); background: var(--panel-2); overflow: hidden; }
+.fm-attendance__fill { height: 100%; border-radius: var(--r-full); background: var(--green); }
+
+/* ── Objectives grouped list ── */
+.fm-obj-group { margin-bottom: 18px; }
+.fm-obj-group:last-child { margin-bottom: 0; }
+.fm-obj-group__title { font-size: 11px; font-weight: 800; color: var(--muted-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.fm-obj-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.fm-obj-item__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+.fm-obj-item__dot--met { background: var(--green); }
+.fm-obj-item__dot--open { background: var(--muted); }
+.fm-obj-item__text { font-size: 12px; color: var(--text); line-height: 1.4; }
+.fm-obj-item__status { font-size: 10px; font-weight: 800; color: var(--muted-dim); text-transform: uppercase; }

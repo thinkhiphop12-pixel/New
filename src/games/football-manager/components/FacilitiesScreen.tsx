@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { GameState, StandId } from '@/engine/types';
+import type { GameState, Coach, StandId } from '@/engine/types';
 import {
-  getStadiumLevel, getStaff, upgradeAcademy, upgradeStadium, upgradeStaff,
+  gateIncome, getStadiumLevel, getStaff, upgradeAcademy, upgradeStadium, upgradeStaff,
 } from '@/engine/seasonProgression';
 import {
   ACADEMY_UPGRADE_COST, STADIUM_UPGRADE_COST, STAFF_MAX_LEVEL, STAFF_UPGRADE_COST,
@@ -13,7 +13,9 @@ import {
   fireCoach, hireCoach, newFacilities, startFacilityProject, startStandProject, tickFacilitiesWeek,
 } from '@/engine/facilities';
 import { formatMoney } from '@/engine/utils';
+import { Icon } from './Icon';
 import StadiumBuilder from './StadiumBuilder';
+import StaffProfileModal from './StaffProfileModal';
 
 export default function FacilitiesScreen({
   state,
@@ -22,13 +24,11 @@ export default function FacilitiesScreen({
   state: GameState;
   onChange: (next: GameState) => void;
 }) {
+  const [tab, setTab] = useState<'stadium' | 'staff'>('stadium');
   const [selectedStand, setSelectedStand] = useState<StandId | null>(null);
+  const [profileCoachId, setProfileCoachId] = useState<number | null>(null);
   const fs = state.facilities ?? newFacilities(state);
 
-  // Catch up any weeks that passed since this screen was last open — projects
-  // and scout assignments only progress while this weekly tick runs (see
-  // tickFacilitiesWeek's doc comment: this module doesn't own
-  // seasonProgression.ts's own weekly loop, so screens drive the catch-up).
   const lastTickWeekKey = `${state.seasonYear}-${state.week}`;
   useEffect(() => {
     if (!state.facilities) {
@@ -40,18 +40,86 @@ export default function FacilitiesScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastTickWeekKey]);
 
-  const stadiumLevel = getStadiumLevel(state);
-  const stadiumCost = STADIUM_UPGRADE_COST[stadiumLevel + 1];
-  const academyCost = ACADEMY_UPGRADE_COST[state.academyLevel + 1];
-  const staff = getStaff(state);
-
-  const staffLabels: Record<'coach' | 'physio' | 'scout', string> = {
-    coach: 'Backroom coaching (legacy)',
-    physio: 'Backroom medical (legacy)',
-    scout: 'Backroom scouting (legacy)',
-  };
-
   const activeProjects = fs.projects.filter((p) => !p.complete);
+  const userClub = state.clubs.find((c) => c.id === state.userClubId)!;
+
+  return (
+    <>
+      <div className="fm-subnav__tabs" role="tablist" aria-label="Facilities sections">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'stadium'}
+          className={`fm-subtab${tab === 'stadium' ? ' active' : ''}`}
+          onClick={() => setTab('stadium')}
+        >
+          <Icon name="stadium" size={14} className="fm-subtab__icon" />
+          <span className="fm-subtab__label">Stadium &amp; Facilities</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'staff'}
+          className={`fm-subtab${tab === 'staff' ? ' active' : ''}`}
+          onClick={() => setTab('staff')}
+        >
+          <Icon name="staff" size={14} className="fm-subtab__icon" />
+          <span className="fm-subtab__label">Staff</span>
+          {getStaff(state) && <span className="fm-subtab__badge" />}
+        </button>
+      </div>
+
+      {tab === 'stadium' && (
+        <StadiumTab
+          state={state}
+          onChange={onChange}
+          fs={fs}
+          activeProjects={activeProjects}
+          selectedStand={selectedStand}
+          onSelectStand={setSelectedStand}
+          userClub={userClub}
+        />
+      )}
+
+      {tab === 'staff' && (
+        <StaffTab
+          state={state}
+          onChange={onChange}
+          fs={fs}
+          staff={getStaff(state)}
+          onSelectCoach={(id) => setProfileCoachId(id)}
+        />
+      )}
+    {profileCoachId !== null && fs.coaches.find((c) => c.id === profileCoachId) && (
+      <StaffProfileModal
+        state={state}
+        coach={fs.coaches.find((c) => c.id === profileCoachId)!}
+        onClose={() => setProfileCoachId(null)}
+        onChange={(next) => { onChange(next); setProfileCoachId(null); }}
+      />
+    )}
+    </>
+  );
+}
+
+function StadiumTab({
+  state,
+  onChange,
+  fs,
+  activeProjects,
+  selectedStand,
+  onSelectStand,
+  userClub,
+}: {
+  state: GameState;
+  onChange: (next: GameState) => void;
+  fs: NonNullable<GameState['facilities']>;
+  activeProjects: NonNullable<GameState['facilities']>['projects'];
+  selectedStand: StandId | null;
+  onSelectStand: (id: StandId | null) => void;
+  userClub: NonNullable<GameState['clubs']>[number];
+}) {
+  const gate = gateIncome(state);
 
   return (
     <>
@@ -85,7 +153,7 @@ export default function FacilitiesScreen({
       <StadiumBuilder
         state={state}
         selected={selectedStand}
-        onSelect={setSelectedStand}
+        onSelect={onSelectStand}
         onStartProject={(standId) => onChange(startStandProject({ ...state, facilities: fs }, standId))}
       />
 
@@ -105,7 +173,7 @@ export default function FacilitiesScreen({
             }
             onClick={() => onChange(startFacilityProject({ ...state, facilities: fs }, 'training'))}
           >
-            Start project → level {fs.trainingLevel + 1} — {formatMoney(TRAINING_UPGRADE_COST[fs.trainingLevel + 1])}
+            Start project level {fs.trainingLevel + 1} — {formatMoney(TRAINING_UPGRADE_COST[fs.trainingLevel + 1])}
           </button>
         )}
       </div>
@@ -126,7 +194,7 @@ export default function FacilitiesScreen({
             }
             onClick={() => onChange(startFacilityProject({ ...state, facilities: fs }, 'medical'))}
           >
-            Start project → level {fs.medicalLevel + 1} — {formatMoney(MEDICAL_UPGRADE_COST[fs.medicalLevel + 1])}
+            Start project level {fs.medicalLevel + 1} — {formatMoney(MEDICAL_UPGRADE_COST[fs.medicalLevel + 1])}
           </button>
         )}
       </div>
@@ -156,48 +224,92 @@ export default function FacilitiesScreen({
           {state.academyLevel < 3 && (
             <button
               className="fm-btn fm-btn--ghost fm-btn--small"
-              disabled={!academyCost || academyCost > state.budget}
+              disabled={state.budget < (ACADEMY_UPGRADE_COST[state.academyLevel + 1] ?? 0)}
               onClick={() => onChange(upgradeAcademy(state))}
             >
-              Legacy intake upgrade → level {state.academyLevel + 1} — {academyCost ? formatMoney(academyCost) : '—'}
+              Legacy intake upgrade → level {state.academyLevel + 1} — {ACADEMY_UPGRADE_COST[state.academyLevel + 1] ? formatMoney(ACADEMY_UPGRADE_COST[state.academyLevel + 1]) : '—'}
             </button>
           )}
         </div>
       </div>
+    </>
+  );
+}
 
+function StaffTab({
+  state,
+  onChange,
+  fs,
+  staff,
+  onSelectCoach,
+}: {
+  state: GameState;
+  onChange: (next: GameState) => void;
+  fs: NonNullable<GameState['facilities']>;
+  staff: NonNullable<GameState['staff']>;
+  onSelectCoach: (id: number) => void;
+}) {
+  const staffLabels: Record<'coach' | 'physio' | 'scout', string> = {
+    coach: 'Backroom coaching (legacy)',
+    physio: 'Backroom medical (legacy)',
+    scout: 'Backroom scouting (legacy)',
+  };
+
+  return (
+    <>
       <div className="fm-panel">
         <p className="fm-label" style={{ marginTop: 0 }}>Named Coaches</p>
-        <p className="fm-club-line">
-          A head coach's quality feeds the tactical drilling multiplier and player development speed.
-        </p>
+        {fs.coaches.length === 0 ? (
+          <p className="fm-hint">No named coaches hired yet. Hire below to override the legacy backroom levels.</p>
+        ) : (
+          <div className="fm-staff-list">
+            {fs.coaches.map((coach) => (
+              <StaffRow
+                key={coach.id}
+                coach={coach}
+                onClick={() => onSelectCoach(coach.id)}
+              />
+            ))}
+          </div>
+        )}
         {(['head', 'fitness', 'goalkeeping'] as const).map((role) => {
           const coach = fs.coaches.find((c) => c.role === role);
+          const roleLabel = role === 'head' ? 'Head Coach' : role === 'fitness' ? 'Fitness Coach' : 'Goalkeeping Coach';
           return (
             <div key={role} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid var(--border-soft)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="fm-label" style={{ margin: 0, textTransform: 'capitalize' }}>{role} coach</span>
+                <span className="fm-label" style={{ margin: 0, textTransform: 'capitalize' }}>{roleLabel}</span>
                 {coach ? (
-                  <span className="fm-hint">{coach.name} · quality {coach.quality} · {formatMoney(coach.wage)}/wk</span>
+                  <>
+                    <span
+                      className="fm-hint"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => onSelectCoach(coach.id)}
+                      title="View profile"
+                    >
+                      {coach.name} · quality {coach.quality} · {formatMoney(coach.wage)}/wk
+                    </span>
+                    <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => onChange(fireCoach({ ...state, facilities: fs }, coach.id))}>
+                      Release
+                    </button>
+                  </>
                 ) : (
                   <span className="fm-hint">Vacant</span>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                {[45, 65, 85].map((q) => (
-                  <button
-                    key={q}
-                    className="fm-btn fm-btn--ghost fm-btn--small"
-                    onClick={() => onChange(hireCoach({ ...state, facilities: fs }, role, q))}
-                  >
-                    Hire (qual {q})
-                  </button>
-                ))}
-                {coach && (
-                  <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => onChange(fireCoach({ ...state, facilities: fs }, coach.id))}>
-                    Release
-                  </button>
-                )}
-              </div>
+              {!coach && (
+                <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                  {[45, 65, 85].map((q) => (
+                    <button
+                      key={q}
+                      className="fm-btn fm-btn--ghost fm-btn--small"
+                      onClick={() => onChange(hireCoach({ ...state, facilities: fs }, role, q))}
+                    >
+                      Hire (qual {q})
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
@@ -226,22 +338,54 @@ export default function FacilitiesScreen({
                   disabled={(cost ?? 0) > state.budget}
                   onClick={() => onChange(upgradeStaff(state, role))}
                 >
-                  Upgrade → level {level + 1} — {cost ? formatMoney(cost) : '—'}
+                  Upgrade level {level + 1} — {cost ? formatMoney(cost) : '—'}
                 </button>
               )}
             </div>
           );
         })}
-        {stadiumLevel < 3 && (
-          <button
-            className="fm-btn fm-btn--ghost fm-btn--small"
-            disabled={!stadiumCost || stadiumCost > state.budget}
-            onClick={() => onChange(upgradeStadium(state))}
-          >
-            Legacy instant stadium upgrade → level {stadiumLevel + 1} — {stadiumCost ? formatMoney(stadiumCost) : '—'}
-          </button>
-        )}
+        {getStadiumLevel(state) < 3 && (
+        <button
+          className="fm-btn fm-btn--ghost fm-btn--small"
+          disabled={!STADIUM_UPGRADE_COST[getStadiumLevel(state) + 1] || STADIUM_UPGRADE_COST[getStadiumLevel(state) + 1] > state.budget}
+          onClick={() => onChange(upgradeStadium(state))}
+        >
+          Legacy instant stadium upgrade to level {getStadiumLevel(state) + 1} — {STADIUM_UPGRADE_COST[getStadiumLevel(state) + 1] ? formatMoney(STADIUM_UPGRADE_COST[getStadiumLevel(state) + 1]) : '—'}
+        </button>
+      )}
       </div>
     </>
+  );
+}
+
+function StaffRow({ coach, onClick }: { coach: Coach; onClick: () => void }) {
+  const qualityPct = Math.round((coach.quality / 99) * 100);
+  return (
+    <div className="fm-staff-row">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span
+          className="fm-staff-row__rating"
+          style={{
+            background: `conic-gradient(var(--green) ${qualityPct}%, var(--panel-2) 0)`,
+            color: 'var(--text)',
+          }}
+        >
+          {coach.quality}
+        </span>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span className="fm-staff-row__name">{coach.name}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="fm-staff-row__role">{coach.role.replace(/_/g, ' ')}</span>
+            <span className="fm-staff-row__quality">quality {coach.quality}/99</span>
+            <span className="fm-staff-row__badge">
+              <Icon name="finances" size={10} /> {formatMoney(coach.wage)}/wk
+            </span>
+          </div>
+        </div>
+      </div>
+      <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={onClick}>
+        Profile
+      </button>
+    </div>
   );
 }

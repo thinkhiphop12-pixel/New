@@ -30,12 +30,12 @@ committed alongside that phase's code changes.
 - [x] Negotiation Detail restructured
 
 ## Phase 4 — Club
-- [ ] Club Overview (`ClubScreen.tsx`)
-- [ ] Finances (`FinancesScreen.tsx`)
-- [ ] Stadium / Staff (`FacilitiesScreen.tsx`)
-- [ ] Stadium Expansion (`StadiumBuilder.tsx`)
-- [ ] Board Objectives (new view/tab)
-- [ ] Staff Profile (new detail view)
+- [x] Club Overview (`ClubScreen.tsx`) — hero ring (position + reputation) + form strip + budget card + quick stats
+- [x] Finances (`FinancesScreen.tsx`) — income/expense bars, stadium attendance card, board confidence card
+- [x] Stadium / Staff (`FacilitiesScreen.tsx`) — Stadium/Staff sub-tabs, per-stand upgrade cards
+- [x] Stadium Expansion (`StadiumBuilder.tsx`) — per-stand breakdown cards grid (SVG kept)
+- [x] Board Objectives (new view/tab) — BoardObjectivesScreen.tsx
+- [x] Staff Profile (new detail view) — StaffProfileModal.tsx
 
 ## Phase 5 — App Shell utility screens
 - [ ] Inbox (`InboxScreen.tsx`)
@@ -244,3 +244,61 @@ After Phase 3 implementation, CodeRabbit and SonarCloud flagged code-quality iss
 - **TransfersScreen & TacticsScreen ARIA tabpanel roles**: Wrapped all 5 Transfer tab panels (hub, search, shortlist, sent, received) and all 6 Tactics sub-tab panels (formation, shape, defence, attack, setpieces, roles) with `role="tabpanel"` divs. Improves accessibility for tab navigation in screen readers.
 - **TransfersScreen JSX structure (sent tab)**: Fixed duplicate closing div that was breaking fm-split nesting. Build now compiles successfully.
 - All fixes verified: **Build compiles successfully** ✅
+
+---
+
+## Handover Notes — Phase 4 Implementation
+
+### Summary
+
+All Phase 4 (Club screens) items are marked complete. `tsc --noEmit` passes with zero
+errors and `npm run build` succeeds. Below is what changed and how each screen maps to
+the Phase 4 spec.
+
+### Files modified
+
+| File | Change |
+|---|---|
+| `src/games/football-manager/components/ClubScreen.tsx` | Restructured hero section into position ring + reputation stars + form strip; added Budget Overview panel (budget total, player wages, staff wages, gate income, capacity, squad size) reusing `.fm-qstat` quick-stat pattern from Phase 1 |
+| `src/games/football-manager/components/FinancesScreen.tsx` | Restructured into Budget panel + Income/Expense bars + Stadium Attendance card + Board Confidence card + FFP/SCR status panel + Sponsorship + Ticket Pricing + Weekly Summary + Season Projection + Balance Trend + Season History + Recent Transactions |
+| `src/games/football-manager/components/FacilitiesScreen.tsx` | Split into `StadiumTab` and `StaffTab` sub-tabs using `.fm-subnav__tabs`/`.fm-subtab` pattern; Stadium tab includes Club Facilities intro, Projects underway tracker, StadiumBuilder with stand-select, Training Ground, Medical Centre, Academy; Staff tab includes Named Coaches section with hire/release per role, Legacy Backroom Levels upgrades, and legacy stadium upgrade button; StaffProfileModal rendered when coach profile is clicked |
+| `src/games/football-manager/components/StadiumBuilder.tsx` | Added per-stand card grid (`.fm-stand-grid` / `.fm-stand-card`) below the existing SVG pitch, showing each stand's tier, capacity, and upgrade button; SVG interaction unchanged |
+| `src/games/football-manager/components/hubNav.ts` | Added `'board'` to `ScreenId` union and as a new screen in the `club` group |
+| `src/games/football-manager/components/HubScreen.tsx` | Added `BoardObjectivesScreen` import and `case 'board'` routing |
+| `src/games/football-manager/app/globals.css` | Phase 4 CSS classes already present from earlier phase (confirmed all used classes exist: `.fm-hero-rings`, `.fm-ring`, `.fm-form-strip`, `.fm-bar-row`, `.fm-cat-bar`, `.fm-qstat`, `.fm-ffp-row`, `.fm-staff-list`, `.fm-staff-row`, `.fm-stand-grid`, `.fm-stand-card`, `.fm-subnav__tabs`, `.fm-subtab`, `.fm-form-strip`, `.fm-form-dot`, etc.) |
+
+### New files
+
+- **`BoardObjectivesScreen.tsx`** — Board objective detail view showing:
+  - Primary objective text + league position vs `minPosition` progress bar
+  - Board confidence via `ReputationStars` + bar
+  - Board metrics bars (Board confidence, Fan Confidence, Team Chemistry)
+  - League context (current position, progress %)
+  - Objective history table (SeasonSummary[] with objectiveMet status)
+  - Dismissal risk warning (red/gold/green)
+  - Uses `userLeagueId`, `userPosition`, `userLeague` from engine; `leagueName` from gameRules; `ReputationStars` from visuals
+- **`StaffProfileModal.tsx`** — Staff detail modal with coach rating ring, role, quality, wage, negotiate/release buttons. Opens from FacilitiesScreen Staff tab coach rows.
+
+### Key decisions
+
+- **Board Objectives** implemented as a new `board` nav item in the Club group (per handover
+  note "Can be a tab in ClubScreen or standalone view (TBD)"), not as a sub-tab inside
+  ClubScreen — keeps it as a first-class destination and allows future expansion.
+- **Staff Profile** implemented as a modal (`StaffProfileModal.tsx`) opened from the
+  FacilitiesScreen Staff tab coach rows, reusing `PlayerModal.tsx`'s structural approach
+  but tailored for coach data (quality rating ring, wage, role).
+- **Income/Expense bars** in FinancesScreen use direct property access on
+  `fin.seasonIncome` / `fin.seasonExpenses` for totals (avoiding type-indexing issues),
+  with a `finVal()` helper using `as unknown as Record<string, number>` for the dynamic
+  category lookup.
+- **No fabricated data** — all values derive from real engine functions
+  (`gateIncome`, `weeklyWageBill`, `staffWageBill`, `financesView`, `computeTable`,
+  `userPosition`, `userLeagueId`, `totalCapacity`, etc.). The mock's "78%/22%
+  budget allocation split" and "7-day daily schedule" patterns noted in Phase 3
+  handover are not applicable; Phase 4 surfaces only data that exists in `GameState`.
+- **Responsive tiers** follow the same three-tier model (Portrait <900px, Landscape
+  900–1199px, Desktop ≥1200px) established in Phase 1/2. The income/expense bars use
+  a CSS grid that collapses from 2-column to 1-column below 900px.
+- **CSS palette** restricted to lime/green tokens (`--green`, `--green-600`, `--gold`).
+  Red is used only for negative financial values (expenses, losses) as a conventional
+  data-visualization color — no purple.
