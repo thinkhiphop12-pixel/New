@@ -1653,6 +1653,18 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-matchx-modal__close { background: transparent; border: none; color: var(--muted); font-size: 16px; cursor: pointer; }
 .fm-matchx__ft-score { font-weight: 900; font-size: 16px; }
 
+/* Generic modal backdrop/dialog pair (e.g. StaffProfileModal) */
+.fm-modal-backdrop {
+  position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); padding: 16px;
+}
+.fm-modal {
+  width: 100%; max-width: var(--w-narrow); max-height: 92dvh; overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+}
+.fm-modal__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+
 .fm-mentality-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
 .fm-mentality-card {
   flex: 1; min-width: 84px; background: var(--panel-2); border: 1px solid var(--border);

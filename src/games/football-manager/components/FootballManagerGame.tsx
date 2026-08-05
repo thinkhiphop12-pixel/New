@@ -268,6 +268,7 @@ export default function FootballManagerGame() {
   };
 
   const handleCharacterCustomizerOpen = () => {
+    if (view === 'match') return;
     setView('character');
   };
 

@@ -39,7 +39,7 @@ export default function BoardObjectivesScreen({ state }: { state: GameState }) {
             <div
               className="fm-bar__fill"
               style={{
-                width: ranked ? `${Math.max(2, Math.min(100, (1 - pos / league.clubCount) * 100))}%` : '2%',
+                width: ranked ? `${Math.max(2, Math.min(100, ((league.clubCount - pos + 1) / league.clubCount) * 100))}%` : '2%',
                 background: onTrack ? 'var(--green)' : 'var(--red)',
               }}
             />
