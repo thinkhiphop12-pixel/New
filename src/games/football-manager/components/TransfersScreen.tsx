@@ -125,6 +125,10 @@ export default function TransfersScreen({
 
   const toggleScout = (playerId: number) => onChange(toggleShortlist(state, playerId));
 
+  // The window gates every paid deal, so the screens where deals are started
+  // have to say so up front — otherwise the buttons just fail on click.
+  const win = transferWindow(state.week);
+
   const clubName = (id: number) => (id === 0 ? 'Free agent' : state.clubs.find((c) => c.id === id)?.name ?? '—');
   const opponentClubs = state.clubs.filter((c) => c.id !== state.userClubId && !c.dormant).slice(0, 30);
   const activeAssignments = sc.assignments.filter((a) => !a.complete);
@@ -171,6 +175,7 @@ export default function TransfersScreen({
 
       {tab === 'search' && (
         <div role="tabpanel">
+          <WindowNotice win={win} />
           <div className="fm-filtercards">
             <FilterCard label="Position" icon="squad">
               <select className="fm-search" value={posFilter} onChange={(e) => setPosFilter(e.target.value as Position | 'ALL')}>
@@ -237,10 +242,17 @@ export default function TransfersScreen({
                   )}
                   <button
                     className="fm-btn fm-btn--small fm-btn--primary"
-                    disabled={banned || alreadyTalking}
+                    disabled={banned || alreadyTalking || (!win.open && p.clubId !== 0)}
+                    title={!win.open && p.clubId !== 0 ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}` : undefined}
                     onClick={(e) => { e.stopPropagation(); openTalks(p); }}
                   >
-                    {banned ? 'Won’t talk' : alreadyTalking ? 'Talking' : `Guide ${formatMoney(p.askingGuide)}`}
+                    {banned
+                      ? 'Won’t talk'
+                      : alreadyTalking
+                        ? 'Talking'
+                        : !win.open && p.clubId !== 0
+                          ? 'Window shut'
+                          : `Guide ${formatMoney(p.askingGuide)}`}
                   </button>
                   <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
                     {p.rating}
@@ -316,6 +328,7 @@ export default function TransfersScreen({
 
       {tab === 'shortlist' && (
         <div role="tabpanel">
+          <WindowNotice win={win} />
           <div className="fm-player-list">
           <p className="fm-hint">Full shortlist, with a scouting-status dot per player — full colour once your scouts have a complete read on him, dim while a report is still pending.</p>
           {shortlisted.length === 0 && <p className="fm-hint">Nobody shortlisted yet. Tap “Shortlist” on a player from Search.</p>}
@@ -344,10 +357,11 @@ export default function TransfersScreen({
                   </button>
                   <button
                     className="fm-btn fm-btn--small fm-btn--primary"
-                    disabled={askingPrice(p) > state.budget}
+                    disabled={askingPrice(p) > state.budget || (!win.open && p.clubId !== 0)}
+                    title={!win.open && p.clubId !== 0 ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}` : undefined}
                     onClick={(e) => { e.stopPropagation(); doSign(p.id); }}
                   >
-                    Sign {formatMoney(askingPrice(p))}
+                    {!win.open && p.clubId !== 0 ? 'Window shut' : `Sign ${formatMoney(askingPrice(p))}`}
                   </button>
                 </span>
                 <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
@@ -640,6 +654,36 @@ function TransferHub({
         <button className="fm-pill" onClick={() => onGo('received')}>Offers received</button>
       </div>
     </>
+  );
+}
+
+/**
+ * Deadline banner for the two screens deals are started from.
+ *
+ * Without this the window is invisible here — Search and Shortlist would
+ * offer buttons that simply fail, with the state only explained a tab away
+ * on the Hub. Says nothing at all while the window is open, so it costs no
+ * space in the case that matters most.
+ */
+function WindowNotice({ win }: { win: ReturnType<typeof transferWindow> }) {
+  if (win.open) {
+    return win.weeksLeft <= 1 ? (
+      <p className="fm-hint" style={{ color: 'var(--gold-2)', marginTop: 0 }}>
+        <Icon name="warning" size={12} style={{ verticalAlign: -1 }} />{' '}
+        {win.weeksLeft === 0
+          ? `Deadline day — last week of the ${win.name} window.`
+          : `${win.name} window closes after next week.`}
+      </p>
+    ) : null;
+  }
+  return (
+    <p className="fm-hint" style={{ color: 'var(--gold-2)', marginTop: 0 }}>
+      <Icon name="warning" size={12} style={{ verticalAlign: -1 }} /> Transfer window shut
+      {win.weeksLeft > 0
+        ? ` — the ${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}.`
+        : ' — no window remains this season.'}{' '}
+      Free agents can still be signed.
+    </p>
   );
 }
 
