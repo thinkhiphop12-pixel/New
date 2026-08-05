@@ -1,18 +1,18 @@
 'use client';
 
-import type { GameState, Match } from '@/engine/types';
+import type { GameState, Fixture } from '@/engine/types';
 import { Icon } from './Icon';
 
 export default function MatchPreviewScreen({
   state,
-  match,
+  fixture,
   onContinue,
 }: {
   state: GameState;
-  match: Match | null;
+  fixture: Fixture | null;
   onContinue: () => void;
 }) {
-  if (!match) {
+  if (!fixture) {
     return (
       <div className="fm-screen">
         <p className="fm-hint">No upcoming match</p>
@@ -20,19 +20,19 @@ export default function MatchPreviewScreen({
     );
   }
 
-  const homeClub = state.clubs.find((c) => c.id === match.homeId);
-  const awayClub = state.clubs.find((c) => c.id === match.awayId);
+  const homeClub = state.clubs.find((c) => c.id === fixture.homeId);
+  const awayClub = state.clubs.find((c) => c.id === fixture.awayId);
 
-  // Form dots (last 5 results: W=green, D=blue, L=red)
-  const formHome = match.homeId === state.clubId ? state.recentResults.slice(-5) : [];
-  const formAway = match.awayId === state.clubId ? state.recentResults.slice(-5) : [];
+  // Get players for user's club
+  const userClubPlayers = Object.values(state.players).filter(
+    (p) => p.clubId === state.userClubId
+  );
 
-  const topScorer = state.players
-    .filter((p) => p.clubId === state.clubId && p.pos !== 'GK')
+  const topScorer = userClubPlayers
+    .filter((p) => p.pos !== 'GK')
     .sort((a, b) => b.goals - a.goals)[0];
 
-  const injuries = state.players.filter((p) => p.clubId === state.clubId && p.injuryWeeks > 0);
-  const suspensions = state.players.filter((p) => p.clubId === state.clubId && p.suspended);
+  const injuries = userClubPlayers.filter((p) => p.injuryWeeks > 0);
 
   return (
     <div className="fm-match-preview">
@@ -43,7 +43,7 @@ export default function MatchPreviewScreen({
             className="fm-match-preview__crest"
             style={{ background: homeClub?.color || '#666' }}
           >
-            {homeClub?.name.slice(0, 3).toUpperCase()}
+            {homeClub?.code || 'HOME'}
           </div>
           <div className="fm-match-preview__name">{homeClub?.name}</div>
         </div>
@@ -55,43 +55,29 @@ export default function MatchPreviewScreen({
             className="fm-match-preview__crest"
             style={{ background: awayClub?.color || '#666' }}
           >
-            {awayClub?.name.slice(0, 3).toUpperCase()}
+            {awayClub?.code || 'AWAY'}
           </div>
           <div className="fm-match-preview__name">{awayClub?.name}</div>
         </div>
       </div>
 
-      {/* Form Strips */}
+      {/* Form Strips - placeholder */}
       <div className="fm-match-preview__form">
         <div className="fm-match-preview__form-strip">
-          {formHome.map((result, i) => (
+          {[0, 1, 2, 3, 4].map((i) => (
             <div
               key={i}
               className="fm-match-preview__form-dot"
-              style={{
-                background:
-                  result === 'W'
-                    ? '#7ccb3f'
-                    : result === 'D'
-                      ? '#4c7fd6'
-                      : '#c24b4b',
-              }}
+              style={{ background: '#666' }}
             />
           ))}
         </div>
         <div className="fm-match-preview__form-strip">
-          {formAway.map((result, i) => (
+          {[0, 1, 2, 3, 4].map((i) => (
             <div
               key={i}
               className="fm-match-preview__form-dot"
-              style={{
-                background:
-                  result === 'W'
-                    ? '#7ccb3f'
-                    : result === 'D'
-                      ? '#4c7fd6'
-                      : '#c24b4b',
-              }}
+              style={{ background: '#666' }}
             />
           ))}
         </div>
@@ -111,8 +97,8 @@ export default function MatchPreviewScreen({
       )}
 
       {/* Availability */}
-      <div className="fm-match-preview__availability">
-        {injuries.length > 0 && (
+      {injuries.length > 0 && (
+        <div className="fm-match-preview__availability">
           <div className="fm-match-preview__status">
             <div className="fm-match-preview__status-icon">
               <Icon name="injury" size={20} />
@@ -120,17 +106,8 @@ export default function MatchPreviewScreen({
             <div className="fm-match-preview__status-name">Injuries</div>
             <div className="fm-match-preview__status-count">{injuries.length}</div>
           </div>
-        )}
-        {suspensions.length > 0 && (
-          <div className="fm-match-preview__status">
-            <div className="fm-match-preview__status-icon">
-              <Icon name="suspended" size={20} />
-            </div>
-            <div className="fm-match-preview__status-name">Suspended</div>
-            <div className="fm-match-preview__status-count">{suspensions.length}</div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* CTA Button */}
       <div className="fm-match-preview__footer">

@@ -1,16 +1,16 @@
 'use client';
 
-import type { GameState, Match } from '@/engine/types';
+import type { GameState, MatchReport } from '@/engine/types';
 import { Icon } from './Icon';
 
 export default function MatchDetailScreen({
   state,
-  match,
+  report,
 }: {
   state: GameState;
-  match: Match | null;
+  report: MatchReport | null;
 }) {
-  if (!match) {
+  if (!report) {
     return (
       <div className="fm-screen">
         <p className="fm-hint">No match detail</p>
@@ -18,17 +18,17 @@ export default function MatchDetailScreen({
     );
   }
 
-  const homeClub = state.clubs.find((c) => c.id === match.homeId);
-  const awayClub = state.clubs.find((c) => c.id === match.awayId);
+  const homeClub = state.clubs.find((c) => c.id === report.homeId);
+  const awayClub = state.clubs.find((c) => c.id === report.awayId);
 
-  // Simulate match events (placeholder)
-  const events = [
-    { min: '12', type: 'goal', team: 'home', player: 'A. McLeish', icon: 'goal' },
-    { min: '34', type: 'yellow', team: 'away', player: 'B. Smith', icon: 'card' },
-    { min: '67', type: 'goal', team: 'away', player: 'C. Jones', icon: 'goal' },
-    { min: '78', type: 'sub', team: 'home', player: 'D. Wilson on for E. Brown', icon: 'sub' },
-    { min: '89', type: 'goal', team: 'home', player: 'F. Davis', icon: 'goal' },
-  ];
+  // Use actual events from the match report
+  const events = report.events.map((e) => ({
+    min: String(e.minute),
+    type: e.type,
+    team: e.clubId === report.homeId ? 'home' : 'away',
+    player: e.text,
+    icon: e.type === 'goal' ? 'goal' : e.type === 'card' ? 'card' : 'info',
+  }));
 
   return (
     <div className="fm-match-detail">
@@ -38,14 +38,14 @@ export default function MatchDetailScreen({
           className="fm-match-detail__crest"
           style={{ background: homeClub?.color || '#666' }}
         />
-        <div className="fm-match-detail__score">{match.homeGoals} – {match.awayGoals}</div>
+        <div className="fm-match-detail__score">{report.homeGoals} – {report.awayGoals}</div>
         <div
           className="fm-match-detail__crest"
           style={{ background: awayClub?.color || '#666' }}
         />
       </div>
 
-      <div className="fm-match-detail__status">Full Time · {match.competition}</div>
+      <div className="fm-match-detail__status">Full Time</div>
 
       {/* Timeline */}
       <div className="fm-match-detail__timeline">
@@ -58,9 +58,9 @@ export default function MatchDetailScreen({
                 background:
                   e.type === 'goal'
                     ? '#7ccb3f'
-                    : e.type === 'yellow'
+                    : e.type === 'card'
                       ? '#e8a93b'
-                      : e.type === 'red'
+                      : e.type === 'injury'
                         ? '#c24b4b'
                         : '#4c7fd6',
               }}
