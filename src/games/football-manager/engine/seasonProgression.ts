@@ -1021,7 +1021,10 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   s.incomingOffers = generateWeeklyOffers(s);
 
   // Advance facilities projects and scouting assignments by one week.
-  Object.assign(s, tickFacilitiesWeek(s));
+  const facilityState = tickFacilitiesWeek(s);
+  s.facilities = facilityState.facilities;
+  s.scouting = facilityState.scouting;
+  s.news = facilityState.news;
 
   // Repair the lineup if injuries/sales/loans broke it.
   if (!isLineupValid(s, s.userClubId, s.lineup)) {
