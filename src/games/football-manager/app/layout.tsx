@@ -21,14 +21,14 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://ballknw.com'),
-  title: 'Gaffa — BALLKNW',
+  title: 'Gaffa',
   description:
     'Take charge of a club: pick your formation, work the transfer market, and manage your way through a full league season. Free browser game, no account needed.',
   alternates: { canonical: '/gaffa/' },
   openGraph: {
-    siteName: 'BALLKNW',
+    siteName: 'Gaffa',
     url: '/gaffa/',
-    title: 'Gaffa — BALLKNW',
+    title: 'Gaffa',
     description:
       'Pick your formation, work the transfer market, and manage a full season — promotion, relegation and all.',
     images: ['/assets/og-image.png'],
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Gaffa — BALLKNW',
+    title: 'Gaffa',
     images: ['/assets/og-image.png'],
   },
   icons: { icon: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/favicon.svg` },

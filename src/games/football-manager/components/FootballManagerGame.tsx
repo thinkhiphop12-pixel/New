@@ -302,19 +302,14 @@ export default function FootballManagerGame() {
       <ToastHost />
       <header className="fm-header">
         <div className="fm-header__brand">
-          <svg width="18" height="18" viewBox="0 0 512 512" style={{ flexShrink: 0 }}>
-            <defs>
-              <linearGradient id="fmBrandMark" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#2ab248" />
-                <stop offset="100%" stopColor="#12b380" />
-              </linearGradient>
-            </defs>
-            <rect x="20" y="20" width="472" height="472" rx="123" fill="url(#fmBrandMark)" />
-            <text x="150" y="345" fontFamily="Inter, system-ui, sans-serif" fontWeight="900" fontSize="286" fill="#052411">B</text>
-          </svg>
-          <span>{"BALL"}<b>{"KNW"}</b></span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/gaffa-logo.png"
+            alt="Gaffa"
+            className="fm-header__logo"
+            style={{ height: 22, width: 'auto', flexShrink: 0, display: 'block' }}
+          />
         </div>
-        <span className="fm-header__title">Gaffa</span>
         <span className="fm-header__spacer" />
         <button className="fm-header__settings" onClick={() => setShowSettings(true)}>
           Settings
