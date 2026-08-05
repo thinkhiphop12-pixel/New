@@ -119,12 +119,12 @@ committed alongside that phase's code changes.
   - **Defence** = Pressing (relabeled "Defensive Line & Pressing" — this engine ties the two
     together as one setting, unlike the mock's separate sliders) as `.fm-segmented`, plus
     Defending Corners, plus a decorative pitch line whose height responds to the real pressing
-    value. The mock's Tackling/Offside Trap/Time Wasting rows have no engine fields and were
-    dropped rather than invented.
-  - **Attack** = the existing Team Identity grid (play-style cards with familiarity/fit), with a
-    line of copy explaining that this collapses the mock's granular passing-style/flank-focus
-    instructions — this engine has no such knobs; Team Identity is the real attacking-approach
-    lever it models instead.
+    value. Tackling is implemented with cautious/normal/aggressive options (challenge intensity);
+    Offside Trap and Time Wasting rows have no engine fields and were dropped rather than invented.
+  - **Attack** = the existing Team Identity grid (play-style cards with familiarity/fit), plus
+    passing-style (short/mixed/through-balls), focus (how to build attacks), buildUp (playing out vs
+    going long), and runs (forward runs). The mock's flank-focus/width instructions are surfaced on
+    the Shape tab instead; Team Identity remains the real stylistic lever.
   - **Set Pieces** = the existing corner-routine/corner-defense/takers UI, now paired with a
     small decorative pitch visual (reusing the same `.fm-slot`/`.fm-slot__chip` pitch-token
     classes as the Formation tab) showing the real assigned corner/free-kick/penalty takers as
