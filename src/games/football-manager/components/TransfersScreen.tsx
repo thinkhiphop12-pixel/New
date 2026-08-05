@@ -15,6 +15,7 @@ import { assignScout, newScouting, tickFacilitiesWeek, toggleShortlist } from '@
 import { SEASON_ROUNDS } from '@/engine/gameRules';
 import { weeklyWageBill } from '@/engine/seasonProgression';
 import { formatMoney } from '@/engine/utils';
+import { weeksRemaining } from './visuals';
 import { Icon } from './Icon';
 import PlayerModal from './PlayerModal';
 
@@ -488,7 +489,7 @@ function TransferHub({
   onChange: (next: GameState) => void;
   onGo: (t: MarketTab) => void;
 }) {
-  const weeksLeft = Math.max(0, SEASON_ROUNDS - state.week + 1);
+  const weeksLeft = weeksRemaining(state.week, SEASON_ROUNDS);
   const pct = Math.round((state.week / SEASON_ROUNDS) * 100);
   const wageBill = weeklyWageBill(state);
 

@@ -207,3 +207,8 @@ export function ordinalSuffix(n: number): string {
   if (n % 100 >= 11 && n % 100 <= 13) return 'th';
   return ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
 }
+
+/** Weeks remaining in season (0-38 rounds). */
+export function weeksRemaining(week: number, seasonRounds = 38): number {
+  return Math.max(0, seasonRounds - week + 1);
+}

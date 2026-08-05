@@ -6,7 +6,7 @@ import { gateIncome, weeklyWageBill, staffWageBill, userLeagueId, userPosition, 
 import { SEASON_ROUNDS, leagueName } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
 import { totalCapacity } from '@/engine/facilities';
-import { ReputationStars, Bar, ordinalSuffix } from './visuals';
+import { ReputationStars, Bar, ordinalSuffix, weeksRemaining } from './visuals';
 import { Icon } from './Icon';
 import {
   SPONSOR_SLOTS, TICKET_TIERS, acceptKitOffer, acceptSponsorOffer, canRequestBoardFunds,
@@ -28,8 +28,8 @@ export default function FinancesScreen({
   const playerWages = weeklyWageBill(state);
   const staffWages = staffWageBill(state);
   const weeklyBalance = gate - playerWages - staffWages;
-  const weeksRemaining = Math.max(0, SEASON_ROUNDS - state.week + 1);
-  const projectedSeasonBalance = weeklyBalance * weeksRemaining;
+  const weeks = weeksRemaining(state.week, SEASON_ROUNDS);
+  const projectedSeasonBalance = weeklyBalance * weeks;
 
   const ffp = ffpStatus(state, fin);
   const scr = scrStatus(state, fin);
@@ -169,7 +169,7 @@ export default function FinancesScreen({
 
       <div className="fm-panel">
         <p className="fm-label" style={{ marginTop: 0 }}>Season Projection</p>
-        <p className="fm-club-line">Remaining weeks: {weeksRemaining}</p>
+        <p className="fm-club-line">Remaining weeks: {weeks}</p>
         <p style={{ fontSize: 20, fontWeight: 900, margin: '4px 0 0', color: projectedSeasonBalance >= 0 ? 'var(--green)' : 'var(--red)' }}>
           {projectedSeasonBalance >= 0 ? '+' : ''}{formatMoney(projectedSeasonBalance)}
         </p>
