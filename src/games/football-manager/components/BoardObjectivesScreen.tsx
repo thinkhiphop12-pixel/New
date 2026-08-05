@@ -3,7 +3,7 @@
 import type { GameState } from '@/engine/types';
 import { userLeagueId, userPosition, userLeague } from '@/engine/seasonProgression';
 import { leagueName } from '@/engine/gameRules';
-import { ReputationStars } from './visuals';
+import { ReputationStars, Bar } from './visuals';
 import { Icon } from './Icon';
 
 export default function BoardObjectivesScreen({ state }: { state: GameState }) {
@@ -99,15 +99,3 @@ export default function BoardObjectivesScreen({ state }: { state: GameState }) {
   );
 }
 
-function Bar({ value, label }: { value: number; label: string }) {
-  const tone = value >= 65 ? 'good' : value >= 35 ? 'mid' : 'bad';
-  return (
-    <div className="fm-bar-row">
-      <span className="fm-bar-row__label">{label}</span>
-      <div className="fm-bar">
-        <div className={`fm-bar__fill ${tone}`} style={{ width: `${value}%` }} />
-      </div>
-      <span className="fm-bar-row__value">{value}</span>
-    </div>
-  );
-}

@@ -187,3 +187,23 @@ export function readableTextOn(hex: string): string {
   const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   return luminance > 0.55 ? '#04140d' : '#f5f5f5';
 }
+
+/** Horizontal progress bar with label and numeric value. */
+export function Bar({ value, label }: { value: number; label: string }) {
+  const tone = value >= 65 ? 'good' : value >= 35 ? 'mid' : 'bad';
+  return (
+    <div className="fm-bar-row">
+      <span className="fm-bar-row__label">{label}</span>
+      <div className="fm-bar">
+        <div className={`fm-bar__fill ${tone}`} style={{ width: `${value}%` }} />
+      </div>
+      <span className="fm-bar-row__value">{value}</span>
+    </div>
+  );
+}
+
+/** English ordinal suffix (th, st, nd, rd) for a given number. */
+export function ordinalSuffix(n: number): string {
+  if (n % 100 >= 11 && n % 100 <= 13) return 'th';
+  return ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
+}

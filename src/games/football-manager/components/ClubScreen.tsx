@@ -11,7 +11,7 @@ import { getSquad } from '@/engine/teamManagement';
 import { totalCapacity } from '@/engine/facilities';
 import { traitNames } from '@/engine/traits';
 import { formatMoney } from '@/engine/utils';
-import { StatTile, ReputationStars } from './visuals';
+import { StatTile, ReputationStars, ordinalSuffix } from './visuals';
 import { Icon } from './Icon';
 
 const STAFF_LABELS: Record<keyof Staff, string> = { coach: 'Assistant coach', physio: 'Physio', scout: 'Chief scout' };
@@ -371,9 +371,4 @@ export default function ClubScreen({
       </div>
     </>
   );
-}
-
-function ordinalSuffix(n: number): string {
-  if (n % 100 >= 11 && n % 100 <= 13) return 'th';
-  return ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
 }

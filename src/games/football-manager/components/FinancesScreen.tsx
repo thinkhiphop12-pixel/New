@@ -6,7 +6,7 @@ import { gateIncome, weeklyWageBill, staffWageBill, userLeagueId, userPosition, 
 import { SEASON_ROUNDS, leagueName } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
 import { totalCapacity } from '@/engine/facilities';
-import { ReputationStars } from './visuals';
+import { ReputationStars, Bar, ordinalSuffix } from './visuals';
 import { Icon } from './Icon';
 import {
   SPONSOR_SLOTS, TICKET_TIERS, acceptKitOffer, acceptSponsorOffer, canRequestBoardFunds,
@@ -260,18 +260,6 @@ function Row({ label, value }: { label: string; value: number }) {
   );
 }
 
-function Bar({ value, label }: { value: number; label: string }) {
-  const tone = value >= 65 ? 'good' : value >= 35 ? 'mid' : 'bad';
-  return (
-    <div className="fm-bar-row">
-      <span className="fm-bar-row__label">{label}</span>
-      <div className="fm-bar">
-        <div className={`fm-bar__fill ${tone}`} style={{ width: `${value}%` }} />
-      </div>
-      <span className="fm-bar-row__value">{value}</span>
-    </div>
-  );
-}
 
 type CatDef = { key: string; label: string; color: string };
 
@@ -480,9 +468,4 @@ function SponsorOfferPicker({
           ))}
     </div>
   );
-}
-
-function ordinalSuffix(n: number): string {
-  if (n % 100 >= 11 && n % 100 <= 13) return 'th';
-  return ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
 }
