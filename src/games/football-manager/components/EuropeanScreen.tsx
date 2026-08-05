@@ -180,9 +180,10 @@ export default function EuropeanScreen({ state }: { state: GameState }) {
           {currentTie ? (
             <>
               {(() => {
-                // Leg 2 (if this tie has played exactly one leg) reverses venue.
-                const homeId = currentTie.legs.length === 1 ? currentTie.awayId : currentTie.homeId;
-                const awayId = currentTie.legs.length === 1 ? currentTie.homeId : currentTie.awayId;
+                // Leg 2 (if two-legged and exactly one leg has played) reverses venue.
+                const isSecondLeg = currentTie.twoLegged && currentTie.legs.length === 1;
+                const homeId = isSecondLeg ? currentTie.awayId : currentTie.homeId;
+                const awayId = isSecondLeg ? currentTie.homeId : currentTie.awayId;
                 const home = state.clubs.find((cl) => cl.id === homeId);
                 const away = state.clubs.find((cl) => cl.id === awayId);
                 return (

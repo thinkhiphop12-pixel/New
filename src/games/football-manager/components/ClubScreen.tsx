@@ -85,10 +85,13 @@ export default function ClubScreen({
   const leagueId = userLeagueId(state);
   const lg = userLeague(state);
   const table = computeTable(state, leagueId);
-  const position = table.findIndex((r) => r.clubId === state.userClubId) + 1;
+  const posIndex = table.findIndex((r) => r.clubId === state.userClubId);
+  const position = posIndex >= 0 ? posIndex + 1 : 0;
   const clubCount = lg.clubCount;
   // Ring fill: further up the table = fuller ring. Position 1/20 → 100%.
-  const positionPct = clubCount > 0 ? ((clubCount - position) / Math.max(1, clubCount - 1)) * 100 : 0;
+  const positionPct = position > 0 && clubCount > 0
+    ? Math.max(0, Math.min(100, ((clubCount - position) / Math.max(1, clubCount - 1)) * 100))
+    : 0;
   const form = clubForm(state, state.userClubId);
 
   const fs = state.facilities;
@@ -112,7 +115,7 @@ export default function ClubScreen({
             >
               <span className="fm-ring__value">{position}</span>
             </div>
-            <span className="fm-hero-rings__pos-num">{ordinal(position)}</span>
+            <span className="fm-hero-rings__pos-num">{position}{ordinalSuffix(position)}</span>
             <span className="fm-hero-rings__pos-sub">of {clubCount} · {leagueName(leagueId)}</span>
           </div>
 
@@ -344,7 +347,7 @@ export default function ClubScreen({
           <StatTile icon={<Icon name="net" />} value={state.records.biggestWin?.text ?? '—'} label="Biggest win" />
           <StatTile
             icon={<Icon name="medal" />}
-            value={state.records.bestFinish ? `${state.records.bestFinish.position}${ordinal(state.records.bestFinish.position)}` : '—'}
+            value={state.records.bestFinish ? `${state.records.bestFinish.position}${ordinalSuffix(state.records.bestFinish.position)}` : '—'}
             label={state.records.bestFinish ? `${leagueName(state.records.bestFinish.leagueId)}, ${state.records.bestFinish.year}` : 'Best finish'}
           />
           <StatTile
@@ -370,7 +373,7 @@ export default function ClubScreen({
   );
 }
 
-function ordinal(n: number): string {
+function ordinalSuffix(n: number): string {
   if (n % 100 >= 11 && n % 100 <= 13) return 'th';
   return ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
 }

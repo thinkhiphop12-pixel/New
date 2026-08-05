@@ -56,15 +56,13 @@ export default function TransfersScreen({
   const sc = state.scouting ?? newScouting();
   const shortlist = sc.shortlist;
 
-  // Catch up scouting/facilities weekly progress on visit, same pattern the
-  // old ScoutScreen used — persisted state, not local React state (gap item
-  // 67: a bare useState shortlist vanished on navigation).
-  const lastTickWeekKey = `${state.seasonYear}-${state.week}`;
+  // Initialize scouting state if missing. Weekly progression happens at the
+  // authoritative game-progress transition, not on mount, to prevent early
+  // completion via repeated Transfers screen visits.
   useEffect(() => {
-    if (!state.scouting) { onChange({ ...state, scouting: sc }); return; }
-    if (sc.assignments.some((a) => !a.complete)) onChange(tickFacilitiesWeek(state));
+    if (!state.scouting) { onChange({ ...state, scouting: sc }); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastTickWeekKey]);
+  }, []);
 
   const detail = detailId !== null ? state.players[detailId] : null;
   const negotiations = state.negotiations ?? [];

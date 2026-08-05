@@ -103,7 +103,7 @@ committed alongside that phase's code changes.
   groups, Tactics' pitch+list/pitch+instructions panels, and Training's week-grid+condition
   panels — a pattern that recurred across all of Phase 2's screens but wasn't covered by Phase
   0/1's shared classes.
-- **Tactics' 5 sub-screens are in-page `.fm-subtab`s, not new nav entries** (per PLAN.md's
+- **Tactics' 6 sub-screens are in-page `.fm-subtab`s, not new nav entries** (per PLAN.md's
   explicit judgement call): `TacticsScreen.tsx` now renders its own `role="tablist"` row —
   Formation / Shape / Defence / Attack / Set Pieces / Player Roles — above the content, reusing
   the same `.fm-subtab` pill class the top-level group nav uses. The existing accordion sections
@@ -189,10 +189,9 @@ committed alongside that phase's code changes.
     them, but nothing in the brief called for deleting them).
   - **Shortlist** = `ScoutScreen.tsx`'s persisted `state.scouting.shortlist` list (via
     `transferTargets`/shortlist merge, byte-for-byte the same logic that screen used), now with
-    the mock's per-player scouting-status dot: green ("scouted") when the player already appears
-    in `scoutRecommendations(state)`'s picks (a completed lead), dim grey ("report pending")
-    otherwise — an honest proxy for "has scouting coverage" since there's no separate per-player
-    scouting-completeness field on `Player`.
+    the mock's per-player scouting-status dot: green ("assigned") when a scout assignment for
+    this player has completed (via `sc.assignments` matching), dim grey ("pending") otherwise.
+    Reflects whether scouts have been assigned to actively locate the player in transfers.
   - **Offers Sent** = outgoing negotiations list (left) + a `.fm-ledger` card (right, `.fm-split`
     at ≥900px) showing the selected deal's Fee/Wage/Contract rows as current-vs-offer, reusing
     `Negotiation.neg.asking`/`.wageDemand` for "current" and `.lastFee`/`.lastWage`/
@@ -241,7 +240,7 @@ After Phase 3 implementation, CodeRabbit and SonarCloud flagged code-quality iss
 - **TransfersScreen scouting-status dot (line 322)**: Changed data source from `scoutRecommendations(state)` (AI recommendations) to `sc.assignments` (actual scout assignments). Dot now shows based on whether scouts have been assigned to find the player, with full color for completed assignments and dim for pending.
 - **TransfersScreen fm-ledger class rename (lines 642-650)**: All `.fm-ledger*` selectors renamed to `.fm-ledger-card*` to resolve duplicate selector conflict. Old `.fm-ledger` class (line 1128 in globals.css) stays for Finances list-style; new `.fm-ledger-card` for Negotiation/Transfers card-style.
 - **globals.css Stylelint violation (line 2077)**: Added blank line between custom-property declarations (--ring-pct, --ring-color) and normal declarations (position, display) to satisfy `declaration-empty-line-before` rule.
-- **TransfersScreen & TacticsScreen ARIA tabpanel roles**: Wrapped all 5 Transfer tab panels (hub, search, shortlist, sent, received) and all 6 Tactics sub-tab panels (formation, shape, defence, attack, setpieces, roles) with `role="tabpanel"` divs. Improves accessibility for tab navigation in screen readers.
+- **TransfersScreen & TacticsScreen ARIA tabpanel roles**: Wrapped all 5 Transfer tab panels (hub, search, shortlist, sent, received) and all 6 Tactics sub-tab panels (formation, shape, defence, attack, Set Pieces, roles) with `role="tabpanel"` divs. Improves accessibility for tab navigation in screen readers.
 - **TransfersScreen JSX structure (sent tab)**: Fixed duplicate closing div that was breaking fm-split nesting. Build now compiles successfully.
 - All fixes verified: **Build compiles successfully** ✅
 

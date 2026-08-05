@@ -11,7 +11,8 @@ export default function BoardObjectivesScreen({ state }: { state: GameState }) {
   const leagueId = userLeagueId(state);
   const league = userLeague(state);
   const pos = userPosition(state);
-  const onTrack = pos <= board.minPosition;
+  const ranked = pos > 0;
+  const onTrack = ranked && pos <= board.minPosition;
 
   const bars: { label: string; value: number }[] = [
     { label: 'Board', value: board.confidence },
@@ -38,12 +39,12 @@ export default function BoardObjectivesScreen({ state }: { state: GameState }) {
             <div
               className="fm-bar__fill"
               style={{
-                width: `${Math.max(2, Math.min(100, (1 - pos / league.clubCount) * 100))}%`,
+                width: ranked ? `${Math.max(2, Math.min(100, (1 - pos / league.clubCount) * 100))}%` : '2%',
                 background: onTrack ? 'var(--green)' : 'var(--red)',
               }}
             />
           </div>
-          <span className="fm-bar-row__value">{onTrack ? 'On track' : 'Needs improvement'}</span>
+          <span className="fm-bar-row__value">{ranked ? (onTrack ? 'On track' : 'Needs improvement') : 'Not yet ranked'}</span>
         </div>
       </div>
 
