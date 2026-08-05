@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import type { GameState, KitOffer, SponsorOffer, SponsorSlotId, TicketTier, FinanceState, SeasonIncome, SeasonExpenses } from '@/engine/types';
+import type { GameState, KitOffer, SponsorOffer, SponsorSlotId, TicketTier, FinanceState } from '@/engine/types';
 import { gateIncome, weeklyWageBill, staffWageBill, userLeagueId, userPosition, userLeague } from '@/engine/seasonProgression';
 import { SEASON_ROUNDS, leagueName } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
 import { totalCapacity } from '@/engine/facilities';
-import { matchIncome } from '@/engine/finances';
 import { ReputationStars } from './visuals';
 import { Icon } from './Icon';
 import {
@@ -376,7 +375,8 @@ function StadiumAttendance({ state, fin }: { state: GameState; fin: FinanceState
   const gate = gateIncome(state);
   const ticketTier = fin.ticketPricing ? TICKET_TIERS[fin.ticketPricing] : null;
   const attendancePct = capMax > 0 ? Math.min(100, (capUsed / capMax) * 100) : 0;
-  const attendanceLabel = capMax > 0 ? `${Math.round(attendancePct)}% capacity` : 'no stadium data';
+  const attendanceLabel = capMax > 0 ? `${Math.round(attendancePct)}% built` : 'no stadium data';
+  const positionLabel = pos > 0 ? `${pos}${ordinalSuffix(pos)} place in ${leagueName(userLeagueId(state))}` : 'Not yet ranked';
 
   return (
     <div className="fm-panel">
@@ -402,7 +402,7 @@ function StadiumAttendance({ state, fin }: { state: GameState; fin: FinanceState
             <div className="fm-attendance__fill" style={{ width: `${attendancePct}%` }} />
           </div>
           <span className="fm-hint" style={{ marginTop: 4, display: 'block' }}>
-            {attendanceLabel} · {pos} place in {leagueName(userLeagueId(state))}
+            {attendanceLabel} · {positionLabel}
           </span>
         </div>
       )}
@@ -480,4 +480,9 @@ function SponsorOfferPicker({
           ))}
     </div>
   );
+}
+
+function ordinalSuffix(n: number): string {
+  if (n % 100 >= 11 && n % 100 <= 13) return 'th';
+  return ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
 }

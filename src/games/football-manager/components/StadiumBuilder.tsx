@@ -128,7 +128,7 @@ export default function StadiumBuilder({
             const stand = fs.stands[id];
             const building = inFlight.has(id);
             return (
-              <div
+              <button
                 key={id}
                 className="fm-stand-card"
                 style={{
@@ -151,7 +151,7 @@ export default function StadiumBuilder({
                   </button>
                 )}
                 {building && <span className="fm-hint">Project underway</span>}
-              </div>
+              </button>
             );
           })}
         </div>

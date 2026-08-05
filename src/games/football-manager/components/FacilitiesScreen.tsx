@@ -41,7 +41,6 @@ export default function FacilitiesScreen({
   }, [lastTickWeekKey]);
 
   const activeProjects = fs.projects.filter((p) => !p.complete);
-  const userClub = state.clubs.find((c) => c.id === state.userClubId)!;
 
   return (
     <>
@@ -77,7 +76,6 @@ export default function FacilitiesScreen({
           activeProjects={activeProjects}
           selectedStand={selectedStand}
           onSelectStand={setSelectedStand}
-          userClub={userClub}
         />
       )}
 
@@ -109,7 +107,6 @@ function StadiumTab({
   activeProjects,
   selectedStand,
   onSelectStand,
-  userClub,
 }: {
   state: GameState;
   onChange: (next: GameState) => void;
@@ -117,7 +114,6 @@ function StadiumTab({
   activeProjects: NonNullable<GameState['facilities']>['projects'];
   selectedStand: StandId | null;
   onSelectStand: (id: StandId | null) => void;
-  userClub: NonNullable<GameState['clubs']>[number];
 }) {
   const gate = gateIncome(state);
 
@@ -281,14 +277,14 @@ function StaffTab({
                 <span className="fm-label" style={{ margin: 0, textTransform: 'capitalize' }}>{roleLabel}</span>
                 {coach ? (
                   <>
-                    <span
-                      className="fm-hint"
-                      style={{ cursor: 'pointer' }}
+                    <button
+                      className="fm-btn fm-btn--ghost"
+                      style={{ padding: 0, fontSize: 'inherit', color: 'inherit' }}
                       onClick={() => onSelectCoach(coach.id)}
                       title="View profile"
                     >
                       {coach.name} · quality {coach.quality} · {formatMoney(coach.wage)}/wk
-                    </span>
+                    </button>
                     <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => onChange(fireCoach({ ...state, facilities: fs }, coach.id))}>
                       Release
                     </button>
