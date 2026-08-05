@@ -822,6 +822,44 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-fixture.loss { border-left: 3px solid var(--red); }
 .fm-fixture.next { border-color: var(--green-600); background: var(--green-dim); }
 
+/* ── MATCHDAY (mockup layout: next-match banner + results card) ── */
+.fm-matchday { display: flex; flex-direction: column; gap: 16px; }
+.fm-next-banner {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+.fm-next-banner__label {
+  font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--accent, var(--green)); margin-bottom: 12px;
+}
+.fm-next-banner__teams { display: flex; align-items: center; justify-content: space-between; }
+.fm-next-banner__team { text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.fm-next-banner__name { font-size: 14.5px; font-weight: 800; }
+.fm-next-banner__vs { font-size: 15px; font-weight: 900; color: var(--muted-dim); padding: 0 16px; }
+.fm-results-card {
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  padding: 6px 20px;
+}
+.fm-result-row {
+  display: grid; grid-template-columns: 60px 1fr 60px 1fr; align-items: center; gap: 14px;
+  padding: 10px 0; border-top: 1px solid var(--border-soft);
+}
+.fm-result-row:first-child { border-top: none; }
+.fm-result-row__comp { font-size: 11.5px; color: var(--muted-dim); font-weight: 700; }
+.fm-result-row__home { text-align: right; font-size: 13.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fm-result-row__away { text-align: left; font-size: 13.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fm-result-row__score {
+  width: 100%; text-align: center; font-size: 13px; font-weight: 800;
+  background: rgba(255,255,255,0.06); border-radius: 8px; padding: 4px 0;
+}
+.fm-result-row__score--win { color: var(--green); }
+.fm-result-row__score--draw { color: var(--gold); }
+.fm-result-row__score--loss { color: var(--red); }
+
 /* ── MATCH DAY SCOREBOARD ── */
 .fm-scoreboard {
   display: grid; grid-template-columns: 1fr auto 1fr;
