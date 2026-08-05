@@ -2306,6 +2306,19 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
    Every colour comes from the existing token set — no new hex values.
    ===================================================================== */
 
+/* ── Shirt number on the Player Profile heading ── */
+.pm-num {
+  display: inline-block; margin-right: 8px;
+  color: var(--muted-dim); font-variant-numeric: tabular-nums;
+}
+
+/* ── Shirt number badge on a squad row ── */
+.fm-player-row__num {
+  flex-shrink: 0; min-width: 20px; text-align: center;
+  font-size: 12px; font-weight: 900; font-variant-numeric: tabular-nums;
+  color: var(--muted-dim);
+}
+
 /* ── Message list: icon-tile rows ──
    Inbox. The tile carries the category colour via `--tile-tint`, so the
    row itself stays neutral and unread state is the only other signal. */
@@ -2382,6 +2395,12 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-preview__vs { font-size: 12px; font-weight: 900; color: var(--muted-dim); letter-spacing: 1px; }
 .fm-preview__score { font-size: 26px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
 .fm-preview__venue { font-size: 10px; color: var(--muted-dim); text-transform: uppercase; letter-spacing: 0.5px; text-align: center; }
+
+/* Commentary-only match stage, used when the 2D pitch is switched off. */
+.fm-matchx__nopitch {
+  position: absolute; inset: 0; overflow-y: auto;
+  padding: 12px 14px; background: var(--panel-2);
+}
 
 /* Pre-kick-off stage: the preview banner scrolls with the team sheet rather
    than stealing fixed height from it, so Portrait still gets a usable pitch. */

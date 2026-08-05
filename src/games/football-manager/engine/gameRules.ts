@@ -25,6 +25,72 @@ export function isWinterBreakWeek(week: number): boolean {
   return WINTER_BREAK.includes(week);
 }
 
+/**
+ * Transfer windows, as inclusive calendar-week ranges.
+ *
+ * Derived from the week rather than stored on `GameState`, so there is no
+ * save migration and no way for a save to drift out of sync with the rules.
+ * The winter window is centred on `WINTER_BREAK` the way a real January
+ * window sits in the mid-season gap. Between them the market is shut:
+ * roughly a third of the season is tradeable, which is the point of having
+ * a deadline at all. Tune here — every gate reads these two ranges.
+ */
+export const TRANSFER_WINDOWS: { name: string; opens: number; closes: number }[] = [
+  { name: 'Summer', opens: 1, closes: 8 },
+  { name: 'Winter', opens: 24, closes: 30 },
+];
+
+export interface TransferWindowState {
+  /** Is the market open for paid transfers this week? */
+  open: boolean;
+  /** The window in play: the open one, or the next one due. */
+  name: string;
+  /** Weeks until deadline day when open, until it opens when shut. */
+  weeksLeft: number;
+  /** Last week of the open window (0 when shut). */
+  closesWeek: number;
+  /** First week of the next window (0 when none remain this season). */
+  opensWeek: number;
+}
+
+/**
+ * Why the market is shut, phrased for a gate error.
+ *
+ * Late in the season there is no window left to count down to, so
+ * `weeksLeft` is 0 and "opens in 0 weeks" would be nonsense — that case gets
+ * its own wording.
+ */
+export function windowShutReason(week: number, what = 'Transfer window'): string {
+  const w = transferWindow(week);
+  if (w.weeksLeft > 0) {
+    return `${what} shut — the ${w.name} window opens in ${w.weeksLeft} week${w.weeksLeft === 1 ? '' : 's'}.`;
+  }
+  return `${what} shut — no window remains this season.`;
+}
+
+/** Whether the transfer market is open in a given calendar week, and how long
+ *  is left on that state. Free agents are always signable — see `canBuy`. */
+export function transferWindow(week: number): TransferWindowState {
+  const current = TRANSFER_WINDOWS.find((w) => week >= w.opens && week <= w.closes);
+  if (current) {
+    return {
+      open: true,
+      name: current.name,
+      weeksLeft: current.closes - week,
+      closesWeek: current.closes,
+      opensWeek: 0,
+    };
+  }
+  const next = TRANSFER_WINDOWS.find((w) => w.opens > week);
+  return {
+    open: false,
+    name: next?.name ?? 'Summer',
+    weeksLeft: next ? next.opens - week : 0,
+    closesWeek: 0,
+    opensWeek: next?.opens ?? 0,
+  };
+}
+
 export const MIN_SQUAD_SIZE = 16;
 export const MAX_SQUAD_SIZE = 30;
 

@@ -96,6 +96,11 @@ export default function SquadScreen({
               }
             >
               <PlayerFace playerId={p.id} size={26} />
+              {p.squadNumber !== undefined && (
+                <span className="fm-player-row__num" aria-label={`Shirt number ${p.squadNumber}`}>
+                  {p.squadNumber}
+                </span>
+              )}
               <span className="fm-player-row__badge">{p.role}</span>
               <span className="fm-player-row__name">
                 {p.name}

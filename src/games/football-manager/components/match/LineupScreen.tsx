@@ -83,7 +83,9 @@ export default function LineupScreen({
       const top = 9 + ((mirror ? 100 - slot.x : slot.x) / 100) * 82;
       return (
         <div key={`${mirror ? 'a' : 'h'}${i}`} className="fm-ko__player" style={{ left: `${left}%`, top: `${top}%` }}>
-          <Shirt color={club?.color ?? '#888'} gk={gk} num={i + 1} />
+          {/* The player's real shirt number; falls back to the formation slot
+              index only for a pre-v7 save not yet numbered by the week tick. */}
+          <Shirt color={club?.color ?? '#888'} gk={gk} num={p.squadNumber ?? i + 1} />
           <span className="fm-ko__name">
             {lastName(p.name)}
             {captainId != null && p.id === captainId ? ' (c)' : ''}

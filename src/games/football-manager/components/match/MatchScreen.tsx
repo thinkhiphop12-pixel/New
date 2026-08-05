@@ -414,6 +414,30 @@ export default function MatchScreen({
               />
             </div>
           </div>
+        ) : settings.show2DPitch === false ? (
+          // "2D pitch" off: the match plays out as a live commentary rail
+          // instead of the animated canvas. Same timeline, same events — only
+          // the presentation changes, so the result is identical either way.
+          <div className="fm-matchx__nopitch">
+            {shownEvents.length === 0 ? (
+              <p className="fm-hint">The teams are out…</p>
+            ) : (
+              <div className="fm-timeline">
+                {shownEvents.slice(-40).map((e, i) => (
+                  <div
+                    key={i}
+                    className={`fm-timeline__row${e.type === 'goal' ? ' fm-timeline__row--goal' : ''}${
+                      e.type === 'card' ? ' fm-timeline__row--card' : ''
+                    }${e.type === 'injury' ? ' fm-timeline__row--injury' : ''}`}
+                  >
+                    <span className="fm-timeline__min">{formatMinute(e.minute, stoppage1)}</span>
+                    <span className="fm-timeline__marker">{eventIcon(e)}</span>
+                    <span className="fm-timeline__text">{e.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
           <PitchCanvas snapshots={timeline.snapshots} minute={minute} homeClub={home} awayClub={away} resetKey={0} />
         )}

@@ -31,6 +31,95 @@ export function getSquad(state: GameState, clubId: number): Player[] {
   return club.playerIds.map((id) => state.players[id]).filter(Boolean);
 }
 
+/** Weekly wage bill for a club. Loanees are off the books — their parent club
+ *  pays them. Lives here rather than in `seasonProgression` so that
+ *  `transferMarket` can reach it without a circular import; that module's
+ *  `weeklyWageBill` is the user-club shorthand for this. */
+export function clubWageBill(state: GameState, clubId: number): number {
+  return getSquad(state, clubId)
+    .filter((p) => !isOnLoan(p))
+    .reduce((sum, p) => sum + p.wage, 0);
+}
+
+/**
+ * The board's sanctioned weekly wage ceiling.
+ *
+ * Seeded at `newGame` as headroom over what the inherited squad already
+ * earns, so it self-calibrates to the league and squad instead of needing a
+ * hand-tuned figure per division — and so a freshly-started save can never
+ * already be over its own cap. Pre-v7 saves store nothing and fall back to
+ * the same formula applied to their current bill.
+ */
+export const WAGE_BUDGET_HEADROOM = 1.25;
+
+export function wageCeiling(state: GameState): number {
+  return state.wageBudget ?? Math.round(clubWageBill(state, state.userClubId) * WAGE_BUDGET_HEADROOM);
+}
+
+/** Position order shirt numbers are handed out in, and the conventional
+ *  numbers reserved for the best player in a position. */
+const NUMBER_POS_ORDER: Position[] = ['GK', 'DEF', 'MID', 'FWD'];
+const PREFERRED_NUMBER: Partial<Record<Position, number>> = { GK: 1, FWD: 9, MID: 10 };
+const MAX_SHIRT = 99;
+
+/**
+ * Give every player at every club a shirt number that is unique within that
+ * club.
+ *
+ * Idempotent and additive: a number that is already valid and unclaimed is
+ * kept, so nobody loses their shirt because a team-mate signed. Only genuine
+ * gaps and collisions are filled — which is why this can be called from the
+ * weekly tick and after each signing rather than threaded through all ~10
+ * places a player's `clubId` changes (transfers, loans, releases, youth
+ * intake, AI deals). Players without a club hold their old number until it
+ * collides somewhere new.
+ */
+export function ensureSquadNumbers(state: GameState): void {
+  for (const club of state.clubs) {
+    const squad = club.playerIds.map((id) => state.players[id]).filter(Boolean);
+    const taken = new Set<number>();
+
+    // Keep the numbers that are still legal and unclaimed; drop the rest.
+    for (const p of squad) {
+      const n = p.squadNumber;
+      if (n !== undefined && Number.isInteger(n) && n >= 1 && n <= MAX_SHIRT && !taken.has(n)) {
+        taken.add(n);
+      } else {
+        p.squadNumber = undefined;
+      }
+    }
+
+    // 1 to the best keeper, 9 to the best forward, 10 to the best midfielder —
+    // but only where that number is actually free.
+    for (const pos of NUMBER_POS_ORDER) {
+      const want = PREFERRED_NUMBER[pos];
+      if (want === undefined || taken.has(want)) continue;
+      const best = squad
+        .filter((p) => p.pos === pos && p.squadNumber === undefined)
+        .sort((a, b) => b.rating - a.rating)[0];
+      if (best) {
+        best.squadNumber = want;
+        taken.add(want);
+      }
+    }
+
+    // Everyone else takes the lowest free number, back to front.
+    const rest = squad
+      .filter((p) => p.squadNumber === undefined)
+      .sort(
+        (a, b) =>
+          NUMBER_POS_ORDER.indexOf(a.pos) - NUMBER_POS_ORDER.indexOf(b.pos) || b.rating - a.rating
+      );
+    let next = 2;
+    for (const p of rest) {
+      while (next <= MAX_SHIRT && taken.has(next)) next++;
+      if (next > MAX_SHIRT) break; // squad deeper than the shirt range; leave unnumbered
+      p.squadNumber = next;
+      taken.add(next);
+    }
+  }
+}
+
 export function isOnLoan(p: Player): boolean {
   return p.onLoanUntil !== undefined && p.onLoanUntil > 0;
 }

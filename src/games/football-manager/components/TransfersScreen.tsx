@@ -10,9 +10,9 @@ import {
   type MarketEntry, type MarketFilters,
 } from '@/engine/transferMarket';
 import { statusLabel, STATUS_ORDER } from '@/engine/negotiation';
-import { getSquad } from '@/engine/teamManagement';
+import { getSquad, wageCeiling } from '@/engine/teamManagement';
 import { assignScout, newScouting, tickFacilitiesWeek, toggleShortlist } from '@/engine/facilities';
-import { SEASON_ROUNDS } from '@/engine/gameRules';
+import { TRANSFER_WINDOWS, transferWindow } from '@/engine/gameRules';
 import { weeklyWageBill } from '@/engine/seasonProgression';
 import { formatMoney } from '@/engine/utils';
 import { Icon } from './Icon';
@@ -488,16 +488,26 @@ function TransferHub({
   onChange: (next: GameState) => void;
   onGo: (t: MarketTab) => void;
 }) {
-  const weeksLeft = Math.max(0, SEASON_ROUNDS - state.week + 1);
-  const pct = Math.round((state.week / SEASON_ROUNDS) * 100);
   const wageBill = weeklyWageBill(state);
+  const ceiling = wageCeiling(state);
+  const wagePct = ceiling > 0 ? Math.min(100, Math.round((wageBill / ceiling) * 100)) : 0;
+
+  // Real deadline, not season progress: when the window is open the ring
+  // counts down to deadline day; when it is shut it counts down to the next
+  // window opening, and turns gold to say the market is closed.
+  const win = transferWindow(state.week);
+  const span = win.open
+    ? (TRANSFER_WINDOWS.find((w) => w.name === win.name)?.closes ?? 0) -
+      (TRANSFER_WINDOWS.find((w) => w.name === win.name)?.opens ?? 0) + 1
+    : 0;
+  const windowPct = win.open && span > 0 ? Math.round(((span - win.weeksLeft) / span) * 100) : 100;
 
   return (
     <>
       <div className="fm-split" style={{ ['--split-ratio' as string]: '1fr 1.3fr' }}>
         <div className="fm-panel">
-          <p className="fm-label" style={{ marginTop: 0 }}>Transfer budget</p>
-          <div className="fm-attr-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: 16 }}>
+          <p className="fm-label" style={{ marginTop: 0 }}>Budgets</p>
+          <div className="fm-attr-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: 12 }}>
             <div>
               <p className="fm-hint" style={{ margin: 0 }}>TRANSFER</p>
               <p style={{ fontSize: 20, fontWeight: 900, margin: 0 }}>{formatMoney(state.budget)}</p>
@@ -505,13 +515,55 @@ function TransferHub({
             <div>
               <p className="fm-hint" style={{ margin: 0 }}>WAGES</p>
               <p style={{ fontSize: 20, fontWeight: 900, margin: 0 }}>{formatMoney(wageBill)} pw</p>
+              <p className="fm-hint" style={{ margin: 0 }}>of {formatMoney(ceiling)} ceiling</p>
+            </div>
+          </div>
+          <div className="fm-meter-row" style={{ marginBottom: 14 }}>
+            <div className="fm-meter-row__head">
+              <span>Wage budget used</span>
+              <span className="fm-meter-row__value">{wagePct}%</span>
+            </div>
+            <div className="fm-meter-row__track">
+              <div
+                className="fm-meter-row__fill"
+                style={{
+                  width: `${wagePct}%`,
+                  background: wagePct >= 95 ? 'var(--red)' : wagePct >= 80 ? 'var(--gold)' : 'var(--green)',
+                }}
+              />
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div className="fm-ring" style={{ ['--ring-pct' as string]: pct, ['--ring-color' as string]: 'var(--green)' }}>
-              <span className="fm-ring__value">{weeksLeft}</span>
+            <div
+              className="fm-ring"
+              style={{
+                ['--ring-pct' as string]: windowPct,
+                ['--ring-color' as string]: win.open ? 'var(--green)' : 'var(--gold)',
+              }}
+            >
+              <span className="fm-ring__value">{win.weeksLeft}</span>
             </div>
-            <p className="fm-club-line" style={{ margin: 0 }}>Weeks left<br />this season</p>
+            <p className="fm-club-line" style={{ margin: 0 }}>
+              {win.open ? (
+                <>
+                  <strong>{win.name} window open</strong>
+                  <br />
+                  {win.weeksLeft === 0
+                    ? 'Deadline day — last week to deal'
+                    : `${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'} to deadline`}
+                </>
+              ) : (
+                <>
+                  <strong>Window shut</strong>
+                  <br />
+                  {win.weeksLeft > 0
+                    ? `${win.name} opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}`
+                    : 'No window left this season'}
+                  <br />
+                  Free agents can still be signed.
+                </>
+              )}
+            </p>
           </div>
         </div>
 

@@ -11,7 +11,10 @@ import {
   prizeMoney, roundToWeek, startingBudget,
 } from './gameRules';
 import { matchRatings, simulateMatch } from './matchSimulation';
-import { autoPickLineup, getSquad, isLineupValid, isOnLoan, squadAvgRating } from './teamManagement';
+import {
+  WAGE_BUDGET_HEADROOM, autoPickLineup, clubWageBill, ensureSquadNumbers, getSquad,
+  isLineupValid, isOnLoan, squadAvgRating,
+} from './teamManagement';
 import { clamp, contractEndFor, marketValue, pickRandom, rollRetireAge, weeklyWage } from './utils';
 import { tickTacticalFamiliarity } from './familiarity';
 import { generateWeeklyNews } from './news';
@@ -493,6 +496,9 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
   // Give every club a play-style identity and reputation band before the first
   // drilling tick, so familiarity has something to work from.
   seedClubIdentities(state);
+  ensureSquadNumbers(state);
+  // Sanctioned wage bill: what the inherited squad costs, plus headroom.
+  state.wageBudget = Math.round(weeklyWageBill(state) * WAGE_BUDGET_HEADROOM);
   state.playStyle = state.playStyle ?? state.clubs.find((c) => c.id === userClubId)?.playStyle ?? 'balanced';
   state.news.push(`Board objective: ${state.board.objective}.`);
   pushInbox(state, {
@@ -603,9 +609,7 @@ export function gateIncome(state: GameState): number {
 
 /** The user's total weekly wage bill (loanees are off the books). */
 export function weeklyWageBill(state: GameState): number {
-  return getSquad(state, state.userClubId)
-    .filter((p) => !isOnLoan(p))
-    .reduce((s, p) => s + p.wage, 0);
+  return clubWageBill(state, state.userClubId);
 }
 
 /** Weekly staff wages (per level, per role). */
@@ -1023,6 +1027,11 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   if (!isLineupValid(s, s.userClubId, s.lineup)) {
     s.lineup = autoPickLineup(s, s.userClubId, getFormation(s.formationId));
   }
+
+  // Number anyone who arrived this week (signings, loans, youth intake) and
+  // resolve any collision the moves created. Idempotent, so this is a no-op
+  // in a week where nobody changed clubs.
+  ensureSquadNumbers(s);
 
   s.news = s.news.slice(0, 14);
   return s;
