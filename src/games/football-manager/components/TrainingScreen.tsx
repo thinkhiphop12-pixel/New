@@ -1,13 +1,21 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import type { GameState, Player, TrainingFocus } from '@/engine/types';
 import { getSquad } from '@/engine/teamManagement';
-import { getStaff, upgradeStaff } from '@/engine/seasonProgression';
+import { getStaff, nextUserFixture, upgradeStaff } from '@/engine/seasonProgression';
 import { STAFF_MAX_LEVEL, STAFF_UPGRADE_COST } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
 import { StatTile } from './visuals';
 import { Icon, type IconName } from './Icon';
+
+/** The engine's smallest time unit is a week — there's no per-day schedule
+ *  to read training sessions off. This weekly grid stays honest to that: the
+ *  training days all show the club's single active weekly focus, Saturday
+ *  reflects whether the currently-simulated week actually has a fixture
+ *  (`nextUserFixture` checks `f.round === state.week`), and Sunday is a
+ *  fixed rest day. Nothing here is fabricated per-day variety. */
+const WEEK_TRAINING_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] as const;
 
 const TRAINING_TYPES: { id: TrainingFocus; label: string; icon: IconName; desc: string }[] = [
   { id: 'balanced', label: 'Balanced', icon: 'balanced', desc: 'Develop all aspects equally' },
@@ -158,6 +166,12 @@ export default function TrainingScreen({
   const worstPlayers = [...displayedSquad].sort((a, b) => a.rating - b.rating).slice(0, 5);
   const shownPlayers = squadView === 'best' ? bestPlayers : worstPlayers;
 
+  const activeFocus = TRAINING_TYPES.find((t) => t.id === state.training) ?? TRAINING_TYPES[0];
+  const hasMatchThisWeek = nextUserFixture(state) !== null;
+  const conditionSquad = [...squad].sort((a, b) => a.fitness - b.fitness).slice(0, 8);
+  const conditionColor = (pct: number) =>
+    pct >= 75 ? 'var(--green)' : pct >= 50 ? 'var(--gold)' : 'var(--red)';
+
   return (
     <>
       <div className="fm-mod">
@@ -176,6 +190,51 @@ export default function TrainingScreen({
               <Icon name={t.icon} size={18} />
               <span>{t.label}</span>
             </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="fm-split" style={{ '--split-ratio': '1.3fr 1fr' } as CSSProperties}>
+        <div className="fm-mod">
+          <div className="fm-mod__head"><h2 className="fm-mod__title">This Week</h2></div>
+          <div className="fm-weekgrid">
+            {WEEK_TRAINING_DAYS.map((day) => (
+              <div key={day} className="fm-weekgrid__day">
+                <div className="fm-weekgrid__label">{day}</div>
+                <Icon name={activeFocus.icon} size={18} />
+                <div className="fm-weekgrid__session">{activeFocus.label}</div>
+              </div>
+            ))}
+            <div className="fm-weekgrid__day">
+              <div className="fm-weekgrid__label">Sat</div>
+              <Icon name={hasMatchThisWeek ? 'fixtures' : 'training'} size={18} />
+              <div className="fm-weekgrid__session">{hasMatchThisWeek ? 'Match Day' : 'Free'}</div>
+            </div>
+            <div className="fm-weekgrid__day">
+              <div className="fm-weekgrid__label">Sun</div>
+              <Icon name="person" size={18} />
+              <div className="fm-weekgrid__session">Rest</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="fm-mod">
+          <div className="fm-mod__head"><h2 className="fm-mod__title">Condition</h2></div>
+          {conditionSquad.map((p) => (
+            <div key={p.id} className="fm-meter-row">
+              <div className="fm-meter-row__head">
+                <span>{p.name}</span>
+                <span className="fm-meter-row__value" style={{ color: conditionColor(p.fitness) }}>
+                  {Math.round(p.fitness)}%
+                </span>
+              </div>
+              <div className="fm-meter-row__track">
+                <div
+                  className="fm-meter-row__fill"
+                  style={{ width: `${Math.round(p.fitness)}%`, background: conditionColor(p.fitness) }}
+                />
+              </div>
+            </div>
           ))}
         </div>
       </div>

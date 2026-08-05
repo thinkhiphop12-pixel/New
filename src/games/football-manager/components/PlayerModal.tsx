@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Icon } from './Icon';
 import type { Club, GameState, Player } from '@/engine/types';
 import { canLoanOut, loanOut, renewContract } from '@/engine/transferMarket';
@@ -40,6 +40,18 @@ function luminance(hex: string): number {
 
 function textOn(hex: string): string {
   return luminance(hex) > 0.45 ? '#111' : '#fff';
+}
+
+/** Same 5-band ramp `attrBand` uses for attribute chips, as a raw colour
+ *  rather than a class name — feeds the `.fm-ring` header treatment's
+ *  `--ring-color`, so the ring reads on the same scale as the attribute
+ *  bars underneath it. */
+function ratingRingColor(v: number): string {
+  if (v >= 85) return 'var(--chip-vhigh)';
+  if (v >= 72) return 'var(--chip-high)';
+  if (v >= 58) return 'var(--chip-mid)';
+  if (v >= 45) return 'var(--chip-low)';
+  return 'var(--chip-bad)';
 }
 
 function initials(name: string): string {
@@ -121,8 +133,13 @@ export default function PlayerModal({
         </div>
 
         <div className="pm-header">
-          <div className="pm-avatar" style={{ background: clubColor, color: clubText }}>
-            {initials(p.name)}
+          <div
+            className="fm-ring fm-ring--lg"
+            style={{ '--ring-pct': p.rating, '--ring-color': ratingRingColor(p.rating) } as CSSProperties}
+          >
+            <div className="pm-avatar" style={{ background: clubColor, color: clubText }}>
+              {initials(p.name)}
+            </div>
           </div>
           <div className="pm-info">
             <h2 className="pm-name">{p.name}</h2>

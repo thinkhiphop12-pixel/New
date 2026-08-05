@@ -19,10 +19,10 @@ committed alongside that phase's code changes.
 - [x] Overview (`PortalHub.tsx`) reconciled with Fixtures
 
 ## Phase 2 — Team
-- [ ] Squad (`SquadScreen.tsx`)
-- [ ] Tactics (`TacticsScreen.tsx`) + Shape/Defence/Attack/Set Pieces/Player Roles sub-screens
-- [ ] Training (`TrainingScreen.tsx`)
-- [ ] Player Profile (`PlayerModal.tsx`)
+- [x] Squad (`SquadScreen.tsx`)
+- [x] Tactics (`TacticsScreen.tsx`) + Shape/Defence/Attack/Set Pieces/Player Roles sub-screens
+- [x] Training (`TrainingScreen.tsx`)
+- [x] Player Profile (`PlayerModal.tsx`)
 
 ## Phase 3 — Market
 - [ ] Transfers (`TransfersScreen.tsx`) restructured to 5-tab IA
@@ -88,3 +88,68 @@ committed alongside that phase's code changes.
   `continentalRoundName`), filling undrawn rounds with "TBD vs TBD" placeholder tie cards, with
   the placeholder *count* per round estimated by halving the last known round's tie count
   (standard single-elimination shape) — a visual estimate, not real future pairing data.
+
+### Phase 2 — Team
+
+- **Squad's two rating-coded groups**: split by `Position` into "Goalkeepers & Defense"
+  (`GK`+`DEF`) and "Midfield & Attack" (`MID`+`FWD`), matching the mock's grouping exactly. The
+  mock's rating badge in this list is a rounded-square pill, not a circle, so it keeps reusing
+  the existing `.fm-player-row__rating` badge rather than `.fm-ring` — `.fm-ring` is reserved for
+  the screens where the mock actually shows a circular rating (Player Profile). No jersey-number
+  field exists on `Player`, so the mock's numbered circle became the existing `PlayerFace` avatar
+  instead of a fabricated squad number.
+- **New shared class**: `.fm-split`, a responsive two-column grid (`--split-ratio` custom
+  property, collapses to one column below 900px) added to `app/globals.css`. Used by Squad's two
+  groups, Tactics' pitch+list/pitch+instructions panels, and Training's week-grid+condition
+  panels — a pattern that recurred across all of Phase 2's screens but wasn't covered by Phase
+  0/1's shared classes.
+- **Tactics' 5 sub-screens are in-page `.fm-subtab`s, not new nav entries** (per PLAN.md's
+  explicit judgement call): `TacticsScreen.tsx` now renders its own `role="tablist"` row —
+  Formation / Shape / Defence / Attack / Set Pieces / Player Roles — above the content, reusing
+  the same `.fm-subtab` pill class the top-level group nav uses. The existing accordion sections
+  were redistributed rather than kept as a flat list:
+  - **Formation** (default landing tab) = the pitch preview (IP/OOP toggle) + a new "Squad ·
+    Role" list (the mock's right-hand panel, built from the real starting XI and each player's
+    `tacticalRole`) + the existing IP/OOP/custom-formation pickers, no longer behind an accordion
+    toggle since each sub-tab is now already a dedicated screen.
+  - **Shape** = Mentality (existing cards, kept — richer than the mock's 4-option mentality) +
+    Approach/Tempo/Width, each rewired onto the new `Segmented` helper component wrapping Phase
+    0's `.fm-segmented` class. The mock's 4th Shape row, "Creative Freedom", has no engine
+    equivalent and was **not** added — no fabricated tactical knob.
+  - **Defence** = Pressing (relabeled "Defensive Line & Pressing" — this engine ties the two
+    together as one setting, unlike the mock's separate sliders) as `.fm-segmented`, plus
+    Defending Corners, plus a decorative pitch line whose height responds to the real pressing
+    value. The mock's Tackling/Offside Trap/Time Wasting rows have no engine fields and were
+    dropped rather than invented.
+  - **Attack** = the existing Team Identity grid (play-style cards with familiarity/fit), with a
+    line of copy explaining that this collapses the mock's granular passing-style/flank-focus
+    instructions — this engine has no such knobs; Team Identity is the real attacking-approach
+    lever it models instead.
+  - **Set Pieces** = the existing corner-routine/corner-defense/takers UI, now paired with a
+    small decorative pitch visual (reusing the same `.fm-slot`/`.fm-slot__chip` pitch-token
+    classes as the Formation tab) showing the real assigned corner/free-kick/penalty takers as
+    markers, closer to the mock's set-piece pitch view.
+  - **Player Roles** = a new read-only summary grid (new `.fm-rolecard`/`.fm-rolecard-grid`
+    classes) showing the captain (`state.captainId`) and the four dead-ball jobs. It's
+    deliberately read-only: captaincy is appointed on `ClubScreen.tsx` (Phase 4 territory) and
+    dead-ball takers are set on this screen's own Set Pieces tab — duplicating editable controls
+    here would split one piece of state across two editors. The card copy says as much and points
+    at both places.
+- **Training's weekly grid stays honest to weekly-granularity data**: the engine's smallest time
+  unit is a week (no per-day schedule exists — see the Phase 1 log above), so a literal 7-day
+  mock schedule with distinct daily sessions would fabricate data. `TrainingScreen.tsx`'s new
+  `.fm-weekgrid` shows the real single active `state.training` focus across Mon–Fri, a real
+  Match Day/Free flag on Saturday from `nextUserFixture(state)` (which already checks
+  `f.round === state.week`), and a fixed Rest day on Sunday — visually matches the mock's 7-tile
+  grid without inventing daily variety the sim doesn't model. The Condition list reuses the real
+  `player.fitness` field (already on `Player`, previously unsurfaced in this screen) through a
+  new shared `.fm-meter-row` class. Existing Staff/best-worst-squad sections were kept below the
+  new modules rather than removed — real functionality the mock doesn't cover but nothing in the
+  brief called for deleting.
+- **Player Profile's ring is additive, layered onto the existing avatar rather than replacing
+  it**: `PlayerModal.tsx`'s `.fm-ring--lg` now wraps the existing club-coloured initials avatar
+  (unchanged), with `--ring-pct` driven by `p.rating` and `--ring-color` banded on the same
+  `--chip-vhigh/high/mid/low/bad` thresholds `attrBand` already uses for the attribute bars below
+  it, so the ring and the bars read on one consistent scale. Everything else — attribute bars,
+  the spider chart (kept, per the brief, as the supplementary detail view), traits, tactical-role
+  picker, Stats tab — is untouched.

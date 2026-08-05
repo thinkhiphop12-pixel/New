@@ -2133,3 +2133,46 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-bracket__side-score { font-weight: 900; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 .fm-bracket__side.winner .fm-bracket__side-name { color: var(--text); font-weight: 800; }
 .fm-bracket__side.winner .fm-bracket__side-score { color: var(--green); }
+
+/* =====================================================================
+   Gaffa restyle — Phase 2 shared component classes
+   Team screens (Squad/Tactics/Training/Player Profile). Patterns not
+   already covered by Phase 0/1's shared classes.
+   ===================================================================== */
+
+/* ── Split panel: responsive two-column layout ──
+   Squad's GK/Defense + Mid/Attack group lists, Tactics' pitch+squad-role
+   panel and each sub-screen's pitch+instructions panel. Ratio set per
+   instance via `--split-ratio` (defaults to two equal columns); collapses
+   to one column below 900px so nothing is squeezed on Portrait. */
+.fm-split { display: grid; grid-template-columns: 1fr; gap: var(--s-4); }
+@media (min-width: 900px) {
+  .fm-split { grid-template-columns: var(--split-ratio, 1fr 1fr); align-items: start; }
+}
+
+/* ── Meter row: label + value + thin progress bar ──
+   Training's Condition list; any future name-keyed 0-100 stat list. */
+.fm-meter-row { padding: 8px 0; border-top: 1px solid var(--border-soft); }
+.fm-meter-row:first-child { border-top: none; }
+.fm-meter-row__head { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; margin-bottom: 5px; gap: 8px; }
+.fm-meter-row__value { font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.fm-meter-row__track { height: 5px; border-radius: var(--r-full); background: var(--panel-3); overflow: hidden; }
+.fm-meter-row__fill { height: 100%; border-radius: var(--r-full); }
+
+/* ── Week grid: 7 session-icon tiles ──
+   Training's "This Week" schedule. */
+.fm-weekgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.fm-weekgrid__day { background: var(--panel-2); border-radius: var(--r-md); padding: 10px 4px; text-align: center; }
+.fm-weekgrid__label { font-size: 10.5px; font-weight: 800; color: var(--muted); margin-bottom: 8px; }
+.fm-weekgrid__session { font-size: 10px; font-weight: 700; line-height: 1.25; color: var(--text-2); }
+@media (max-width: 420px) { .fm-weekgrid { grid-template-columns: repeat(4, 1fr); } }
+
+/* ── Role card: icon tile + label + name grid ──
+   Tactics Player Roles summary (captain, dead-ball takers). */
+.fm-rolecard-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 700px) { .fm-rolecard-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1100px) { .fm-rolecard-grid { grid-template-columns: repeat(3, 1fr); } }
+.fm-rolecard { display: flex; align-items: center; gap: 14px; background: var(--panel); border: 1px solid var(--border-soft); border-radius: var(--r-lg); padding: 16px; }
+.fm-rolecard__label { font-size: 10px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--green); margin-bottom: 3px; }
+.fm-rolecard__name { font-size: 14.5px; font-weight: 800; }
+.fm-rolecard__sub { font-size: 11.5px; color: var(--muted); }

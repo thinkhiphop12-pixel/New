@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { GameState, PlayStyle, Pressing, TacticStyle, Tempo, Width } from '@/engine/types';
 import { ALL_FORMATIONS, buildCustomFormation, getFormation, getLeague, parseCustomFormationId } from '@/engine/gameRules';
 import { autoPickLineup, previewEffectiveXG } from '@/engine/teamManagement';
@@ -14,7 +14,9 @@ import {
   CORNER_ROUTINES, cornerRoutineOf, setPieceTaker, setPieceXG,
   type CornerDefense, type CornerRoutine, type SPJob,
 } from '@/engine/setPieces';
+import { getRole } from '@/lib/playerRoles';
 import { PitchMarkings, PlayerToken } from './visuals';
+import { Icon, type IconName } from './Icon';
 
 const ROUTINE_LABEL: Record<CornerRoutine, string> = {
   'near-post': 'Near Post',
@@ -26,11 +28,11 @@ const ROUTINE_LABEL: Record<CornerRoutine, string> = {
 
 /** The four dead-ball jobs, with the attribute each is judged on — shown next
  *  to every name so the choice can be made without leaving the screen. */
-const SP_ROLES: { job: SPJob; label: string; stat: 'pas' | 'sho' }[] = [
-  { job: 'penalty', label: 'Penalties', stat: 'sho' },
-  { job: 'corner', label: 'Corners', stat: 'pas' },
-  { job: 'fkShoot', label: 'Free kicks (shoot)', stat: 'sho' },
-  { job: 'fkDeliver', label: 'Free kicks (cross)', stat: 'pas' },
+const SP_ROLES: { job: SPJob; label: string; stat: 'pas' | 'sho'; icon: IconName }[] = [
+  { job: 'penalty', label: 'Penalties', stat: 'sho', icon: 'target' },
+  { job: 'corner', label: 'Corners', stat: 'pas', icon: 'corner' },
+  { job: 'fkShoot', label: 'Free kicks (shoot)', stat: 'sho', icon: 'boot' },
+  { job: 'fkDeliver', label: 'Free kicks (cross)', stat: 'pas', icon: 'flag' },
 ];
 
 const SP_FIELD: Record<SPJob, string> = {
@@ -56,6 +58,48 @@ const IDENTITY_LABEL: Record<PlayStyle, string> = {
   catenaccio: 'Catenaccio',
 };
 
+/** Equal-width option-pill row — Phase 0's `.fm-segmented` shared class,
+ *  used across the Shape/Defence sub-screens for the mock's instruction rows. */
+function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { id: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="fm-segmented">
+      {options.map((o) => (
+        <button
+          key={o.id}
+          type="button"
+          className={`fm-segmented__opt${value === o.id ? ' active' : ''}`}
+          onClick={() => onChange(o.id)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** The 6 Tactics sub-screens from the design spec — Formation is the
+ *  overview (pitch + squad/role list + the formation pickers this game
+ *  already had); Shape/Defence/Attack/Set Pieces/Player Roles are dedicated
+ *  screens reached via an in-page `.fm-subtab` row rather than new top-level
+ *  nav entries (see PROGRESS.md "Phase 2" decision log). */
+const TACTICS_SUB_TABS = [
+  { id: 'formation', label: 'Formation' },
+  { id: 'shape', label: 'Shape' },
+  { id: 'defence', label: 'Defence' },
+  { id: 'attack', label: 'Attack' },
+  { id: 'setpieces', label: 'Set Pieces' },
+  { id: 'roles', label: 'Player Roles' },
+] as const;
+type TacticsSubTab = (typeof TACTICS_SUB_TABS)[number]['id'];
+
 export default function TacticsScreen({
   state,
   onChange,
@@ -63,7 +107,7 @@ export default function TacticsScreen({
   state: GameState;
   onChange: (next: GameState) => void;
 }) {
-  const [expandedSection, setExpandedSection] = useState<string>('formations');
+  const [subTab, setSubTab] = useState<TacticsSubTab>('formation');
   const [previewShape, setPreviewShape] = useState<'ip' | 'oop'>('ip');
 
   // Custom formation builder (gap 24): seed the steppers from the current IP
@@ -162,198 +206,353 @@ export default function TacticsScreen({
     update({ tactics: { ...state.tactics, width } });
   };
 
-  const toggleSection = (section: string) => {
-    setExpandedSection(expandedSection === section ? '' : section);
-  };
-
   const previewFormation = getFormation(previewShape === 'ip' ? currentIPFormation : currentOOPFormation);
+
+  // Decorative defensive-line height on the Defence sub-screen's pitch —
+  // driven by the real `pressing` setting (the closest engine knob to the
+  // mock's "Defensive Line"), not a separate fabricated attribute.
+  const defenceLineTop = state.tactics.pressing === 'high' ? 25 : state.tactics.pressing === 'low' ? 75 : 50;
+
+  const captain = state.captainId != null ? state.players[state.captainId] : null;
 
   return (
     <div className="fm-panel fm-tactics">
-      <div className="fm-pills" style={{ marginBottom: 8 }}>
-        <button className={`fm-pill${previewShape === 'ip' ? ' active' : ''}`} onClick={() => setPreviewShape('ip')}>
-          In possession
-        </button>
-        <button className={`fm-pill${previewShape === 'oop' ? ' active' : ''}`} onClick={() => setPreviewShape('oop')}>
-          Out of possession
-        </button>
-      </div>
-      <div className="fm-pitch" style={{ marginBottom: 14 }}>
-        <PitchMarkings />
-        {previewFormation.slots.map((slot, i) => (
-          <div key={i} className="fm-slot fm-slot--live filled" style={{ left: `${slot.x}%`, bottom: `${slot.y}%` }}>
-            <PlayerToken label={slot.label} pos={slot.pos} />
-          </div>
+      <div className="fm-subnav__tabs" role="tablist" aria-label="Tactics sections" style={{ marginBottom: 12 }}>
+        {TACTICS_SUB_TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={subTab === t.id}
+            className={`fm-subtab${subTab === t.id ? ' active' : ''}`}
+            onClick={() => setSubTab(t.id)}
+          >
+            <span className="fm-subtab__label">{t.label}</span>
+          </button>
         ))}
       </div>
 
-      {(() => {
-        // Gap 32: previewEffectiveXG against the actual next opponent, using
-        // the same calcMatchXG chain a real match resolves with, so a
-        // tactical tweak's effect is visible before it's ever played out.
-        const fixture = nextUserFixture(state);
-        if (!fixture) return null;
-        const opponentId = fixture.homeId === state.userClubId ? fixture.awayId : fixture.homeId;
-        const opponent = state.clubs.find((c) => c.id === opponentId);
-        const xg = previewEffectiveXG(state, opponentId);
-        return (
-          <div className="fm-panel fm-panel--elevated" style={{ marginBottom: 14, padding: 10 }}>
-            <p className="fm-label fm-label--sm" style={{ marginTop: 0 }}>
-              Projected xG vs {opponent?.name ?? 'next opponent'}
-            </p>
-            <div className="fm-xg-preview">
-              <span className="fm-xg-preview__you">You {xg.userXG.toFixed(2)}</span>
-              <span className="fm-xg-preview__sep">–</span>
-              <span className="fm-xg-preview__them">{xg.oppXG.toFixed(2)} Them</span>
-            </div>
+      {subTab === 'formation' && (
+        <>
+          <div className="fm-pills" style={{ marginBottom: 8 }}>
+            <button className={`fm-pill${previewShape === 'ip' ? ' active' : ''}`} onClick={() => setPreviewShape('ip')}>
+              In possession
+            </button>
+            <button className={`fm-pill${previewShape === 'oop' ? ' active' : ''}`} onClick={() => setPreviewShape('oop')}>
+              Out of possession
+            </button>
           </div>
-        );
-      })()}
 
-      {/* Dual Formations Section */}
-      <div className="fm-tactics__section">
-        <button
-          className="fm-tactics__header"
-          onClick={() => toggleSection('formations')}
-          aria-expanded={expandedSection === 'formations'}
-        >
-          <span className="fm-tactics__title">Formations</span>
-          <span className="fm-tactics__indicator">{expandedSection === 'formations' ? '−' : '+'}</span>
-        </button>
-
-        {expandedSection === 'formations' && (
-          <div className="fm-tactics__content">
-            <div className="fm-tactics__formation-group">
-              <label className="fm-label fm-label--sm">In Possession</label>
-              <div className="fm-formation-grid">
-                {ALL_FORMATIONS.map((f) => (
-                  <button
-                    key={f.id}
-                    className={`fm-formation-tile${currentIPFormation === f.id ? ' active' : ''}`}
-                    onClick={() => setIPFormation(f.id)}
-                  >
-                    {f.id}
-                  </button>
-                ))}
-              </div>
+          <div className="fm-split" style={{ '--split-ratio': '1.4fr 1fr' } as CSSProperties}>
+            <div className="fm-pitch" style={{ marginBottom: 0 }}>
+              <PitchMarkings />
+              {previewFormation.slots.map((slot, i) => (
+                <div key={i} className="fm-slot fm-slot--live filled" style={{ left: `${slot.x}%`, bottom: `${slot.y}%` }}>
+                  <PlayerToken label={slot.label} pos={slot.pos} />
+                </div>
+              ))}
             </div>
 
-            <div className="fm-tactics__formation-group">
-              <label className="fm-label fm-label--sm">Out of Possession</label>
-              <div className="fm-formation-grid">
-                {ALL_FORMATIONS.map((f) => (
-                  <button
-                    key={f.id}
-                    className={`fm-formation-tile${currentOOPFormation === f.id ? ' active' : ''}`}
-                    onClick={() => setOOPFormation(f.id)}
-                  >
-                    {f.id}
-                  </button>
-                ))}
-              </div>
-              <p className="fm-hint">Used only while defending.</p>
-            </div>
-
-            <div className="fm-tactics__formation-group">
-              <label className="fm-label fm-label--sm">Custom Formation</label>
-              <p className="fm-hint">
-                Build any def-mid-fwd split (must total 10 outfield players) and set it as your
-                in-possession shape.
-              </p>
-              <div className="fm-custom-formation">
-                {(['DEF', 'MID', 'FWD'] as const).map((label, i) => (
-                  <div key={label} className="fm-custom-formation__stepper">
-                    <span className="fm-custom-formation__label">{label}</span>
-                    <button
-                      className="fm-btn fm-btn--ghost fm-btn--sm"
-                      onClick={() => setCustomLines((lines) => {
-                        const next = [...lines] as [number, number, number];
-                        next[i] = Math.max(1, next[i] - 1);
-                        return next;
-                      })}
-                    >
-                      −
-                    </button>
-                    <span className="fm-custom-formation__count">{customLines[i]}</span>
-                    <button
-                      className="fm-btn fm-btn--ghost fm-btn--sm"
-                      onClick={() => setCustomLines((lines) => {
-                        const next = [...lines] as [number, number, number];
-                        next[i] = Math.min(8, next[i] + 1);
-                        return next;
-                      })}
-                    >
-                      +
-                    </button>
+            <div className="fm-mod">
+              <div className="fm-mod__head"><h2 className="fm-mod__title">Squad · Role</h2></div>
+              <div className="fm-player-list">
+                {xi.length === 0 && <p className="fm-hint">Pick your XI on the Squad screen first.</p>}
+                {xi.map((p) => (
+                  <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`}>
+                    <span className="fm-player-row__badge">{p.pos}</span>
+                    <span className="fm-player-row__name">
+                      {p.name}
+                      <span className="fm-player-row__sub">{p.role}</span>
+                    </span>
+                    <span />
+                    <span className="fm-player-row__tag">
+                      {p.tacticalRole ? getRole(p.tacticalRole)?.name ?? 'Balanced' : 'Balanced'}
+                    </span>
                   </div>
                 ))}
               </div>
-              {(() => {
-                const total = customLines.reduce((a, b) => a + b, 0);
-                const valid = total === 10;
-                return (
-                  <>
-                    <p className="fm-hint">
-                      {customLines.join('-')} — {total} outfield players
-                      {valid ? '' : ` (needs 10, not ${total})`}
-                    </p>
+            </div>
+          </div>
+
+          {(() => {
+            // Gap 32: previewEffectiveXG against the actual next opponent, using
+            // the same calcMatchXG chain a real match resolves with, so a
+            // tactical tweak's effect is visible before it's ever played out.
+            const fixture = nextUserFixture(state);
+            if (!fixture) return null;
+            const opponentId = fixture.homeId === state.userClubId ? fixture.awayId : fixture.homeId;
+            const opponent = state.clubs.find((c) => c.id === opponentId);
+            const xg = previewEffectiveXG(state, opponentId);
+            return (
+              <div className="fm-panel fm-panel--elevated" style={{ margin: '14px 0', padding: 10 }}>
+                <p className="fm-label fm-label--sm" style={{ marginTop: 0 }}>
+                  Projected xG vs {opponent?.name ?? 'next opponent'}
+                </p>
+                <div className="fm-xg-preview">
+                  <span className="fm-xg-preview__you">You {xg.userXG.toFixed(2)}</span>
+                  <span className="fm-xg-preview__sep">–</span>
+                  <span className="fm-xg-preview__them">{xg.oppXG.toFixed(2)} Them</span>
+                </div>
+              </div>
+            );
+          })()}
+
+          <div className="fm-tactics__section">
+            <div className="fm-tactics__content">
+              <div className="fm-tactics__formation-group">
+                <label className="fm-label fm-label--sm">In Possession</label>
+                <div className="fm-formation-grid">
+                  {ALL_FORMATIONS.map((f) => (
                     <button
-                      className="fm-btn fm-btn--primary"
-                      disabled={!valid}
-                      onClick={() => setIPFormation(buildCustomFormation(...customLines).id)}
+                      key={f.id}
+                      className={`fm-formation-tile${currentIPFormation === f.id ? ' active' : ''}`}
+                      onClick={() => setIPFormation(f.id)}
                     >
-                      Set as In-Possession Shape
+                      {f.id}
                     </button>
-                  </>
-                );
-              })()}
+                  ))}
+                </div>
+              </div>
+
+              <div className="fm-tactics__formation-group">
+                <label className="fm-label fm-label--sm">Out of Possession</label>
+                <div className="fm-formation-grid">
+                  {ALL_FORMATIONS.map((f) => (
+                    <button
+                      key={f.id}
+                      className={`fm-formation-tile${currentOOPFormation === f.id ? ' active' : ''}`}
+                      onClick={() => setOOPFormation(f.id)}
+                    >
+                      {f.id}
+                    </button>
+                  ))}
+                </div>
+                <p className="fm-hint">Used only while defending.</p>
+              </div>
+
+              <div className="fm-tactics__formation-group">
+                <label className="fm-label fm-label--sm">Custom Formation</label>
+                <p className="fm-hint">
+                  Build any def-mid-fwd split (must total 10 outfield players) and set it as your
+                  in-possession shape.
+                </p>
+                <div className="fm-custom-formation">
+                  {(['DEF', 'MID', 'FWD'] as const).map((label, i) => (
+                    <div key={label} className="fm-custom-formation__stepper">
+                      <span className="fm-custom-formation__label">{label}</span>
+                      <button
+                        className="fm-btn fm-btn--ghost fm-btn--sm"
+                        onClick={() => setCustomLines((lines) => {
+                          const next = [...lines] as [number, number, number];
+                          next[i] = Math.max(1, next[i] - 1);
+                          return next;
+                        })}
+                      >
+                        −
+                      </button>
+                      <span className="fm-custom-formation__count">{customLines[i]}</span>
+                      <button
+                        className="fm-btn fm-btn--ghost fm-btn--sm"
+                        onClick={() => setCustomLines((lines) => {
+                          const next = [...lines] as [number, number, number];
+                          next[i] = Math.min(8, next[i] + 1);
+                          return next;
+                        })}
+                      >
+                        +
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {(() => {
+                  const total = customLines.reduce((a, b) => a + b, 0);
+                  const valid = total === 10;
+                  return (
+                    <>
+                      <p className="fm-hint">
+                        {customLines.join('-')} — {total} outfield players
+                        {valid ? '' : ` (needs 10, not ${total})`}
+                      </p>
+                      <button
+                        className="fm-btn fm-btn--primary"
+                        disabled={!valid}
+                        onClick={() => setIPFormation(buildCustomFormation(...customLines).id)}
+                      >
+                        Set as In-Possession Shape
+                      </button>
+                    </>
+                  );
+                })()}
+              </div>
             </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
 
-      {/* Mentality Section */}
-      <div className="fm-tactics__section">
-        <button
-          className="fm-tactics__header"
-          onClick={() => toggleSection('mentality')}
-          aria-expanded={expandedSection === 'mentality'}
-        >
-          <span className="fm-tactics__title">Mentality</span>
-          <span className="fm-tactics__indicator">{expandedSection === 'mentality' ? '−' : '+'}</span>
-        </button>
+      {subTab === 'shape' && (
+        <div className="fm-tactics__content">
+          <p className="fm-label fm-label--sm" style={{ marginTop: 0 }}>Mentality</p>
+          <div className="fm-mentality-row">
+            {MENTALITY_ORDER.map((m) => (
+              <button
+                key={m}
+                className={`fm-mentality-card${normalizeMentality(state.tactics.mentality) === m ? ' active' : ''}`}
+                onClick={() => setMentality(m)}
+              >
+                {MENTALITIES[m].short}
+              </button>
+            ))}
+          </div>
+          <p className="fm-hint">Sets the default match mentality — you can change it live from the touchline.</p>
 
-        {expandedSection === 'mentality' && (
-          <div className="fm-tactics__content">
-            <div className="fm-mentality-row">
-              {MENTALITY_ORDER.map((m) => (
+          <p className="fm-label fm-label--sm" style={{ marginTop: 16 }}>Approach</p>
+          <Segmented
+            options={(['defensive', 'balanced', 'attacking'] as TacticStyle[]).map((s) => ({ id: s, label: s[0].toUpperCase() + s.slice(1) }))}
+            value={state.tactics.style}
+            onChange={setStyle}
+          />
+
+          <p className="fm-label fm-label--sm" style={{ marginTop: 16 }}>Passing Tempo</p>
+          <Segmented
+            options={(['slow', 'normal', 'fast'] as Tempo[]).map((t) => ({ id: t, label: t[0].toUpperCase() + t.slice(1) }))}
+            value={state.tactics.tempo}
+            onChange={setTempo}
+          />
+
+          <p className="fm-label fm-label--sm" style={{ marginTop: 16 }}>Width</p>
+          <Segmented
+            options={(['narrow', 'standard', 'wide'] as Width[]).map((w) => ({ id: w, label: w[0].toUpperCase() + w.slice(1) }))}
+            value={state.tactics.width}
+            onChange={setWidth}
+          />
+        </div>
+      )}
+
+      {subTab === 'defence' && (
+        <div className="fm-split" style={{ '--split-ratio': '1fr 1.4fr' } as CSSProperties}>
+          <div className="fm-pitch" style={{ height: 220, marginBottom: 0 }}>
+            <PitchMarkings />
+            <div
+              style={{
+                position: 'absolute', left: '8%', right: '8%', top: `${defenceLineTop}%`,
+                height: 3, background: 'var(--gold)', borderRadius: 2,
+              }}
+            />
+            <span
+              style={{
+                position: 'absolute', left: 8, top: `${defenceLineTop + 2}%`,
+                fontSize: 9, fontWeight: 800, color: 'var(--gold)', letterSpacing: 0.5,
+              }}
+            >
+              DEFENSIVE LINE
+            </span>
+          </div>
+
+          <div className="fm-mod">
+            <div className="fm-mod__head"><h2 className="fm-mod__title">Team Instructions</h2></div>
+            <p className="fm-label fm-label--sm" style={{ marginTop: 0 }}>Defensive Line &amp; Pressing</p>
+            <Segmented
+              options={(['low', 'mid', 'high'] as Pressing[]).map((p) => ({
+                id: p, label: p === 'low' ? 'Low block' : p === 'mid' ? 'Standard' : 'High press',
+              }))}
+              value={state.tactics.pressing}
+              onChange={setPressing}
+            />
+            <p className="fm-hint">This engine ties defensive-line height directly to pressing intensity, rather than modelling them as separate knobs.</p>
+
+            <p className="fm-label fm-label--sm" style={{ marginTop: 16 }}>Defending Corners</p>
+            <Segmented
+              options={(['zonal', 'mixed', 'man'] as CornerDefense[]).map((d) => ({ id: d, label: d[0].toUpperCase() + d.slice(1) }))}
+              value={state.tactics.setPieces?.cornerDefense ?? 'mixed'}
+              onChange={(d) => setSetPiece({ cornerDefense: d })}
+            />
+            <p className="fm-hint">
+              Zonal concedes least from the delivery itself; man-marking concedes most but leaves
+              you better placed for the second ball.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {subTab === 'attack' && (
+        <div className="fm-tactics__content">
+          <p className="fm-label fm-label--sm" style={{ marginTop: 0 }}>Team Identity</p>
+          <p className="fm-hint" style={{ marginTop: 0 }}>
+            The mock's granular passing-style/flank-focus knobs collapse into this engine's single
+            named identity — the real attacking-approach lever this game models (see PROGRESS.md).
+          </p>
+          <div className="fm-identity-grid">
+            {IDENTITY_ORDER.map((id) => {
+              const active = currentStyle === id;
+              const fam = active
+                ? styleFamiliarity(userClub, id)
+                : projectedFamiliarity(userClub, id);
+              const weeks = weeksToDrill(userClub, id, 80, coachMult);
+              // How well the squad could execute it if fully drilled — the
+              // ability half of the gate, shown separately so a player can
+              // tell "wrong squad" apart from "needs more time".
+              const fit = Math.round(
+                styleExec(userClub, xi, id, level, undefined, { rawSkill: true }) * 100,
+              );
+              return (
                 <button
-                  key={m}
-                  className={`fm-mentality-card${normalizeMentality(state.tactics.mentality) === m ? ' active' : ''}`}
-                  onClick={() => setMentality(m)}
+                  key={id}
+                  className={`fm-identity-card${active ? ' active' : ''}`}
+                  onClick={() => setIdentity(id)}
                 >
-                  {MENTALITIES[m].short}
+                  <span className="fm-identity-card__name">{IDENTITY_LABEL[id]}</span>
+                  <span className="fm-identity-card__bar" aria-hidden>
+                    <span
+                      className="fm-identity-card__fill"
+                      style={{ width: `${Math.round(fam)}%` }}
+                    />
+                  </span>
+                  <span className="fm-identity-card__meta">
+                    {active
+                      ? `${Math.round(fam)}% drilled`
+                      : weeks === 0
+                        ? 'ready now'
+                        : `${Math.round(fam)}% · ${weeks}w to drill`}
+                  </span>
+                  <span
+                    className={`fm-identity-card__fit${fit >= 75 ? ' good' : fit >= 55 ? ' ok' : ' poor'}`}
+                  >
+                    squad fit {fit}%
+                  </span>
                 </button>
-              ))}
-            </div>
-            <p className="fm-hint">Sets the default match mentality — you can change it live from the touchline.</p>
+              );
+            })}
           </div>
-        )}
-      </div>
+          <p className="fm-hint">
+            {needsDrilling(currentStyle)
+              ? `Your side is ${Math.round(styleFamiliarity(userClub, currentStyle))}% drilled in ${IDENTITY_LABEL[currentStyle]}. Familiarity builds each week and decays on styles you stop using — switching to a related style carries most of the work across.`
+              : 'Balanced and Park the Bus need no drilling. Any other identity has to be worked on before it pays off.'}
+          </p>
+        </div>
+      )}
 
-      {/* Set Pieces — routine, defensive scheme and designated takers. */}
-      <div className="fm-tactics__section">
-        <button
-          className="fm-tactics__header"
-          onClick={() => toggleSection('setpieces')}
-          aria-expanded={expandedSection === 'setpieces'}
-        >
-          <span className="fm-tactics__title">Set Pieces</span>
-          <span className="fm-tactics__indicator">{expandedSection === 'setpieces' ? '−' : '+'}</span>
-        </button>
+      {subTab === 'setpieces' && (
+        <div className="fm-split" style={{ '--split-ratio': '1fr 1.4fr' } as CSSProperties}>
+          <div className="fm-pitch" style={{ height: 280, marginBottom: 0 }}>
+            <PitchMarkings />
+            {[
+              { label: 'CK', top: 16, left: 6, name: cornerTaker?.name },
+              { label: 'FK', top: 46, left: 50, name: setPieceTaker(xi, state.tactics, 'fkShoot')?.name },
+              { label: 'PK', top: 82, left: 50, name: setPieceTaker(xi, state.tactics, 'penalty')?.name },
+            ].map((m) => (
+              <div
+                key={m.label}
+                className="fm-slot fm-slot--live filled"
+                style={{ top: `${m.top}%`, left: `${m.left}%`, transform: 'translate(-50%,-50%)' }}
+              >
+                <span className="fm-slot__chip">{m.label}</span>
+                <span className="fm-slot__name">{m.name ?? '—'}</span>
+              </div>
+            ))}
+          </div>
 
-        {expandedSection === 'setpieces' && (
-          <div className="fm-tactics__content">
+          <div className="fm-mod">
+            <div className="fm-mod__head"><h2 className="fm-mod__title">Set Pieces</h2></div>
             <div className="fm-sp-label">Corner routine</div>
             <div className="fm-pills">
               {(Object.keys(CORNER_ROUTINES) as CornerRoutine[]).map((r) => (
@@ -370,23 +569,6 @@ export default function TacticsScreen({
               Currently worth <strong>{spThreat.toFixed(2)}×</strong> on a corner — delivery from{' '}
               {cornerTaker?.name ?? 'nobody'} against the aerial threat of the men you send up.
               Short routines ignore height; far-post leans on it entirely.
-            </p>
-
-            <div className="fm-sp-label">Defending corners</div>
-            <div className="fm-pills">
-              {(['zonal', 'mixed', 'man'] as CornerDefense[]).map((d) => (
-                <button
-                  key={d}
-                  className={`fm-pill${(state.tactics.setPieces?.cornerDefense ?? 'mixed') === d ? ' active' : ''}`}
-                  onClick={() => setSetPiece({ cornerDefense: d })}
-                >
-                  {d[0].toUpperCase() + d.slice(1)}
-                </button>
-              ))}
-            </div>
-            <p className="fm-hint">
-              Zonal concedes least from the delivery itself; man-marking concedes most but leaves
-              you better placed for the second ball.
             </p>
 
             <div className="fm-sp-label">Takers</div>
@@ -418,184 +600,42 @@ export default function TacticsScreen({
               instead, as long as he is in the XI.
             </p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Team Identity — the named play-style the squad is drilled in. */}
-      <div className="fm-tactics__section">
-        <button
-          className="fm-tactics__header"
-          onClick={() => toggleSection('identity')}
-          aria-expanded={expandedSection === 'identity'}
-        >
-          <span className="fm-tactics__title">Team Identity</span>
-          <span className="fm-tactics__indicator">{expandedSection === 'identity' ? '−' : '+'}</span>
-        </button>
-
-        {expandedSection === 'identity' && (
-          <div className="fm-tactics__content">
-            <div className="fm-identity-grid">
-              {IDENTITY_ORDER.map((id) => {
-                const active = currentStyle === id;
-                const fam = active
-                  ? styleFamiliarity(userClub, id)
-                  : projectedFamiliarity(userClub, id);
-                const weeks = weeksToDrill(userClub, id, 80, coachMult);
-                // How well the squad could execute it if fully drilled — the
-                // ability half of the gate, shown separately so a player can
-                // tell "wrong squad" apart from "needs more time".
-                const fit = Math.round(
-                  styleExec(userClub, xi, id, level, undefined, { rawSkill: true }) * 100,
-                );
-                return (
-                  <button
-                    key={id}
-                    className={`fm-identity-card${active ? ' active' : ''}`}
-                    onClick={() => setIdentity(id)}
-                  >
-                    <span className="fm-identity-card__name">{IDENTITY_LABEL[id]}</span>
-                    <span className="fm-identity-card__bar" aria-hidden>
-                      <span
-                        className="fm-identity-card__fill"
-                        style={{ width: `${Math.round(fam)}%` }}
-                      />
-                    </span>
-                    <span className="fm-identity-card__meta">
-                      {active
-                        ? `${Math.round(fam)}% drilled`
-                        : weeks === 0
-                          ? 'ready now'
-                          : `${Math.round(fam)}% · ${weeks}w to drill`}
-                    </span>
-                    <span
-                      className={`fm-identity-card__fit${fit >= 75 ? ' good' : fit >= 55 ? ' ok' : ' poor'}`}
-                    >
-                      squad fit {fit}%
-                    </span>
-                  </button>
-                );
-              })}
+      {subTab === 'roles' && (
+        <div className="fm-rolecard-grid">
+          <div className="fm-rolecard">
+            <div className="fm-icon-tile fm-icon-tile--lg" style={{ '--tile-tint': 'var(--gold)' } as CSSProperties}>
+              <Icon name="star" size={22} />
             </div>
-            <p className="fm-hint">
-              {needsDrilling(currentStyle)
-                ? `Your side is ${Math.round(styleFamiliarity(userClub, currentStyle))}% drilled in ${IDENTITY_LABEL[currentStyle]}. Familiarity builds each week and decays on styles you stop using — switching to a related style carries most of the work across.`
-                : 'Balanced and Park the Bus need no drilling. Any other identity has to be worked on before it pays off.'}
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Style Section */}
-      <div className="fm-tactics__section">
-        <button
-          className="fm-tactics__header"
-          onClick={() => toggleSection('style')}
-          aria-expanded={expandedSection === 'style'}
-        >
-          <span className="fm-tactics__title">Approach</span>
-          <span className="fm-tactics__indicator">{expandedSection === 'style' ? '−' : '+'}</span>
-        </button>
-
-        {expandedSection === 'style' && (
-          <div className="fm-tactics__content">
-            <div className="fm-pills">
-              {(['defensive', 'balanced', 'attacking'] as TacticStyle[]).map((s) => (
-                <button
-                  key={s}
-                  className={`fm-pill${state.tactics.style === s ? ' active' : ''}`}
-                  onClick={() => setStyle(s)}
-                >
-                  {s[0].toUpperCase() + s.slice(1)}
-                </button>
-              ))}
+            <div>
+              <div className="fm-rolecard__label">Captain</div>
+              <div className="fm-rolecard__name">{captain?.name ?? 'Not appointed'}</div>
+              <div className="fm-rolecard__sub">{captain ? captain.pos : 'Appoint from the Club screen'}</div>
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Pressing Section */}
-      <div className="fm-tactics__section">
-        <button
-          className="fm-tactics__header"
-          onClick={() => toggleSection('pressing')}
-          aria-expanded={expandedSection === 'pressing'}
-        >
-          <span className="fm-tactics__title">Pressing</span>
-          <span className="fm-tactics__indicator">{expandedSection === 'pressing' ? '−' : '+'}</span>
-        </button>
-
-        {expandedSection === 'pressing' && (
-          <div className="fm-tactics__content">
-            <div className="fm-pills">
-              {(['low', 'mid', 'high'] as Pressing[]).map((p) => (
-                <button
-                  key={p}
-                  className={`fm-pill${state.tactics.pressing === p ? ' active' : ''}`}
-                  onClick={() => setPressing(p)}
-                >
-                  {p === 'low' ? 'Low block' : p === 'mid' ? 'Standard' : 'High press'}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Tempo Section */}
-      <div className="fm-tactics__section">
-        <button
-          className="fm-tactics__header"
-          onClick={() => toggleSection('tempo')}
-          aria-expanded={expandedSection === 'tempo'}
-        >
-          <span className="fm-tactics__title">Tempo</span>
-          <span className="fm-tactics__indicator">{expandedSection === 'tempo' ? '−' : '+'}</span>
-        </button>
-
-        {expandedSection === 'tempo' && (
-          <div className="fm-tactics__content">
-            <div className="fm-pills">
-              {(['slow', 'normal', 'fast'] as Tempo[]).map((t) => (
-                <button
-                  key={t}
-                  className={`fm-pill${state.tactics.tempo === t ? ' active' : ''}`}
-                  onClick={() => setTempo(t)}
-                >
-                  {t[0].toUpperCase() + t.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Width Section */}
-      <div className="fm-tactics__section">
-        <button
-          className="fm-tactics__header"
-          onClick={() => toggleSection('width')}
-          aria-expanded={expandedSection === 'width'}
-        >
-          <span className="fm-tactics__title">Width</span>
-          <span className="fm-tactics__indicator">{expandedSection === 'width' ? '−' : '+'}</span>
-        </button>
-
-        {expandedSection === 'width' && (
-          <div className="fm-tactics__content">
-            <div className="fm-pills">
-              {(['narrow', 'standard', 'wide'] as Width[]).map((w) => (
-                <button
-                  key={w}
-                  className={`fm-pill${state.tactics.width === w ? ' active' : ''}`}
-                  onClick={() => setWidth(w)}
-                >
-                  {w[0].toUpperCase() + w.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+          {SP_ROLES.map(({ job, label, stat, icon }) => {
+            const taker = setPieceTaker(xi, state.tactics, job);
+            return (
+              <div key={job} className="fm-rolecard">
+                <div className="fm-icon-tile fm-icon-tile--lg" style={{ '--tile-tint': 'var(--green)' } as CSSProperties}>
+                  <Icon name={icon} size={22} />
+                </div>
+                <div>
+                  <div className="fm-rolecard__label">{label}</div>
+                  <div className="fm-rolecard__name">{taker?.name ?? 'Nobody'}</div>
+                  <div className="fm-rolecard__sub">{taker ? `${taker.pos} · ${taker[stat]} ${stat.toUpperCase()}` : 'Set on the Set Pieces tab'}</div>
+                </div>
+              </div>
+            );
+          })}
+          <p className="fm-hint" style={{ gridColumn: '1 / -1' }}>
+            Captain is appointed from the Club screen; dead-ball takers are set on the Set Pieces
+            tab above — this is a read-only summary of both.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
