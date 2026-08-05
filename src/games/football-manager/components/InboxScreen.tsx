@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { GameState, InboxCategory, InboxItem, Player } from '@/engine/types';
 import { markAllInboxRead, markInboxRead, setCaptain } from '@/engine/seasonProgression';
 import { formatMoney } from '@/engine/utils';
@@ -28,6 +28,25 @@ const CATEGORY_LABEL: Record<InboxCategory, string> = {
   match: 'Match',
   press: 'Press',
 };
+
+/** Icon-tile tint per category (mock: colour-coded message rows), drawn only
+ *  from the existing token set — the spec's purple is not part of this
+ *  game's palette, so board/press take gold and emerald instead. */
+const CATEGORY_TINT: Record<InboxCategory, string> = {
+  club: 'var(--green)',
+  transfer: 'var(--blue)',
+  injury: 'var(--red)',
+  contract: 'var(--gold)',
+  youth: 'var(--green-600)',
+  board: 'var(--gold-2)',
+  match: 'var(--lime)',
+  press: 'var(--emerald)',
+};
+
+/** List filter: everything, unread only, or a single category. Only
+ *  categories that actually have messages become tabs — an empty "Youth"
+ *  filter would read as a broken screen rather than an empty inbox. */
+type Filter = 'all' | 'unread' | InboxCategory;
 
 function ord(n: number): string {
   if (n % 100 >= 11 && n % 100 <= 13) return 'th';
@@ -91,22 +110,38 @@ export default function InboxScreen({
   onChange: (next: GameState) => void;
 }) {
   const [openId, setOpenId] = useState<number | null>(null);
+  const [filter, setFilter] = useState<Filter>('all');
   const items = state.inbox;
   const unread = items.filter((i) => !i.read).length;
 
-  const openIndex = openId !== null ? items.findIndex((i) => i.id === openId) : -1;
-  const current = openIndex >= 0 ? items[openIndex] : null;
+  // Categories present in the real inbox, in the order the label map
+  // declares them so the strip doesn't reshuffle as news arrives.
+  const presentCategories = (Object.keys(CATEGORY_LABEL) as InboxCategory[]).filter((c) =>
+    items.some((i) => i.category === c)
+  );
+  const shown = items.filter((i) =>
+    filter === 'all' ? true : filter === 'unread' ? !i.read : i.category === filter
+  );
 
-  const openItem = (id: number) => {
+  // Prev/Next walk the list you opened the message *from*, captured at open
+  // time rather than recomputed. Reading a message under the "Unread" filter
+  // drops it out of the live filtered list, which would otherwise strand the
+  // detail view the instant it marked itself read.
+  const [navIds, setNavIds] = useState<number[]>([]);
+  const current = openId !== null ? items.find((i) => i.id === openId) ?? null : null;
+  const navIndex = openId !== null ? navIds.indexOf(openId) : -1;
+
+  const openItem = (id: number, from?: number[]) => {
     setOpenId(id);
+    if (from) setNavIds(from);
     const item = items.find((i) => i.id === id);
     if (item && !item.read) onChange(markInboxRead(state, id));
   };
 
   const step = (dir: 1 | -1) => {
-    if (openIndex < 0) return;
-    const next = items[openIndex + dir];
-    if (next) openItem(next.id);
+    if (navIndex < 0) return;
+    const next = navIds[navIndex + dir];
+    if (next !== undefined) openItem(next);
   };
 
   if (!current) {
@@ -128,18 +163,67 @@ export default function InboxScreen({
         {items.length === 0 ? (
           <p className="fm-hint">Nothing here yet — news will arrive as your season unfolds.</p>
         ) : (
-          <div className="fm-inbox__list">
-            {items.map((item) => (
-              <button key={item.id} className={`fm-inbox__row${item.read ? '' : ' unread'}`} onClick={() => openItem(item.id)}>
-                <span className="fm-inbox__row-icon"><Icon name={CATEGORY_ICON[item.category]} size={16} /></span>
-                <span className="fm-inbox__row-main">
-                  <span className="fm-inbox__row-title">{item.title}</span>
-                  <span className="fm-inbox__row-meta">{CATEGORY_LABEL[item.category]} · Week {item.week}</span>
-                </span>
-                {!item.read && <span className="fm-inbox__row-dot" />}
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="fm-subnav__tabs" role="tablist" aria-label="Filter messages">
+              {([
+                { id: 'all' as Filter, label: 'All', count: items.length },
+                { id: 'unread' as Filter, label: 'Unread', count: unread },
+                ...presentCategories.map((c) => ({
+                  id: c as Filter,
+                  label: CATEGORY_LABEL[c],
+                  count: items.filter((i) => i.category === c).length,
+                })),
+              ]).map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  id={`fm-inbox-tab-${t.id}`}
+                  role="tab"
+                  aria-selected={filter === t.id}
+                  aria-controls="fm-inbox-panel"
+                  className={`fm-subtab${filter === t.id ? ' active' : ''}`}
+                  onClick={() => setFilter(t.id)}
+                >
+                  <span className="fm-subtab__label">{t.label}{t.count > 0 ? ` (${t.count})` : ''}</span>
+                </button>
+              ))}
+            </div>
+
+            <div id="fm-inbox-panel" role="tabpanel" aria-labelledby={`fm-inbox-tab-${filter}`}>
+              {shown.length === 0 ? (
+                <p className="fm-hint">
+                  {filter === 'unread' ? 'Everything here is read.' : 'No messages in this category.'}
+                </p>
+              ) : (
+                <div className="fm-msg-list">
+                  {shown.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`fm-msg-row${item.read ? '' : ' unread'}`}
+                      onClick={() => openItem(item.id, shown.map((i) => i.id))}
+                    >
+                      <span
+                        className="fm-icon-tile fm-icon-tile--sm"
+                        style={{ '--tile-tint': CATEGORY_TINT[item.category] } as CSSProperties}
+                      >
+                        <Icon name={CATEGORY_ICON[item.category]} size={15} />
+                      </span>
+                      <span className="fm-msg-row__main">
+                        <span className="fm-msg-row__title">{item.title}</span>
+                        <span className="fm-msg-row__meta">{CATEGORY_LABEL[item.category]} · Week {item.week}</span>
+                      </span>
+                      {!item.read && (
+                        <span className="fm-msg-row__dot">
+                          <span className="fm-u-sr">Unread</span>
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
     );
@@ -152,11 +236,17 @@ export default function InboxScreen({
   return (
     <div className="fm-inbox">
       <div className="fm-inbox__article-head">
-        <div>
-          <span className="fm-inbox__cat-chip" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-            <Icon name={CATEGORY_ICON[current.category]} size={13} /> {CATEGORY_LABEL[current.category]}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <span
+            className="fm-icon-tile fm-icon-tile--sm"
+            style={{ '--tile-tint': CATEGORY_TINT[current.category] } as CSSProperties}
+          >
+            <Icon name={CATEGORY_ICON[current.category]} size={15} />
           </span>
-          <span className="fm-inbox__date">{articleDate(current)}</span>
+          <span style={{ minWidth: 0 }}>
+            <span className="fm-inbox__cat-chip">{CATEGORY_LABEL[current.category]}</span>
+            <span className="fm-inbox__date">{articleDate(current)}</span>
+          </span>
         </div>
         <button className="fm-btn fm-btn--primary fm-btn--small" onClick={() => setOpenId(null)}>
           Continue
@@ -195,10 +285,10 @@ export default function InboxScreen({
         <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setOpenId(null)}>
           Inbox
         </button>
-        <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => step(-1)} disabled={openIndex <= 0}>
+        <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => step(-1)} disabled={navIndex <= 0}>
           <Icon name="chevron" size={13} style={{ transform: 'rotate(180deg)' }} /> Previous
         </button>
-        <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => step(1)} disabled={openIndex >= items.length - 1}>
+        <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => step(1)} disabled={navIndex < 0 || navIndex >= navIds.length - 1}>
           Next <Icon name="chevron" size={13} />
         </button>
       </div>
