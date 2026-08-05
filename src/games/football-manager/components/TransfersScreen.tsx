@@ -336,7 +336,7 @@ export default function TransfersScreen({
             const assignment = sc.assignments.find((a) => a.kind === 'player-search' && a.foundPlayerIds?.includes(p.id));
             const known = assignment?.complete ?? false;
             return (
-              <button key={p.id} type="button" className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)} style={{ background: 'transparent', border: 'inherit', padding: 'inherit', font: 'inherit', color: 'inherit', width: '100%', textAlign: 'left', cursor: 'pointer' }}>
+              <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
                 <span
                   aria-hidden
                   style={{
@@ -352,14 +352,14 @@ export default function TransfersScreen({
                   </span>
                 </span>
                 <span style={{ display: 'flex', gap: 6 }} onClick={(e) => e.stopPropagation()}>
-                  <button className="fm-btn fm-btn--small fm-btn--ghost" onClick={(e) => { e.stopPropagation(); toggleScout(p.id); }}>
+                  <button className="fm-btn fm-btn--small fm-btn--ghost" onClick={() => toggleScout(p.id)}>
                     Drop
                   </button>
                   <button
                     className="fm-btn fm-btn--small fm-btn--primary"
                     disabled={askingPrice(p) > state.budget || (!win.open && p.clubId !== 0)}
                     title={!win.open && p.clubId !== 0 ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}` : undefined}
-                    onClick={(e) => { e.stopPropagation(); doSign(p.id); }}
+                    onClick={() => doSign(p.id)}
                   >
                     {!win.open && p.clubId !== 0 ? 'Window shut' : `Sign ${formatMoney(askingPrice(p))}`}
                   </button>
@@ -367,7 +367,7 @@ export default function TransfersScreen({
                 <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
                   {p.rating}
                 </span>
-              </button>
+              </div>
             );
           })}
           </div>
