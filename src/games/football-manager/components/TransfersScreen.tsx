@@ -385,7 +385,7 @@ export default function TransfersScreen({
                     </span>
                   </span>
                   <span className="fm-player-row__rating">{n.playerRating}</span>
-                </div>
+                </button>
               ))}
             </div>
           </div>
