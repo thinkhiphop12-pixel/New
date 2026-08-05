@@ -2074,6 +2074,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-ring {
   --ring-pct: 0;
   --ring-color: var(--green);
+
   position: relative; display: flex; align-items: center; justify-content: center;
   width: 64px; height: 64px; border-radius: 50%;
   background: conic-gradient(var(--ring-color) calc(var(--ring-pct) * 1%), var(--border-soft) 0);
@@ -2093,14 +2094,14 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 /* ── Ledger card: two-column "current vs offer" comparison ──
    Negotiation Detail, Offers Sent — a term-by-term row split into a left
    (current/asking) and right (proposed/offer) value. */
-.fm-ledger { display: flex; flex-direction: column; gap: 1px; border-radius: var(--r-md); overflow: hidden; }
-.fm-ledger__row {
+.fm-ledger-card { display: flex; flex-direction: column; gap: 1px; border-radius: var(--r-md); overflow: hidden; }
+.fm-ledger-card__row {
   display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px;
   background: var(--panel); padding: 9px 12px; font-size: 12.5px;
 }
-.fm-ledger__label { color: var(--muted); font-weight: 600; }
-.fm-ledger__current { color: var(--muted); font-variant-numeric: tabular-nums; }
-.fm-ledger__offer { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+.fm-ledger-card__label { color: var(--muted); font-weight: 600; }
+.fm-ledger-card__current { color: var(--muted); font-variant-numeric: tabular-nums; }
+.fm-ledger-card__offer { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
 .fm-ledger__offer--up { color: var(--green); }
 .fm-ledger__offer--down { color: var(--red); }
 

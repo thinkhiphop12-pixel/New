@@ -158,7 +158,8 @@ export default function TransfersScreen({
       {notice && !error && <p className="fm-hint" style={{ color: 'var(--green-600)' }}>{notice}</p>}
 
       {tab === 'hub' && (
-        <TransferHub
+        <div role="tabpanel">
+          <TransferHub
           state={state}
           sc={sc}
           activeAssignments={activeAssignments}
@@ -167,10 +168,11 @@ export default function TransfersScreen({
           onChange={onChange}
           onGo={setTab}
         />
+        </div>
       )}
 
       {tab === 'search' && (
-        <>
+        <div role="tabpanel">
           <div className="fm-filtercards">
             <FilterCard label="Position" icon="squad">
               <select className="fm-search" value={posFilter} onChange={(e) => setPosFilter(e.target.value as Position | 'ALL')}>
@@ -311,17 +313,19 @@ export default function TransfersScreen({
               </div>
             ))}
           </div>
-        </>
+        </div>
       )}
 
       {tab === 'shortlist' && (
-        <div className="fm-player-list">
+        <div role="tabpanel">
+          <div className="fm-player-list">
           <p className="fm-hint">Full shortlist, with a scouting-status dot per player — full colour once your scouts have a complete read on him, dim while a report is still pending.</p>
           {shortlisted.length === 0 && <p className="fm-hint">Nobody shortlisted yet. Tap “Shortlist” on a player from Search.</p>}
           {shortlisted.map((p) => {
-            const known = reports.some((r) => r.picks.some((pk) => pk.id === p.id));
+            const assignment = sc.assignments.find((a) => a.kind === 'player-search' && a.foundPlayerIds?.includes(p.id));
+            const known = assignment?.complete ?? false;
             return (
-              <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
+              <button key={p.id} type="button" className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)} style={{ background: 'transparent', border: 'inherit', padding: 'inherit', font: 'inherit', color: 'inherit', width: '100%', textAlign: 'left', cursor: 'pointer' }}>
                 <span
                   aria-hidden
                   style={{
@@ -336,7 +340,7 @@ export default function TransfersScreen({
                     {p.nat} · {p.age}y · {clubName(p.clubId)} · {known ? 'scouted' : 'report pending'}
                   </span>
                 </span>
-                <span style={{ display: 'flex', gap: 6 }}>
+                <span style={{ display: 'flex', gap: 6 }} onClick={(e) => e.stopPropagation()}>
                   <button className="fm-btn fm-btn--small fm-btn--ghost" onClick={(e) => { e.stopPropagation(); toggleScout(p.id); }}>
                     Drop
                   </button>
@@ -351,23 +355,27 @@ export default function TransfersScreen({
                 <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
                   {p.rating}
                 </span>
-              </div>
+              </button>
             );
           })}
+          </div>
         </div>
       )}
 
       {tab === 'sent' && (
-        <div className="fm-split" style={{ ['--split-ratio' as string]: '1fr 1.3fr' }}>
+        <div role="tabpanel">
+          <div className="fm-split" style={{ ['--split-ratio' as string]: '1fr 1.3fr' }}>
           <div className="fm-panel">
             <p className="fm-label" style={{ marginTop: 0 }}>Sent</p>
             {outgoing.length === 0 && <p className="fm-hint">No talks open. Approach a target from Search.</p>}
             <div className="fm-player-list">
               {outgoing.map((n) => (
-                <div
+                <button
                   key={n.id}
+                  type="button"
                   className={`fm-player-row fm-pos-${n.playerPos}${activeNegId === n.id ? ' active' : ''}`}
                   onClick={() => setActiveNegId(n.id)}
+                  style={{ background: 'transparent', border: 'inherit', padding: 'inherit', font: 'inherit', color: 'inherit', width: '100%', textAlign: 'left', cursor: 'pointer' }}
                 >
                   <span className="fm-player-row__name">
                     {n.playerName}
@@ -388,15 +396,17 @@ export default function TransfersScreen({
               <p className="fm-hint">Select a deal on the left to see its terms.</p>
             </div>
           )}
+          </div>
         </div>
       )}
 
       {tab === 'received' && (
-        <div className="fm-player-list">
+        <div role="tabpanel">
+          <div className="fm-player-list">
           {incoming.length === 0 && <p className="fm-hint">No bids for your players this week.</p>}
           {incoming.map((n) => (
             <div key={n.id} className="fm-received-row">
-              <div className="fm-received-row__head" onClick={() => setDetailId(n.playerId)}>
+              <button type="button" className="fm-received-row__head" onClick={() => setDetailId(n.playerId)} style={{ background: 'transparent', border: 'none', padding: 0, font: 'inherit', color: 'inherit', width: '100%', textAlign: 'left', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <span className="fm-player-row__name">
                   {n.playerName}
                   <span className="fm-player-row__sub">from {n.clubName}</span>
@@ -410,7 +420,7 @@ export default function TransfersScreen({
                     {n.rival ? ` · rival: ${n.rival.clubName} ${formatMoney(n.rival.offer)}` : ''}
                   </div>
                 </span>
-              </div>
+              </button>
               {n.awaiting === 'user' && (
                 <div className="fm-received-row__actions">
                   <button
@@ -440,6 +450,7 @@ export default function TransfersScreen({
               )}
             </div>
           ))}
+          </div>
         </div>
       )}
 
@@ -637,12 +648,12 @@ function NegotiationPanel({
         </span>
       </div>
 
-      <div className="fm-ledger">
+      <div className="fm-ledger-card">
         {ledgerRows.map((r) => (
-          <div className="fm-ledger__row" key={r.label}>
-            <span className="fm-ledger__label">{r.label}</span>
-            <span className="fm-ledger__current">{r.current}</span>
-            <span className={`fm-ledger__offer${r.offer ? ' fm-ledger__offer--up' : ''}`}>{r.offer ?? '—'}</span>
+          <div className="fm-ledger-card__row" key={r.label}>
+            <span className="fm-ledger-card__label">{r.label}</span>
+            <span className="fm-ledger-card__current">{r.current}</span>
+            <span className={`fm-ledger-card__offer${r.offer ? ' fm-ledger-card__offer--up' : ''}`}>{r.offer ?? '—'}</span>
           </div>
         ))}
       </div>

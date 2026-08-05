@@ -160,11 +160,11 @@ export default function GroupHub({
             </button>
           )}
 
-          <button type="button" className="fm-hubtable" onClick={() => onOpen('matchday')}>
-            <span className="fm-hubtable__head">
+          <div className="fm-hubtable">
+            <button type="button" className="fm-hubtable__head" onClick={() => onOpen('matchday')} style={{ background: 'transparent', border: 'none', padding: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', cursor: 'pointer', font: 'inherit', color: 'inherit' }}>
               <span>{leagueName(leagueId)}</span>
               <Icon name="chevron" size={14} />
-            </span>
+            </button>
             <table className="fm-table fm-hubtable__table">
               <tbody>
                 {tableSlice.map((row, i) => {
@@ -186,14 +186,14 @@ export default function GroupHub({
                 })}
               </tbody>
             </table>
-          </button>
+          </div>
         </div>
 
-        <button type="button" className="fm-hubcal" onClick={() => onOpen('matchday')}>
-          <span className="fm-hubtable__head">
+        <div className="fm-hubcal">
+          <button type="button" onClick={() => onOpen('matchday')} style={{ background: 'transparent', border: 'none', padding: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', cursor: 'pointer', font: 'inherit', color: 'inherit' }}>
             <span>Coming up</span>
             <Icon name="chevron" size={14} />
-          </span>
+          </button>
           {calendar.length > 0 ? (
             <ul className="fm-hubcal__list">
               {calendar.map((row, i) => (
@@ -211,7 +211,7 @@ export default function GroupHub({
           ) : (
             <p className="fm-hint" style={{ margin: 0 }}>No fixtures scheduled.</p>
           )}
-        </button>
+        </div>
       </div>
 
       <div className="fm-groupgrid">

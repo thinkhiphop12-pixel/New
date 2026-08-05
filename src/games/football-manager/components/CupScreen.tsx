@@ -65,12 +65,14 @@ function DomesticBracket({ state, k }: { state: GameState; k: Knockout }) {
                   <div className={`fm-bracket__tie${mine ? ' me' : ''}`} key={j}>
                     <div className={`fm-bracket__side${w === t.homeId ? ' winner' : ''}`}>
                       <span className="fm-bracket__side-name">{clubName(t.homeId)}</span>
-                      <span className="fm-bracket__side-score">{t.played ? t.homeGoals : ''}</span>
+                      <span className="fm-bracket__side-score">
+                        {t.played ? `${t.homeGoals}${t.pensWinnerId === t.homeId ? ' p' : ''}` : ''}
+                      </span>
                     </div>
                     <div className={`fm-bracket__side${w === t.awayId ? ' winner' : ''}`}>
                       <span className="fm-bracket__side-name">{clubName(t.awayId)}</span>
                       <span className="fm-bracket__side-score">
-                        {t.played ? `${t.awayGoals}${t.pensWinnerId ? ' p' : ''}` : ''}
+                        {t.played ? `${t.awayGoals}${t.pensWinnerId === t.awayId ? ' p' : ''}` : ''}
                       </span>
                     </div>
                   </div>
@@ -147,12 +149,14 @@ function EuroBracket({ state }: { state: GameState }) {
                   <div className={`fm-bracket__tie${mine ? ' me' : ''}`} key={t.id}>
                     <div className={`fm-bracket__side${w === t.homeId ? ' winner' : ''}`}>
                       <span className="fm-bracket__side-name">{clubName(t.homeId)}</span>
-                      <span className="fm-bracket__side-score">{played ? agg.home : ''}</span>
+                      <span className="fm-bracket__side-score">
+                        {played ? `${agg.home}${t.legs[t.legs.length - 1].pensWinnerId === t.homeId ? ' p' : ''}` : ''}
+                      </span>
                     </div>
                     <div className={`fm-bracket__side${w === t.awayId ? ' winner' : ''}`}>
                       <span className="fm-bracket__side-name">{clubName(t.awayId)}</span>
                       <span className="fm-bracket__side-score">
-                        {played ? `${agg.away}${t.legs[t.legs.length - 1].pensWinnerId ? ' p' : ''}` : ''}
+                        {played ? `${agg.away}${t.legs[t.legs.length - 1].pensWinnerId === t.awayId ? ' p' : ''}` : ''}
                       </span>
                     </div>
                   </div>

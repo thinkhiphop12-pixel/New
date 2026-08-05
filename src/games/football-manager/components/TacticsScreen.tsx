@@ -233,8 +233,9 @@ export default function TacticsScreen({
       </div>
 
       {subTab === 'formation' && (
-        <>
-          <div className="fm-pills" style={{ marginBottom: 8 }}>
+        <div role="tabpanel">
+          <>
+            <div className="fm-pills" style={{ marginBottom: 8 }}>
             <button className={`fm-pill${previewShape === 'ip' ? ' active' : ''}`} onClick={() => setPreviewShape('ip')}>
               In possession
             </button>
@@ -386,11 +387,13 @@ export default function TacticsScreen({
               </div>
             </div>
           </div>
-        </>
+          </>
+        </div>
       )}
 
       {subTab === 'shape' && (
-        <div className="fm-tactics__content">
+        <div role="tabpanel">
+          <div className="fm-tactics__content">
           <p className="fm-label fm-label--sm" style={{ marginTop: 0 }}>Mentality</p>
           <div className="fm-mentality-row">
             {MENTALITY_ORDER.map((m) => (
@@ -425,11 +428,13 @@ export default function TacticsScreen({
             value={state.tactics.width}
             onChange={setWidth}
           />
+          </div>
         </div>
       )}
 
       {subTab === 'defence' && (
-        <div className="fm-split" style={{ '--split-ratio': '1fr 1.4fr' } as CSSProperties}>
+        <div role="tabpanel">
+          <div className="fm-split" style={{ '--split-ratio': '1fr 1.4fr' } as CSSProperties}>
           <div className="fm-pitch" style={{ height: 220, marginBottom: 0 }}>
             <PitchMarkings />
             <div
@@ -471,11 +476,13 @@ export default function TacticsScreen({
               you better placed for the second ball.
             </p>
           </div>
+          </div>
         </div>
       )}
 
       {subTab === 'attack' && (
-        <div className="fm-tactics__content">
+        <div role="tabpanel">
+          <div className="fm-tactics__content">
           <p className="fm-label fm-label--sm" style={{ marginTop: 0 }}>Team Identity</p>
           <p className="fm-hint" style={{ marginTop: 0 }}>
             The mock's granular passing-style/flank-focus knobs collapse into this engine's single
@@ -528,11 +535,13 @@ export default function TacticsScreen({
               ? `Your side is ${Math.round(styleFamiliarity(userClub, currentStyle))}% drilled in ${IDENTITY_LABEL[currentStyle]}. Familiarity builds each week and decays on styles you stop using — switching to a related style carries most of the work across.`
               : 'Balanced and Park the Bus need no drilling. Any other identity has to be worked on before it pays off.'}
           </p>
+          </div>
         </div>
       )}
 
       {subTab === 'setpieces' && (
-        <div className="fm-split" style={{ '--split-ratio': '1fr 1.4fr' } as CSSProperties}>
+        <div role="tabpanel">
+          <div className="fm-split" style={{ '--split-ratio': '1fr 1.4fr' } as CSSProperties}>
           <div className="fm-pitch" style={{ height: 280, marginBottom: 0 }}>
             <PitchMarkings />
             {[
@@ -600,11 +609,13 @@ export default function TacticsScreen({
               instead, as long as he is in the XI.
             </p>
           </div>
+          </div>
         </div>
       )}
 
       {subTab === 'roles' && (
-        <div className="fm-rolecard-grid">
+        <div role="tabpanel">
+          <div className="fm-rolecard-grid">
           <div className="fm-rolecard">
             <div className="fm-icon-tile fm-icon-tile--lg" style={{ '--tile-tint': 'var(--gold)' } as CSSProperties}>
               <Icon name="star" size={22} />
@@ -634,6 +645,7 @@ export default function TacticsScreen({
             Captain is appointed from the Club screen; dead-ball takers are set on the Set Pieces
             tab above — this is a read-only summary of both.
           </p>
+          </div>
         </div>
       )}
     </div>

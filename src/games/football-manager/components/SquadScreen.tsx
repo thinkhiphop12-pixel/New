@@ -101,7 +101,7 @@ export default function SquadScreen({
                 {p.name}
                 <span className="fm-player-row__sub">
                   {p.age}y{inLineup ? ' · XI' : ''}
-                  {p.tacticalRole ? ` · ${getRole(p.tacticalRole)?.name}` : ''}
+                  {p.tacticalRole && getRole(p.tacticalRole)?.name ? ` · ${getRole(p.tacticalRole)?.name}` : ''}
                   {p.contractYears <= 1 && <> · <Icon name="warning" size={11} style={{ verticalAlign: -1 }} /> expiring</>}
                 </span>
               </span>
