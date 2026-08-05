@@ -5,6 +5,8 @@ import { Icon } from './Icon';
 import type { AvatarConfig, ManagerProfile } from '@/engine/types';
 import ManagerAvatar, { shadeColor } from './ManagerAvatar';
 
+type CustomizerTab = 'details' | 'appearance';
+
 const DEFAULT_AVATAR: AvatarConfig = {
   skinTone: 'c1ad60',
   skinShadow: shadeColor('#c1ad60'),
@@ -135,6 +137,7 @@ export default function CharacterCustomizerScreen({
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(
     initialProfile?.avatarConfig || { ...DEFAULT_AVATAR }
   );
+  const [tab, setTab] = useState<CustomizerTab>('details');
   const avatarRef = useRef<HTMLDivElement | null>(null);
 
   const setSkin = (value: string) => {
@@ -191,137 +194,164 @@ export default function CharacterCustomizerScreen({
         </div>
 
         <div className="customization-section">
-          <div className="form-group">
-            <label className="fm-label-small">Manager Name</label>
-            <input
-              type="text"
-              className="fm-search"
-              placeholder="Enter your manager name"
-              value={name}
-              maxLength={24}
-              onChange={(e) => setName(e.target.value)}
-            />
+          <div className="fm-subnav__tabs" role="tablist" aria-label="Manager customization sections">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'details'}
+              aria-controls="customizer-panel-details"
+              className={`fm-subtab${tab === 'details' ? ' active' : ''}`}
+              onClick={() => setTab('details')}
+            >
+              <span className="fm-subtab__label">Personal Details</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'appearance'}
+              aria-controls="customizer-panel-appearance"
+              className={`fm-subtab${tab === 'appearance' ? ' active' : ''}`}
+              onClick={() => setTab('appearance')}
+            >
+              <span className="fm-subtab__label">Appearance</span>
+            </button>
           </div>
 
-          <div className="customization-group">
-            <h4>Appearance</h4>
-
-            <div className="form-group">
-              <label className="fm-label-small">Skin Tone</label>
-              <p className="fm-category-desc">Sets a matching shadow tone automatically, so shading looks right at every skin tone.</p>
-              <div className="color-selector">
-                {SKIN_TONES.map((tone) => (
-                  <button
-                    key={tone.value}
-                    className={`color-option ${avatarConfig.skinTone === tone.value ? 'active' : ''}`}
-                    style={{ backgroundColor: `#${tone.value}` }}
-                    onClick={() => setSkin(tone.value)}
-                    title={tone.label}
-                  />
-                ))}
+          {tab === 'details' && (
+            <div id="customizer-panel-details" role="tabpanel" aria-label="Personal details">
+              <div className="form-group">
+                <label className="fm-label-small">Manager Name</label>
+                <input
+                  type="text"
+                  className="fm-search"
+                  placeholder="Enter your manager name"
+                  value={name}
+                  maxLength={24}
+                  onChange={(e) => setName(e.target.value)}
+                />
               </div>
             </div>
+          )}
 
-            <div className="form-group">
-              <label className="fm-label-small">Hair Color</label>
-              <p className="fm-category-desc">Independent of hairstyle — mix any color with any cut.</p>
-              <div className="color-selector">
-                {HAIR_COLORS.map((color) => (
-                  <button
-                    key={color.value}
-                    className={`color-option ${avatarConfig.hairColor === color.value ? 'active' : ''}`}
-                    style={{ backgroundColor: `#${color.value}` }}
-                    onClick={() => setAvatarConfig({ ...avatarConfig, hairColor: color.value })}
-                    title={color.label}
-                  />
-                ))}
+          {tab === 'appearance' && (
+            <div id="customizer-panel-appearance" role="tabpanel" aria-label="Appearance" className="customization-group">
+              <div className="form-group">
+                <label className="fm-label-small">Skin Tone</label>
+                <p className="fm-category-desc">Sets a matching shadow tone automatically, so shading looks right at every skin tone.</p>
+                <div className="color-selector">
+                  {SKIN_TONES.map((tone) => (
+                    <button
+                      key={tone.value}
+                      className={`color-option ${avatarConfig.skinTone === tone.value ? 'active' : ''}`}
+                      style={{ backgroundColor: `#${tone.value}` }}
+                      onClick={() => setSkin(tone.value)}
+                      title={tone.label}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="fm-label-small">Hair Color</label>
+                <p className="fm-category-desc">Independent of hairstyle — mix any color with any cut.</p>
+                <div className="color-selector">
+                  {HAIR_COLORS.map((color) => (
+                    <button
+                      key={color.value}
+                      className={`color-option ${avatarConfig.hairColor === color.value ? 'active' : ''}`}
+                      style={{ backgroundColor: `#${color.value}` }}
+                      onClick={() => setAvatarConfig({ ...avatarConfig, hairColor: color.value })}
+                      title={color.label}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="fm-label-small">Eyebrow Color</label>
+                <p className="fm-category-desc">Its own axis — doesn't have to match your hair.</p>
+                <div className="color-selector">
+                  {EYEBROW_COLORS.map((color) => (
+                    <button
+                      key={color.value}
+                      className={`color-option ${(avatarConfig.eyebrowColor ?? '') === color.value ? 'active' : ''}`}
+                      style={{ backgroundColor: `#${color.value}` }}
+                      onClick={() => setAvatarConfig({ ...avatarConfig, eyebrowColor: color.value })}
+                      title={color.label}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="fm-label-small">Hair Style</label>
+                <p className="fm-category-desc">The shape and length of your cut.</p>
+                <div className="option-grid">
+                  {HAIR_STYLES.map((style) => (
+                    <button
+                      key={style.value}
+                      className={`fm-btn fm-btn--small ${avatarConfig.hairStyle === style.value ? 'active' : ''}`}
+                      onClick={() => setAvatarConfig({ ...avatarConfig, hairStyle: style.value })}
+                    >
+                      {style.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="fm-label-small">Eye Color</label>
+                <p className="fm-category-desc">Iris color.</p>
+                <div className="color-selector">
+                  {EYE_COLORS.map((color) => (
+                    <button
+                      key={color.value}
+                      className={`color-option ${avatarConfig.eyeColor === color.value ? 'active' : ''}`}
+                      style={{ backgroundColor: `#${color.value}` }}
+                      onClick={() => setAvatarConfig({ ...avatarConfig, eyeColor: color.value })}
+                      title={color.label}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="fm-label-small">Facial Hair</label>
+                <p className="fm-category-desc">Uses your hair color.</p>
+                <div className="option-grid">
+                  {FACIAL_HAIR.map((style) => (
+                    <button
+                      key={style.value}
+                      className={`fm-btn fm-btn--small ${avatarConfig.facialHair === style.value ? 'active' : ''}`}
+                      onClick={() => setAvatarConfig({ ...avatarConfig, facialHair: style.value })}
+                    >
+                      {style.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="fm-label-small">Accessories</label>
+                <p className="fm-category-desc">Optional extras.</p>
+                <div className="option-grid">
+                  {ACCESSORIES.map((acc) => (
+                    <button
+                      key={acc.value}
+                      className={`fm-btn fm-btn--small ${
+                        (avatarConfig.accessories?.[0] ?? '') === acc.value ? 'active' : ''
+                      }`}
+                      onClick={() =>
+                        setAvatarConfig({ ...avatarConfig, accessories: acc.value ? [acc.value] : [] })
+                      }
+                    >
+                      {acc.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-
-            <div className="form-group">
-              <label className="fm-label-small">Eyebrow Color</label>
-              <p className="fm-category-desc">Its own axis — doesn't have to match your hair.</p>
-              <div className="color-selector">
-                {EYEBROW_COLORS.map((color) => (
-                  <button
-                    key={color.value}
-                    className={`color-option ${(avatarConfig.eyebrowColor ?? '') === color.value ? 'active' : ''}`}
-                    style={{ backgroundColor: `#${color.value}` }}
-                    onClick={() => setAvatarConfig({ ...avatarConfig, eyebrowColor: color.value })}
-                    title={color.label}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="fm-label-small">Hair Style</label>
-              <p className="fm-category-desc">The shape and length of your cut.</p>
-              <div className="option-grid">
-                {HAIR_STYLES.map((style) => (
-                  <button
-                    key={style.value}
-                    className={`fm-btn fm-btn--small ${avatarConfig.hairStyle === style.value ? 'active' : ''}`}
-                    onClick={() => setAvatarConfig({ ...avatarConfig, hairStyle: style.value })}
-                  >
-                    {style.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="fm-label-small">Eye Color</label>
-              <p className="fm-category-desc">Iris color.</p>
-              <div className="color-selector">
-                {EYE_COLORS.map((color) => (
-                  <button
-                    key={color.value}
-                    className={`color-option ${avatarConfig.eyeColor === color.value ? 'active' : ''}`}
-                    style={{ backgroundColor: `#${color.value}` }}
-                    onClick={() => setAvatarConfig({ ...avatarConfig, eyeColor: color.value })}
-                    title={color.label}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="fm-label-small">Facial Hair</label>
-              <p className="fm-category-desc">Uses your hair color.</p>
-              <div className="option-grid">
-                {FACIAL_HAIR.map((style) => (
-                  <button
-                    key={style.value}
-                    className={`fm-btn fm-btn--small ${avatarConfig.facialHair === style.value ? 'active' : ''}`}
-                    onClick={() => setAvatarConfig({ ...avatarConfig, facialHair: style.value })}
-                  >
-                    {style.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="fm-label-small">Accessories</label>
-              <p className="fm-category-desc">Optional extras.</p>
-              <div className="option-grid">
-                {ACCESSORIES.map((acc) => (
-                  <button
-                    key={acc.value}
-                    className={`fm-btn fm-btn--small ${
-                      (avatarConfig.accessories?.[0] ?? '') === acc.value ? 'active' : ''
-                    }`}
-                    onClick={() =>
-                      setAvatarConfig({ ...avatarConfig, accessories: acc.value ? [acc.value] : [] })
-                    }
-                  >
-                    {acc.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+          )}
 
           <div className="action-buttons">
             <button className="fm-btn fm-btn--secondary" onClick={handleReset}>
@@ -348,9 +378,9 @@ export default function CharacterCustomizerScreen({
           grid-template-columns: 1fr 1fr;
           gap: 2rem;
           padding: 2rem;
-          background: rgba(8, 20, 34, 0.4);
-          border-radius: 8px;
-          border: 1px solid rgba(90, 242, 184, 0.1);
+          background: var(--panel-2);
+          border-radius: var(--r-md);
+          border: 1px solid var(--border);
         }
 
         .avatar-preview-section {
@@ -363,15 +393,15 @@ export default function CharacterCustomizerScreen({
         .avatar-preview-section h3 {
           margin: 0 0 1rem 0;
           font-size: 1.25rem;
-          color: #f4fbff;
+          color: var(--text);
         }
 
         .avatar-preview {
           width: 280px;
           height: 280px;
-          border-radius: 12px;
-          border: 2px solid rgba(90, 242, 184, 0.3);
-          background: rgba(3, 9, 18, 0.8);
+          border-radius: var(--r-md);
+          border: 2px solid var(--border-bright);
+          background: var(--panel);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -391,18 +421,10 @@ export default function CharacterCustomizerScreen({
         }
 
         .customization-group {
-          background: rgba(11, 31, 52, 0.5);
+          background: var(--panel);
           padding: 1.5rem;
-          border-radius: 8px;
-          border: 1px solid rgba(90, 242, 184, 0.1);
-        }
-
-        .customization-group h4 {
-          margin: 0 0 1rem 0;
-          font-size: 1rem;
-          color: #39ff98;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
+          border-radius: var(--r-md);
+          border: 1px solid var(--border);
         }
 
         .form-group {
@@ -416,7 +438,7 @@ export default function CharacterCustomizerScreen({
         .fm-label-small {
           display: block;
           font-size: 0.875rem;
-          color: #a8bdd1;
+          color: var(--text-muted);
           margin-bottom: 0.375rem;
           text-transform: uppercase;
           letter-spacing: 0.05em;
@@ -425,7 +447,7 @@ export default function CharacterCustomizerScreen({
         .fm-category-desc {
           margin: 0 0 0.75rem 0;
           font-size: 0.8rem;
-          color: #6f8398;
+          color: var(--muted);
         }
 
         .color-selector {
@@ -445,12 +467,12 @@ export default function CharacterCustomizerScreen({
 
         .color-option:hover {
           transform: scale(1.1);
-          border-color: rgba(57, 255, 152, 0.5);
+          border-color: color-mix(in srgb, var(--lime) 50%, transparent);
         }
 
         .color-option.active {
-          border-color: #39ff98;
-          box-shadow: 0 0 12px rgba(57, 255, 152, 0.4);
+          border-color: var(--lime);
+          box-shadow: 0 0 12px color-mix(in srgb, var(--lime) 40%, transparent);
         }
 
         .option-grid {
@@ -465,8 +487,8 @@ export default function CharacterCustomizerScreen({
         }
 
         .fm-btn.fm-btn--small.active {
-          background: #39ff98;
-          color: #020712;
+          background: var(--lime);
+          color: var(--brand-text);
         }
 
         .action-buttons {

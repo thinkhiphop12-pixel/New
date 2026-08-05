@@ -159,6 +159,22 @@ body::before{
 .embed-actions{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
 .embed-actions .btn{font-size:13px;min-height:38px;padding:9px 14px}
 
+/* ── HOW IT WORKS ── */
+.steps-grid{display:flex;flex-direction:column;gap:10px}
+.step-card{
+  display:flex;gap:14px;align-items:flex-start;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:14px 16px;
+}
+.step-num{
+  flex-shrink:0;width:26px;height:26px;border-radius:50%;
+  background:rgba(44,185,78,0.16);color:var(--lime);
+  font-weight:800;font-size:12.5px;
+  display:flex;align-items:center;justify-content:center;
+}
+.step-body h3{font-size:14px;font-weight:800;letter-spacing:-.01em;margin-bottom:3px}
+.step-body p{font-size:12.5px;color:var(--muted);line-height:1.55}
+
 /* ── COMING SOON ── */
 .soon-grid{display:grid;grid-template-columns:1fr;gap:10px}
 .soon-card{
@@ -379,6 +395,46 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
     <div class="embed-actions">
       <a href="/gaffa/" class="btn btn-ghost">Open full screen ↗</a>
       <a href="/gaffer-guide.html" class="btn btn-ghost">Strategy guide</a>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" style="padding-top:10px">
+  <div class="wrap">
+    <div class="section-head" style="text-align:center">
+      <div class="eyebrow">How it works</div>
+      <h2>Four steps to kickoff</h2>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Pick your club</h3>
+          <p>Choose from every club across three divisions, or let the game assign one.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Set your tactics</h3>
+          <p>Formation, instructions, set pieces — build the way your team plays.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Work the market</h3>
+          <p>Scout, negotiate and sign — all within a real wage and transfer budget.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Survive the board</h3>
+          <p>Hit your season objectives or face the sack. Your save persists automatically.</p>
+        </div>
+      </div>
     </div>
   </div>
 </section>
