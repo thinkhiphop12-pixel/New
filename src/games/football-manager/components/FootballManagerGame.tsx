@@ -166,7 +166,7 @@ export default function FootballManagerGame() {
 
   const handlePickClub = async (clubId: number, managerName: string) => {
     if (!data || busy) return;
-    let state = newGame(data, clubId, managerName);
+    let state = newGame(data, clubId, managerName, undefined, managerProfile || undefined);
     // Carry the manager avatar (edited from the main menu, or from a prior
     // career) with the save slot rather than a separate device-wide key.
     if (managerProfile) state.managerProfile = managerProfile;
