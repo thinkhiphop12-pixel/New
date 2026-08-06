@@ -11,6 +11,15 @@
 import type { CSSProperties } from 'react';
 import type { AvatarConfig } from '@/engine/types';
 
+/** Option values are stored as bare hex (`c1ad60`) but SVG `fill`/`stroke`
+ *  need `#c1ad60` — a bare value is invalid and silently renders black.
+ *  Passes through anything already prefixed or a CSS `var(...)` untouched. */
+function cssColor(value: string): string {
+  if (!value) return 'none';
+  if (value.startsWith('#') || value.startsWith('var(')) return value;
+  return `#${value}`;
+}
+
 /** Darken a `#rrggbb`/`rrggbb` colour by `amount` (0–1) for the paired
  *  shadow tone — the "one real idea" from the reference: shading that stays
  *  correct across every skin tone instead of a single flat fill. */
@@ -87,8 +96,12 @@ export type CompactAvatarProps = {
 /** Renders the avatar SVG. Self-contained per instance (no shared ids), so
  *  it's safe to render several at once (dugout + header, say). */
 export default function ManagerAvatar({ config, size = 40, className = '', title, style }: CompactAvatarProps) {
-  const skinShadow = config.skinShadow || shadeColor(config.skinTone);
-  const eyebrowColor = config.eyebrowColor || shadeColor(config.hairColor, -0.1);
+  const skinTone = cssColor(config.skinTone);
+  const skinShadow = cssColor(config.skinShadow || shadeColor(config.skinTone));
+  const hairColor = cssColor(config.hairColor);
+  const eyeColor = cssColor(config.eyeColor);
+  const eyebrowColor = cssColor(config.eyebrowColor || shadeColor(config.hairColor, -0.1));
+  const suitColor = config.suitColor ? cssColor(config.suitColor) : 'var(--panel-2)';
   const hasGlasses = (config.accessories ?? []).includes('glasses');
 
   return (
@@ -103,19 +116,19 @@ export default function ManagerAvatar({ config, size = 40, className = '', title
     >
       <circle cx="50" cy="50" r="50" fill="var(--panel-3)" />
       {/* shoulders / suit */}
-      <path d="M10 100 Q50 66 90 100 Z" fill={config.suitColor ?? 'var(--panel-2)'} />
+      <path d="M10 100 Q50 66 90 100 Z" fill={suitColor} />
       {/* neck + head, two-tone: primary fill with a shadow wedge on the
           right so the face reads with volume at every skin tone */}
-      <circle cx="50" cy="55" r="34" fill={config.skinTone} />
+      <circle cx="50" cy="55" r="34" fill={skinTone} />
       <path d="M50 21 A34 34 0 0 1 84 55 A34 34 0 0 1 66 85 A40 40 0 0 0 50 21 Z" fill={skinShadow} opacity="0.55" />
-      <FacialHair style={config.facialHair} color={config.hairColor} />
-      <Hair style={config.hairStyle} color={config.hairColor} />
+      <FacialHair style={config.facialHair} color={hairColor} />
+      <Hair style={config.hairStyle} color={hairColor} />
       {/* eyebrows — independent colour axis from hair */}
       <path d="M34 48 Q39 45 44 48" stroke={eyebrowColor} strokeWidth="2.2" fill="none" strokeLinecap="round" />
       <path d="M56 48 Q61 45 66 48" stroke={eyebrowColor} strokeWidth="2.2" fill="none" strokeLinecap="round" />
       {/* eyes */}
-      <circle cx="39" cy="56" r="3.2" fill={config.eyeColor} />
-      <circle cx="61" cy="56" r="3.2" fill={config.eyeColor} />
+      <circle cx="39" cy="56" r="3.2" fill={eyeColor} />
+      <circle cx="61" cy="56" r="3.2" fill={eyeColor} />
       {hasGlasses && (
         <g stroke="#20242c" strokeWidth="2" fill="none" opacity="0.85">
           <circle cx="39" cy="56" r="7" />
