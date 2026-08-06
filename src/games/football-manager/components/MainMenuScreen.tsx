@@ -43,12 +43,14 @@ export default function MainMenuScreen({
       />
       <div className="fm-screen fm-start" style={{ position: 'relative', zIndex: 1 }}>
       <p className="fm-label">A BALLKNW GAME</p>
-      <h1 className="fm-start__title">
-        <img
-          src={`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/gaffa-logo.png`}
-          alt="Gaffa"
-          style={{ height: 56, width: 'auto', display: 'block', margin: '0 auto' }}
-        />
+      {/* Wordmark, not an image: the same boxed-initial + Inter-caps lockup
+          ballknw.com uses for BALLKNW, so the two logos are one mark. Text
+          also stays crisp at any density and needs no asset request. */}
+      <h1 className="fm-start__title" style={{ margin: '8px 0 0' }}>
+        <span className="fm-brand fm-brand--hero">
+          <span className="fm-brand__mark" aria-hidden>G</span>
+          <span>GAFFA</span>
+        </span>
       </h1>
       <p className="fm-start__tagline">
         Take charge of a club across three divisions. Set your tactics, work the market, bring

@@ -311,6 +311,28 @@ body {
   letter-spacing: -1.5px; margin: 8px 0 0; line-height: 1.02; color: #f3f7f4;
 }
 .fm-start__accent { color: var(--lime); font-style: normal; }
+
+/* Gaffa wordmark — a direct port of ballknw.com's `.brand`/`.mark` pair
+   (index.html / styles.css) so the game's logo and the site's logo are the
+   same mark, not two lookalikes. The landing version is a 28px gradient tile
+   holding a 900-weight initial next to an 800-weight Inter caps wordmark at
+   15px. Every measurement below is expressed in `em` at exactly those ratios
+   (tile 28/15 = 1.867em, radius and gap 7/15 = 0.467em), so setting one
+   font-size scales the whole lockup without drifting off-brand. */
+.fm-brand {
+  display: inline-flex; align-items: center; gap: 0.467em;
+  font-weight: 800; letter-spacing: -0.01em; line-height: 1;
+  color: #f3f7f4; font-family: inherit; white-space: nowrap;
+}
+.fm-brand__mark {
+  width: 1.867em; height: 1.867em; border-radius: 0.467em; flex-shrink: 0;
+  /* Same 135deg lime→teal ramp as the site's --cta token. */
+  background: linear-gradient(135deg, #2cb94e 0%, #12b380 100%);
+  color: #04200d; display: grid; place-items: center;
+  font-weight: 900; font-size: 1em;
+}
+/* Hero lockup on the start screen: same clamp as the title it replaces. */
+.fm-brand--hero { font-size: clamp(1.9rem, 8.2vw, 2.9rem); }
 .fm-start__tagline { color: var(--muted); font-size: 15px; line-height: 1.55; margin: 4px 0 8px; }
 .fm-howto { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; text-align: left; }
 .fm-howto__step {
