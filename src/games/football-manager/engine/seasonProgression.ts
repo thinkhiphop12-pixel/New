@@ -30,6 +30,8 @@ import { pushInbox } from './inbox';
 import { tickFinances, weeklyMatchdayIncome } from './finances';
 import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
 import { tickFacilitiesWeek } from './facilities';
+import { applyWeeklySchedule } from './schedule';
+import { tickScoutNetwork } from './scouting';
 
 export { markInboxRead, markAllInboxRead } from './inbox';
 
@@ -232,7 +234,7 @@ const YOUTH_FIRST = ['Alfie', 'Ben', 'Callum', 'Dan', 'Eli', 'Finn', 'George', '
 const YOUTH_LAST = ['Abbott', 'Barnes', 'Clarke', 'Dawson', 'Ellis', 'Foster', 'Grant', 'Hayes', 'Ingram', 'Jennings', 'Kerr', 'Lowe', 'Mercer', 'Nolan', 'Osborne', 'Price', 'Quinn', 'Reid', 'Shaw', 'Turner'];
 const YOUTH_ROLES: [Position, string][] = [['GK', 'GK'], ['DEF', 'CB'], ['DEF', 'RB'], ['MID', 'CM'], ['MID', 'CAM'], ['FWD', 'ST'], ['FWD', 'LW']];
 
-function makeYouthPlayer(id: number, clubId: number, academyLevel: number, seasonYear = 2026): Player {
+export function makeYouthPlayer(id: number, clubId: number, academyLevel: number, seasonYear = 2026): Player {
   const [pos, role] = pickRandom(YOUTH_ROLES);
   const base = 52 + academyLevel * 4;
   const rating = base + Math.floor(Math.random() * 9);
@@ -612,10 +614,16 @@ export function weeklyWageBill(state: GameState): number {
   return clubWageBill(state, state.userClubId);
 }
 
-/** Weekly staff wages (per level, per role). */
+/** Weekly staff wages: legacy per-level backroom figure plus every named
+ *  coach (Staff Hub) and named scout (Scouting Network) actually on the
+ *  books — the single wage line every screen and the weekly tick reads, so
+ *  hiring named staff has a real, immediate budget cost. */
 export function staffWageBill(state: GameState): number {
   const st = getStaff(state);
-  return (st.coach + st.physio + st.scout) * STAFF_WEEKLY_WAGE;
+  const legacy = (st.coach + st.physio + st.scout) * STAFF_WEEKLY_WAGE;
+  const coaches = (state.facilities?.coaches ?? []).reduce((sum, c) => sum + c.wage, 0);
+  const scouts = (state.scouting?.scouts ?? []).reduce((sum, sc) => sum + sc.wage, 0);
+  return legacy + coaches + scouts;
 }
 
 /** Credit apps, goals and match ratings from a report onto the players involved. */
@@ -883,6 +891,12 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
     p.fitness = clamp(p.fitness + 4, 15, 100);
   }
 
+  // Career mode weekly planner (engine/schedule.ts): per-day training/recovery
+  // choice for the user's own squad layers on top of the flat rest-day bump
+  // above, so an unedited schedule (the default 5:2 split) doesn't change
+  // anything a save already relied on.
+  applyWeeklySchedule(s);
+
   // Squad happiness: good players left out of the XI week after week grow
   // unhappy and start attracting transfer interest; starters settle back down.
   for (const id of userClub.playerIds) {
@@ -911,7 +925,14 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
         s.training === 'attack' ? p.pos === 'MID' || p.pos === 'FWD'
         : s.training === 'defense' ? p.pos === 'GK' || p.pos === 'DEF'
         : true;
-      const chance = (s.training === 'balanced' ? 0.02 : matches ? 0.05 : 0) * coachMult;
+      // Backroom Staff hub: a positional coach (attack/midfield/defense)
+      // speeds up development for players in his position group, on top of
+      // the legacy head-coach `coachMult`.
+      const posRole =
+        p.pos === 'FWD' ? 'attack' : p.pos === 'MID' ? 'midfield' : p.pos === 'DEF' ? 'defense' : null;
+      const posCoach = posRole ? s.facilities?.coaches.find((c) => c.role === posRole) : undefined;
+      const posMult = posCoach ? 1 + posCoach.quality / 200 : 1;
+      const chance = (s.training === 'balanced' ? 0.02 : matches ? 0.05 : 0) * coachMult * posMult;
       if (Math.random() < chance) {
         p.rating++;
         p.value = marketValue(p.rating, p.age);
@@ -1025,6 +1046,14 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   s.facilities = facilityState.facilities;
   s.scouting = facilityState.scouting;
   s.news = facilityState.news;
+
+  // Scouting network: named scouts (Career mode) file transfer-target leads
+  // into the shortlist + inbox, independent of the ad-hoc assignments above.
+  const scoutedState = tickScoutNetwork(s);
+  s.scouting = scoutedState.scouting;
+  s.news = scoutedState.news;
+  s.inbox = scoutedState.inbox;
+  s.nextInboxId = scoutedState.nextInboxId;
 
   // Repair the lineup if injuries/sales/loans broke it.
   if (!isLineupValid(s, s.userClubId, s.lineup)) {

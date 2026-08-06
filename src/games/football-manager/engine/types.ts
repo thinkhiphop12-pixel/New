@@ -879,9 +879,26 @@ export interface FacilityProject {
 export interface Coach {
   id: number;
   name: string;
-  role: 'head' | 'fitness' | 'goalkeeping';
+  /** `attack`/`midfield`/`defense` are positional coaches (development speed
+   *  boost for players in that position group); `analyst` boosts sharpness
+   *  gained from training days (see engine/schedule.ts). */
+  role: 'head' | 'fitness' | 'goalkeeping' | 'attack' | 'midfield' | 'defense' | 'analyst';
   /** 1–99, like a player attribute. */
   quality: number;
+  wage: number;
+}
+
+/** A named scout, permanently on the books (unlike the ad-hoc
+ *  `ScoutAssignment` tasks he works through). Star rating drives both how
+ *  quickly he files reports and how sharp the picks in them are. */
+export interface Scout {
+  id: number;
+  name: string;
+  /** 1–5 star rating. */
+  stars: number;
+  /** Country/region he is assigned to comb for talent — free text drawn
+   *  from the existing nationality pool used across the dataset. */
+  region: string;
   wage: number;
 }
 
@@ -930,6 +947,20 @@ export interface OpponentReport {
   weaknesses: string[];
 }
 
+/** A transfer-target lead a scout has filed, surfaced through the inbox and
+ *  actionable straight from TransfersScreen. Detail/accuracy of the note
+ *  scale with the filing scout's star rating. */
+export interface ScoutReport {
+  id: number;
+  playerId: number;
+  scoutName: string;
+  stars: number;
+  region: string;
+  weekGenerated: number;
+  yearGenerated: number;
+  note: string;
+}
+
 export interface ScoutingState {
   assignments: ScoutAssignment[];
   /** Persisted shortlist of scouted player ids — was local-only React state
@@ -938,6 +969,13 @@ export interface ScoutingState {
   reports: OpponentReport[];
   nextAssignmentId: number;
   nextReportId: number;
+  /** Career mode: a permanent scouting network, each scout combing one
+   *  region, filing player leads into `playerReports` on a cadence set by
+   *  his star rating (see engine/scouting.ts). */
+  scouts?: Scout[];
+  nextScoutId?: number;
+  playerReports?: ScoutReport[];
+  nextPlayerReportId?: number;
 }
 
 export interface GameState {
@@ -1038,7 +1076,13 @@ export interface GameState {
   /** Phase 10: scout assignments, opponent reports and the persisted
    *  shortlist. */
   scouting?: ScoutingState;
+  /** Career mode weekly planner: one entry per day, Monday first. Optional —
+   *  absent means "the default split" (see engine/schedule.ts DEFAULT_SCHEDULE).
+   *  Drives per-day sharpness/fitness/injury-risk in the weekly tick. */
+  weeklySchedule?: ScheduleDay[];
 }
+
+export type ScheduleDay = 'training' | 'recovery';
 
 export type InboxCategory = 'club' | 'transfer' | 'injury' | 'contract' | 'youth' | 'board' | 'match' | 'press';
 
