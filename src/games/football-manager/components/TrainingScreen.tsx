@@ -4,10 +4,12 @@ import { useMemo, useState, type CSSProperties } from 'react';
 import type { GameState, Player, TrainingFocus } from '@/engine/types';
 import { getSquad } from '@/engine/teamManagement';
 import { getStaff, nextUserFixture, upgradeStaff } from '@/engine/seasonProgression';
+import { DRILLS_PER_WEEK } from '@/engine/development';
 import { STAFF_MAX_LEVEL, STAFF_UPGRADE_COST } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
 import { StatTile } from './visuals';
 import { Icon, type IconName } from './Icon';
+import TrainingDrillModal from './TrainingDrillModal';
 
 /** The engine's smallest time unit is a week — there's no per-day schedule
  *  to read training sessions off. This weekly grid stays honest to that: the
@@ -110,7 +112,7 @@ const STAFF_TAB_LABEL: Record<StaffTab, string> = {
   goalkeepers: 'Goalkeepers',
 };
 
-function playerRow(p: Player, tone: 'good' | 'bad') {
+function playerRow(p: Player, tone: 'good' | 'bad', drillsLeft: number, onDrill: (p: Player) => void) {
   return (
     <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`}>
       <span className="fm-player-row__badge">{p.role}</span>
@@ -120,7 +122,14 @@ function playerRow(p: Player, tone: 'good' | 'bad') {
           {p.pos} · {p.age}y
         </span>
       </span>
-      <span />
+      <button
+        className="fm-btn fm-btn--ghost fm-btn--small"
+        disabled={drillsLeft <= 0 || p.injuryWeeks > 0}
+        onClick={() => onDrill(p)}
+        title={drillsLeft <= 0 ? 'No drills left this week' : 'Run a manual training drill'}
+      >
+        Run Drill
+      </button>
       <span
         className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}
         style={tone === 'bad' ? { background: 'var(--red-soft)', color: 'var(--red)' } : undefined}
@@ -139,8 +148,10 @@ export default function TrainingScreen({
   onChange: (next: GameState) => void;
 }) {
   const [staffTab, setStaffTab] = useState<StaffTab>('general');
+  const [drillPlayer, setDrillPlayer] = useState<Player | null>(null);
   const squad = getSquad(state, state.userClubId).sort((a, b) => b.rating - a.rating);
   const staff = getStaff(state);
+  const drillsLeft = DRILLS_PER_WEEK - (state.drillsUsedThisWeek ?? 0);
 
   const injuredCount = squad.filter((p) => p.injuryWeeks > 0).length;
   // "At risk" here means squad-happiness risk (a real engine flag: players
@@ -301,6 +312,7 @@ export default function TrainingScreen({
         <div className="fm-mod__head">
           <h2 className="fm-mod__title">{STAFF_TAB_LABEL[staffTab]}</h2>
           <span className="fm-actiondock__spacer" />
+          <span className="fm-hint" style={{ margin: '0 8px 0 0' }}>{drillsLeft} drill{drillsLeft === 1 ? '' : 's'} left this week</span>
           <div style={{ display: 'flex', gap: 4 }}>
             <button className={`fm-pill${squadView === 'best' ? ' active' : ''}`} onClick={() => setSquadView('best')}>Best</button>
             <button className={`fm-pill${squadView === 'worst' ? ' active' : ''}`} onClick={() => setSquadView('worst')}>Needs work</button>
@@ -309,9 +321,20 @@ export default function TrainingScreen({
         {shownPlayers.length === 0 ? (
           <p className="fm-hint">No players in this group.</p>
         ) : (
-          <div className="fm-player-list">{shownPlayers.map((p) => playerRow(p, squadView === 'worst' ? 'bad' : 'good'))}</div>
+          <div className="fm-player-list">
+            {shownPlayers.map((p) => playerRow(p, squadView === 'worst' ? 'bad' : 'good', drillsLeft, setDrillPlayer))}
+          </div>
         )}
       </div>
+
+      {drillPlayer && (
+        <TrainingDrillModal
+          state={state}
+          player={drillPlayer}
+          onChange={onChange}
+          onClose={() => setDrillPlayer(null)}
+        />
+      )}
     </>
   );
 }

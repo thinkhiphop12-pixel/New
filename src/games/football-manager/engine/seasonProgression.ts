@@ -32,6 +32,7 @@ import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tick
 import { tickFacilitiesWeek } from './facilities';
 import { applyWeeklySchedule } from './schedule';
 import { tickScoutNetwork } from './scouting';
+import { applyDevPlans } from './development';
 
 export { markInboxRead, markAllInboxRead } from './inbox';
 
@@ -916,11 +917,18 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   const coachMult = 1 + staff.coach * 0.35;
   const physioHealChance = 0.5 + staff.physio * 0.15;
 
+  // Per-player development plans (engine/development.ts) resolve first —
+  // players with an active plan skip the generic squad-wide roll below.
+  applyDevPlans(s);
+
+  // Reset the manual-training-drill weekly cap.
+  s.drillsUsedThisWeek = 0;
+
   // Training: focused development for the user's younger players.
   if (s.training !== 'fitness') {
     for (const id of userClub.playerIds) {
       const p = s.players[id];
-      if (!p || p.age > 27 || p.rating >= 90 || isOnLoan(p)) continue;
+      if (!p || p.age > 27 || p.rating >= 90 || isOnLoan(p) || p.devPlan) continue;
       const matches =
         s.training === 'attack' ? p.pos === 'MID' || p.pos === 'FWD'
         : s.training === 'defense' ? p.pos === 'GK' || p.pos === 'DEF'
@@ -932,7 +940,11 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
         p.pos === 'FWD' ? 'attack' : p.pos === 'MID' ? 'midfield' : p.pos === 'DEF' ? 'defense' : null;
       const posCoach = posRole ? s.facilities?.coaches.find((c) => c.role === posRole) : undefined;
       const posMult = posCoach ? 1 + posCoach.quality / 200 : 1;
-      const chance = (s.training === 'balanced' ? 0.02 : matches ? 0.05 : 0) * coachMult * posMult;
+      // Low morale saps focus in the gym; high morale gives a small lift.
+      // Player.morale is otherwise only written (transfer-promise breaches),
+      // never read — this is the one place it's wired into the sim.
+      const moraleMult = clamp(0.5 + p.morale / 100, 0.5, 1.15);
+      const chance = (s.training === 'balanced' ? 0.02 : matches ? 0.05 : 0) * coachMult * posMult * moraleMult;
       if (Math.random() < chance) {
         p.rating++;
         p.value = marketValue(p.rating, p.age);

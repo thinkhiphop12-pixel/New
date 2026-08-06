@@ -180,6 +180,24 @@ export interface Player {
   promiseBreachWeeks?: number;
   /** Consecutive weeks he has gone without an appearance. */
   benchWeeks?: number;
+
+  /** Career mode: an individual development focus layered on top of the
+   *  squad-wide `GameState.training` focus. Absent means "balanced / auto" —
+   *  the pre-existing generic per-player roll in seasonProgression.ts. */
+  devPlan?: DevPlan;
+  /** Season week a "not playing enough"-style complaint last fired for this
+   *  player, so the inbox doesn't spam him every week. */
+  lastComplaintWeek?: number;
+}
+
+/** A per-player development focus set from `PlayerModal`. `stat` mode
+ *  doubles growth odds for `statFocus`; `position` mode counts down
+ *  `weeksRemaining` and, on reaching 0, adds `targetPos` to `altPos`. */
+export interface DevPlan {
+  mode: 'balanced' | 'stat' | 'position';
+  statFocus?: 'pac' | 'sho' | 'pas' | 'dri' | 'def' | 'phy';
+  targetPos?: string;
+  weeksRemaining?: number;
 }
 
 /** A live loan spell, held on the player while he sits in the borrower's squad. */
@@ -1080,6 +1098,9 @@ export interface GameState {
    *  absent means "the default split" (see engine/schedule.ts DEFAULT_SCHEDULE).
    *  Drives per-day sharpness/fitness/injury-risk in the weekly tick. */
   weeklySchedule?: ScheduleDay[];
+  /** Manual training mini-game: drills run so far this week, reset to 0 in
+   *  `playRound`'s weekly-advance section. Capped at `DRILLS_PER_WEEK`. */
+  drillsUsedThisWeek?: number;
 }
 
 export type ScheduleDay = 'training' | 'recovery';
@@ -1096,6 +1117,9 @@ export interface InboxItem {
   /** Player this article is about, shown as a card alongside the text. */
   playerId?: number;
   read: boolean;
+  /** Set once a complaint-type item has been responded to, so the response
+   *  buttons in InboxScreen disappear after one use. */
+  responded?: boolean;
 }
 
 export type MatchSpeed = 'slow' | 'normal' | 'fast' | 'instant';

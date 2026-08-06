@@ -1461,6 +1461,41 @@ function tickSquadPromises(s: GameState): void {
   }
 }
 
+const STATUS_UPGRADE: Record<SquadStatusKey, SquadStatusKey> = {
+  fringe: 'rotation',
+  rotation: 'first_team',
+  first_team: 'key',
+  key: 'star',
+  star: 'star',
+};
+
+/**
+ * Respond to a playing-time complaint pushed by `generatePlayerEvents`.
+ * "reassure" is free talk — a small, always-available morale bump.
+ * "promise" registers a real squad-status promise using the same
+ * promise-tracking `tickSquadPromises` already checks on every negotiated
+ * signing, so a later breach correctly tanks morale exactly as it would for
+ * a promise made at signing time.
+ */
+export function respondToComplaint(state: GameState, playerId: number, response: 'reassure' | 'promise'): GameState {
+  const s: GameState = structuredClone(state);
+  const p = s.players[playerId];
+  if (!p) return s;
+  if (response === 'reassure') {
+    p.morale = clamp(p.morale + 6, 0, 100);
+    s.news.unshift(`You reassured ${p.name} about his role in the squad.`);
+  } else {
+    p.morale = clamp(p.morale + 14, 0, 100);
+    const current = (p.promisedStatus as SquadStatusKey | null) ?? 'fringe';
+    const upgraded = STATUS_UPGRADE[current];
+    p.promisedStatus = upgraded;
+    p.promiseWeeks = 0;
+    p.promiseBreachWeeks = 0;
+    s.news.unshift(`You promised ${p.name} more ${statusLabel(upgraded).toLowerCase()} game time.`);
+  }
+  return s;
+}
+
 function fileTransferRequest(
   s: GameState,
   p: Player,
@@ -1503,6 +1538,22 @@ function generatePlayerEvents(s: GameState): void {
     } else if ((p.benchWeeks ?? 0) >= 6 && gap >= -3 && Math.random() < 0.045) {
       fileTransferRequest(s, p, 'game_time',
         `${p.name} (${p.pos}, ${p.rating} rated) is unhappy with his lack of game time and has handed in a transfer request. He is unlikely to sign a new contract while he is frozen out.`);
+    // A lighter early warning, well before it escalates into a formal
+    // transfer request above — this is the one InboxScreen offers
+    // Reassure/Promise-change response buttons on, closing the interactive
+    // morale loop the game otherwise lacks entirely.
+    } else if (
+      (p.benchWeeks ?? 0) >= 3 && gap >= -5 &&
+      s.week - (p.lastComplaintWeek ?? -99) >= 6 &&
+      Math.random() < 0.06
+    ) {
+      p.lastComplaintWeek = s.week;
+      pushInbox(s, {
+        category: 'club',
+        title: `${p.name} unhappy with his playing time`,
+        body: `${p.name} (${p.pos}, ${p.rating} rated) has come to you privately — he isn't happy with how little he's playing lately and wants to know where he stands.\n\nHow you respond now could settle things down, or it could come back to bite you later.`,
+        playerId: p.id,
+      });
     }
   }
 }
