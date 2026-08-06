@@ -274,12 +274,18 @@ export default function TransfersScreen({
                     {p.nat} · {p.age}y · {p.clubName}{p.devLoan ? ' · development loan' : ''}
                   </span>
                 </span>
+                {/* `requestLoanIn` refuses outright while the window is shut, so
+                    the button has to say so up front — otherwise it reads as live
+                    and the rejection only surfaces as an error after the click.
+                    Same treatment as the Sign button above. Loans are a club-to-club
+                    deal, so unlike free agents there is no shut-window exemption. */}
                 <button
                   className="fm-btn fm-btn--small fm-btn--primary"
-                  disabled={p.fee > state.budget}
+                  disabled={p.fee > state.budget || !win.open}
+                  title={!win.open ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}` : undefined}
                   onClick={(e) => { e.stopPropagation(); apply(requestLoanIn(state, p.id)); }}
                 >
-                  Enquire {formatMoney(p.fee)}
+                  {!win.open ? 'Window shut' : `Enquire ${formatMoney(p.fee)}`}
                 </button>
                 <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
                   {p.rating}

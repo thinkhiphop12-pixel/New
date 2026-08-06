@@ -6,7 +6,20 @@
 - **Landing page** at `/` (marketing, guides, SEO pages)
 - **Gaffa game** at `/gaffa/` (React-based football manager, static export)
 
-The site is deployed as **pure static files** to `ballknw.com` via Vercel (`vercel.json` has `buildCommand: null`, `outputDirectory: "."`).
+The site is deployed to `ballknw.com` via Vercel, serving the repo root (`vercel.json` has `outputDirectory: "."`).
+
+> **`buildCommand: null` does not mean "no build".** In `vercel.json`, `null` means *unset* —
+> Vercel falls back to auto-detection and runs the root `build` script, which is
+> `npm -w src/games/football-manager run export:static`. So **Vercel regenerates `/gaffa/` on
+> every deploy**; the committed `/gaffa/` is not what production serves.
+>
+> Verified against production: the live page references JS chunks that exist in *no commit* in
+> this repo's history, and returns 404 for a chunk that *is* committed — while serving the exact
+> `assets/og-image.png` blob from the deployed commit. Only a deploy-time rebuild explains that.
+>
+> Consequence: the committed `/gaffa/` matters for **local preview** (`npm run dev` serves it
+> from disk) and as a checked-in artifact — not for what users get. Don't hand-patch build
+> hashes in `/gaffa/` to "fix" production; rebuild from source instead.
 
 ## Recent Cleanup (Completed)
 
