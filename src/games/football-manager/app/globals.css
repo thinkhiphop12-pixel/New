@@ -113,6 +113,8 @@
   --league-netherlands: #e2001a; /* Eredivisie red */
   --league-portugal: #0f8a5f;    /* Primeira Liga green */
   --league-scotland: #003087;    /* Scottish Premiership blue */
+  --league-usa: #002868;         /* MLS navy blue */
+  --league-saudi: #1c4620;       /* Saudi Pro League green */
 
   /* ── Layout system (new) ── */
   /* Spacing — 4px base */

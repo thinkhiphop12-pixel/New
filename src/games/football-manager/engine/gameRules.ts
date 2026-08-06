@@ -323,6 +323,26 @@ export const LEAGUES: LeagueDef[] = [
     tvEqualShare: 0,
     startingBudget: 250_000, gateBase: 8_000, prizeTop: 150_000, prizeStep: 5_000,
   },
+
+  // ── USA: Major League Soccer (standalone, no promotion/relegation) ────────
+  {
+    id: 'mls', name: 'Major League Soccer', country: 'USA', level: 1,
+    clubCount: 29, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 0, clPlayoff: 0, europaLeague: 0, conferenceLeague: 0,
+    tvEqualShare: 0.6,
+    startingBudget: 600_000, gateBase: 18_000, prizeTop: 1_500_000, prizeStep: 50_000,
+  },
+
+  // ── Saudi Arabia: Saudi Pro League (standalone, no promotion/relegation) ──
+  {
+    id: 'saudi_pro', name: 'Saudi Pro League', country: 'Saudi Arabia', level: 1,
+    clubCount: 18, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 0, clPlayoff: 0, europaLeague: 0, conferenceLeague: 0,
+    tvEqualShare: 1.0,
+    startingBudget: 1_200_000, gateBase: 20_000, prizeTop: 2_000_000, prizeStep: 100_000,
+  },
 ];
 
 const LEAGUE_BY_ID = new Map(LEAGUES.map((l) => [l.id, l]));
@@ -361,6 +381,8 @@ const COUNTRY_LEAGUE: Record<string, { cssVar: string; hex: string }> = {
   Netherlands: { cssVar: '--league-netherlands', hex: '#e2001a' },
   Portugal: { cssVar: '--league-portugal', hex: '#0f8a5f' },
   Scotland: { cssVar: '--league-scotland', hex: '#003087' },
+  USA: { cssVar: '--league-usa', hex: '#002868' },
+  'Saudi Arabia': { cssVar: '--league-saudi', hex: '#1c4620' },
 };
 
 /** Relative luminance via the standard sRGB coefficients — same formula as
@@ -405,7 +427,7 @@ export function leagueBelow(id: string): LeagueDef | null {
   return i >= 0 && i < p.length - 1 ? p[i + 1] : null;
 }
 
-/** Legacy `Division` (1–10) → league id. Used to read gamedata.json and to
+/** Legacy `Division` (1–12) → league id. Used to read gamedata.json and to
  *  migrate pre-v4 saves; nothing else should branch on a division number. */
 export const DIVISION_TO_LEAGUE: Record<Division, string> = {
   1: 'premier_league',
@@ -418,6 +440,8 @@ export const DIVISION_TO_LEAGUE: Record<Division, string> = {
   8: 'ligue_1',
   9: 'eredivisie',
   10: 'primeira_liga',
+  11: 'mls',
+  12: 'saudi_pro',
 };
 
 export function leagueIdForDivision(division: number): string {
