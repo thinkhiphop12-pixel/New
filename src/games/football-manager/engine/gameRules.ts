@@ -323,6 +323,41 @@ export const LEAGUES: LeagueDef[] = [
     tvEqualShare: 0,
     startingBudget: 250_000, gateBase: 8_000, prizeTop: 150_000, prizeStep: 5_000,
   },
+
+  // ── Belgium, Brazil, USA/Canada, Denmark: single-tier, no modelled lower
+  // division (fc26-source.json carries only the top flight for each) ──────
+  {
+    id: 'pro_league', name: 'Pro League', country: 'Belgium', level: 1,
+    clubCount: 16, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 1, europaLeague: 1, conferenceLeague: 2,
+    tvEqualShare: 3.5,
+    startingBudget: 6_000_000, gateBase: 100_000, prizeTop: 5_000_000, prizeStep: 180_000,
+  },
+  {
+    id: 'brazil_serie_a', name: 'Série A', country: 'Brazil', level: 1,
+    clubCount: 20, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 0, clPlayoff: 0, europaLeague: 0, conferenceLeague: 0,
+    tvEqualShare: 6,
+    startingBudget: 9_000_000, gateBase: 140_000, prizeTop: 7_000_000, prizeStep: 250_000,
+  },
+  {
+    id: 'mls', name: 'MLS', country: 'United States', level: 1,
+    clubCount: 24, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 0, clPlayoff: 0, europaLeague: 0, conferenceLeague: 0,
+    tvEqualShare: 5,
+    startingBudget: 8_000_000, gateBase: 130_000, prizeTop: 6_000_000, prizeStep: 220_000,
+  },
+  {
+    id: 'superliga', name: 'Superliga', country: 'Denmark', level: 1,
+    clubCount: 12, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 1, europaLeague: 1, conferenceLeague: 1,
+    tvEqualShare: 2,
+    startingBudget: 3_500_000, gateBase: 60_000, prizeTop: 2_800_000, prizeStep: 100_000,
+  },
 ];
 
 const LEAGUE_BY_ID = new Map(LEAGUES.map((l) => [l.id, l]));
@@ -418,6 +453,10 @@ export const DIVISION_TO_LEAGUE: Record<Division, string> = {
   8: 'ligue_1',
   9: 'eredivisie',
   10: 'primeira_liga',
+  11: 'pro_league',
+  12: 'brazil_serie_a',
+  13: 'mls',
+  14: 'superliga',
 };
 
 export function leagueIdForDivision(division: number): string {

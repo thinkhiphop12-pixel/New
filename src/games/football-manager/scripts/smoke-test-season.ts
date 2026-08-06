@@ -43,13 +43,24 @@ const gamedataPath = join(__dirname, '..', 'public', 'data', 'gamedata.json');
 const data: GameData = JSON.parse(readFileSync(gamedataPath, 'utf8'));
 
 console.log(`Loaded ${data.clubs.length} clubs, ${data.players.length} players.`);
-assert(data.clubs.length === CLUBS_PER_DIVISION * 10, `expected ${CLUBS_PER_DIVISION * 10} clubs total, got ${data.clubs.length}`);
+assert(data.clubs.length === CLUBS_PER_DIVISION * 10 + 72, `expected ${CLUBS_PER_DIVISION * 10 + 72} clubs total, got ${data.clubs.length}`);
 
 for (const d of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
   const lid = leagueIdForDivision(d);
   const count = data.clubs.filter((c) => c.division === d).length;
   console.log(`  ${leagueName(lid)}: ${count} clubs`);
   assert(count === CLUBS_PER_DIVISION, `${lid} has ${count} clubs, expected ${CLUBS_PER_DIVISION}`);
+}
+
+// Divisions 11-14 (Belgium, Brazil, MLS, Denmark) sit outside the modelled
+// 10-division pyramid above, each with its own real club count.
+const EXTRA_DIVISION_SIZE: Record<number, number> = { 11: 16, 12: 20, 13: 24, 14: 12 };
+for (const [d, expected] of Object.entries(EXTRA_DIVISION_SIZE)) {
+  const division = Number(d);
+  const lid = leagueIdForDivision(division);
+  const count = data.clubs.filter((c) => c.division === division).length;
+  console.log(`  ${leagueName(lid)}: ${count} clubs`);
+  assert(count === expected, `${lid} has ${count} clubs, expected ${expected}`);
 }
 
 // --- The pyramid itself is internally consistent ---------------------------

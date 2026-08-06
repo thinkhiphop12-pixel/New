@@ -210,6 +210,10 @@ const DIVISION_META = {
   8: { id: 'ligue_1', name: 'Ligue 1', country: 'France' },
   9: { id: 'eredivisie', name: 'Eredivisie', country: 'Netherlands' },
   10: { id: 'primeira_liga', name: 'Primeira Liga', country: 'Portugal' },
+  11: { id: 'pro_league', name: 'Pro League', country: 'Belgium' },
+  12: { id: 'brazil_serie_a', name: 'Série A', country: 'Brazil' },
+  13: { id: 'mls', name: 'MLS', country: 'United States' },
+  14: { id: 'superliga', name: 'Superliga', country: 'Denmark' },
 };
 
 function clubStrength(club) {

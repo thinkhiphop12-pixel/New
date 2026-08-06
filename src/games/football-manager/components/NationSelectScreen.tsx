@@ -6,6 +6,7 @@ const FLAGS: Record<string, string> = {
   England: '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}',
   Spain: '🇪🇸', Italy: '🇮🇹', Germany: '🇩🇪', France: '🇫🇷',
   Netherlands: '🇳🇱', Portugal: '🇵🇹', Scotland: '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}',
+  Belgium: '🇧🇪', Brazil: '🇧🇷', 'United States': '🇺🇸', Denmark: '🇩🇰',
 };
 
 const BLURBS: Record<string, string> = {
@@ -17,6 +18,10 @@ const BLURBS: Record<string, string> = {
   Netherlands: 'Eredivisie — attacking football and a famous youth conveyor belt',
   Portugal: 'Primeira Liga — technical quality and Europe\'s best scouting network',
   Scotland: 'Premiership — three rounds, then the genuine top-six split',
+  Belgium: 'Pro League — a proven talent factory punching above its size',
+  Brazil: 'Série A — passionate crowds and relentless attacking football',
+  'United States': 'MLS — a growing league mixing homegrown talent and stars',
+  Denmark: 'Superliga — well-drilled sides and a strong export pipeline',
 };
 
 /** One card per country that has at least one league the game simulates. */

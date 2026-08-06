@@ -1,6 +1,6 @@
 1:"$Sreact.fragment"
-2:I[93640,["/gaffa/_next/static/chunks/035_poxmekv2h.js","/gaffa/_next/static/chunks/158myu8e_yme3.js","/gaffa/_next/static/chunks/2-zvt4d8gc395.js","/gaffa/_next/static/chunks/1vry0xy3z0e-x.js"],"default"]
+2:I[93640,["/gaffa/_next/static/chunks/035_poxmekv2h.js","/gaffa/_next/static/chunks/158myu8e_yme3.js","/gaffa/_next/static/chunks/2-zvt4d8gc395.js","/gaffa/_next/static/chunks/2phn_8do2z1p7.js"],"default"]
 3:I[97367,["/gaffa/_next/static/chunks/035_poxmekv2h.js","/gaffa/_next/static/chunks/158myu8e_yme3.js"],"OutletBoundary"]
 4:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],[["$","script","script-0",{"src":"/gaffa/_next/static/chunks/2-zvt4d8gc395.js","async":true}],["$","script","script-1",{"src":"/gaffa/_next/static/chunks/1vry0xy3z0e-x.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"HQ9Z0lPf7-em55XLP6n9-"}
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],[["$","script","script-0",{"src":"/gaffa/_next/static/chunks/2-zvt4d8gc395.js","async":true}],["$","script","script-1",{"src":"/gaffa/_next/static/chunks/2phn_8do2z1p7.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"zSz1s2SaYG_1lLec0pA6S"}
 5:null
