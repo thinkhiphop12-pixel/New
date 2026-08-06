@@ -1088,6 +1088,9 @@ export interface AvatarConfig {
   eyes: string;
   nose: string;
   accessories?: string[];
+  /** Suit/jacket fill for the shoulders silhouette. Optional — falls back to
+   *  `var(--panel-2)` when absent (older saves predate this field). */
+  suitColor?: string;
 }
 
 export interface ManagerProfile {

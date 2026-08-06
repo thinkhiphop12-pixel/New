@@ -5,7 +5,7 @@ import { Icon } from './Icon';
 import type { AvatarConfig, ManagerProfile } from '@/engine/types';
 import ManagerAvatar, { shadeColor } from './ManagerAvatar';
 
-type CustomizerTab = 'details' | 'appearance';
+type CustomizerTab = 'presets' | 'body' | 'head' | 'attire';
 
 const DEFAULT_AVATAR: AvatarConfig = {
   skinTone: 'c1ad60',
@@ -19,6 +19,7 @@ const DEFAULT_AVATAR: AvatarConfig = {
   eyes: 'default',
   nose: 'default',
   accessories: [],
+  suitColor: undefined,
 };
 
 const SKIN_TONES = [
@@ -70,6 +71,18 @@ const ACCESSORIES = [
   { label: 'Glasses', value: 'glasses' },
 ];
 
+/** Suit colour palette for the Attire tab. `undefined` (the implicit first
+ *  choice) keeps the default `var(--panel-2)` fill so old saves without this
+ *  field render exactly as before. */
+const SUIT_COLORS: { label: string; value: string | undefined }[] = [
+  { label: 'Default', value: undefined },
+  { label: 'Navy', value: '1f2937' },
+  { label: 'Charcoal', value: '374151' },
+  { label: 'Maroon', value: '7f1d1d' },
+  { label: 'Forest', value: '14532d' },
+  { label: 'Black', value: '111827' },
+];
+
 function randomOf<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -89,7 +102,93 @@ function randomAvatar(): AvatarConfig {
     eyes: 'default',
     nose: 'default',
     accessories: Math.random() < 0.3 ? ['glasses'] : [],
+    suitColor: randomOf(SUIT_COLORS).value,
   };
+}
+
+/** Curated full-look combinations for the Presets tab — just points in the
+ *  existing option space above, no new asset data. */
+const PRESETS: { id: string; label: string; config: AvatarConfig }[] = [
+  {
+    id: 'classic',
+    label: 'Classic',
+    config: {
+      skinTone: 'c1ad60', skinShadow: shadeColor('#c1ad60'), eyeColor: '4a3728',
+      hairColor: '1f2937', eyebrowColor: shadeColor('#1f2937', -0.1), hairStyle: 'short01',
+      facialHair: '', mouth: 'default', eyes: 'default', nose: 'default', accessories: [],
+      suitColor: '1f2937',
+    },
+  },
+  {
+    id: 'silver-fox',
+    label: 'Silver Fox',
+    config: {
+      skinTone: 'd4a574', skinShadow: shadeColor('#d4a574'), eyeColor: '4b5563',
+      hairColor: 'a8a8a8', eyebrowColor: 'a8a8a8', hairStyle: 'straight01',
+      facialHair: 'beardLight', mouth: 'default', eyes: 'default', nose: 'default',
+      accessories: [], suitColor: '374151',
+    },
+  },
+  {
+    id: 'young-gun',
+    label: 'Young Gun',
+    config: {
+      skinTone: '70563f', skinShadow: shadeColor('#70563f'), eyeColor: '1f2937',
+      hairColor: '1f2937', eyebrowColor: '1f2937', hairStyle: 'buzz', facialHair: '',
+      mouth: 'default', eyes: 'default', nose: 'default', accessories: [], suitColor: '111827',
+    },
+  },
+  {
+    id: 'tactician',
+    label: 'Tactician',
+    config: {
+      skinTone: 'fdbcb4', skinShadow: shadeColor('#fdbcb4'), eyeColor: '1e40af',
+      hairColor: '5e4e42', eyebrowColor: '5e4e42', hairStyle: 'curly01',
+      facialHair: 'moustache', mouth: 'default', eyes: 'default', nose: 'default',
+      accessories: ['glasses'], suitColor: '7f1d1d',
+    },
+  },
+  {
+    id: 'continental',
+    label: 'Continental',
+    config: {
+      skinTone: 'f7bde4', skinShadow: shadeColor('#f7bde4'), eyeColor: '15803d',
+      hairColor: '8b4513', eyebrowColor: '8b4513', hairStyle: 'long01', facialHair: 'beardMajestic',
+      mouth: 'default', eyes: 'default', nose: 'default', accessories: [], suitColor: '14532d',
+    },
+  },
+  {
+    id: 'the-boardroom',
+    label: 'The Boardroom',
+    config: {
+      skinTone: 'b8860b', skinShadow: shadeColor('#b8860b'), eyeColor: 'a16207',
+      hairColor: 'f4d03f', eyebrowColor: 'f4d03f', hairStyle: 'straight01', facialHair: '',
+      mouth: 'default', eyes: 'default', nose: 'default', accessories: ['glasses'],
+      suitColor: undefined,
+    },
+  },
+  {
+    id: 'old-guard',
+    label: 'Old Guard',
+    config: {
+      skinTone: 'c1ad60', skinShadow: shadeColor('#c1ad60'), eyeColor: '4b5563',
+      hairColor: 'a8a8a8', eyebrowColor: 'a8a8a8', hairStyle: 'buzz', facialHair: 'beardLight',
+      mouth: 'default', eyes: 'default', nose: 'default', accessories: [], suitColor: '374151',
+    },
+  },
+  {
+    id: 'sideline',
+    label: 'Sideline',
+    config: {
+      skinTone: 'd4a574', skinShadow: shadeColor('#d4a574'), eyeColor: '1f2937',
+      hairColor: 'd84315', eyebrowColor: 'd84315', hairStyle: 'curly01', facialHair: '',
+      mouth: 'default', eyes: 'default', nose: 'default', accessories: [], suitColor: '111827',
+    },
+  },
+];
+
+function presetMatches(config: AvatarConfig, preset: AvatarConfig): boolean {
+  return JSON.stringify(config) === JSON.stringify(preset);
 }
 
 /** Draws the avatar SVG to an offscreen canvas and triggers a PNG download.
@@ -137,7 +236,7 @@ export default function CharacterCustomizerScreen({
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(
     initialProfile?.avatarConfig || { ...DEFAULT_AVATAR }
   );
-  const [tab, setTab] = useState<CustomizerTab>('details');
+  const [tab, setTab] = useState<CustomizerTab>('presets');
   const avatarRef = useRef<HTMLDivElement | null>(null);
 
   const setSkin = (value: string) => {
@@ -175,66 +274,97 @@ export default function CharacterCustomizerScreen({
 
   return (
     <div className="fm-screen fm-character-customizer">
-      <p className="fm-label">CUSTOMIZE YOUR MANAGER</p>
+      <p className="fm-label">MANAGER CREATION</p>
+
+      <div className="name-row">
+        <label className="fm-label-small" htmlFor="manager-name">Manager Name</label>
+        <input
+          id="manager-name"
+          type="text"
+          className="fm-search"
+          placeholder="Enter your manager name"
+          value={name}
+          maxLength={24}
+          onChange={(e) => setName(e.target.value)}
+        />
+      </div>
 
       <div className="character-container">
-        <div className="avatar-preview-section">
-          <h3>Your Manager</h3>
-          <div className="avatar-preview customizer-avatar-svg" ref={avatarRef}>
-            <ManagerAvatar config={avatarConfig} size={280} title={name || 'Manager avatar'} />
-          </div>
-          <div className="preview-actions">
-            <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={handleRandomize}>
-              <Icon name="dice" size={15} /> Randomize
-            </button>
-            <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={handleDownload}>
-              <Icon name="download" size={15} /> Download PNG
-            </button>
-          </div>
-        </div>
-
         <div className="customization-section">
-          <div className="fm-subnav__tabs" role="tablist" aria-label="Manager customization sections">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === 'details'}
-              aria-controls="customizer-panel-details"
-              className={`fm-subtab${tab === 'details' ? ' active' : ''}`}
-              onClick={() => setTab('details')}
-            >
-              <span className="fm-subtab__label">Personal Details</span>
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === 'appearance'}
-              aria-controls="customizer-panel-appearance"
-              className={`fm-subtab${tab === 'appearance' ? ' active' : ''}`}
-              onClick={() => setTab('appearance')}
-            >
-              <span className="fm-subtab__label">Appearance</span>
+          <div className="tabs-row">
+            <div className="fm-subnav__tabs" role="tablist" aria-label="Manager customization sections">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === 'presets'}
+                aria-controls="customizer-panel-presets"
+                className={`fm-subtab${tab === 'presets' ? ' active' : ''}`}
+                onClick={() => setTab('presets')}
+              >
+                <span className="fm-subtab__label">Presets</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === 'body'}
+                aria-controls="customizer-panel-body"
+                className={`fm-subtab${tab === 'body' ? ' active' : ''}`}
+                onClick={() => setTab('body')}
+              >
+                <span className="fm-subtab__label">Body</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === 'head'}
+                aria-controls="customizer-panel-head"
+                className={`fm-subtab${tab === 'head' ? ' active' : ''}`}
+                onClick={() => setTab('head')}
+              >
+                <span className="fm-subtab__label">Head</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === 'attire'}
+                aria-controls="customizer-panel-attire"
+                className={`fm-subtab${tab === 'attire' ? ' active' : ''}`}
+                onClick={() => setTab('attire')}
+              >
+                <span className="fm-subtab__label">Attire</span>
+              </button>
+            </div>
+            <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={handleReset}>
+              Reset Changes
             </button>
           </div>
 
-          {tab === 'details' && (
-            <div id="customizer-panel-details" role="tabpanel" aria-label="Personal details">
-              <div className="form-group">
-                <label className="fm-label-small">Manager Name</label>
-                <input
-                  type="text"
-                  className="fm-search"
-                  placeholder="Enter your manager name"
-                  value={name}
-                  maxLength={24}
-                  onChange={(e) => setName(e.target.value)}
-                />
+          {tab === 'presets' && (
+            <div id="customizer-panel-presets" role="tabpanel" aria-label="Presets" className="customization-group">
+              <div className="fm-preset-grid" role="radiogroup" aria-label="Avatar presets">
+                {PRESETS.map((preset) => {
+                  const selected = presetMatches(avatarConfig, preset.config);
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      className={`fm-preset-card${selected ? ' selected' : ''}`}
+                      onClick={() => setAvatarConfig({ ...preset.config })}
+                    >
+                      <span className="fm-preset-card__radio" aria-hidden="true" />
+                      <ManagerAvatar config={preset.config} size={72} title={preset.label} />
+                      <span className="fm-preset-card__label">{preset.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {tab === 'appearance' && (
-            <div id="customizer-panel-appearance" role="tabpanel" aria-label="Appearance" className="customization-group">
+          {tab === 'body' && (
+            <div id="customizer-panel-body" role="tabpanel" aria-label="Body" className="customization-group">
               <div className="form-group">
                 <label className="fm-label-small">Skin Tone</label>
                 <p className="fm-category-desc">Sets a matching shadow tone automatically, so shading looks right at every skin tone.</p>
@@ -247,6 +377,26 @@ export default function CharacterCustomizerScreen({
                       onClick={() => setSkin(tone.value)}
                       title={tone.label}
                     />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {tab === 'head' && (
+            <div id="customizer-panel-head" role="tabpanel" aria-label="Head" className="customization-group">
+              <div className="form-group">
+                <label className="fm-label-small">Hair Style</label>
+                <p className="fm-category-desc">The shape and length of your cut.</p>
+                <div className="option-grid">
+                  {HAIR_STYLES.map((style) => (
+                    <button
+                      key={style.value}
+                      className={`fm-btn fm-btn--small ${avatarConfig.hairStyle === style.value ? 'active' : ''}`}
+                      onClick={() => setAvatarConfig({ ...avatarConfig, hairStyle: style.value })}
+                    >
+                      {style.label}
+                    </button>
                   ))}
                 </div>
               </div>
@@ -279,22 +429,6 @@ export default function CharacterCustomizerScreen({
                       onClick={() => setAvatarConfig({ ...avatarConfig, eyebrowColor: color.value })}
                       title={color.label}
                     />
-                  ))}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="fm-label-small">Hair Style</label>
-                <p className="fm-category-desc">The shape and length of your cut.</p>
-                <div className="option-grid">
-                  {HAIR_STYLES.map((style) => (
-                    <button
-                      key={style.value}
-                      className={`fm-btn fm-btn--small ${avatarConfig.hairStyle === style.value ? 'active' : ''}`}
-                      onClick={() => setAvatarConfig({ ...avatarConfig, hairStyle: style.value })}
-                    >
-                      {style.label}
-                    </button>
                   ))}
                 </div>
               </div>
@@ -353,15 +487,46 @@ export default function CharacterCustomizerScreen({
             </div>
           )}
 
-          <div className="action-buttons">
-            <button className="fm-btn fm-btn--secondary" onClick={handleReset}>
-              Reset to Default
+          {tab === 'attire' && (
+            <div id="customizer-panel-attire" role="tabpanel" aria-label="Attire" className="customization-group">
+              <div className="form-group">
+                <label className="fm-label-small">Suit Color</label>
+                <p className="fm-category-desc">The jacket colour shown in your preview.</p>
+                <div className="color-selector">
+                  {SUIT_COLORS.map((suit) => (
+                    <button
+                      key={suit.label}
+                      className={`color-option ${avatarConfig.suitColor === suit.value ? 'active' : ''}`}
+                      style={{ backgroundColor: suit.value ? `#${suit.value}` : 'var(--panel-2)' }}
+                      onClick={() => setAvatarConfig({ ...avatarConfig, suitColor: suit.value })}
+                      title={suit.label}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="fm-actions bottom-actions">
+            <button className="fm-btn fm-btn--ghost" onClick={onBack}>
+              Back
             </button>
             <button className="fm-btn fm-btn--primary" onClick={handleSave}>
-              Save Manager
+              Confirm
             </button>
-            <button className="fm-btn fm-btn--secondary" onClick={onBack}>
-              Cancel
+          </div>
+        </div>
+
+        <div className="avatar-preview-section">
+          <div className="avatar-preview customizer-avatar-svg" ref={avatarRef}>
+            <ManagerAvatar config={avatarConfig} size={420} title={name || 'Manager avatar'} />
+          </div>
+          <div className="preview-actions">
+            <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={handleRandomize}>
+              <Icon name="dice" size={15} /> Randomize
+            </button>
+            <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={handleDownload}>
+              <Icon name="download" size={15} /> Download PNG
             </button>
           </div>
         </div>
@@ -369,13 +534,27 @@ export default function CharacterCustomizerScreen({
 
       <style jsx>{`
         .fm-character-customizer {
-          max-width: 1000px;
+          max-width: 1100px;
           margin: 0 auto;
+        }
+
+        .name-row {
+          max-width: 420px;
+          margin: 0 auto 1.5rem;
+        }
+
+        .name-row .fm-label-small {
+          display: block;
+          font-size: 0.875rem;
+          color: var(--text-muted);
+          margin-bottom: 0.375rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
 
         .character-container {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
           gap: 2rem;
           padding: 2rem;
           background: var(--panel-2);
@@ -383,41 +562,19 @@ export default function CharacterCustomizerScreen({
           border: 1px solid var(--border);
         }
 
-        .avatar-preview-section {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .avatar-preview-section h3 {
-          margin: 0 0 1rem 0;
-          font-size: 1.25rem;
-          color: var(--text);
-        }
-
-        .avatar-preview {
-          width: 280px;
-          height: 280px;
-          border-radius: var(--r-md);
-          border: 2px solid var(--border-bright);
-          background: var(--panel);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-        }
-
-        .preview-actions {
-          display: flex;
-          gap: 0.5rem;
-          margin-top: 1rem;
-        }
-
         .customization-section {
           display: flex;
           flex-direction: column;
           gap: 1.5rem;
+          min-width: 0;
+        }
+
+        .tabs-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          flex-wrap: wrap;
         }
 
         .customization-group {
@@ -491,16 +648,36 @@ export default function CharacterCustomizerScreen({
           color: var(--brand-text);
         }
 
-        .action-buttons {
-          display: flex;
-          gap: 1rem;
-          margin-top: 1rem;
-          flex-wrap: wrap;
+        .bottom-actions {
+          justify-content: space-between;
+          margin-top: auto;
         }
 
-        .action-buttons .fm-btn {
-          flex: 1;
-          min-width: 140px;
+        .avatar-preview-section {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .avatar-preview {
+          width: min(420px, 100%);
+          aspect-ratio: 1 / 1;
+          border-radius: var(--r-md);
+          border: 2px solid var(--border-bright);
+          background: var(--panel);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+
+        .preview-actions {
+          display: flex;
+          gap: 0.5rem;
+          margin-top: 1rem;
+          flex-wrap: wrap;
+          justify-content: center;
         }
 
         @media (max-width: 768px) {
@@ -510,17 +687,20 @@ export default function CharacterCustomizerScreen({
             padding: 1.5rem;
           }
 
-          .avatar-preview {
-            width: 200px;
-            height: 200px;
+          .avatar-preview-section {
+            order: -1;
           }
 
-          .action-buttons {
+          .avatar-preview {
+            width: 220px;
+          }
+
+          .bottom-actions {
             flex-direction: column;
           }
 
-          .action-buttons .fm-btn {
-            min-width: unset;
+          .bottom-actions .fm-btn {
+            width: 100%;
           }
         }
       `}</style>

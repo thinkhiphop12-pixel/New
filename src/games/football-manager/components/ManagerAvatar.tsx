@@ -103,7 +103,7 @@ export default function ManagerAvatar({ config, size = 40, className = '', title
     >
       <circle cx="50" cy="50" r="50" fill="var(--panel-3)" />
       {/* shoulders / suit */}
-      <path d="M10 100 Q50 66 90 100 Z" fill="var(--panel-2)" />
+      <path d="M10 100 Q50 66 90 100 Z" fill={config.suitColor ?? 'var(--panel-2)'} />
       {/* neck + head, two-tone: primary fill with a shadow wedge on the
           right so the face reads with volume at every skin tone */}
       <circle cx="50" cy="55" r="34" fill={config.skinTone} />

@@ -2509,3 +2509,24 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 @media (min-width: 620px) { .fm-pick-head__fields { grid-template-columns: 1fr 1fr; } }
 .fm-pick-head .fm-search { min-width: 0; }
+
+/* ── Preset grid: small avatar-thumbnail cards with a radio indicator ──
+   Same shell language as `.fm-club-card` (border/hover/selected treatment)
+   so a picker screen with thumbnails reads as one family with Club Select,
+   just smaller tiles and a radio dot instead of a crest+stats footer. */
+.fm-preset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+.fm-preset-card {
+  position: relative; display: flex; flex-direction: column; gap: 6px;
+  align-items: center; text-align: center;
+  background: var(--panel); border: 1.5px solid var(--border-soft);
+  border-radius: var(--r-lg); padding: 10px 8px; cursor: pointer; color: var(--text);
+  transition: border-color 0.15s, transform 0.12s, box-shadow 0.2s;
+}
+.fm-preset-card:hover { border-color: var(--border-bright); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.fm-preset-card.selected { border-color: var(--gold); background: var(--gold-dim); box-shadow: var(--shadow-glow-gold); }
+.fm-preset-card__radio {
+  position: absolute; top: 8px; right: 8px; width: 16px; height: 16px;
+  border-radius: 50%; border: 2px solid var(--border-bright); background: transparent;
+}
+.fm-preset-card.selected .fm-preset-card__radio { background: var(--gold); border-color: var(--gold); }
+.fm-preset-card__label { font-weight: 700; font-size: 11.5px; color: var(--text-2); line-height: 1.2; }
