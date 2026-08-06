@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Icon } from './Icon';
 import type {
   AvatarConfig, BadgeLevel, ManagerProfile, PlayingBackground, PriorRole,
@@ -8,6 +8,18 @@ import type {
 import ManagerAvatar, { shadeColor } from './ManagerAvatar';
 
 type CustomizerTab = 'details' | 'credentials' | 'style' | 'appearance';
+
+const APPEARANCE_SECTIONS = [
+  { id: 'skin', label: 'Skin Tone', icon: 'palette' },
+  { id: 'hairColor', label: 'Hair Color', icon: 'palette' },
+  { id: 'eyebrow', label: 'Eyebrows', icon: 'palette' },
+  { id: 'hairStyle', label: 'Hair Style', icon: 'person' },
+  { id: 'eyes', label: 'Eye Color', icon: 'palette' },
+  { id: 'facialHair', label: 'Facial Hair', icon: 'person' },
+  { id: 'accessories', label: 'Accessories', icon: 'settings' },
+] as const;
+
+type AppearanceSection = (typeof APPEARANCE_SECTIONS)[number]['id'];
 
 const PLAYING_BACKGROUNDS: { label: string; value: PlayingBackground; desc: string }[] = [
   { label: 'World-class player', value: 'world-class', desc: 'A decorated international career. The football world already knows your name.' },
@@ -126,6 +138,39 @@ function randomAvatar(): AvatarConfig {
   };
 }
 
+/** A single grid choice: a thumbnail (color swatch or mini avatar render),
+ *  a label, and a checkmark badge when selected — the one visual pattern
+ *  every customization grid in this screen shares. */
+function OptionTile({
+  label,
+  active,
+  onClick,
+  thumb,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  thumb: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className={`option-tile${active ? ' active' : ''}`}
+      onClick={onClick}
+      aria-pressed={active}
+      title={label}
+    >
+      <span className="option-tile__thumb">{thumb}</span>
+      <span className="option-tile__label">{label}</span>
+      {active && (
+        <span className="option-tile__check">
+          <Icon name="check" size={11} />
+        </span>
+      )}
+    </button>
+  );
+}
+
 /** Draws the avatar SVG to an offscreen canvas and triggers a PNG download.
  *  Runs entirely client-side — no server round trip for a cosmetic export. */
 function downloadAvatarPng(config: AvatarConfig, filename: string) {
@@ -179,7 +224,14 @@ export default function CharacterCustomizerScreen({
   const [coachingStyles, setCoachingStyles] = useState<string[]>(initialProfile?.coachingStyles || []);
   const [personality, setPersonality] = useState<string[]>(initialProfile?.personality || []);
   const [tab, setTab] = useState<CustomizerTab>('details');
+  const [appearanceSection, setAppearanceSection] = useState<AppearanceSection>('skin');
   const avatarRef = useRef<HTMLDivElement | null>(null);
+
+  const sectionIndex = APPEARANCE_SECTIONS.findIndex((s) => s.id === appearanceSection);
+  const stepSection = (dir: 1 | -1) => {
+    const n = APPEARANCE_SECTIONS.length;
+    setAppearanceSection(APPEARANCE_SECTIONS[(sectionIndex + dir + n) % n].id);
+  };
 
   const toggleStyle = (style: string) => {
     setCoachingStyles((prev) =>
@@ -254,7 +306,7 @@ export default function CharacterCustomizerScreen({
         </div>
 
         <div className="customization-section">
-          <div className="fm-subnav__tabs" role="tablist" aria-label="Manager customization sections">
+          <div className="fm-subnav__tabs customizer-tabbar" role="tablist" aria-label="Manager customization sections">
             <button
               type="button"
               role="tab"
@@ -315,121 +367,158 @@ export default function CharacterCustomizerScreen({
 
           {tab === 'appearance' && (
             <div id="customizer-panel-appearance" role="tabpanel" aria-label="Appearance" className="customization-group">
-              <div className="form-group">
-                <label className="fm-label-small">Skin Tone</label>
-                <p className="fm-category-desc">Sets a matching shadow tone automatically, so shading looks right at every skin tone.</p>
-                <div className="color-selector">
-                  {SKIN_TONES.map((tone) => (
-                    <button
-                      key={tone.value}
-                      className={`color-option ${avatarConfig.skinTone === tone.value ? 'active' : ''}`}
-                      style={{ backgroundColor: `#${tone.value}` }}
-                      onClick={() => setSkin(tone.value)}
-                      title={tone.label}
-                    />
-                  ))}
-                </div>
+              <div className="section-strip" role="tablist" aria-label="Appearance sections">
+                {APPEARANCE_SECTIONS.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={appearanceSection === s.id}
+                    className={`section-strip__item${appearanceSection === s.id ? ' active' : ''}`}
+                    onClick={() => setAppearanceSection(s.id)}
+                    title={s.label}
+                  >
+                    <Icon name={s.icon} size={16} />
+                  </button>
+                ))}
               </div>
 
-              <div className="form-group">
-                <label className="fm-label-small">Hair Color</label>
-                <p className="fm-category-desc">Independent of hairstyle — mix any color with any cut.</p>
-                <div className="color-selector">
-                  {HAIR_COLORS.map((color) => (
-                    <button
-                      key={color.value}
-                      className={`color-option ${avatarConfig.hairColor === color.value ? 'active' : ''}`}
-                      style={{ backgroundColor: `#${color.value}` }}
-                      onClick={() => setAvatarConfig({ ...avatarConfig, hairColor: color.value })}
-                      title={color.label}
-                    />
-                  ))}
-                </div>
+              <div className="section-nav">
+                <button type="button" className="section-nav__arrow" onClick={() => stepSection(-1)} aria-label="Previous section">
+                  <Icon name="chevron" size={14} style={{ transform: 'rotate(90deg)' }} />
+                </button>
+                <span className="section-nav__label">{APPEARANCE_SECTIONS[sectionIndex].label}</span>
+                <button type="button" className="section-nav__arrow" onClick={() => stepSection(1)} aria-label="Next section">
+                  <Icon name="chevron" size={14} style={{ transform: 'rotate(-90deg)' }} />
+                </button>
               </div>
 
-              <div className="form-group">
-                <label className="fm-label-small">Eyebrow Color</label>
-                <p className="fm-category-desc">Its own axis — doesn't have to match your hair.</p>
-                <div className="color-selector">
-                  {EYEBROW_COLORS.map((color) => (
-                    <button
-                      key={color.value}
-                      className={`color-option ${(avatarConfig.eyebrowColor ?? '') === color.value ? 'active' : ''}`}
-                      style={{ backgroundColor: `#${color.value}` }}
-                      onClick={() => setAvatarConfig({ ...avatarConfig, eyebrowColor: color.value })}
-                      title={color.label}
-                    />
-                  ))}
+              {appearanceSection === 'skin' && (
+                <div className="form-group">
+                  <p className="fm-category-desc">Sets a matching shadow tone automatically, so shading looks right at every skin tone.</p>
+                  <div className="tile-grid">
+                    {SKIN_TONES.map((tone) => (
+                      <OptionTile
+                        key={tone.value}
+                        label={tone.label}
+                        active={avatarConfig.skinTone === tone.value}
+                        onClick={() => setSkin(tone.value)}
+                        thumb={<span className="swatch" style={{ backgroundColor: `#${tone.value}` }} />}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="form-group">
-                <label className="fm-label-small">Hair Style</label>
-                <p className="fm-category-desc">The shape and length of your cut.</p>
-                <div className="option-grid">
-                  {HAIR_STYLES.map((style) => (
-                    <button
-                      key={style.value}
-                      className={`fm-btn fm-btn--small ${avatarConfig.hairStyle === style.value ? 'active' : ''}`}
-                      onClick={() => setAvatarConfig({ ...avatarConfig, hairStyle: style.value })}
-                    >
-                      {style.label}
-                    </button>
-                  ))}
+              {appearanceSection === 'hairColor' && (
+                <div className="form-group">
+                  <p className="fm-category-desc">Independent of hairstyle — mix any color with any cut.</p>
+                  <div className="tile-grid">
+                    {HAIR_COLORS.map((color) => (
+                      <OptionTile
+                        key={color.value}
+                        label={color.label}
+                        active={avatarConfig.hairColor === color.value}
+                        onClick={() => setAvatarConfig({ ...avatarConfig, hairColor: color.value })}
+                        thumb={<span className="swatch" style={{ backgroundColor: `#${color.value}` }} />}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="form-group">
-                <label className="fm-label-small">Eye Color</label>
-                <p className="fm-category-desc">Iris color.</p>
-                <div className="color-selector">
-                  {EYE_COLORS.map((color) => (
-                    <button
-                      key={color.value}
-                      className={`color-option ${avatarConfig.eyeColor === color.value ? 'active' : ''}`}
-                      style={{ backgroundColor: `#${color.value}` }}
-                      onClick={() => setAvatarConfig({ ...avatarConfig, eyeColor: color.value })}
-                      title={color.label}
-                    />
-                  ))}
+              {appearanceSection === 'eyebrow' && (
+                <div className="form-group">
+                  <p className="fm-category-desc">Its own axis — doesn't have to match your hair.</p>
+                  <div className="tile-grid">
+                    {EYEBROW_COLORS.map((color) => (
+                      <OptionTile
+                        key={color.value}
+                        label={color.label}
+                        active={(avatarConfig.eyebrowColor ?? '') === color.value}
+                        onClick={() => setAvatarConfig({ ...avatarConfig, eyebrowColor: color.value })}
+                        thumb={<span className="swatch" style={{ backgroundColor: `#${color.value}` }} />}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="form-group">
-                <label className="fm-label-small">Facial Hair</label>
-                <p className="fm-category-desc">Uses your hair color.</p>
-                <div className="option-grid">
-                  {FACIAL_HAIR.map((style) => (
-                    <button
-                      key={style.value}
-                      className={`fm-btn fm-btn--small ${avatarConfig.facialHair === style.value ? 'active' : ''}`}
-                      onClick={() => setAvatarConfig({ ...avatarConfig, facialHair: style.value })}
-                    >
-                      {style.label}
-                    </button>
-                  ))}
+              {appearanceSection === 'hairStyle' && (
+                <div className="form-group">
+                  <p className="fm-category-desc">The shape and length of your cut — each tile previews it on your manager.</p>
+                  <div className="tile-grid">
+                    {HAIR_STYLES.map((style) => (
+                      <OptionTile
+                        key={style.value}
+                        label={style.label}
+                        active={avatarConfig.hairStyle === style.value}
+                        onClick={() => setAvatarConfig({ ...avatarConfig, hairStyle: style.value })}
+                        thumb={<ManagerAvatar config={{ ...avatarConfig, hairStyle: style.value }} size={64} title={style.label} />}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="form-group">
-                <label className="fm-label-small">Accessories</label>
-                <p className="fm-category-desc">Optional extras.</p>
-                <div className="option-grid">
-                  {ACCESSORIES.map((acc) => (
-                    <button
-                      key={acc.value}
-                      className={`fm-btn fm-btn--small ${
-                        (avatarConfig.accessories?.[0] ?? '') === acc.value ? 'active' : ''
-                      }`}
-                      onClick={() =>
-                        setAvatarConfig({ ...avatarConfig, accessories: acc.value ? [acc.value] : [] })
-                      }
-                    >
-                      {acc.label}
-                    </button>
-                  ))}
+              {appearanceSection === 'eyes' && (
+                <div className="form-group">
+                  <p className="fm-category-desc">Iris color.</p>
+                  <div className="tile-grid">
+                    {EYE_COLORS.map((color) => (
+                      <OptionTile
+                        key={color.value}
+                        label={color.label}
+                        active={avatarConfig.eyeColor === color.value}
+                        onClick={() => setAvatarConfig({ ...avatarConfig, eyeColor: color.value })}
+                        thumb={<span className="swatch" style={{ backgroundColor: `#${color.value}` }} />}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {appearanceSection === 'facialHair' && (
+                <div className="form-group">
+                  <p className="fm-category-desc">Uses your hair color.</p>
+                  <div className="tile-grid">
+                    {FACIAL_HAIR.map((style) => (
+                      <OptionTile
+                        key={style.value}
+                        label={style.label}
+                        active={avatarConfig.facialHair === style.value}
+                        onClick={() => setAvatarConfig({ ...avatarConfig, facialHair: style.value })}
+                        thumb={<ManagerAvatar config={{ ...avatarConfig, facialHair: style.value }} size={64} title={style.label} />}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {appearanceSection === 'accessories' && (
+                <div className="form-group">
+                  <p className="fm-category-desc">Optional extras.</p>
+                  <div className="tile-grid">
+                    {ACCESSORIES.map((acc) => (
+                      <OptionTile
+                        key={acc.value}
+                        label={acc.label}
+                        active={(avatarConfig.accessories?.[0] ?? '') === acc.value}
+                        onClick={() =>
+                          setAvatarConfig({ ...avatarConfig, accessories: acc.value ? [acc.value] : [] })
+                        }
+                        thumb={
+                          <ManagerAvatar
+                            config={{ ...avatarConfig, accessories: acc.value ? [acc.value] : [] }}
+                            size={64}
+                            title={acc.label}
+                          />
+                        }
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -447,6 +536,9 @@ export default function CharacterCustomizerScreen({
                     >
                       <span className="stack-option__label">{opt.label}</span>
                       <span className="stack-option__desc">{opt.desc}</span>
+                      {playingBackground === opt.value && (
+                        <span className="stack-option__check"><Icon name="check" size={12} /></span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -464,6 +556,9 @@ export default function CharacterCustomizerScreen({
                     >
                       <span className="stack-option__label">{opt.label}</span>
                       <span className="stack-option__desc">{opt.desc}</span>
+                      {priorRole === opt.value && (
+                        <span className="stack-option__check"><Icon name="check" size={12} /></span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -476,10 +571,11 @@ export default function CharacterCustomizerScreen({
                   {BADGE_LEVELS.map((opt) => (
                     <button
                       key={opt.value}
-                      className={`fm-btn fm-btn--small ${badgeLevel === opt.value ? 'active' : ''}`}
+                      className={`fm-btn fm-btn--ghost fm-btn--small ${badgeLevel === opt.value ? 'active' : ''}`}
                       onClick={() => setBadgeLevel(opt.value)}
                       title={opt.desc}
                     >
+                      {badgeLevel === opt.value && <Icon name="check" size={11} />}
                       {opt.label}
                     </button>
                   ))}
@@ -497,10 +593,11 @@ export default function CharacterCustomizerScreen({
                   {COACHING_STYLES.map((style) => (
                     <button
                       key={style}
-                      className={`fm-btn fm-btn--small ${coachingStyles.includes(style) ? 'active' : ''}`}
+                      className={`fm-btn fm-btn--ghost fm-btn--small ${coachingStyles.includes(style) ? 'active' : ''}`}
                       onClick={() => toggleStyle(style)}
                       disabled={!coachingStyles.includes(style) && coachingStyles.length >= MAX_STYLES}
                     >
+                      {coachingStyles.includes(style) && <Icon name="check" size={11} />}
                       {style}
                     </button>
                   ))}
@@ -514,10 +611,11 @@ export default function CharacterCustomizerScreen({
                   {PERSONALITY_TRAITS.map((trait) => (
                     <button
                       key={trait}
-                      className={`fm-btn fm-btn--small ${personality.includes(trait) ? 'active' : ''}`}
+                      className={`fm-btn fm-btn--ghost fm-btn--small ${personality.includes(trait) ? 'active' : ''}`}
                       onClick={() => toggleTrait(trait)}
                       disabled={!personality.includes(trait) && personality.length >= MAX_TRAITS}
                     >
+                      {personality.includes(trait) && <Icon name="check" size={11} />}
                       {trait}
                     </button>
                   ))}
@@ -560,6 +658,7 @@ export default function CharacterCustomizerScreen({
         .character-container {
           display: grid;
           grid-template-columns: 1fr 1fr;
+          align-items: start;
           gap: 2rem;
           padding: 2rem;
           background: var(--panel-2);
@@ -572,6 +671,12 @@ export default function CharacterCustomizerScreen({
           flex-direction: column;
           align-items: center;
           justify-content: center;
+          position: sticky;
+          top: 16px;
+          background: var(--panel);
+          border: 1px solid var(--border);
+          border-radius: var(--r-lg, 18px);
+          padding: 1.5rem;
         }
 
         .avatar-preview-section h3 {
@@ -585,7 +690,7 @@ export default function CharacterCustomizerScreen({
           height: 280px;
           border-radius: var(--r-md);
           border: 2px solid var(--border-bright);
-          background: var(--panel);
+          background: var(--panel-2);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -609,6 +714,181 @@ export default function CharacterCustomizerScreen({
           padding: 1.5rem;
           border-radius: var(--r-md);
           border: 1px solid var(--border);
+        }
+
+        .customizer-tabbar {
+          display: flex;
+          gap: 0;
+          background: var(--panel);
+          border: 1px solid var(--border);
+          border-radius: var(--r-sm, 8px);
+          overflow: hidden;
+        }
+
+        .customizer-tabbar :global(.fm-subtab) {
+          flex: 1;
+          justify-content: center;
+          padding: 0.85rem 0.5rem;
+          border-radius: 0;
+          border: none;
+          border-right: 1px solid var(--border);
+          border-bottom: 3px solid transparent;
+          background: transparent;
+          font-weight: 800;
+          font-size: 0.78rem;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+
+        .customizer-tabbar :global(.fm-subtab:last-child) {
+          border-right: none;
+        }
+
+        .customizer-tabbar :global(.fm-subtab.active) {
+          background: color-mix(in srgb, var(--lime) 14%, var(--panel));
+          border-bottom-color: var(--lime);
+          color: var(--text);
+        }
+
+        .section-strip {
+          display: flex;
+          gap: 0.4rem;
+          flex-wrap: wrap;
+          margin-bottom: 0.75rem;
+        }
+
+        .section-strip__item {
+          width: 38px;
+          height: 38px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: var(--r-sm, 8px);
+          border: 1px solid var(--border);
+          background: var(--panel-2);
+          color: var(--muted);
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .section-strip__item:hover {
+          border-color: var(--border-bright);
+          color: var(--text);
+        }
+
+        .section-strip__item.active {
+          border-color: var(--lime);
+          color: var(--text);
+          background: color-mix(in srgb, var(--lime) 16%, var(--panel-2));
+        }
+
+        .section-nav {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.75rem;
+          padding: 0.5rem 0;
+          margin-bottom: 1rem;
+          border-top: 1px solid var(--border);
+          border-bottom: 1px solid var(--border);
+        }
+
+        .section-nav__arrow {
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 999px;
+          border: 1px solid var(--border);
+          background: var(--panel-2);
+          color: var(--text);
+          cursor: pointer;
+        }
+
+        .section-nav__arrow:hover {
+          border-color: var(--lime);
+        }
+
+        .section-nav__label {
+          font-weight: 700;
+          font-size: 0.85rem;
+          color: var(--text);
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          min-width: 140px;
+          text-align: center;
+        }
+
+        .tile-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+          gap: 0.6rem;
+        }
+
+        /* OptionTile renders as its own component, so its elements never
+         *  receive this file's scoped class — these rules must stay global
+         *  or none of them would ever match. */
+        :global(.option-tile) {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.6rem 0.4rem;
+          border-radius: var(--r-sm, 8px);
+          border: 2px solid var(--border);
+          background: var(--panel-2);
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        :global(.option-tile:hover) {
+          border-color: color-mix(in srgb, var(--lime) 50%, transparent);
+        }
+
+        :global(.option-tile.active) {
+          border-color: var(--lime);
+          background: color-mix(in srgb, var(--lime) 12%, var(--panel-2));
+          box-shadow: 0 0 12px color-mix(in srgb, var(--lime) 30%, transparent);
+        }
+
+        :global(.option-tile__thumb) {
+          width: 64px;
+          height: 64px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 6px;
+          overflow: hidden;
+        }
+
+        :global(.option-tile__thumb) .swatch {
+          width: 100%;
+          height: 100%;
+          border-radius: 6px;
+          display: block;
+        }
+
+        :global(.option-tile__label) {
+          font-size: 0.72rem;
+          color: var(--text-2, var(--text));
+          text-align: center;
+          line-height: 1.2;
+        }
+
+        :global(.option-tile__check) {
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          width: 18px;
+          height: 18px;
+          border-radius: 999px;
+          background: var(--lime);
+          color: #04140d;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .form-group {
@@ -666,18 +946,34 @@ export default function CharacterCustomizerScreen({
         }
 
         .stack-option {
+          position: relative;
           display: flex;
           flex-direction: column;
           align-items: flex-start;
           gap: 0.15rem;
           text-align: left;
-          padding: 0.65rem 0.9rem;
+          padding: 0.65rem 2.25rem 0.65rem 0.9rem;
           border-radius: var(--r-sm, 6px);
           border: 1px solid var(--border);
           background: var(--panel);
           color: var(--text);
           cursor: pointer;
           transition: all 0.2s ease;
+        }
+
+        .stack-option__check {
+          position: absolute;
+          top: 50%;
+          right: 0.75rem;
+          transform: translateY(-50%);
+          width: 18px;
+          height: 18px;
+          border-radius: 999px;
+          background: var(--lime);
+          color: #04140d;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .stack-option:hover {
@@ -720,6 +1016,10 @@ export default function CharacterCustomizerScreen({
         .fm-btn.fm-btn--small {
           padding: 0.75rem 1.25rem;
           font-size: 0.875rem;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.4rem;
         }
 
         .fm-btn.fm-btn--small.active {
@@ -746,9 +1046,18 @@ export default function CharacterCustomizerScreen({
             padding: 1.5rem;
           }
 
+          .avatar-preview-section {
+            position: static;
+          }
+
           .avatar-preview {
             width: 200px;
             height: 200px;
+          }
+
+          .customizer-tabbar :global(.fm-subtab) {
+            font-size: 0.68rem;
+            padding: 0.7rem 0.25rem;
           }
 
           .action-buttons {
