@@ -341,6 +341,12 @@ export interface Club {
   /** LeagueDef.id this club is registered in. Exactly one, always. */
   leagueId: string;
   playerIds: number[];
+  /** Youth-team players attached to this club: not part of the first-team
+   *  squad, excluded from `playerIds`-based wage bills, squad-size checks
+   *  and lineup/tactics selection. `promoteYouthPlayer` moves an id from
+   *  here into `playerIds`. Optional so old saves without a youth squad
+   *  still deserialize fine. */
+  youthPlayerIds?: number[];
   /** Dormant club sitting in a phantom league's pool — no fixtures, no
    *  transfer activity, waiting to rotate up. */
   dormant?: boolean;
@@ -1158,12 +1164,32 @@ export interface AvatarConfig {
   accessories?: string[];
 }
 
+/** Playing career tier chosen in the Credentials step — feeds the starting
+ *  reputation formula in `engine/seasonProgression.ts` (`newGame`). */
+export type PlayingBackground =
+  | 'world-class' | 'top-flight' | 'lower-league' | 'semi-pro' | 'none';
+
+/** Non-playing background before taking the manager's chair, if any. */
+export type PriorRole = 'coaching' | 'recruitment' | 'media' | 'none';
+
+/** Coaching badge tier attained. */
+export type BadgeLevel = 'none' | 'basic' | 'advanced' | 'pro';
+
 export interface ManagerProfile {
   id: string;
   name: string;
   avatarConfig: AvatarConfig;
   createdAt: Date;
   updatedAt: Date;
+  /** Backstory/credentials (Phase: Manager Creator). All optional so
+   *  existing saves/profiles load unchanged and simply skip the bonus. */
+  playingBackground?: PlayingBackground;
+  priorRole?: PriorRole;
+  badgeLevel?: BadgeLevel;
+  /** Up to 3 coaching-style flavor tags. */
+  coachingStyles?: string[];
+  /** Up to 2 personality flavor tags. */
+  personality?: string[];
 }
 
 export interface GameData {

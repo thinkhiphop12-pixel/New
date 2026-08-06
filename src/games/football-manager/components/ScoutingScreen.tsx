@@ -5,16 +5,14 @@ import type { GameState } from '@/engine/types';
 import { newScouting } from '@/engine/facilities';
 import { getPlayerReports, getScouts, hireScout, fireScout, reassignScout, SCOUT_REGIONS, scoutWage } from '@/engine/scouting';
 import { formatMoney } from '@/engine/utils';
-import { Icon } from './Icon';
 
 /**
  * Scouting network: hire named scouts (1-5 stars), each assigned to a
  * region, who periodically file transfer-target leads — real players added
  * to the shared shortlist (engine/facilities.ts) with a report in the inbox.
  * Feeds straight into the existing TransfersScreen; no separate pipeline.
- * The Youth Academy card below summarises the existing academy intake
- * system (engine/seasonProgression.ts makeYouthPlayer, run at season end)
- * rather than duplicating it.
+ * Youth academy intake now has its own screen (YouthAcademyScreen, under the
+ * Club group's Academy tab) rather than a static summary card here.
  */
 export default function ScoutingScreen({
   state,
@@ -29,7 +27,6 @@ export default function ScoutingScreen({
 
   const scouts = getScouts(state);
   const reports = getPlayerReports(state);
-  const fs = state.facilities;
 
   return (
     <>
@@ -110,14 +107,6 @@ export default function ScoutingScreen({
         )}
       </div>
 
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}><Icon name="sprout" size={13} /> Youth Academy</p>
-        <p className="fm-club-line">
-          Reputation {fs?.academyReputation ?? 20}/100, intake level {state.academyLevel}/3 — higher reputation
-          and level raise both the number and quality of prospects who graduate into the first team at each
-          season's academy intake. Manage upgrades from the Facilities screen.
-        </p>
-      </div>
     </>
   );
 }

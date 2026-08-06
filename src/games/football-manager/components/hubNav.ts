@@ -20,7 +20,7 @@ export type ScreenId =
   | 'overview' | 'fixtures' | 'table' | 'cups' | 'european'
   | 'squad' | 'tactics' | 'training' | 'schedule'
   | 'transfers' | 'scouting'
-  | 'inbox' | 'club' | 'facilities' | 'staff' | 'finances' | 'board';
+  | 'inbox' | 'club' | 'facilities' | 'staff' | 'academy' | 'finances' | 'board';
 
 export type GroupId = 'matchday' | 'team' | 'market' | 'club';
 
@@ -75,6 +75,7 @@ export const GROUPS: GroupDef[] = [
       { id: 'club', label: 'Club', icon: 'club' },
       { id: 'facilities', label: 'Facilities', icon: 'facilities' },
       { id: 'staff', label: 'Staff', icon: 'staff' },
+      { id: 'academy', label: 'Academy', icon: 'sprout' },
       { id: 'finances', label: 'Finances', icon: 'finances' },
       { id: 'board', label: 'Board', icon: 'club' },
     ],

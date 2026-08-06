@@ -1,6 +1,6 @@
 import type {
   Board, Club, Continental, Fixture, GameData, GameState, JobOffer, Knockout, LeagueDef, MatchReport,
-  Player, Position, SeasonSummary, Staff, TableRow,
+  ManagerProfile, Player, Position, SeasonSummary, Staff, TableRow,
 } from './types';
 import {
   ACADEMY_UPGRADE_COST, CONTINENTAL_PRIZES, CONTINENTAL_SPOTS, CONTINENTAL_WEEKS, CUP_PRIZES,
@@ -408,7 +408,30 @@ function wakePoolClub(s: GameState, club: Club, targetLeagueId: string, seasonYe
   }
 }
 
-export function newGame(data: GameData, userClubId: number, managerName = 'The Gaffer', seasonYear = 2026): GameState {
+/** Starting-reputation bonus from the Credentials step of the Manager
+ *  Creator. Each axis is a small, capped nudge on top of the job's own
+ *  league-band reputation (see `newGame` below) — playing pedigree carries
+ *  the most weight, coaching badges the least, mirroring how a real board
+ *  would weigh a CV. Absent/'none' fields contribute nothing, so profiles
+ *  from before this feature (or a skipped step) are unaffected. */
+export function credentialsReputationBonus(profile?: ManagerProfile): number {
+  if (!profile) return 0;
+  const playing: Record<string, number> = {
+    'world-class': 20, 'top-flight': 12, 'lower-league': 6, 'semi-pro': 2, none: 0,
+  };
+  const prior: Record<string, number> = { coaching: 6, recruitment: 4, media: 2, none: 0 };
+  const badges: Record<string, number> = { pro: 10, advanced: 6, basic: 3, none: 0 };
+  return (
+    (playing[profile.playingBackground ?? 'none'] ?? 0) +
+    (prior[profile.priorRole ?? 'none'] ?? 0) +
+    (badges[profile.badgeLevel ?? 'none'] ?? 0)
+  );
+}
+
+export function newGame(
+  data: GameData, userClubId: number, managerName = 'The Gaffer', seasonYear = 2026,
+  managerProfile?: ManagerProfile,
+): GameState {
   const clubs: Club[] = data.clubs.map(({ division, ...c }) => ({
     ...c,
     leagueId: leagueIdForDivision(division),
@@ -462,8 +485,13 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
     board: { objective: '', minPosition: 17, confidence: 60 },
     manager: {
       name: managerName,
-      // Reputation on appointment tracks how high up the pyramid the job is.
-      reputation: clamp(60 - getLeague(userClub.leagueId).level * 10, 20, 50),
+      // Reputation on appointment tracks how high up the pyramid the job is,
+      // plus a bonus from the Manager Creator's Credentials step (playing
+      // pedigree, prior non-playing role, coaching badges).
+      reputation: clamp(
+        60 - getLeague(userClub.leagueId).level * 10 + credentialsReputationBonus(managerProfile),
+        20, 90,
+      ),
       wins: 0, draws: 0, losses: 0, seasons: 0, trophies: [],
     },
     academyLevel: 1,
@@ -1603,18 +1631,20 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     }
   }
 
-  // Youth academy intake.
+  // Youth academy intake. New prospects join the youth squad, not the first
+  // team directly — the user promotes them via the Youth Academy screen
+  // (engine/youthAcademy.ts promoteYouthPlayer), subject to MAX_SQUAD_SIZE.
   const intakeCount = s.academyLevel >= 3 ? 2 : 1;
+  if (!userClub.youthPlayerIds) userClub.youthPlayerIds = [];
   for (let i = 0; i < intakeCount; i++) {
-    if (userClub.playerIds.length >= MAX_SQUAD_SIZE) break;
     const kid = makeYouthPlayer(s.nextPlayerId++, s.userClubId, s.academyLevel, s.seasonYear);
     s.players[kid.id] = kid;
-    userClub.playerIds.push(kid.id);
-    s.news.unshift(`Academy graduate ${kid.name} (${kid.role}, ${kid.rating} OVR) joins the first team.`);
+    userClub.youthPlayerIds.push(kid.id);
+    s.news.unshift(`Academy intake: ${kid.name} (${kid.role}, ${kid.rating} OVR, ${kid.potential} PA) joins the youth squad.`);
     pushInbox(s, {
       category: 'youth',
-      title: `${kid.name} promoted to the first team`,
-      body: `Academy graduate ${kid.name} has impressed the youth coaches enough to earn a first-team squad number.\n\nA raw ${kid.rating} OVR ${kid.role} at ${kid.age} — the kind of prospect worth developing.`,
+      title: `${kid.name} joins the youth academy`,
+      body: `A new prospect has entered the academy: ${kid.name}, a ${kid.age}-year-old ${kid.role} rated ${kid.rating} OVR with potential of ${kid.potential}.\n\nHe's in the youth squad now — promote him to the first team from the Youth Academy screen whenever he's ready.`,
       playerId: kid.id,
     });
   }
