@@ -18,7 +18,10 @@ export interface TacFam {
 
 /** Legacy division number, kept only for the raw dataset (gamedata.json) and
  *  the pre-v4 save migration. Live game state keys off `LeagueDef.id`. */
-export type Division = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+export type Division =
+  | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11
+  | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20
+  | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29;
 
 /**
  * One league in the pyramid. Structure, promotion/relegation counts, UEFA slot
