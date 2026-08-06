@@ -24,12 +24,13 @@ import SeasonEndScreen from './SeasonEndScreen';
 import SettingsPanel, { loadSettings } from './SettingsPanel';
 import MoreMenu from './MoreMenu';
 import CharacterCustomizerScreen from './CharacterCustomizerScreen';
+import ManagerPickScreen from './ManagerPickScreen';
 import { readableTextOn } from './visuals';
 import { ToastHost, pushToast } from './ToastQueue';
 import { Icon, IconSprite } from './Icon';
 import type { ScreenId } from './hubNav';
 
-type View = 'menu' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonend' | 'character';
+type View = 'menu' | 'managerpick' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonend' | 'character';
 
 export default function FootballManagerGame() {
   const [data, setData] = useState<GameData | null>(null);
@@ -52,6 +53,11 @@ export default function FootballManagerGame() {
   const [showMore, setShowMore] = useState(false);
   const [selectedDivisions, setSelectedDivisions] = useState<string[]>(['premier_league', 'championship', 'league_one', 'league_two']);
   const [managerProfile, setManagerProfile] = useState<ManagerProfile | null>(null);
+  // True while the manager-pick/character screens are resolving the
+  // mandatory choice at the start of a new career, so Save/Back from those
+  // screens know to continue on into scenario pick rather than returning to
+  // wherever they'd go for a mid-career "Customize Manager" edit.
+  const [careerManagerFlow, setCareerManagerFlow] = useState(false);
   const [selectedScenarioId, setSelectedScenarioId] = useState<ScenarioId | undefined>(undefined);
   // Progress label for the scenario fast-forward below. Non-null means a long
   // synchronous engine job is being run in yielded chunks; see `handlePickClub`.
@@ -142,7 +148,31 @@ export default function FootballManagerGame() {
   const handleNewGame = (s: number) => {
     setSlot(s);
     setSelectedScenarioId(undefined);
+    setCareerManagerFlow(true);
+    // A profile already on file gets a choice (continue with it or build a
+    // new one); with nothing on file yet there's nothing to choose between,
+    // so go straight to the customizer — creating one is mandatory either way.
+    if (managerProfile) {
+      setView('managerpick');
+    } else {
+      setCharacterReturn('scenariopick');
+      setView('character');
+    }
+  };
+
+  const handleManagerPickContinue = () => {
+    setCareerManagerFlow(false);
     setView('scenariopick');
+  };
+
+  const handleManagerPickCreateNew = () => {
+    setCharacterReturn('scenariopick');
+    setView('character');
+  };
+
+  const handleManagerPickBack = () => {
+    setCareerManagerFlow(false);
+    setView('menu');
   };
 
   const handlePickScenario = (id: ScenarioId) => {
@@ -277,6 +307,7 @@ export default function FootballManagerGame() {
 
   const handleCharacterCustomizerOpen = () => {
     if (view === 'match') return;
+    setCareerManagerFlow(false);
     setCharacterReturn(gs ? 'hub' : 'menu');
     setView('character');
   };
@@ -289,10 +320,20 @@ export default function FootballManagerGame() {
     // If a career is in progress, keep the profile travelling with the save
     // slot rather than only the device-wide key.
     if (gs) apply({ ...gs, managerProfile: profile });
+    setCareerManagerFlow(false);
     setView(characterReturn);
   };
 
   const handleCharacterBack = () => {
+    if (careerManagerFlow) {
+      // Cancelling out of manager creation mid-new-career: if a profile was
+      // already on file, land back on the pick screen so "continue with the
+      // existing one" is still available instead of aborting the whole
+      // new-career attempt; otherwise there's nothing to fall back to.
+      setCareerManagerFlow(false);
+      setView(managerProfile ? 'managerpick' : 'menu');
+      return;
+    }
     setView(characterReturn);
   };
 
@@ -356,6 +397,13 @@ export default function FootballManagerGame() {
           </div>
         ) : view === 'character' ? (
           <CharacterCustomizerScreen onSave={handleCharacterSave} onBack={handleCharacterBack} initialProfile={managerProfile || undefined} />
+        ) : view === 'managerpick' && managerProfile ? (
+          <ManagerPickScreen
+            profile={managerProfile}
+            onContinue={handleManagerPickContinue}
+            onCreateNew={handleManagerPickCreateNew}
+            onBack={handleManagerPickBack}
+          />
         ) : view === 'menu' ? (
           <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} onCharacterCustomizer={handleCharacterCustomizerOpen} />
         ) : view === 'scenariopick' ? (
