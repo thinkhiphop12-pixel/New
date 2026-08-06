@@ -2,10 +2,44 @@
 
 import { useRef, useState } from 'react';
 import { Icon } from './Icon';
-import type { AvatarConfig, ManagerProfile } from '@/engine/types';
+import type {
+  AvatarConfig, BadgeLevel, ManagerProfile, PlayingBackground, PriorRole,
+} from '@/engine/types';
 import ManagerAvatar, { shadeColor } from './ManagerAvatar';
 
-type CustomizerTab = 'details' | 'appearance';
+type CustomizerTab = 'details' | 'credentials' | 'style' | 'appearance';
+
+const PLAYING_BACKGROUNDS: { label: string; value: PlayingBackground; desc: string }[] = [
+  { label: 'World-class player', value: 'world-class', desc: 'A decorated international career. The football world already knows your name.' },
+  { label: 'Top-flight player', value: 'top-flight', desc: 'Played regularly in a top domestic league.' },
+  { label: 'Lower-league player', value: 'lower-league', desc: 'A journeyman career in the lower divisions.' },
+  { label: 'Semi-professional', value: 'semi-pro', desc: 'Played part-time while working another job.' },
+  { label: 'Never played professionally', value: 'none', desc: 'Coming into management with no playing pedigree at all.' },
+];
+
+const PRIOR_ROLES: { label: string; value: PriorRole; desc: string }[] = [
+  { label: 'None', value: 'none', desc: 'Straight into the dugout.' },
+  { label: 'Coaching', value: 'coaching', desc: 'Time served as an assistant or youth coach.' },
+  { label: 'Recruitment & Analysis', value: 'recruitment', desc: 'Built a reputation scouting and analysing data.' },
+  { label: 'Media & Punditry', value: 'media', desc: 'A familiar voice on TV and radio.' },
+];
+
+const BADGE_LEVELS: { label: string; value: BadgeLevel; desc: string }[] = [
+  { label: 'No badges', value: 'none', desc: '' },
+  { label: 'Basic License', value: 'basic', desc: '' },
+  { label: 'Advanced License', value: 'advanced', desc: '' },
+  { label: 'Pro License', value: 'pro', desc: 'The top coaching qualification.' },
+];
+
+const COACHING_STYLES = [
+  'Attacking', 'Possession-based', 'Pragmatic', 'Man-management focused',
+  'Youth-focused', 'Data-driven', 'Disciplinarian', 'Motivator', 'Tactical Innovator',
+];
+
+const PERSONALITY_TRAITS = ['Calm', 'Fiery', 'Ambitious', 'Loyal', 'Ruthless', 'Media-savvy'];
+
+const MAX_STYLES = 3;
+const MAX_TRAITS = 2;
 
 const DEFAULT_AVATAR: AvatarConfig = {
   skinTone: 'c1ad60',
@@ -137,8 +171,29 @@ export default function CharacterCustomizerScreen({
   const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(
     initialProfile?.avatarConfig || { ...DEFAULT_AVATAR }
   );
+  const [playingBackground, setPlayingBackground] = useState<PlayingBackground>(
+    initialProfile?.playingBackground || 'none'
+  );
+  const [priorRole, setPriorRole] = useState<PriorRole>(initialProfile?.priorRole || 'none');
+  const [badgeLevel, setBadgeLevel] = useState<BadgeLevel>(initialProfile?.badgeLevel || 'none');
+  const [coachingStyles, setCoachingStyles] = useState<string[]>(initialProfile?.coachingStyles || []);
+  const [personality, setPersonality] = useState<string[]>(initialProfile?.personality || []);
   const [tab, setTab] = useState<CustomizerTab>('details');
   const avatarRef = useRef<HTMLDivElement | null>(null);
+
+  const toggleStyle = (style: string) => {
+    setCoachingStyles((prev) =>
+      prev.includes(style) ? prev.filter((s) => s !== style)
+        : prev.length >= MAX_STYLES ? prev : [...prev, style]
+    );
+  };
+
+  const toggleTrait = (trait: string) => {
+    setPersonality((prev) =>
+      prev.includes(trait) ? prev.filter((t) => t !== trait)
+        : prev.length >= MAX_TRAITS ? prev : [...prev, trait]
+    );
+  };
 
   const setSkin = (value: string) => {
     setAvatarConfig({ ...avatarConfig, skinTone: value, skinShadow: shadeColor(`#${value}`) });
@@ -156,6 +211,11 @@ export default function CharacterCustomizerScreen({
       avatarConfig,
       createdAt: initialProfile?.createdAt || new Date(),
       updatedAt: new Date(),
+      playingBackground,
+      priorRole,
+      badgeLevel,
+      coachingStyles,
+      personality,
     };
 
     onSave(profile);
@@ -214,6 +274,26 @@ export default function CharacterCustomizerScreen({
               onClick={() => setTab('appearance')}
             >
               <span className="fm-subtab__label">Appearance</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'credentials'}
+              aria-controls="customizer-panel-credentials"
+              className={`fm-subtab${tab === 'credentials' ? ' active' : ''}`}
+              onClick={() => setTab('credentials')}
+            >
+              <span className="fm-subtab__label">Credentials</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'style'}
+              aria-controls="customizer-panel-style"
+              className={`fm-subtab${tab === 'style' ? ' active' : ''}`}
+              onClick={() => setTab('style')}
+            >
+              <span className="fm-subtab__label">Style &amp; Personality</span>
             </button>
           </div>
 
@@ -353,12 +433,116 @@ export default function CharacterCustomizerScreen({
             </div>
           )}
 
+          {tab === 'credentials' && (
+            <div id="customizer-panel-credentials" role="tabpanel" aria-label="Credentials" className="customization-group">
+              <div className="form-group">
+                <label className="fm-label-small">Playing Career</label>
+                <p className="fm-category-desc">Your pedigree as a player — the biggest factor in your starting reputation.</p>
+                <div className="stack-options">
+                  {PLAYING_BACKGROUNDS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      className={`stack-option ${playingBackground === opt.value ? 'active' : ''}`}
+                      onClick={() => setPlayingBackground(opt.value)}
+                    >
+                      <span className="stack-option__label">{opt.label}</span>
+                      <span className="stack-option__desc">{opt.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="fm-label-small">Prior Background</label>
+                <p className="fm-category-desc">What you did before taking a dugout, if anything.</p>
+                <div className="stack-options">
+                  {PRIOR_ROLES.map((opt) => (
+                    <button
+                      key={opt.value}
+                      className={`stack-option ${priorRole === opt.value ? 'active' : ''}`}
+                      onClick={() => setPriorRole(opt.value)}
+                    >
+                      <span className="stack-option__label">{opt.label}</span>
+                      <span className="stack-option__desc">{opt.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="fm-label-small">Coaching Badges</label>
+                <p className="fm-category-desc">Formal qualifications earned on the coaching pathway.</p>
+                <div className="option-grid">
+                  {BADGE_LEVELS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      className={`fm-btn fm-btn--small ${badgeLevel === opt.value ? 'active' : ''}`}
+                      onClick={() => setBadgeLevel(opt.value)}
+                      title={opt.desc}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {tab === 'style' && (
+            <div id="customizer-panel-style" role="tabpanel" aria-label="Style and personality" className="customization-group">
+              <div className="form-group">
+                <label className="fm-label-small">Coaching Style ({coachingStyles.length}/{MAX_STYLES})</label>
+                <p className="fm-category-desc">Pick up to {MAX_STYLES} tags that describe your approach on the training ground and touchline.</p>
+                <div className="option-grid">
+                  {COACHING_STYLES.map((style) => (
+                    <button
+                      key={style}
+                      className={`fm-btn fm-btn--small ${coachingStyles.includes(style) ? 'active' : ''}`}
+                      onClick={() => toggleStyle(style)}
+                      disabled={!coachingStyles.includes(style) && coachingStyles.length >= MAX_STYLES}
+                    >
+                      {style}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="fm-label-small">Personality ({personality.length}/{MAX_TRAITS})</label>
+                <p className="fm-category-desc">Pick up to {MAX_TRAITS} traits that define your character.</p>
+                <div className="option-grid">
+                  {PERSONALITY_TRAITS.map((trait) => (
+                    <button
+                      key={trait}
+                      className={`fm-btn fm-btn--small ${personality.includes(trait) ? 'active' : ''}`}
+                      onClick={() => toggleTrait(trait)}
+                      disabled={!personality.includes(trait) && personality.length >= MAX_TRAITS}
+                    >
+                      {trait}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group summary-box">
+                <label className="fm-label-small">Summary</label>
+                <p className="fm-category-desc" style={{ margin: 0 }}>
+                  <strong>{name || 'Your manager'}</strong> — {PLAYING_BACKGROUNDS.find((o) => o.value === playingBackground)?.label.toLowerCase()}
+                  {priorRole !== 'none' && <>, background in {PRIOR_ROLES.find((o) => o.value === priorRole)?.label.toLowerCase()}</>}
+                  {badgeLevel !== 'none' && <>, holds a {BADGE_LEVELS.find((o) => o.value === badgeLevel)?.label}</>}.
+                  {coachingStyles.length > 0 && <> Style: {coachingStyles.join(', ')}.</>}
+                  {personality.length > 0 && <> Known for being {personality.join(' and ').toLowerCase()}.</>}
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="action-buttons">
             <button className="fm-btn fm-btn--secondary" onClick={handleReset}>
               Reset to Default
             </button>
             <button className="fm-btn fm-btn--primary" onClick={handleSave}>
-              Save Manager
+              {initialProfile ? 'Save Manager' : 'Start Career'}
             </button>
             <button className="fm-btn fm-btn--secondary" onClick={onBack}>
               Cancel
@@ -473,6 +657,58 @@ export default function CharacterCustomizerScreen({
         .color-option.active {
           border-color: var(--lime);
           box-shadow: 0 0 12px color-mix(in srgb, var(--lime) 40%, transparent);
+        }
+
+        .stack-options {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .stack-option {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.15rem;
+          text-align: left;
+          padding: 0.65rem 0.9rem;
+          border-radius: var(--r-sm, 6px);
+          border: 1px solid var(--border);
+          background: var(--panel);
+          color: var(--text);
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .stack-option:hover {
+          border-color: color-mix(in srgb, var(--lime) 50%, transparent);
+        }
+
+        .stack-option.active {
+          border-color: var(--lime);
+          background: color-mix(in srgb, var(--lime) 12%, var(--panel));
+        }
+
+        .stack-option__label {
+          font-weight: 600;
+          font-size: 0.9rem;
+        }
+
+        .stack-option__desc {
+          font-size: 0.78rem;
+          color: var(--muted);
+        }
+
+        .summary-box {
+          background: var(--panel-2);
+          border: 1px solid var(--border);
+          border-radius: var(--r-sm, 6px);
+          padding: 1rem;
+        }
+
+        .fm-btn.fm-btn--small:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
         }
 
         .option-grid {
