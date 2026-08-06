@@ -3,9 +3,12 @@
  * (scripts/fc26-source.json — real clubs with their real squads).
  *
  * Output: public/data/gamedata.json
- *   - 240 real clubs across 10 divisions/leagues (English pyramid tiers 1-4,
- *     La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie, Primeira Liga)
- *   - each club carries its actual FC 26 roster (up to 24 players)
+ *   - 500+ real clubs across 27 divisions/leagues: the English pyramid
+ *     (tiers 1-4), La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie,
+ *     Primeira Liga, plus Belgium, MLS, Denmark, Argentina, Turkey, Saudi
+ *     Arabia, China, South Korea, Poland, Romania, Norway, Sweden,
+ *     Switzerland, Austria, Scotland, Australia, India and Ireland
+ *   - each club carries its actual FC 26 roster
  *   - real clubless players become free agents
  *   - a `leagues[]` block with a derived strength rating per league
  */
@@ -211,9 +214,23 @@ const DIVISION_META = {
   9: { id: 'eredivisie', name: 'Eredivisie', country: 'Netherlands' },
   10: { id: 'primeira_liga', name: 'Primeira Liga', country: 'Portugal' },
   11: { id: 'pro_league', name: 'Pro League', country: 'Belgium' },
-  12: { id: 'brazil_serie_a', name: 'Série A', country: 'Brazil' },
   13: { id: 'mls', name: 'MLS', country: 'United States' },
   14: { id: 'superliga', name: 'Superliga', country: 'Denmark' },
+  15: { id: 'argentina_lpf', name: 'Liga Profesional', country: 'Argentina' },
+  16: { id: 'super_lig', name: 'Süper Lig', country: 'Turkey' },
+  17: { id: 'saudi_pro_league', name: 'Saudi Pro League', country: 'Saudi Arabia' },
+  18: { id: 'chinese_super_league', name: 'Chinese Super League', country: 'China' },
+  19: { id: 'k_league_1', name: 'K League 1', country: 'South Korea' },
+  20: { id: 'ekstraklasa', name: 'Ekstraklasa', country: 'Poland' },
+  21: { id: 'liga_1_romania', name: 'Superliga', country: 'Romania' },
+  22: { id: 'eliteserien', name: 'Eliteserien', country: 'Norway' },
+  23: { id: 'allsvenskan', name: 'Allsvenskan', country: 'Sweden' },
+  24: { id: 'swiss_super_league', name: 'Swiss Super League', country: 'Switzerland' },
+  25: { id: 'austrian_bundesliga', name: 'Austrian Bundesliga', country: 'Austria' },
+  26: { id: 'scottish_premiership', name: 'Scottish Premiership', country: 'Scotland' },
+  27: { id: 'a_league_men', name: 'A-League Men', country: 'Australia' },
+  28: { id: 'indian_super_league', name: 'Indian Super League', country: 'India' },
+  29: { id: 'league_of_ireland_premier', name: 'Premier Division', country: 'Ireland' },
 };
 
 function clubStrength(club) {
@@ -250,7 +267,7 @@ const out = {
   meta: {
     built: new Date().toISOString().slice(0, 10),
     attribution:
-      'Player and club data: FC 26 player database (EA Sports FC 26 ratings). Real squads across 10 leagues — the English pyramid (Premier League, Championship, League One, League Two) plus La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie and Primeira Liga. League ratings are derived from squad ratings, not an external feed.',
+      'Player and club data: FC 26 player database (EA Sports FC 26 ratings). Real squads across 27 leagues — the English pyramid (Premier League, Championship, League One, League Two), La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie, Primeira Liga, Pro League, MLS, Superliga, Liga Profesional, Süper Lig, Saudi Pro League, Chinese Super League, K League 1, Ekstraklasa, Superliga (Romania), Eliteserien, Allsvenskan, Swiss Super League, Austrian Bundesliga, Scottish Premiership, A-League Men, Indian Super League and the League of Ireland Premier Division. League ratings are derived from squad ratings, not an external feed.',
     clubCount: clubs.length,
     playerCount: players.length,
   },
