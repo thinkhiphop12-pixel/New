@@ -430,6 +430,33 @@ export function getTransferMarket(s: GameState, filters: MarketFilters = {}): Ma
       });
     }
   }
+
+  // Free agents (clubId 0 — released, or run their contract out) belong to no
+  // club, so the loop above can never reach them: it walks `club.playerIds`.
+  // They still have to be findable here. Search is the only discovery surface
+  // in the game — the shortlist holds what you have already flagged, so it
+  // cannot be where you first meet a player.
+  for (const p of Object.values(s.players)) {
+    if (p.clubId !== 0 || p.loan) continue;
+    if (ratingVal != null && (ratingMode === 'under' ? p.rating > ratingVal : p.rating < ratingVal)) continue;
+    if (priceVal != null && (priceMode === 'under' ? p.value > priceVal : p.value < priceVal)) continue;
+    if (pos && pos !== 'ALL' && p.pos !== pos) continue;
+    if (q && !p.name.toLowerCase().includes(q) && !p.nat.toLowerCase().includes(q)) continue;
+    // A free agent is available by definition, and has no contract to be
+    // listed on, unsettled about, or running down — so he answers to
+    // "Available" and to nothing narrower.
+    if (avail && avail !== 'all' && avail !== 'available') continue;
+    out.push({
+      ...p,
+      clubName: 'Free agent',
+      status: { listed: false, unsettled: false, unsettledReason: null, expiring: false, monthsLeft: 0 },
+      // No selling club, so there is no asking price to guide against — the
+      // number that matters is what it costs to sign him outright.
+      askingGuide: askingPrice(p),
+      releaseClauseFee: null,
+    });
+  }
+
   return out.sort((a, b) => b.rating - a.rating);
 }
 
