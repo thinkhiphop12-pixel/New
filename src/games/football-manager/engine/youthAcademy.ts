@@ -85,7 +85,7 @@ export function generateYouthIntake(state: GameState): GameState {
       form: 1,
       injuryWeeks: 0,
       contractYears: 0,
-      contractEnd: 0,
+      contractEnd: contractEndFor(s.seasonYear, 0),
       releaseClause: 0,
       loyal: true,
       transferListed: false,
