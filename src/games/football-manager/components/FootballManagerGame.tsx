@@ -196,7 +196,7 @@ export default function FootballManagerGame() {
 
   const handlePickClub = async (clubId: number, managerName: string) => {
     if (!data || busy) return;
-    let state = newGame(data, clubId, managerName);
+    let state = newGame(data, clubId, managerName, undefined, managerProfile || undefined);
     // Carry the manager avatar (edited from the main menu, or from a prior
     // career) with the save slot rather than a separate device-wide key.
     if (managerProfile) state.managerProfile = managerProfile;
@@ -442,7 +442,7 @@ export default function FootballManagerGame() {
           repositioned to "fit" — so it can never overlap `.fm-matchx`'s own
           controls or intercept a tap meant for the pitch/menus. */}
       {view !== 'match' && (
-        <div className="fm-bottom-ad ad-slot" id="gaffaBottomAd" aria-label="Advertisement" />
+        <div className="fm-bottom-ad ad-slot" id="gaffaBottomAd" data-ad-format="banner" aria-label="Advertisement" />
       )}
 
       {/* Persistent action dock (Touchline/Pocket layout): the in-game date

@@ -760,8 +760,14 @@ function weeklyWages(state: GameState): number {
 
 function weeklyStaffWages(state: GameState): number {
   const st = state.staff;
-  if (!st) return 0;
-  return (st.coach + st.physio + st.scout) * 10_000;
+  const legacy = st ? (st.coach + st.physio + st.scout) * 10_000 : 0;
+  // Named coaches (Staff Hub) and named scouts (Scouting Network) carry their
+  // own wage, on top of the legacy per-level figure — kept in sync with
+  // seasonProgression.ts's staffWageBill(), which is what actually debits the
+  // budget week to week; this copy only feeds the FFP/season-expense ledger.
+  const coaches = (state.facilities?.coaches ?? []).reduce((sum, c) => sum + c.wage, 0);
+  const scouts = (state.scouting?.scouts ?? []).reduce((sum, s) => sum + s.wage, 0);
+  return legacy + coaches + scouts;
 }
 
 function weeklyUpkeep(state: GameState): { academy: number; stadium: number } {

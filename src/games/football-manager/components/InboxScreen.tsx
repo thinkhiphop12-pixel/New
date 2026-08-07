@@ -3,6 +3,7 @@
 import { useState, type CSSProperties } from 'react';
 import type { GameState, InboxCategory, InboxItem, Player } from '@/engine/types';
 import { markAllInboxRead, markInboxRead, setCaptain } from '@/engine/seasonProgression';
+import { respondToComplaint } from '@/engine/transferMarket';
 import { formatMoney } from '@/engine/utils';
 import { tint } from './visuals';
 import { Icon, type IconName } from './Icon';
@@ -232,6 +233,14 @@ export default function InboxScreen({
   const player = current.playerId != null ? state.players[current.playerId] : null;
   const playerClub = player ? state.clubs.find((c) => c.id === player.clubId) : undefined;
   const isCaptaincy = current.category === 'club' && /captain/i.test(current.title);
+  const isComplaint = current.category === 'club' && /playing time|complain/i.test(current.title);
+
+  const respond = (response: 'reassure' | 'promise') => {
+    if (!player) return;
+    const next = respondToComplaint(state, player.id, response);
+    next.inbox = next.inbox.map((i) => (i.id === current.id ? { ...i, responded: true } : i));
+    onChange(next);
+  };
 
   return (
     <div className="fm-inbox">
@@ -280,6 +289,19 @@ export default function InboxScreen({
           <button className="fm-btn fm-btn--secondary" onClick={() => onChange(setCaptain(state, player.id))}>
             Confirm captaincy
           </button>
+        )}
+        {isComplaint && player && !current.responded && (
+          <>
+            <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => respond('reassure')} title="Small, always-available morale bump.">
+              Reassure
+            </button>
+            <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={() => respond('promise')} title="Bigger morale bump, but promises him more game time — breaking it later will hurt.">
+              Promise change
+            </button>
+          </>
+        )}
+        {isComplaint && current.responded && (
+          <span className="fm-hint" style={{ textAlign: 'left', margin: 0 }}>You've already responded to this.</span>
         )}
         <span className="fm-inbox__nav-spacer" />
         <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setOpenId(null)}>

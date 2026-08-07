@@ -17,6 +17,10 @@ import FinancesScreen from './FinancesScreen';
 import BoardObjectivesScreen from './BoardObjectivesScreen';
 import EuropeanScreen from './EuropeanScreen';
 import TrainingScreen from './TrainingScreen';
+import WeeklyScheduleScreen from './WeeklyScheduleScreen';
+import StaffHubScreen from './StaffHubScreen';
+import ScoutingScreen from './ScoutingScreen';
+import YouthAcademyScreen from './YouthAcademyScreen';
 import { Icon } from './Icon';
 import {
   GROUPS,
@@ -98,10 +102,14 @@ export default function HubScreen({
       case 'squad': return <SquadScreen state={state} onChange={onChange} />;
       case 'tactics': return <TacticsScreen state={state} onChange={onChange} />;
       case 'training': return <TrainingScreen state={state} onChange={onChange} />;
+      case 'schedule': return <WeeklyScheduleScreen state={state} onChange={onChange} />;
       case 'transfers': return <TransfersScreen state={state} onChange={onChange} />;
+      case 'scouting': return <ScoutingScreen state={state} onChange={onChange} />;
       case 'inbox': return <InboxScreen state={state} onChange={onChange} />;
       case 'club': return <ClubScreen state={state} onChange={onChange} />;
       case 'facilities': return <FacilitiesScreen state={state} onChange={onChange} />;
+      case 'staff': return <StaffHubScreen state={state} onChange={onChange} />;
+      case 'academy': return <YouthAcademyScreen state={state} onChange={onChange} />;
       case 'finances': return <FinancesScreen state={state} onChange={onChange} />;
       case 'board': return <BoardObjectivesScreen state={state} />;
       default: return null;

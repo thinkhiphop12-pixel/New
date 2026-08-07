@@ -1,6 +1,6 @@
 import type {
   Board, Club, Continental, Fixture, GameData, GameState, JobOffer, Knockout, LeagueDef, MatchReport,
-  Player, Position, SeasonSummary, Staff, TableRow,
+  ManagerProfile, Player, Position, SeasonSummary, Staff, TableRow,
 } from './types';
 import {
   ACADEMY_UPGRADE_COST, CONTINENTAL_PRIZES, CONTINENTAL_SPOTS, CONTINENTAL_WEEKS, CUP_PRIZES,
@@ -30,6 +30,9 @@ import { pushInbox } from './inbox';
 import { tickFinances, weeklyMatchdayIncome } from './finances';
 import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
 import { tickFacilitiesWeek } from './facilities';
+import { applyWeeklySchedule } from './schedule';
+import { tickScoutNetwork } from './scouting';
+import { applyDevPlans } from './development';
 
 export { markInboxRead, markAllInboxRead } from './inbox';
 
@@ -232,7 +235,7 @@ const YOUTH_FIRST = ['Alfie', 'Ben', 'Callum', 'Dan', 'Eli', 'Finn', 'George', '
 const YOUTH_LAST = ['Abbott', 'Barnes', 'Clarke', 'Dawson', 'Ellis', 'Foster', 'Grant', 'Hayes', 'Ingram', 'Jennings', 'Kerr', 'Lowe', 'Mercer', 'Nolan', 'Osborne', 'Price', 'Quinn', 'Reid', 'Shaw', 'Turner'];
 const YOUTH_ROLES: [Position, string][] = [['GK', 'GK'], ['DEF', 'CB'], ['DEF', 'RB'], ['MID', 'CM'], ['MID', 'CAM'], ['FWD', 'ST'], ['FWD', 'LW']];
 
-function makeYouthPlayer(id: number, clubId: number, academyLevel: number, seasonYear = 2026): Player {
+export function makeYouthPlayer(id: number, clubId: number, academyLevel: number, seasonYear = 2026): Player {
   const [pos, role] = pickRandom(YOUTH_ROLES);
   const base = 52 + academyLevel * 4;
   const rating = base + Math.floor(Math.random() * 9);
@@ -405,7 +408,30 @@ function wakePoolClub(s: GameState, club: Club, targetLeagueId: string, seasonYe
   }
 }
 
-export function newGame(data: GameData, userClubId: number, managerName = 'The Gaffer', seasonYear = 2026): GameState {
+/** Starting-reputation bonus from the Credentials step of the Manager
+ *  Creator. Each axis is a small, capped nudge on top of the job's own
+ *  league-band reputation (see `newGame` below) — playing pedigree carries
+ *  the most weight, coaching badges the least, mirroring how a real board
+ *  would weigh a CV. Absent/'none' fields contribute nothing, so profiles
+ *  from before this feature (or a skipped step) are unaffected. */
+export function credentialsReputationBonus(profile?: ManagerProfile): number {
+  if (!profile) return 0;
+  const playing: Record<string, number> = {
+    'world-class': 20, 'top-flight': 12, 'lower-league': 6, 'semi-pro': 2, none: 0,
+  };
+  const prior: Record<string, number> = { coaching: 6, recruitment: 4, media: 2, none: 0 };
+  const badges: Record<string, number> = { pro: 10, advanced: 6, basic: 3, none: 0 };
+  return (
+    (playing[profile.playingBackground ?? 'none'] ?? 0) +
+    (prior[profile.priorRole ?? 'none'] ?? 0) +
+    (badges[profile.badgeLevel ?? 'none'] ?? 0)
+  );
+}
+
+export function newGame(
+  data: GameData, userClubId: number, managerName = 'The Gaffer', seasonYear = 2026,
+  managerProfile?: ManagerProfile,
+): GameState {
   const clubs: Club[] = data.clubs.map(({ division, ...c }) => ({
     ...c,
     leagueId: leagueIdForDivision(division),
@@ -459,8 +485,13 @@ export function newGame(data: GameData, userClubId: number, managerName = 'The G
     board: { objective: '', minPosition: 17, confidence: 60 },
     manager: {
       name: managerName,
-      // Reputation on appointment tracks how high up the pyramid the job is.
-      reputation: clamp(60 - getLeague(userClub.leagueId).level * 10, 20, 50),
+      // Reputation on appointment tracks how high up the pyramid the job is,
+      // plus a bonus from the Manager Creator's Credentials step (playing
+      // pedigree, prior non-playing role, coaching badges).
+      reputation: clamp(
+        60 - getLeague(userClub.leagueId).level * 10 + credentialsReputationBonus(managerProfile),
+        20, 90,
+      ),
       wins: 0, draws: 0, losses: 0, seasons: 0, trophies: [],
     },
     academyLevel: 1,
@@ -612,10 +643,16 @@ export function weeklyWageBill(state: GameState): number {
   return clubWageBill(state, state.userClubId);
 }
 
-/** Weekly staff wages (per level, per role). */
+/** Weekly staff wages: legacy per-level backroom figure plus every named
+ *  coach (Staff Hub) and named scout (Scouting Network) actually on the
+ *  books — the single wage line every screen and the weekly tick reads, so
+ *  hiring named staff has a real, immediate budget cost. */
 export function staffWageBill(state: GameState): number {
   const st = getStaff(state);
-  return (st.coach + st.physio + st.scout) * STAFF_WEEKLY_WAGE;
+  const legacy = (st.coach + st.physio + st.scout) * STAFF_WEEKLY_WAGE;
+  const coaches = (state.facilities?.coaches ?? []).reduce((sum, c) => sum + c.wage, 0);
+  const scouts = (state.scouting?.scouts ?? []).reduce((sum, sc) => sum + sc.wage, 0);
+  return legacy + coaches + scouts;
 }
 
 /** Credit apps, goals and match ratings from a report onto the players involved. */
@@ -883,6 +920,12 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
     p.fitness = clamp(p.fitness + 4, 15, 100);
   }
 
+  // Career mode weekly planner (engine/schedule.ts): per-day training/recovery
+  // choice for the user's own squad layers on top of the flat rest-day bump
+  // above, so an unedited schedule (the default 5:2 split) doesn't change
+  // anything a save already relied on.
+  applyWeeklySchedule(s);
+
   // Squad happiness: good players left out of the XI week after week grow
   // unhappy and start attracting transfer interest; starters settle back down.
   for (const id of userClub.playerIds) {
@@ -902,16 +945,34 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   const coachMult = 1 + staff.coach * 0.35;
   const physioHealChance = 0.5 + staff.physio * 0.15;
 
+  // Per-player development plans (engine/development.ts) resolve first —
+  // players with an active plan skip the generic squad-wide roll below.
+  applyDevPlans(s);
+
+  // Reset the manual-training-drill weekly cap.
+  s.drillsUsedThisWeek = 0;
+
   // Training: focused development for the user's younger players.
   if (s.training !== 'fitness') {
     for (const id of userClub.playerIds) {
       const p = s.players[id];
-      if (!p || p.age > 27 || p.rating >= 90 || isOnLoan(p)) continue;
+      if (!p || p.age > 27 || p.rating >= 90 || isOnLoan(p) || p.devPlan) continue;
       const matches =
         s.training === 'attack' ? p.pos === 'MID' || p.pos === 'FWD'
         : s.training === 'defense' ? p.pos === 'GK' || p.pos === 'DEF'
         : true;
-      const chance = (s.training === 'balanced' ? 0.02 : matches ? 0.05 : 0) * coachMult;
+      // Backroom Staff hub: a positional coach (attack/midfield/defense)
+      // speeds up development for players in his position group, on top of
+      // the legacy head-coach `coachMult`.
+      const posRole =
+        p.pos === 'FWD' ? 'attack' : p.pos === 'MID' ? 'midfield' : p.pos === 'DEF' ? 'defense' : null;
+      const posCoach = posRole ? s.facilities?.coaches.find((c) => c.role === posRole) : undefined;
+      const posMult = posCoach ? 1 + posCoach.quality / 200 : 1;
+      // Low morale saps focus in the gym; high morale gives a small lift.
+      // Player.morale is otherwise only written (transfer-promise breaches),
+      // never read — this is the one place it's wired into the sim.
+      const moraleMult = clamp(0.5 + p.morale / 100, 0.5, 1.15);
+      const chance = (s.training === 'balanced' ? 0.02 : matches ? 0.05 : 0) * coachMult * posMult * moraleMult;
       if (Math.random() < chance) {
         p.rating++;
         p.value = marketValue(p.rating, p.age);
@@ -1025,6 +1086,14 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   s.facilities = facilityState.facilities;
   s.scouting = facilityState.scouting;
   s.news = facilityState.news;
+
+  // Scouting network: named scouts (Career mode) file transfer-target leads
+  // into the shortlist + inbox, independent of the ad-hoc assignments above.
+  const scoutedState = tickScoutNetwork(s);
+  s.scouting = scoutedState.scouting;
+  s.news = scoutedState.news;
+  s.inbox = scoutedState.inbox;
+  s.nextInboxId = scoutedState.nextInboxId;
 
   // Repair the lineup if injuries/sales/loans broke it.
   if (!isLineupValid(s, s.userClubId, s.lineup)) {
@@ -1562,18 +1631,20 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     }
   }
 
-  // Youth academy intake.
+  // Youth academy intake. New prospects join the youth squad, not the first
+  // team directly — the user promotes them via the Youth Academy screen
+  // (engine/youthAcademy.ts promoteYouthPlayer), subject to MAX_SQUAD_SIZE.
   const intakeCount = s.academyLevel >= 3 ? 2 : 1;
+  if (!userClub.youthPlayerIds) userClub.youthPlayerIds = [];
   for (let i = 0; i < intakeCount; i++) {
-    if (userClub.playerIds.length >= MAX_SQUAD_SIZE) break;
     const kid = makeYouthPlayer(s.nextPlayerId++, s.userClubId, s.academyLevel, s.seasonYear);
     s.players[kid.id] = kid;
-    userClub.playerIds.push(kid.id);
-    s.news.unshift(`Academy graduate ${kid.name} (${kid.role}, ${kid.rating} OVR) joins the first team.`);
+    userClub.youthPlayerIds.push(kid.id);
+    s.news.unshift(`Academy intake: ${kid.name} (${kid.role}, ${kid.rating} OVR, ${kid.potential} PA) joins the youth squad.`);
     pushInbox(s, {
       category: 'youth',
-      title: `${kid.name} promoted to the first team`,
-      body: `Academy graduate ${kid.name} has impressed the youth coaches enough to earn a first-team squad number.\n\nA raw ${kid.rating} OVR ${kid.role} at ${kid.age} — the kind of prospect worth developing.`,
+      title: `${kid.name} joins the youth academy`,
+      body: `A new prospect has entered the academy: ${kid.name}, a ${kid.age}-year-old ${kid.role} rated ${kid.rating} OVR with potential of ${kid.potential}.\n\nHe's in the youth squad now — promote him to the first team from the Youth Academy screen whenever he's ready.`,
       playerId: kid.id,
     });
   }

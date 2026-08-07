@@ -9,6 +9,8 @@ import { getRolesByPosition } from '@/lib/playerRoles';
 import { setPlayerRole } from '@/engine/teamManagement';
 import { traitNames } from '@/engine/traits';
 import { formatMoney } from '@/engine/utils';
+import { CONVERTIBLE_ROLES, estimateConversionWeeks, setDevPlan } from '@/engine/development';
+import type { DevPlan } from '@/engine/types';
 import { attrBand } from './visuals';
 import { SpiderChart } from './SpiderChart';
 import { PlayerFace } from './PlayerFace';
@@ -53,6 +55,21 @@ function ratingRingColor(v: number): string {
   if (v >= 45) return 'var(--chip-low)';
   return 'var(--chip-bad)';
 }
+
+function moraleColor(v: number): string {
+  if (v >= 70) return 'var(--green)';
+  if (v >= 45) return 'var(--gold)';
+  return 'var(--red)';
+}
+
+const STAT_FOCUS_OPTIONS: { key: NonNullable<DevPlan['statFocus']>; label: string }[] = [
+  { key: 'pac', label: 'Pace' },
+  { key: 'sho', label: 'Shooting' },
+  { key: 'pas', label: 'Passing' },
+  { key: 'dri', label: 'Dribbling' },
+  { key: 'def', label: 'Defending' },
+  { key: 'phy', label: 'Physical' },
+];
 
 function initials(name: string): string {
   const parts = name.split(' ').filter(Boolean);
@@ -159,6 +176,9 @@ export default function PlayerModal({
                   ▲{p.potential}
                 </span>
               )}
+              <span className="fm-trait" style={{ color: moraleColor(p.morale) }} title="Morale">
+                Morale {Math.round(p.morale)}
+              </span>
             </div>
           </div>
         </div>
@@ -235,6 +255,76 @@ export default function PlayerModal({
                 </button>
               ))}
             </div>
+
+            <p className="fm-label" style={{ marginTop: 10 }}>
+              Development plan
+            </p>
+            <div className="fm-role-grid">
+              <button
+                className={`fm-role-tile${!p.devPlan || p.devPlan.mode === 'balanced' ? ' active' : ''}`}
+                onClick={() => onChange(setDevPlan(state, p.id, { mode: 'balanced' }))}
+              >
+                <span className="fm-role-tile__name">Balanced / auto</span>
+                <span className="fm-role-tile__desc">Generic squad-wide training roll</span>
+              </button>
+              <button
+                className={`fm-role-tile${p.devPlan?.mode === 'stat' ? ' active' : ''}`}
+                onClick={() =>
+                  onChange(setDevPlan(state, p.id, { mode: 'stat', statFocus: p.devPlan?.statFocus ?? 'pac' }))
+                }
+              >
+                <span className="fm-role-tile__name">Stat focus</span>
+                <span className="fm-role-tile__desc">Doubles growth odds for one attribute</span>
+              </button>
+              <button
+                className={`fm-role-tile${p.devPlan?.mode === 'position' ? ' active' : ''}`}
+                onClick={() =>
+                  onChange(
+                    setDevPlan(state, p.id, {
+                      mode: 'position',
+                      targetPos: p.devPlan?.targetPos ?? CONVERTIBLE_ROLES.find((r) => r !== p.role) ?? CONVERTIBLE_ROLES[0],
+                    })
+                  )
+                }
+              >
+                <span className="fm-role-tile__name">Position conversion</span>
+                <span className="fm-role-tile__desc">Learn a new position over several weeks</span>
+              </button>
+            </div>
+
+            {p.devPlan?.mode === 'stat' && (
+              <div className="fm-pills" style={{ marginTop: 8 }}>
+                {STAT_FOCUS_OPTIONS.map((o) => (
+                  <button
+                    key={o.key}
+                    className={`fm-pill${p.devPlan?.statFocus === o.key ? ' active' : ''}`}
+                    onClick={() => onChange(setDevPlan(state, p.id, { mode: 'stat', statFocus: o.key }))}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {p.devPlan?.mode === 'position' && (
+              <>
+                <div className="fm-pills" style={{ marginTop: 8 }}>
+                  {CONVERTIBLE_ROLES.filter((r) => r !== p.role).map((r) => (
+                    <button
+                      key={r}
+                      className={`fm-pill${p.devPlan?.targetPos === r ? ' active' : ''}`}
+                      onClick={() => onChange(setDevPlan(state, p.id, { mode: 'position', targetPos: r }))}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+                <p className="fm-hint" style={{ textAlign: 'left', marginTop: 6 }}>
+                  Est. {p.devPlan.weeksRemaining ?? estimateConversionWeeks(p, p.devPlan.targetPos ?? '')} week
+                  {(p.devPlan.weeksRemaining ?? 0) === 1 ? '' : 's'} remaining.
+                </p>
+              </>
+            )}
           </>
         )}
 

@@ -120,7 +120,11 @@ export default function TransfersScreen({
     const check = canBuy(state, playerId);
     if (!check.ok) { setError(check.error ?? 'Cannot sign.'); return; }
     setError(null);
-    onChange(toggleShortlist(buyPlayer(state, playerId), playerId));
+    // Clear him off the shortlist once he's signed — but only if he was on it.
+    // This runs from Search too, where an unconditional toggle would *add* a
+    // player you just bought to your list of targets.
+    const bought = buyPlayer(state, playerId);
+    onChange(shortlist.includes(playerId) ? toggleShortlist(bought, playerId) : bought);
   };
 
   const toggleScout = (playerId: number) => onChange(toggleShortlist(state, playerId));
@@ -240,20 +244,36 @@ export default function TransfersScreen({
                       Trigger clause
                     </button>
                   )}
-                  <button
-                    className="fm-btn fm-btn--small fm-btn--primary"
-                    disabled={banned || alreadyTalking || (!win.open && p.clubId !== 0)}
-                    title={!win.open && p.clubId !== 0 ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}` : undefined}
-                    onClick={(e) => { e.stopPropagation(); openTalks(p); }}
-                  >
-                    {banned
-                      ? 'Won’t talk'
-                      : alreadyTalking
-                        ? 'Talking'
-                        : !win.open && p.clubId !== 0
-                          ? 'Window shut'
-                          : `Guide ${formatMoney(p.askingGuide)}`}
-                  </button>
+                  {/* A free agent has no club on the other side of the table,
+                      so there is nothing to negotiate — `openNegotiation`
+                      refuses him outright ("no club to negotiate with"). He
+                      gets the direct signing action instead, and keeps it while
+                      the window is shut, which is the exemption `canBuy` makes
+                      for him. Everyone else goes through talks. */}
+                  {p.clubId === 0 ? (
+                    <button
+                      className="fm-btn fm-btn--small fm-btn--primary"
+                      disabled={askingPrice(p) > state.budget}
+                      onClick={(e) => { e.stopPropagation(); doSign(p.id); }}
+                    >
+                      Sign {formatMoney(askingPrice(p))}
+                    </button>
+                  ) : (
+                    <button
+                      className="fm-btn fm-btn--small fm-btn--primary"
+                      disabled={banned || alreadyTalking || !win.open}
+                      title={!win.open ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}` : undefined}
+                      onClick={(e) => { e.stopPropagation(); openTalks(p); }}
+                    >
+                      {banned
+                        ? 'Won’t talk'
+                        : alreadyTalking
+                          ? 'Talking'
+                          : !win.open
+                            ? 'Window shut'
+                            : `Guide ${formatMoney(p.askingGuide)}`}
+                    </button>
+                  )}
                   <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
                     {p.rating}
                   </span>

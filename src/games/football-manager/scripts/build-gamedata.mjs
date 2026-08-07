@@ -3,9 +3,14 @@
  * (scripts/fc26-source.json — real clubs with their real squads).
  *
  * Output: public/data/gamedata.json
- *   - 60 real clubs across 3 divisions (Premier League, Championship, League One)
- *   - each club carries its actual FC 26 roster (up to 24 players)
+ *   - 500+ real clubs across 27 divisions/leagues: the English pyramid
+ *     (tiers 1-4), La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie,
+ *     Primeira Liga, plus Belgium, MLS, Denmark, Argentina, Turkey, Saudi
+ *     Arabia, China, South Korea, Poland, Romania, Norway, Sweden,
+ *     Switzerland, Austria, Scotland, Australia, India and Ireland
+ *   - each club carries its actual FC 26 roster
  *   - real clubless players become free agents
+ *   - a `leagues[]` block with a derived strength rating per league
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -191,14 +196,82 @@ for (const [i, c] of raw.clubs.entries()) {
 }
 for (const p of raw.freeAgents) addPlayer(p, 0, 0);
 
+// --- League strength ratings -------------------------------------------
+// Derived (not fetched) from the FC 26 ratings already in this dataset:
+// each club's strength is the average rating of its best 11 players, and
+// each league's strength is the average of its clubs' strengths. This gives
+// every league present in fc26-source.json a comparable 0-99 rating without
+// needing a live external rankings feed.
+const DIVISION_META = {
+  1: { id: 'premier_league', name: 'Premier League', country: 'England' },
+  2: { id: 'championship', name: 'Championship', country: 'England' },
+  3: { id: 'league_one', name: 'League One', country: 'England' },
+  4: { id: 'league_two', name: 'League Two', country: 'England' },
+  5: { id: 'la_liga', name: 'La Liga', country: 'Spain' },
+  6: { id: 'serie_a', name: 'Serie A', country: 'Italy' },
+  7: { id: 'bundesliga', name: 'Bundesliga', country: 'Germany' },
+  8: { id: 'ligue_1', name: 'Ligue 1', country: 'France' },
+  9: { id: 'eredivisie', name: 'Eredivisie', country: 'Netherlands' },
+  10: { id: 'primeira_liga', name: 'Primeira Liga', country: 'Portugal' },
+  11: { id: 'pro_league', name: 'Pro League', country: 'Belgium' },
+  13: { id: 'mls', name: 'MLS', country: 'United States' },
+  14: { id: 'superliga', name: 'Superliga', country: 'Denmark' },
+  15: { id: 'argentina_lpf', name: 'Liga Profesional', country: 'Argentina' },
+  16: { id: 'super_lig', name: 'Süper Lig', country: 'Turkey' },
+  17: { id: 'saudi_pro_league', name: 'Saudi Pro League', country: 'Saudi Arabia' },
+  18: { id: 'chinese_super_league', name: 'Chinese Super League', country: 'China' },
+  19: { id: 'k_league_1', name: 'K League 1', country: 'South Korea' },
+  20: { id: 'ekstraklasa', name: 'Ekstraklasa', country: 'Poland' },
+  21: { id: 'liga_1_romania', name: 'Superliga', country: 'Romania' },
+  22: { id: 'eliteserien', name: 'Eliteserien', country: 'Norway' },
+  23: { id: 'allsvenskan', name: 'Allsvenskan', country: 'Sweden' },
+  24: { id: 'swiss_super_league', name: 'Swiss Super League', country: 'Switzerland' },
+  25: { id: 'austrian_bundesliga', name: 'Austrian Bundesliga', country: 'Austria' },
+  26: { id: 'scottish_premiership', name: 'Scottish Premiership', country: 'Scotland' },
+  27: { id: 'a_league_men', name: 'A-League Men', country: 'Australia' },
+  28: { id: 'indian_super_league', name: 'Indian Super League', country: 'India' },
+  29: { id: 'league_of_ireland_premier', name: 'Premier Division', country: 'Ireland' },
+};
+
+function clubStrength(club) {
+  const ratings = club.playerIds
+    .map((id) => players.find((p) => p.id === id).rating)
+    .sort((a, b) => b - a)
+    .slice(0, 11);
+  return ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+}
+
+const leagues = Object.entries(DIVISION_META)
+  .map(([divisionStr, meta]) => {
+    const division = Number(divisionStr);
+    const divisionClubs = clubs.filter((c) => c.division === division);
+    if (!divisionClubs.length) return null;
+    const strengths = divisionClubs.map(clubStrength);
+    const rating = strengths.reduce((sum, s) => sum + s, 0) / strengths.length;
+    const playerCount = divisionClubs.reduce((sum, c) => sum + c.playerIds.length, 0);
+    return {
+      id: meta.id,
+      name: meta.name,
+      country: meta.country,
+      division,
+      clubCount: divisionClubs.length,
+      playerCount,
+      rating: Math.round(rating * 10) / 10,
+    };
+  })
+  .filter(Boolean)
+  .sort((a, b) => b.rating - a.rating)
+  .map((l, i) => ({ rank: i + 1, ...l }));
+
 const out = {
   meta: {
     built: new Date().toISOString().slice(0, 10),
     attribution:
-      'Player and club data: FC 26 player database (EA Sports FC 26 ratings). Real squads across 8 leagues — the English pyramid (Premier League, Championship, League One, League Two) plus La Liga, Serie A, Bundesliga and Ligue 1.',
+      'Player and club data: FC 26 player database (EA Sports FC 26 ratings). Real squads across 27 leagues — the English pyramid (Premier League, Championship, League One, League Two), La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie, Primeira Liga, Pro League, MLS, Superliga, Liga Profesional, Süper Lig, Saudi Pro League, Chinese Super League, K League 1, Ekstraklasa, Superliga (Romania), Eliteserien, Allsvenskan, Swiss Super League, Austrian Bundesliga, Scottish Premiership, A-League Men, Indian Super League and the League of Ireland Premier Division. League ratings are derived from squad ratings, not an external feed.',
     clubCount: clubs.length,
     playerCount: players.length,
   },
+  leagues,
   clubs,
   players,
 };
@@ -207,5 +280,5 @@ mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify(out));
 const sizeKb = Math.round(JSON.stringify(out).length / 1024);
 console.log(
-  `gamedata.json written: ${clubs.length} clubs, ${players.length - raw.freeAgents.length} contracted players, ${raw.freeAgents.length} free agents (${sizeKb} KB)`
+  `gamedata.json written: ${clubs.length} clubs, ${players.length - raw.freeAgents.length} contracted players, ${raw.freeAgents.length} free agents, ${leagues.length} leagues ranked (${sizeKb} KB)`
 );

@@ -43,13 +43,32 @@ const gamedataPath = join(__dirname, '..', 'public', 'data', 'gamedata.json');
 const data: GameData = JSON.parse(readFileSync(gamedataPath, 'utf8'));
 
 console.log(`Loaded ${data.clubs.length} clubs, ${data.players.length} players.`);
-assert(data.clubs.length === CLUBS_PER_DIVISION * 10, `expected ${CLUBS_PER_DIVISION * 10} clubs total, got ${data.clubs.length}`);
+const EXTRA_DIVISION_SIZE: Record<number, number> = {
+  11: 16, 13: 30, 14: 12, 15: 30, 16: 18, 17: 18, 18: 16, 19: 12, 20: 18,
+  21: 16, 22: 16, 23: 16, 24: 12, 25: 12, 26: 12, 27: 12, 28: 10, 29: 10,
+};
+const extraTotal = Object.values(EXTRA_DIVISION_SIZE).reduce((a, b) => a + b, 0);
+assert(
+  data.clubs.length === CLUBS_PER_DIVISION * 10 + extraTotal,
+  `expected ${CLUBS_PER_DIVISION * 10 + extraTotal} clubs total, got ${data.clubs.length}`
+);
 
 for (const d of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
   const lid = leagueIdForDivision(d);
   const count = data.clubs.filter((c) => c.division === d).length;
   console.log(`  ${leagueName(lid)}: ${count} clubs`);
   assert(count === CLUBS_PER_DIVISION, `${lid} has ${count} clubs, expected ${CLUBS_PER_DIVISION}`);
+}
+
+// Divisions 11+ (Belgium, MLS, Denmark, and 15 more leagues from the EA FC
+// 26 ratings export) sit outside the modelled 10-division pyramid above,
+// each with its own real club count and no lower tier.
+for (const [d, expected] of Object.entries(EXTRA_DIVISION_SIZE)) {
+  const division = Number(d);
+  const lid = leagueIdForDivision(division);
+  const count = data.clubs.filter((c) => c.division === division).length;
+  console.log(`  ${leagueName(lid)}: ${count} clubs`);
+  assert(count === expected, `${lid} has ${count} clubs, expected ${expected}`);
 }
 
 // --- The pyramid itself is internally consistent ---------------------------
@@ -134,7 +153,13 @@ for (const id of activeLeagueIds(state)) {
   const unplayed = fixtures.filter((f) => !f.played);
   console.log(`  ${leagueName(id)}: ${clubs} clubs, ${fixtures.length} fixtures, ${unplayed.length} unplayed`);
   assert(unplayed.length === 0, `${id} has ${unplayed.length} unplayed fixtures at season end`);
-  const expected = getLeague(id).rounds * (clubs - 1) * (clubs / 2);
+  const lg = getLeague(id);
+  // Scottish-style leagues play a full round-robin, then split into top/bottom
+  // groups of `splitSize` who play each other once more (see the dedicated
+  // split assertion above) — that adds splitSize*(splitSize-1) fixtures on
+  // top of the plain round-robin total.
+  const splitExtra = lg.splitSize ? lg.splitSize * (lg.splitSize - 1) : 0;
+  const expected = lg.rounds * (clubs - 1) * (clubs / 2) + splitExtra;
   assert(fixtures.length === expected, `${id} fixture count is ${fixtures.length}, expected ${expected}`);
 }
 
@@ -151,7 +176,11 @@ for (const id of activeLeagueIds(state)) {
   const table = computeTable(state, id);
   assert(table.length === clubs, `${id} table has ${table.length} rows, expected ${clubs}`);
   const totalPlayed = table.reduce((s, r) => s + r.played, 0);
-  const expected = clubs * getLeague(id).rounds * (clubs - 1);
+  const lg2 = getLeague(id);
+  // Same split adjustment as the fixture-count check above: each split game
+  // counts twice in a games-played total (once per side).
+  const splitExtraPlayed = lg2.splitSize ? 2 * lg2.splitSize * (lg2.splitSize - 1) : 0;
+  const expected = clubs * lg2.rounds * (clubs - 1) + splitExtraPlayed;
   assert(totalPlayed === expected, `${id} table games-played total is ${totalPlayed}, expected ${expected}`);
 }
 

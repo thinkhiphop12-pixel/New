@@ -21,6 +21,11 @@ const CONFIG = {
   BANNER_SRC: 'https://www.highperformanceformat.com/c02cc2d42ff972393dd66924fd8b9ebe/invoke.js',
   BANNER_W: 468,
   BANNER_H: 60,
+  BANNER_MIN_FIT: 300,   // px — narrower than this and the banner scales down
+  NATIVE_MIN_H: 90,     // px — slot never collapses below this while measuring
+  NATIVE_MAX_H: 640,     // px — hard ceiling so a runaway unit can't eat the page
+  MEASURE_MS: 6000,      // fast re-measure window for a native unit
+  MEASURE_TAIL_MS: 30000,// slow re-measure window after that, for slow fills
   PRELOAD_OFFSET: 200,   // px of preload margin for lazy loading
   ADBLOCK_NOTICE: true,  // polite, dismissible whitelist prompt only
 };
@@ -30,6 +35,21 @@ const CONFIG = {
 // one's config. Cap it at one per page; every other slot gets the native
 // (responsive) unit instead, which has no such global-state conflict.
 let bannerSlotClaimed = false;
+
+// True when some slot on the page has explicitly asked for the banner format,
+// in which case no other slot may take it on width alone.
+function pageRequestsBanner() {
+  return !!document.querySelector('.ad-slot[data-ad-format="banner"]');
+}
+
+// A slot inside a display:none ancestor (the desktop-only rail on a phone, a
+// game screen that isn't showing) must not be filled: it can't be seen, it
+// would burn the page's one banner, and it measures 0px wide.
+function slotIsVisible(slot) {
+  if (slot.offsetParent === null && getComputedStyle(slot).position !== 'fixed') return false;
+  const r = slot.getBoundingClientRect();
+  return r.width > 0 && r.height > 0;
+}
 
 // ========== GLOBALS / SHIMS ==========
 // consent.js normally defines these; shim them so this file is safe to load
@@ -57,6 +77,21 @@ function injectBaseAdStyles() {
     .ad-slot-label{opacity:0.5;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#93a099;}
     .ad-slot.is-filled .ad-slot-label{display:none;}
     .ad-slot iframe{display:block;width:100%;max-width:100%;border:0;background:transparent;}
+    /* A fixed-size unit (468x60) shrink-to-fit on narrow screens: the frame keeps
+       its native pixel box, the wrapper reserves only the scaled height, so the
+       slot never overflows a phone and never leaves dead space around the ad. */
+    .ad-frame-wrap{position:relative;width:100%;min-width:0;display:flex;align-items:center;justify-content:center;}
+    /* The fixed unit is taken out of flow and centred: a CSS transform does not
+       shrink layout size, so an in-flow 468px iframe would widen its container
+       past the viewport on a phone even while visually scaled down. */
+    .ad-frame-wrap.is-fixed{overflow:hidden;}
+    .ad-frame-wrap.is-fixed iframe{position:absolute;top:50%;left:50%;transform-origin:center center;}
+    /* A slot that never got a paying ad collapses instead of holding open a
+       tall empty rectangle (the 160x600 rail was the worst offender). It is
+       collapsed visually, not with display:none — the frame has to keep a
+       layout box or it could never be measured again if the ad arrives late. */
+    .ad-slot.is-blank{visibility:hidden;height:0!important;min-height:0!important;
+      margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;}
     .soft-banner{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:600;
       max-width:min(92vw,480px);background:#10131a;border:1px solid rgba(255,255,255,.14);
       border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;
@@ -88,12 +123,127 @@ function bannerAdDoc() {
 // — no matter what the vendor script does inside, it can't remove or
 // replace anything outside its own frame, which is what keeps this safe to
 // drop into the middle of a running game (Gaffa) as well as a static page.
+// Usable inner width of a slot, i.e. minus its own padding and border. A slot
+// that is still display:none (a game screen not yet shown) reports 0 — treat
+// that as "unknown" and let the fixed unit lay out at full size until a later
+// resize pass corrects it.
+function hChromeOf(el) {
+  const cs = getComputedStyle(el);
+  return (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0) +
+         (parseFloat(cs.borderLeftWidth) || 0) + (parseFloat(cs.borderRightWidth) || 0);
+}
+function innerWidthOf(el) {
+  const rect = el.getBoundingClientRect();
+  if (!rect.width) return 0;
+  return Math.max(0, rect.width - hChromeOf(el));
+}
+
+// How much horizontal room a fixed unit really has. Because the frame is out
+// of flow, a slot whose width is shrink-to-fit reports almost nothing — in
+// that case take the constraint from the nearest ancestor with real width,
+// capped by the slot's own max-width so a centred column stays centred.
+function availableWidthFor(slot) {
+  let w = innerWidthOf(slot);
+  if (w >= CONFIG.BANNER_MIN_FIT) return w;
+  let el = slot.parentElement, hops = 0;
+  while (el && hops++ < 5) {
+    const pw = innerWidthOf(el);
+    // The ancestor's inner width has to house the slot's own padding and
+    // border too, or the slot ends up wider than the box it sits in.
+    if (pw > w) { w = Math.max(0, pw - hChromeOf(slot)); break; }
+    el = el.parentElement;
+  }
+  const max = parseFloat(getComputedStyle(slot).maxWidth);
+  if (max > 0) w = Math.min(w, max);
+  return w;
+}
+
+// Scales a fixed-size (468x60) unit down to whatever room the slot actually
+// has. Re-run on resize/orientation change so a phone rotation re-fits it.
+function fitFixedFrame(slot, wrap, frame) {
+  const avail = availableWidthFor(slot);
+  const scale = avail ? Math.min(1, avail / CONFIG.BANNER_W) : 1;
+  frame.style.width = CONFIG.BANNER_W + 'px';
+  frame.style.height = CONFIG.BANNER_H + 'px';
+  frame.style.transform = `translate(-50%,-50%) scale(${scale})`;
+  const h = Math.round(CONFIG.BANNER_H * scale);
+  wrap.style.height = h + 'px';
+  // Gives the (otherwise empty) wrapper a real footprint, so a shrink-to-fit
+  // slot sizes to the visible ad instead of collapsing to a sliver.
+  wrap.style.minWidth = Math.round(CONFIG.BANNER_W * scale) + 'px';
+  slot.style.minHeight = h + 'px';
+}
+
+// The responsive/native unit has no declared height, so the old hardcoded
+// 100px either cropped it (the in-game slot) or left a tall empty box (the
+// 160x600 rail). Measure the iframe's own document instead and follow it.
+function trackNativeHeight(slot, wrap, frame, onFirstRender) {
+  const started = Date.now();
+  let settled = 0;
+  let rendered = false;
+
+  function measure() {
+    let h = 0;
+    try {
+      const doc = frame.contentDocument;
+      if (doc && doc.body) {
+        // Not body.scrollHeight: that never reports less than the frame's own
+        // height, so an unfilled unit would look "tall" forever. Measure how
+        // far the actual ad content reaches instead.
+        for (const child of doc.body.children) {
+          const r = child.getBoundingClientRect();
+          if (r.height > 0) h = Math.max(h, r.bottom);
+        }
+      }
+    } catch (e) { /* cross-origin after a vendor redirect — keep last height */ }
+    if (h > 0) {
+      const clamped = Math.min(Math.max(h, 1), CONFIG.NATIVE_MAX_H);
+      if (clamped !== settled) {
+        settled = clamped;
+        frame.style.height = clamped + 'px';
+        wrap.style.height = clamped + 'px';
+        slot.style.minHeight = Math.max(clamped, 1) + 'px';
+      }
+    }
+    if (settled >= 20 && !rendered) {
+      rendered = true;
+      if (onFirstRender) onFirstRender();
+    }
+
+    // Once the fast window is up with nothing rendered — blocked, unfilled,
+    // or no demand — collapse the slot rather than leave an empty framed
+    // rectangle on the page. The collapse is visual only (the frame keeps its
+    // layout box), so a unit that simply arrives late is still measured and
+    // still gets shown.
+    const age = Date.now() - started;
+    if (age >= CONFIG.MEASURE_MS) slot.classList.toggle('is-blank', settled < 20);
+
+    if (age < CONFIG.MEASURE_MS) setTimeout(measure, 250);
+    else if (age < CONFIG.MEASURE_TAIL_MS) setTimeout(measure, 1000);
+  }
+  measure();
+}
+
 function fillSlotWithNetwork(slot) {
   if (adsRemoved() || getConsent() !== 'all') return false;
 
-  const width = slot.getBoundingClientRect().width || slot.clientWidth || 0;
-  const useBanner = !bannerSlotClaimed && width >= CONFIG.BANNER_W + 24;
+  // A slot can ask for a format explicitly (data-ad-format="banner|native");
+  // otherwise the fixed banner goes to the first slot on the page that can
+  // show it at a reasonable size, and everything else gets the native unit.
+  const requested = (slot.dataset.adFormat || '').toLowerCase();
+  const avail = availableWidthFor(slot);
+  let useBanner;
+  if (requested === 'banner') useBanner = !bannerSlotClaimed;
+  else if (requested === 'native') useBanner = false;
+  // Down to 300px of room the banner still scales to a clean, legible strip —
+  // which covers every phone. Narrower than that, fall back to the native unit.
+  // A slot that asked for the banner by name always outranks this auto pick,
+  // even if it sits further down the page.
+  else useBanner = !bannerSlotClaimed && !pageRequestsBanner() && avail >= CONFIG.BANNER_MIN_FIT;
   if (useBanner) bannerSlotClaimed = true;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'ad-frame-wrap' + (useBanner ? ' is-fixed' : '');
 
   const frame = document.createElement('iframe');
   frame.title = 'Advertisement';
@@ -104,13 +254,30 @@ function fillSlotWithNetwork(slot) {
   // standard (if imperfect) sandboxing pattern for a trusted ad-network
   // partner's own tag — not arbitrary third-party/user content.
   frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox');
-  frame.style.height = (useBanner ? CONFIG.BANNER_H : 100) + 'px';
   frame.srcdoc = useBanner ? bannerAdDoc() : nativeAdDoc();
 
+  wrap.appendChild(frame);
   slot.innerHTML = '';
-  slot.appendChild(frame);
-  slot.classList.add('is-filled', 'is-network');
-  recordAdEvent(slot.id || 'network', 'impression');
+  slot.appendChild(wrap);
+  slot.classList.add('is-filled', 'is-network', useBanner ? 'is-banner' : 'is-native');
+
+  if (useBanner) {
+    fitFixedFrame(slot, wrap, frame);
+    const refit = () => fitFixedFrame(slot, wrap, frame);
+    window.addEventListener('resize', refit, { passive: true });
+    window.addEventListener('orientationchange', refit);
+    if ('ResizeObserver' in window) new ResizeObserver(refit).observe(slot);
+    recordAdEvent(slot.id || 'network', 'impression');
+  } else {
+    frame.style.width = '100%';
+    frame.style.height = CONFIG.NATIVE_MIN_H + 'px';
+    wrap.style.height = CONFIG.NATIVE_MIN_H + 'px';
+    // Counted when the unit actually draws something, not when the empty
+    // frame is created — a collapsed slot is not an impression.
+    trackNativeHeight(slot, wrap, frame, () => {
+      recordAdEvent(slot.id || 'network', 'impression');
+    });
+  }
   return true;
 }
 
@@ -118,6 +285,7 @@ function fillSlotWithNetwork(slot) {
 function renderAdSlot(slot) {
   if (!slot || slot.classList.contains('is-filled')) return;
   if (adsRemoved() || getConsent() !== 'all') return;
+  if (!slotIsVisible(slot)) return;
   fillSlotWithNetwork(slot);
 }
 

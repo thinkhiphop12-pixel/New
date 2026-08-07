@@ -18,9 +18,9 @@ import type { IconName } from './Icon';
 
 export type ScreenId =
   | 'overview' | 'fixtures' | 'table' | 'cups' | 'european'
-  | 'squad' | 'tactics' | 'training'
-  | 'transfers'
-  | 'inbox' | 'club' | 'facilities' | 'finances' | 'board';
+  | 'squad' | 'tactics' | 'training' | 'schedule'
+  | 'transfers' | 'scouting'
+  | 'inbox' | 'club' | 'facilities' | 'staff' | 'academy' | 'finances' | 'board';
 
 export type GroupId = 'matchday' | 'team' | 'market' | 'club';
 
@@ -54,6 +54,7 @@ export const GROUPS: GroupDef[] = [
       { id: 'squad', label: 'Squad', icon: 'squad' },
       { id: 'tactics', label: 'Tactics', icon: 'tactics' },
       { id: 'training', label: 'Training', icon: 'training' },
+      { id: 'schedule', label: 'Schedule', icon: 'fitness' },
     ],
   },
   {
@@ -62,6 +63,7 @@ export const GROUPS: GroupDef[] = [
     icon: 'transfers',
     screens: [
       { id: 'transfers', label: 'Transfers', icon: 'transfers' },
+      { id: 'scouting', label: 'Scouting', icon: 'binoculars' },
     ],
   },
   {
@@ -72,6 +74,8 @@ export const GROUPS: GroupDef[] = [
       { id: 'inbox', label: 'Inbox', icon: 'inbox' },
       { id: 'club', label: 'Club', icon: 'club' },
       { id: 'facilities', label: 'Facilities', icon: 'facilities' },
+      { id: 'staff', label: 'Staff', icon: 'staff' },
+      { id: 'academy', label: 'Academy', icon: 'sprout' },
       { id: 'finances', label: 'Finances', icon: 'finances' },
       { id: 'board', label: 'Board', icon: 'club' },
     ],

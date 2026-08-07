@@ -15,6 +15,12 @@ function lastName(name: string): string {
   return parts[parts.length - 1] ?? name;
 }
 
+function moraleColor(v: number): string {
+  if (v >= 70) return 'var(--green)';
+  if (v >= 45) return 'var(--gold)';
+  return 'var(--red)';
+}
+
 function formTag(p: Player): React.ReactNode {
   if (isOnLoan(p)) return <span className="cold">On loan</span>;
   if (p.injuryWeeks > 0) return <span className="inj">INJ {p.injuryWeeks}w</span>;
@@ -110,7 +116,12 @@ export default function SquadScreen({
                   {p.contractYears <= 1 && <> · <Icon name="warning" size={11} style={{ verticalAlign: -1 }} /> expiring</>}
                 </span>
               </span>
-              <span className="fm-player-row__tag">{formTag(p)}</span>
+              <span className="fm-player-row__tag">
+                {formTag(p)}
+                <span style={{ color: moraleColor(p.morale), fontSize: 11, fontWeight: 700 }} title="Morale">
+                  {Math.round(p.morale)}
+                </span>
+              </span>
               <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
                 {p.rating}
               </span>
