@@ -383,6 +383,14 @@ export default function FootballManagerGame() {
   };
 
   const handleContinueFromSummary = () => {
+    // A matchday stop must never be dismissable without actually playing the
+    // match — DaySummaryScreen already hides this button in that case, but
+    // guard here too so nothing can silently skip a fixture (which would
+    // leave `state.week` frozen and the same match re-surfacing forever).
+    if (dayStops.some((s) => s.category === 'matchday')) {
+      setView('daysummary');
+      return;
+    }
     setDayStops([]);
     setDayDigest([]);
     setView('hub');
