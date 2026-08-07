@@ -1,204 +1,95 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Icon } from './Icon';
 import type { AvatarConfig, ManagerProfile } from '@/engine/types';
 import ManagerAvatar, { shadeColor } from './ManagerAvatar';
-
-type CustomizerTab = 'presets' | 'body' | 'head' | 'attire';
+import {
+  ACCESSORY_STYLES, ATTIRE_STYLES, EYEBROW_STYLES, EYE_STYLES, FACIAL_HAIR_STYLES,
+  HAIR_STYLES, MOUTH_STYLES, PALETTE, SKIN_TONES,
+} from './avatarParts';
 
 const DEFAULT_AVATAR: AvatarConfig = {
-  skinTone: 'c1ad60',
-  skinShadow: shadeColor('#c1ad60'),
-  eyeColor: '1f2937',
-  hairColor: '4a3728',
-  eyebrowColor: shadeColor('#4a3728', -0.1),
-  hairStyle: 'long01',
-  facialHair: '',
-  mouth: 'default',
+  skinTone: '#e8b48a',
+  skinShadow: shadeColor('#e8b48a'),
+  eyeColor: '#4a3728',
+  hairColor: '#3b2b20',
+  eyebrowColor: '#3b2b20',
+  hairStyle: 'short01',
+  eyebrows: 'default',
   eyes: 'default',
+  mouth: 'default',
   nose: 'default',
+  facialHair: '',
+  attire: 'suittie',
+  mouthColor: '#a85751',
+  accessoryColor: '#2b3445',
+  suitColor: '#2b3445',
   accessories: [],
-  suitColor: undefined,
 };
 
-const SKIN_TONES = [
-  { label: 'Light', value: 'fdbcb4' },
-  { label: 'Fair', value: 'f7bde4' },
-  { label: 'Medium', value: 'c1ad60' },
-  { label: 'Olive', value: 'b8860b' },
-  { label: 'Tan', value: 'd4a574' },
-  { label: 'Deep', value: '70563f' },
+/** One row of the creator: a part category, the variants it offers, and which
+ *  `AvatarConfig` field its shape and (optionally) its colour write to.
+ *
+ *  `colorKey` is what makes the shared palette work like the reference —
+ *  the palette always edits the active category's own colour axis, so there's
+ *  one palette instead of a separate swatch row per attribute. */
+type Category = {
+  id: string;
+  label: string;
+  /** Ordered variants shown in the numbered grid. */
+  variants: { id: string; label: string }[];
+  /** Which config field the grid writes. Omitted for colour-only categories. */
+  shapeKey?: keyof AvatarConfig;
+  /** Which config field the palette writes. Omitted when not colourable. */
+  colorKey?: keyof AvatarConfig;
+};
+
+const CATEGORIES: Category[] = [
+  { id: 'skin', label: 'Skin', variants: SKIN_TONES, colorKey: 'skinTone' },
+  { id: 'hair', label: 'Hair', variants: HAIR_STYLES, shapeKey: 'hairStyle', colorKey: 'hairColor' },
+  { id: 'brows', label: 'Brows', variants: EYEBROW_STYLES, shapeKey: 'eyebrows', colorKey: 'eyebrowColor' },
+  { id: 'eyes', label: 'Eyes', variants: EYE_STYLES, shapeKey: 'eyes', colorKey: 'eyeColor' },
+  { id: 'mouth', label: 'Mouth', variants: MOUTH_STYLES, shapeKey: 'mouth', colorKey: 'mouthColor' },
+  { id: 'beard', label: 'Beard', variants: FACIAL_HAIR_STYLES, shapeKey: 'facialHair', colorKey: 'hairColor' },
+  { id: 'attire', label: 'Attire', variants: ATTIRE_STYLES, shapeKey: 'attire', colorKey: 'suitColor' },
+  { id: 'extras', label: 'Extras', variants: ACCESSORY_STYLES, shapeKey: 'accessories', colorKey: 'accessoryColor' },
 ];
 
-const EYE_COLORS = [
-  { label: 'Brown', value: '4a3728' },
-  { label: 'Blue', value: '1e40af' },
-  { label: 'Green', value: '15803d' },
-  { label: 'Hazel', value: 'a16207' },
-  { label: 'Gray', value: '4b5563' },
-];
-
-const HAIR_COLORS = [
-  { label: 'Black', value: '1f2937' },
-  { label: 'Brown', value: '5e4e42' },
-  { label: 'Blonde', value: 'f4d03f' },
-  { label: 'Red', value: 'd84315' },
-  { label: 'Auburn', value: '8b4513' },
-  { label: 'Gray', value: 'a8a8a8' },
-];
-
-const EYEBROW_COLORS = HAIR_COLORS;
-
-const HAIR_STYLES = [
-  { label: 'Long', value: 'long01' },
-  { label: 'Medium', value: 'straight01' },
-  { label: 'Short', value: 'short01' },
-  { label: 'Curly', value: 'curly01' },
-  { label: 'Buzz', value: 'buzz' },
-  { label: 'Bald', value: '' },
-];
-
-const FACIAL_HAIR = [
-  { label: 'Clean', value: '' },
-  { label: 'Beard', value: 'beardMajestic' },
-  { label: 'Goatee', value: 'beardLight' },
-  { label: 'Moustache', value: 'moustache' },
-];
-
-const ACCESSORIES = [
-  { label: 'None', value: '' },
-  { label: 'Glasses', value: 'glasses' },
-];
-
-/** Suit colour palette for the Attire tab. `undefined` (the implicit first
- *  choice) keeps the default `var(--panel-2)` fill so old saves without this
- *  field render exactly as before. */
-const SUIT_COLORS: { label: string; value: string | undefined }[] = [
-  { label: 'Default', value: undefined },
-  { label: 'Navy', value: '1f2937' },
-  { label: 'Charcoal', value: '374151' },
-  { label: 'Maroon', value: '7f1d1d' },
-  { label: 'Forest', value: '14532d' },
-  { label: 'Black', value: '111827' },
-];
-
-function randomOf<T>(arr: T[]): T {
+function randomOf<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function randomAvatar(): AvatarConfig {
-  const skinTone = randomOf(SKIN_TONES).value;
-  const hairColor = randomOf(HAIR_COLORS).value;
+  const skinTone = randomOf(SKIN_TONES).id;
+  const hairColor = randomOf(PALETTE);
   return {
     skinTone,
-    skinShadow: shadeColor(`#${skinTone}`),
-    eyeColor: randomOf(EYE_COLORS).value,
+    skinShadow: shadeColor(skinTone),
+    eyeColor: randomOf(PALETTE),
     hairColor,
-    eyebrowColor: randomOf(EYEBROW_COLORS).value,
-    hairStyle: randomOf(HAIR_STYLES).value,
-    facialHair: randomOf(FACIAL_HAIR).value,
-    mouth: 'default',
-    eyes: 'default',
+    eyebrowColor: hairColor,
+    hairStyle: randomOf(HAIR_STYLES).id,
+    eyebrows: randomOf(EYEBROW_STYLES).id,
+    eyes: randomOf(EYE_STYLES).id,
+    mouth: randomOf(MOUTH_STYLES).id,
     nose: 'default',
-    accessories: Math.random() < 0.3 ? ['glasses'] : [],
-    suitColor: randomOf(SUIT_COLORS).value,
+    facialHair: randomOf(FACIAL_HAIR_STYLES).id,
+    attire: randomOf(ATTIRE_STYLES).id,
+    mouthColor: '#a85751',
+    accessoryColor: '#2b3445',
+    suitColor: randomOf(PALETTE),
+    accessories: Math.random() < 0.35 ? [randomOf(ACCESSORY_STYLES.slice(1)).id] : [],
   };
-}
-
-/** Curated full-look combinations for the Presets tab — just points in the
- *  existing option space above, no new asset data. */
-const PRESETS: { id: string; label: string; config: AvatarConfig }[] = [
-  {
-    id: 'classic',
-    label: 'Classic',
-    config: {
-      skinTone: 'c1ad60', skinShadow: shadeColor('#c1ad60'), eyeColor: '4a3728',
-      hairColor: '1f2937', eyebrowColor: shadeColor('#1f2937', -0.1), hairStyle: 'short01',
-      facialHair: '', mouth: 'default', eyes: 'default', nose: 'default', accessories: [],
-      suitColor: '1f2937',
-    },
-  },
-  {
-    id: 'silver-fox',
-    label: 'Silver Fox',
-    config: {
-      skinTone: 'd4a574', skinShadow: shadeColor('#d4a574'), eyeColor: '4b5563',
-      hairColor: 'a8a8a8', eyebrowColor: 'a8a8a8', hairStyle: 'straight01',
-      facialHair: 'beardLight', mouth: 'default', eyes: 'default', nose: 'default',
-      accessories: [], suitColor: '374151',
-    },
-  },
-  {
-    id: 'young-gun',
-    label: 'Young Gun',
-    config: {
-      skinTone: '70563f', skinShadow: shadeColor('#70563f'), eyeColor: '1f2937',
-      hairColor: '1f2937', eyebrowColor: '1f2937', hairStyle: 'buzz', facialHair: '',
-      mouth: 'default', eyes: 'default', nose: 'default', accessories: [], suitColor: '111827',
-    },
-  },
-  {
-    id: 'tactician',
-    label: 'Tactician',
-    config: {
-      skinTone: 'fdbcb4', skinShadow: shadeColor('#fdbcb4'), eyeColor: '1e40af',
-      hairColor: '5e4e42', eyebrowColor: '5e4e42', hairStyle: 'curly01',
-      facialHair: 'moustache', mouth: 'default', eyes: 'default', nose: 'default',
-      accessories: ['glasses'], suitColor: '7f1d1d',
-    },
-  },
-  {
-    id: 'continental',
-    label: 'Continental',
-    config: {
-      skinTone: 'f7bde4', skinShadow: shadeColor('#f7bde4'), eyeColor: '15803d',
-      hairColor: '8b4513', eyebrowColor: '8b4513', hairStyle: 'long01', facialHair: 'beardMajestic',
-      mouth: 'default', eyes: 'default', nose: 'default', accessories: [], suitColor: '14532d',
-    },
-  },
-  {
-    id: 'the-boardroom',
-    label: 'The Boardroom',
-    config: {
-      skinTone: 'b8860b', skinShadow: shadeColor('#b8860b'), eyeColor: 'a16207',
-      hairColor: 'f4d03f', eyebrowColor: 'f4d03f', hairStyle: 'straight01', facialHair: '',
-      mouth: 'default', eyes: 'default', nose: 'default', accessories: ['glasses'],
-      suitColor: undefined,
-    },
-  },
-  {
-    id: 'old-guard',
-    label: 'Old Guard',
-    config: {
-      skinTone: 'c1ad60', skinShadow: shadeColor('#c1ad60'), eyeColor: '4b5563',
-      hairColor: 'a8a8a8', eyebrowColor: 'a8a8a8', hairStyle: 'buzz', facialHair: 'beardLight',
-      mouth: 'default', eyes: 'default', nose: 'default', accessories: [], suitColor: '374151',
-    },
-  },
-  {
-    id: 'sideline',
-    label: 'Sideline',
-    config: {
-      skinTone: 'd4a574', skinShadow: shadeColor('#d4a574'), eyeColor: '1f2937',
-      hairColor: 'd84315', eyebrowColor: 'd84315', hairStyle: 'curly01', facialHair: '',
-      mouth: 'default', eyes: 'default', nose: 'default', accessories: [], suitColor: '111827',
-    },
-  },
-];
-
-function presetMatches(config: AvatarConfig, preset: AvatarConfig): boolean {
-  return JSON.stringify(config) === JSON.stringify(preset);
 }
 
 /** Draws the avatar SVG to an offscreen canvas and triggers a PNG download.
  *  Runs entirely client-side — no server round trip for a cosmetic export. */
-function downloadAvatarPng(config: AvatarConfig, filename: string) {
-  const svgEl = document.querySelector('.customizer-avatar-svg svg') as SVGSVGElement | null;
+function downloadAvatarPng(filename: string) {
+  const svgEl = document.querySelector('.fm-creator__portrait svg') as SVGSVGElement | null;
   if (!svgEl) return;
   const size = 512;
-  const serializer = new XMLSerializer();
-  const svgString = serializer.serializeToString(svgEl);
+  const svgString = new XMLSerializer().serializeToString(svgEl);
   const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(svgBlob);
   const img = new Image();
@@ -233,343 +124,206 @@ export default function CharacterCustomizerScreen({
   initialProfile?: ManagerProfile;
 }) {
   const [name, setName] = useState(initialProfile?.name || '');
-  const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(
-    initialProfile?.avatarConfig || { ...DEFAULT_AVATAR }
+  const [config, setConfig] = useState<AvatarConfig>(
+    initialProfile?.avatarConfig ? { ...DEFAULT_AVATAR, ...initialProfile.avatarConfig } : { ...DEFAULT_AVATAR }
   );
-  const [tab, setTab] = useState<CustomizerTab>('presets');
-  const avatarRef = useRef<HTMLDivElement | null>(null);
+  const [categoryId, setCategoryId] = useState(CATEGORIES[1].id);
+  const [error, setError] = useState<string | null>(null);
 
-  const setSkin = (value: string) => {
-    setAvatarConfig({ ...avatarConfig, skinTone: value, skinShadow: shadeColor(`#${value}`) });
-  };
+  const category = useMemo(
+    () => CATEGORIES.find((c) => c.id === categoryId) ?? CATEGORIES[0],
+    [categoryId]
+  );
 
-  const handleSave = () => {
-    if (!name.trim()) {
-      alert('Please enter a manager name');
+  /** The currently-selected variant id for the active category. `accessories`
+   *  is an array of at most one, so it reads through its first entry. */
+  const activeVariant = (() => {
+    if (!category.shapeKey) return config[category.colorKey!] as string;
+    if (category.shapeKey === 'accessories') return config.accessories?.[0] ?? '';
+    return (config[category.shapeKey] as string) ?? '';
+  })();
+
+  const activeColor = category.colorKey ? (config[category.colorKey] as string | undefined) : undefined;
+
+  /** Applies a variant. A colour-only category (Skin) writes its colour axis
+   *  instead of a shape, and skin additionally recomputes the paired shadow. */
+  const pickVariant = (id: string) => {
+    if (!category.shapeKey) {
+      setConfig({ ...config, [category.colorKey!]: id, ...(category.id === 'skin' ? { skinShadow: shadeColor(id) } : {}) });
       return;
     }
+    if (category.shapeKey === 'accessories') {
+      setConfig({ ...config, accessories: id ? [id] : [] });
+      return;
+    }
+    setConfig({ ...config, [category.shapeKey]: id });
+  };
 
-    const profile: ManagerProfile = {
+  const pickColor = (hex: string) => {
+    if (!category.colorKey) return;
+    setConfig({
+      ...config,
+      [category.colorKey]: hex,
+      // Skin tone owns a paired shadow; hair colour drives brows unless the
+      // player has already set brows to something deliberately different.
+      ...(category.colorKey === 'skinTone' ? { skinShadow: shadeColor(hex) } : {}),
+      ...(category.colorKey === 'hairColor' && config.eyebrowColor === config.hairColor
+        ? { eyebrowColor: hex }
+        : {}),
+    });
+  };
+
+  const handleConfirm = () => {
+    if (!name.trim()) {
+      setError('Give your manager a name first.');
+      return;
+    }
+    setError(null);
+    onSave({
       id: initialProfile?.id || `manager_${Date.now()}`,
       name: name.trim(),
-      avatarConfig,
+      avatarConfig: config,
       createdAt: initialProfile?.createdAt || new Date(),
       updatedAt: new Date(),
-    };
-
-    onSave(profile);
-  };
-
-  const handleReset = () => {
-    setAvatarConfig({ ...DEFAULT_AVATAR });
-  };
-
-  const handleRandomize = () => {
-    setAvatarConfig(randomAvatar());
-  };
-
-  const handleDownload = () => {
-    downloadAvatarPng(avatarConfig, `${(name || 'manager').replace(/\s+/g, '_')}_avatar.png`);
+    });
   };
 
   return (
-    <div className="fm-screen fm-character-customizer">
-      <p className="fm-label">MANAGER CREATION</p>
-
-      <div className="name-row">
-        <label className="fm-label-small" htmlFor="manager-name">Manager Name</label>
-        <input
-          id="manager-name"
-          type="text"
-          className="fm-search"
-          placeholder="Enter your manager name"
-          value={name}
-          maxLength={24}
-          onChange={(e) => setName(e.target.value)}
-        />
+    <div className="fm-screen fm-creator">
+      <div className="fm-creator__head">
+        <p className="fm-label" style={{ margin: 0 }}>CREATE YOUR MANAGER</p>
+        <div className="fm-creator__head-actions">
+          <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setConfig(randomAvatar())}>
+            <Icon name="dice" size={14} /> Randomize
+          </button>
+          <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setConfig({ ...DEFAULT_AVATAR })}>
+            Reset
+          </button>
+          <button
+            className="fm-btn fm-btn--ghost fm-btn--small"
+            onClick={() => downloadAvatarPng(`${(name || 'manager').replace(/\s+/g, '_')}.png`)}
+          >
+            <Icon name="download" size={14} /> PNG
+          </button>
+        </div>
       </div>
 
-      <div className="character-container">
-        <div className="customization-section">
-          <div className="tabs-row">
-            <div className="fm-subnav__tabs" role="tablist" aria-label="Manager customization sections">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tab === 'presets'}
-                aria-controls="customizer-panel-presets"
-                className={`fm-subtab${tab === 'presets' ? ' active' : ''}`}
-                onClick={() => setTab('presets')}
-              >
-                <span className="fm-subtab__label">Presets</span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tab === 'body'}
-                aria-controls="customizer-panel-body"
-                className={`fm-subtab${tab === 'body' ? ' active' : ''}`}
-                onClick={() => setTab('body')}
-              >
-                <span className="fm-subtab__label">Body</span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tab === 'head'}
-                aria-controls="customizer-panel-head"
-                className={`fm-subtab${tab === 'head' ? ' active' : ''}`}
-                onClick={() => setTab('head')}
-              >
-                <span className="fm-subtab__label">Head</span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tab === 'attire'}
-                aria-controls="customizer-panel-attire"
-                className={`fm-subtab${tab === 'attire' ? ' active' : ''}`}
-                onClick={() => setTab('attire')}
-              >
-                <span className="fm-subtab__label">Attire</span>
-              </button>
+      {/* Upper deck: framed portrait + name field on the left, shared colour
+          palette on the right — the palette always edits whichever category
+          is active below, so there's one palette instead of one per attribute. */}
+      <div className="fm-creator__deck">
+        <div className="fm-creator__stage">
+          <div className="fm-creator__frame">
+            <div className="fm-creator__portrait">
+              <ManagerAvatar config={config} size={300} backdrop={false} title={name || 'Manager portrait'} />
             </div>
-            <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={handleReset}>
-              Reset Changes
-            </button>
           </div>
-
-          {tab === 'presets' && (
-            <div id="customizer-panel-presets" role="tabpanel" aria-label="Presets" className="customization-group">
-              <div className="fm-preset-grid" role="radiogroup" aria-label="Avatar presets">
-                {PRESETS.map((preset) => {
-                  const selected = presetMatches(avatarConfig, preset.config);
-                  return (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      className={`fm-preset-card${selected ? ' selected' : ''}`}
-                      onClick={() => setAvatarConfig({ ...preset.config })}
-                    >
-                      <span className="fm-preset-card__radio" aria-hidden="true" />
-                      <ManagerAvatar config={preset.config} size={72} title={preset.label} />
-                      <span className="fm-preset-card__label">{preset.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {tab === 'body' && (
-            <div id="customizer-panel-body" role="tabpanel" aria-label="Body" className="customization-group">
-              <div className="form-group">
-                <label className="fm-label-small">Skin Tone</label>
-                <p className="fm-category-desc">Sets a matching shadow tone automatically, so shading looks right at every skin tone.</p>
-                <div className="color-selector">
-                  {SKIN_TONES.map((tone) => (
-                    <button
-                      key={tone.value}
-                      className={`color-option ${avatarConfig.skinTone === tone.value ? 'active' : ''}`}
-                      style={{ backgroundColor: `#${tone.value}` }}
-                      onClick={() => setSkin(tone.value)}
-                      title={tone.label}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {tab === 'head' && (
-            <div id="customizer-panel-head" role="tabpanel" aria-label="Head" className="customization-group">
-              <div className="form-group">
-                <label className="fm-label-small">Hair Style</label>
-                <p className="fm-category-desc">The shape and length of your cut.</p>
-                <div className="option-grid">
-                  {HAIR_STYLES.map((style) => (
-                    <button
-                      key={style.value}
-                      className={`fm-btn fm-btn--small ${avatarConfig.hairStyle === style.value ? 'active' : ''}`}
-                      onClick={() => setAvatarConfig({ ...avatarConfig, hairStyle: style.value })}
-                    >
-                      {style.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="fm-label-small">Hair Color</label>
-                <p className="fm-category-desc">Independent of hairstyle — mix any color with any cut.</p>
-                <div className="color-selector">
-                  {HAIR_COLORS.map((color) => (
-                    <button
-                      key={color.value}
-                      className={`color-option ${avatarConfig.hairColor === color.value ? 'active' : ''}`}
-                      style={{ backgroundColor: `#${color.value}` }}
-                      onClick={() => setAvatarConfig({ ...avatarConfig, hairColor: color.value })}
-                      title={color.label}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="fm-label-small">Eyebrow Color</label>
-                <p className="fm-category-desc">Its own axis — doesn't have to match your hair.</p>
-                <div className="color-selector">
-                  {EYEBROW_COLORS.map((color) => (
-                    <button
-                      key={color.value}
-                      className={`color-option ${(avatarConfig.eyebrowColor ?? '') === color.value ? 'active' : ''}`}
-                      style={{ backgroundColor: `#${color.value}` }}
-                      onClick={() => setAvatarConfig({ ...avatarConfig, eyebrowColor: color.value })}
-                      title={color.label}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="fm-label-small">Eye Color</label>
-                <p className="fm-category-desc">Iris color.</p>
-                <div className="color-selector">
-                  {EYE_COLORS.map((color) => (
-                    <button
-                      key={color.value}
-                      className={`color-option ${avatarConfig.eyeColor === color.value ? 'active' : ''}`}
-                      style={{ backgroundColor: `#${color.value}` }}
-                      onClick={() => setAvatarConfig({ ...avatarConfig, eyeColor: color.value })}
-                      title={color.label}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="fm-label-small">Facial Hair</label>
-                <p className="fm-category-desc">Uses your hair color.</p>
-                <div className="option-grid">
-                  {FACIAL_HAIR.map((style) => (
-                    <button
-                      key={style.value}
-                      className={`fm-btn fm-btn--small ${avatarConfig.facialHair === style.value ? 'active' : ''}`}
-                      onClick={() => setAvatarConfig({ ...avatarConfig, facialHair: style.value })}
-                    >
-                      {style.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="fm-label-small">Accessories</label>
-                <p className="fm-category-desc">Optional extras.</p>
-                <div className="option-grid">
-                  {ACCESSORIES.map((acc) => (
-                    <button
-                      key={acc.value}
-                      className={`fm-btn fm-btn--small ${
-                        (avatarConfig.accessories?.[0] ?? '') === acc.value ? 'active' : ''
-                      }`}
-                      onClick={() =>
-                        setAvatarConfig({ ...avatarConfig, accessories: acc.value ? [acc.value] : [] })
-                      }
-                    >
-                      {acc.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {tab === 'attire' && (
-            <div id="customizer-panel-attire" role="tabpanel" aria-label="Attire" className="customization-group">
-              <div className="form-group">
-                <label className="fm-label-small">Suit Color</label>
-                <p className="fm-category-desc">The jacket colour shown in your preview.</p>
-                <div className="color-selector">
-                  {SUIT_COLORS.map((suit) => (
-                    <button
-                      key={suit.label}
-                      className={`color-option ${avatarConfig.suitColor === suit.value ? 'active' : ''}`}
-                      style={{ backgroundColor: suit.value ? `#${suit.value}` : 'var(--panel-2)' }}
-                      onClick={() => setAvatarConfig({ ...avatarConfig, suitColor: suit.value })}
-                      title={suit.label}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="fm-actions bottom-actions">
-            <button className="fm-btn fm-btn--ghost" onClick={onBack}>
-              Back
-            </button>
-            <button className="fm-btn fm-btn--primary" onClick={handleSave}>
-              Confirm
-            </button>
+          <div className="fm-creator__namefield">
+            <label className="fm-creator__label" htmlFor="manager-name">Manager Name</label>
+            <input
+              id="manager-name"
+              className="fm-search"
+              placeholder="Enter a name"
+              value={name}
+              maxLength={24}
+              onChange={(e) => { setName(e.target.value); if (error) setError(null); }}
+            />
+            {error && <p className="fm-creator__error">{error}</p>}
           </div>
         </div>
 
-        <div className="avatar-preview-section">
-          <div className="avatar-preview customizer-avatar-svg" ref={avatarRef}>
-            <ManagerAvatar config={avatarConfig} size={420} title={name || 'Manager avatar'} />
-          </div>
-          <div className="preview-actions">
-            <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={handleRandomize}>
-              <Icon name="dice" size={15} /> Randomize
-            </button>
-            <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={handleDownload}>
-              <Icon name="download" size={15} /> Download PNG
-            </button>
-          </div>
+        <div className="fm-creator__palette-panel">
+          <p className="fm-creator__label">
+            {category.colorKey ? `${category.label} Colour` : 'Colour'}
+          </p>
+          {category.colorKey ? (
+            <div className="fm-creator__palette" role="radiogroup" aria-label={`${category.label} colour`}>
+              {PALETTE.map((hex) => {
+                const selected = (activeColor ?? '').toLowerCase() === hex.toLowerCase();
+                return (
+                  <button
+                    key={hex}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    aria-label={hex}
+                    title={hex}
+                    className={`fm-creator__swatch${selected ? ' selected' : ''}`}
+                    style={{ background: hex }}
+                    onClick={() => pickColor(hex)}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <p className="fm-hint">This part has no colour of its own.</p>
+          )}
         </div>
+      </div>
+
+      {/* Lower deck: category strip + numbered variant grid, the reference's
+          core interaction — pick a part category, then pick a numbered variant. */}
+      <div className="fm-creator__parts">
+        <div className="fm-creator__cats" role="tablist" aria-label="Part categories">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              role="tab"
+              aria-selected={c.id === categoryId}
+              className={`fm-creator__cat${c.id === categoryId ? ' active' : ''}`}
+              onClick={() => setCategoryId(c.id)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="fm-creator__variants" role="radiogroup" aria-label={`${category.label} variants`}>
+          {category.variants.map((variant, i) => {
+            const selected = activeVariant === variant.id;
+            // Each tile previews the real result: the live config with just
+            // this one variant swapped in, so tiles stay accurate as the rest
+            // of the character changes.
+            const preview: AvatarConfig = category.shapeKey
+              ? category.shapeKey === 'accessories'
+                ? { ...config, accessories: variant.id ? [variant.id] : [] }
+                : { ...config, [category.shapeKey]: variant.id }
+              : { ...config, [category.colorKey!]: variant.id, ...(category.id === 'skin' ? { skinShadow: shadeColor(variant.id) } : {}) };
+            return (
+              <button
+                key={variant.id || `none-${i}`}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                className={`fm-creator__tile${selected ? ' selected' : ''}`}
+                onClick={() => pickVariant(variant.id)}
+                title={variant.label}
+              >
+                <span className="fm-creator__tile-num">{i + 1}</span>
+                <ManagerAvatar config={preview} size={62} title={variant.label} />
+                <span className="fm-creator__tile-label">{variant.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="fm-creator__foot">
+        <button className="fm-btn fm-btn--ghost" onClick={onBack}>Back</button>
+        <button className="fm-btn fm-btn--primary" onClick={handleConfirm}>Confirm</button>
       </div>
 
       <style jsx>{`
-        .fm-character-customizer {
-          max-width: 1100px;
+        .fm-creator {
+          max-width: 1080px;
           margin: 0 auto;
-        }
-
-        .name-row {
-          max-width: 420px;
-          margin: 0 auto 1.5rem;
-        }
-
-        .name-row .fm-label-small {
-          display: block;
-          font-size: 0.875rem;
-          color: var(--text-muted);
-          margin-bottom: 0.375rem;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-
-        .character-container {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
-          gap: 2rem;
-          padding: 2rem;
-          background: var(--panel-2);
-          border-radius: var(--r-md);
-          border: 1px solid var(--border);
-        }
-
-        .customization-section {
           display: flex;
           flex-direction: column;
-          gap: 1.5rem;
-          min-width: 0;
+          gap: 1rem;
         }
 
-        .tabs-row {
+        .fm-creator__head {
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -577,131 +331,207 @@ export default function CharacterCustomizerScreen({
           flex-wrap: wrap;
         }
 
-        .customization-group {
+        .fm-creator__head-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+        .fm-creator__deck {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 1rem;
+          align-items: start;
+        }
+
+        .fm-creator__stage {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.875rem;
+        }
+
+        /* Framed portrait — a recessed inner panel inside a bright border, the
+           reference's "picture in a frame" read. */
+        .fm-creator__frame {
+          padding: 10px;
           background: var(--panel);
-          padding: 1.5rem;
-          border-radius: var(--r-md);
-          border: 1px solid var(--border);
-        }
-
-        .form-group {
-          margin-bottom: 1.5rem;
-        }
-
-        .form-group:last-child {
-          margin-bottom: 0;
-        }
-
-        .fm-label-small {
-          display: block;
-          font-size: 0.875rem;
-          color: var(--text-muted);
-          margin-bottom: 0.375rem;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-
-        .fm-category-desc {
-          margin: 0 0 0.75rem 0;
-          font-size: 0.8rem;
-          color: var(--muted);
-        }
-
-        .color-selector {
-          display: flex;
-          gap: 0.5rem;
-          flex-wrap: wrap;
-        }
-
-        .color-option {
-          width: 48px;
-          height: 48px;
-          border-radius: 6px;
-          border: 2px solid transparent;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .color-option:hover {
-          transform: scale(1.1);
-          border-color: color-mix(in srgb, var(--lime) 50%, transparent);
-        }
-
-        .color-option.active {
-          border-color: var(--lime);
-          box-shadow: 0 0 12px color-mix(in srgb, var(--lime) 40%, transparent);
-        }
-
-        .option-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-          gap: 0.75rem;
-        }
-
-        .fm-btn.fm-btn--small {
-          padding: 0.75rem 1.25rem;
-          font-size: 0.875rem;
-        }
-
-        .fm-btn.fm-btn--small.active {
-          background: var(--lime);
-          color: var(--brand-text);
-        }
-
-        .bottom-actions {
-          justify-content: space-between;
-          margin-top: auto;
-        }
-
-        .avatar-preview-section {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .avatar-preview {
-          width: min(420px, 100%);
-          aspect-ratio: 1 / 1;
-          border-radius: var(--r-md);
           border: 2px solid var(--border-bright);
-          background: var(--panel);
+          border-radius: var(--r-md);
+          box-shadow: var(--shadow-sm);
+        }
+
+        .fm-creator__portrait {
+          width: 300px;
+          height: 300px;
+          max-width: 100%;
           display: flex;
           align-items: center;
           justify-content: center;
           overflow: hidden;
+          border-radius: calc(var(--r-md) - 4px);
+          background: radial-gradient(circle at 50% 38%, var(--panel-3), var(--panel-2) 70%);
         }
 
-        .preview-actions {
+        .fm-creator__namefield { width: min(320px, 100%); }
+
+        .fm-creator__label {
+          display: block;
+          margin: 0 0 0.375rem;
+          font-size: 0.75rem;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          color: var(--muted);
+        }
+
+        .fm-creator__error {
+          margin: 0.375rem 0 0;
+          font-size: 0.8rem;
+          color: var(--red);
+        }
+
+        .fm-creator__palette-panel {
+          background: var(--panel-2);
+          border: 1px solid var(--border);
+          border-radius: var(--r-md);
+          padding: 1rem;
+        }
+
+        .fm-creator__palette {
+          display: grid;
+          grid-template-columns: repeat(4, 40px);
+          gap: 7px;
+        }
+
+        .fm-creator__swatch {
+          width: 40px;
+          height: 40px;
+          border-radius: 7px;
+          border: 2px solid var(--border-soft);
+          cursor: pointer;
+          padding: 0;
+          transition: transform 0.12s, border-color 0.15s, box-shadow 0.2s;
+        }
+
+        .fm-creator__swatch:hover { transform: scale(1.08); border-color: var(--border-bright); }
+
+        .fm-creator__swatch.selected {
+          border-color: var(--gold);
+          box-shadow: 0 0 0 2px var(--gold-dim), var(--shadow-glow-gold);
+        }
+
+        .fm-creator__parts {
+          background: var(--panel-2);
+          border: 1px solid var(--border);
+          border-radius: var(--r-md);
+          padding: 1rem;
+        }
+
+        .fm-creator__cats {
           display: flex;
-          gap: 0.5rem;
-          margin-top: 1rem;
-          flex-wrap: wrap;
-          justify-content: center;
+          gap: 6px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          padding-bottom: 0.875rem;
+          margin-bottom: 0.875rem;
+          border-bottom: 1px solid var(--border);
         }
 
-        @media (max-width: 768px) {
-          .character-container {
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-            padding: 1.5rem;
-          }
+        .fm-creator__cats::-webkit-scrollbar { display: none; }
 
-          .avatar-preview-section {
-            order: -1;
-          }
+        .fm-creator__cat {
+          flex: 0 0 auto;
+          border: 1px solid var(--border-soft);
+          background: var(--panel);
+          color: var(--muted);
+          font-family: inherit;
+          font-weight: 700;
+          font-size: 12.5px;
+          padding: 8px 14px;
+          border-radius: var(--r-full);
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.15s;
+        }
 
-          .avatar-preview {
-            width: 220px;
-          }
+        .fm-creator__cat:hover { color: var(--text); border-color: var(--border-bright); }
 
-          .bottom-actions {
-            flex-direction: column;
-          }
+        .fm-creator__cat.active {
+          background: var(--gold);
+          border-color: var(--gold);
+          color: #1a0f00;
+        }
 
-          .bottom-actions .fm-btn {
-            width: 100%;
-          }
+        .fm-creator__variants {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+          gap: 8px;
+        }
+
+        .fm-creator__tile {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          background: var(--panel);
+          border: 1.5px solid var(--border-soft);
+          border-radius: var(--r-lg);
+          padding: 10px 6px 8px;
+          cursor: pointer;
+          color: var(--text);
+          transition: border-color 0.15s, transform 0.12s, box-shadow 0.2s;
+        }
+
+        .fm-creator__tile:hover {
+          border-color: var(--border-bright);
+          transform: translateY(-1px);
+          box-shadow: var(--shadow-sm);
+        }
+
+        .fm-creator__tile.selected {
+          border-color: var(--gold);
+          background: var(--gold-dim);
+          box-shadow: var(--shadow-glow-gold);
+        }
+
+        .fm-creator__tile-num {
+          position: absolute;
+          top: 5px;
+          left: 7px;
+          font-size: 10px;
+          font-weight: 900;
+          color: var(--muted-dim);
+          font-variant-numeric: tabular-nums;
+        }
+
+        .fm-creator__tile.selected .fm-creator__tile-num { color: var(--gold); }
+
+        .fm-creator__tile-label {
+          font-size: 10.5px;
+          font-weight: 700;
+          color: var(--text-2);
+          line-height: 1.2;
+          text-align: center;
+        }
+
+        .fm-creator__foot {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+        }
+
+        @media (max-width: 860px) {
+          .fm-creator__deck { grid-template-columns: minmax(0, 1fr); }
+          .fm-creator__palette-panel { order: -1; }
+          .fm-creator__palette { grid-template-columns: repeat(10, 1fr); }
+          .fm-creator__swatch { width: 100%; height: auto; aspect-ratio: 1 / 1; }
+          .fm-creator__portrait { width: 240px; height: 240px; }
+        }
+
+        @media (max-width: 520px) {
+          .fm-creator__palette { grid-template-columns: repeat(5, 1fr); }
+          .fm-creator__portrait { width: 200px; height: 200px; }
+          .fm-creator__foot { flex-direction: column-reverse; }
+          .fm-creator__foot :global(.fm-btn) { width: 100%; }
         }
       `}</style>
     </div>

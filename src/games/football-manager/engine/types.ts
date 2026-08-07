@@ -1091,6 +1091,17 @@ export interface AvatarConfig {
   /** Suit/jacket fill for the shoulders silhouette. Optional — falls back to
    *  `var(--panel-2)` when absent (older saves predate this field). */
   suitColor?: string;
+  /** Eyebrow shape, independent of eyebrow colour. Optional — falls back to
+   *  the arched default when absent (older saves predate this field). */
+  eyebrows?: string;
+  /** Outfit shape (suit & tie, turtleneck, tracksuit…). Optional — falls back
+   *  to 'suittie' when absent. */
+  attire?: string;
+  /** Lip colour. Optional — falls back to a muted default when absent. */
+  mouthColor?: string;
+  /** Frame/stud colour for glasses and earrings. Optional — falls back to a
+   *  dark neutral when absent. */
+  accessoryColor?: string;
 }
 
 export interface ManagerProfile {
