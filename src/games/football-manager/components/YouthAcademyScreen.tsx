@@ -7,6 +7,7 @@ import { MAX_SQUAD_SIZE } from '@/engine/gameRules';
 import { Icon } from './Icon';
 import { PlayerFace } from './PlayerFace';
 import PlayerModal from './PlayerModal';
+import { Pulse, toneFor } from './SectionHub';
 
 /**
  * Youth Academy hub: lists the youth squad built up by season-end intake
@@ -33,22 +34,29 @@ export default function YouthAcademyScreen({
   const firstTeamSize = club?.playerIds.length ?? 0;
   const squadFull = firstTeamSize >= MAX_SQUAD_SIZE;
 
-  const nextIntakeCount = state.academyLevel >= 3 ? 2 : 1;
+  const academyRep = state.facilities?.academyReputation ?? 20;
 
   return (
     <>
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}><Icon name="sprout" size={13} /> Youth Academy</p>
-        <p className="fm-club-line">
-          Reputation {state.facilities?.academyReputation ?? 20}/100, intake level {state.academyLevel}/3 —
-          higher reputation and level raise both the number and quality of prospects who join the youth
-          squad at each season's intake. Manage upgrades from the Facilities screen.
+      {/* Four numbers instead of the paragraph that used to carry them. */}
+      <Pulse
+        items={[
+          { icon: 'sprout', label: 'Prospects', value: String(youth.length), tone: youth.length ? 'green' : 'plain' },
+          { icon: 'star', label: 'Reputation', value: `${academyRep}/100`, tone: toneFor(academyRep, 25, 60), meter: academyRep / 100 },
+          { icon: 'training', label: 'Intake level', value: `${state.academyLevel}/3`, tone: toneFor(state.academyLevel, 2, 3), meter: state.academyLevel / 3 },
+          {
+            icon: 'squad',
+            label: 'First team',
+            value: `${firstTeamSize}/${MAX_SQUAD_SIZE}`,
+            tone: squadFull ? 'red' : 'plain',
+          },
+        ]}
+      />
+      {squadFull && (
+        <p className="fm-hint" style={{ marginTop: 0 }}>
+          <Icon name="warning" size={12} /> Squad full — free up a slot before promoting.
         </p>
-        <p className="fm-hint" style={{ marginBottom: 0 }}>
-          Next season-end intake: {nextIntakeCount} prospect{nextIntakeCount > 1 ? 's' : ''}. First team{' '}
-          {firstTeamSize}/{MAX_SQUAD_SIZE}{squadFull ? ' — full, promotions blocked until you free up a slot' : ''}.
-        </p>
-      </div>
+      )}
 
       <div className="fm-mod">
         <div className="fm-mod__head"><h2 className="fm-mod__title">Youth Squad</h2></div>

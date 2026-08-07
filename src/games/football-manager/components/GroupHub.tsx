@@ -9,7 +9,7 @@ import { ReputationStars } from './visuals';
 import { Crest } from './Crest';
 import ManagerAvatar from './ManagerAvatar';
 import { Icon, type IconName } from './Icon';
-import type { GroupId } from './hubNav';
+import type { GroupId, ScreenId } from './hubNav';
 
 type CalRow = { week: number; label: string; sub: string; icon: IconName; soon?: boolean };
 
@@ -71,9 +71,14 @@ function buildCalendar(state: GameState, leagueId: string): CalRow[] {
 export default function GroupHub({
   state,
   onOpen,
+  onOpenScreen,
 }: {
   state: GameState;
+  /** Opens a group on its Overview. */
   onOpen: (id: GroupId) => void;
+  /** Opens one exact screen — the news card wants the Inbox itself, not
+   *  the Club Overview it would otherwise land on. */
+  onOpenScreen: (id: ScreenId) => void;
 }) {
   const club = state.clubs.find((c) => c.id === state.userClubId)!;
   const leagueId = userLeagueId(state);
@@ -126,7 +131,7 @@ export default function GroupHub({
             <button
               type="button"
               className="fm-hubnews"
-              onClick={() => onOpen('club')}
+              onClick={() => onOpenScreen('inbox')}
             >
               <span className="fm-hubnews__head">
                 <Icon name="inbox" size={12} />

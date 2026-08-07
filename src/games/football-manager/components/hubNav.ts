@@ -5,9 +5,12 @@ import type { IconName } from './Icon';
 /**
  * The hub's two-level navigation model.
  *
- * Level 1 is the Hub landing screen: four group cards, nothing else.
- * Level 2 is a group — you land on its first screen and switch between
- * siblings with the sub-tab strip.
+ * Level 1 is the Hub landing screen: the club at a glance, nothing else.
+ * Level 2 is a group — you land on its *Overview*, a glance screen built
+ * from the group's own data, and switch between siblings with the sub-tab
+ * strip. Every group has one: opening Market used to mean landing in the
+ * transfer market's full table, and opening Club meant the inbox with a
+ * seven-tab strip above it and no orientation.
  *
  * This replaces the old flat 14-entry rail (plus its "More" overflow sheet
  * on phones), which showed every destination at once and made the phone dock
@@ -18,9 +21,19 @@ import type { IconName } from './Icon';
 
 export type ScreenId =
   | 'overview' | 'fixtures' | 'table' | 'cups' | 'european'
-  | 'squad' | 'tactics' | 'training' | 'schedule'
-  | 'transfers' | 'scouting'
-  | 'inbox' | 'club' | 'facilities' | 'staff' | 'academy' | 'finances' | 'board' | 'jobs';
+  | 'team-hub' | 'squad' | 'tactics' | 'training' | 'schedule'
+  | 'market-hub' | 'transfers' | 'scouting' | 'jobs'
+  | 'club-hub' | 'inbox' | 'club' | 'facilities' | 'staff' | 'academy' | 'finances' | 'board';
+
+/** The four landing screens, one per group — the first tab of each. Every
+ *  group now opens on a glance screen instead of dropping you into its
+ *  heaviest table, which is what Matchday → Overview always did and the
+ *  other three never did. */
+export const HUB_SCREENS = ['overview', 'team-hub', 'market-hub', 'club-hub'] as const;
+
+export function isHubScreen(id: ScreenId): boolean {
+  return (HUB_SCREENS as readonly string[]).includes(id);
+}
 
 export type GroupId = 'matchday' | 'team' | 'market' | 'club';
 
@@ -51,6 +64,7 @@ export const GROUPS: GroupDef[] = [
     label: 'Team',
     icon: 'squad',
     screens: [
+      { id: 'team-hub', label: 'Overview', icon: 'home' },
       { id: 'squad', label: 'Squad', icon: 'squad' },
       { id: 'tactics', label: 'Tactics', icon: 'tactics' },
       { id: 'training', label: 'Training', icon: 'training' },
@@ -62,8 +76,13 @@ export const GROUPS: GroupDef[] = [
     label: 'Market',
     icon: 'transfers',
     screens: [
+      { id: 'market-hub', label: 'Overview', icon: 'home' },
       { id: 'transfers', label: 'Transfers', icon: 'transfers' },
       { id: 'scouting', label: 'Scouting', icon: 'binoculars' },
+      // The manager's own market. It sat in Club next to "Job Security",
+      // where the two near-identical labels meant opposite things; it is a
+      // market, so it lives with the others.
+      { id: 'jobs', label: 'Jobs', icon: 'document' },
     ],
   },
   {
@@ -71,14 +90,16 @@ export const GROUPS: GroupDef[] = [
     label: 'Club',
     icon: 'club',
     screens: [
+      { id: 'club-hub', label: 'Overview', icon: 'home' },
       { id: 'inbox', label: 'Inbox', icon: 'inbox' },
-      { id: 'club', label: 'Club', icon: 'club' },
+      // Was labelled "Club" inside the Club group, with the group's own
+      // icon — you could not tell the tab from its container.
+      { id: 'club', label: 'Identity', icon: 'flag' },
       { id: 'facilities', label: 'Facilities', icon: 'facilities' },
       { id: 'staff', label: 'Staff', icon: 'staff' },
       { id: 'academy', label: 'Academy', icon: 'sprout' },
       { id: 'finances', label: 'Finances', icon: 'finances' },
-      { id: 'board', label: 'Job Security', icon: 'club' },
-      { id: 'jobs', label: 'Jobs', icon: 'document' },
+      { id: 'board', label: 'Board', icon: 'target' },
     ],
   },
 ];
