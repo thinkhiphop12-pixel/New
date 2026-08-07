@@ -5,13 +5,11 @@ import { leagueFixtures, userLeagueId } from '@/engine/seasonProgression';
 import { Crest } from './Crest';
 
 /**
- * Fixtures tab: next-match banner up top, results list below (mock:
- * "Gaffa - Hub & Matchday.dc.html#fixtures" — tab row, next-match banner,
- * result list). The banner here is informational only — venue and
- * opposition, nothing actionable — since the actionable version (press
- * conference, lineup warning) already lives on Matchday → Overview
- * (PortalHub.tsx); see PROGRESS.md for why both exist rather than one
- * absorbing the other.
+ * Fixtures tab: next-match banner up top, results list below. The banner
+ * here is informational only — venue and opposition, nothing actionable —
+ * since the actionable version (press conference, lineup warning) lives on
+ * the Dashboard (components/Dashboard.tsx), reachable both as the Hub
+ * landing and as Matchday → Overview.
  */
 export default function FixturesScreen({ state }: { state: GameState }) {
   const leagueId = userLeagueId(state);

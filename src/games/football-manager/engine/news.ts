@@ -127,3 +127,72 @@ export function generateWeeklyNews(s: GameState, leagueId: string, table: TableR
   // Cap the feed so it can't grow unbounded over a long career.
   if (s.news.length > 30) s.news.length = 30;
 }
+
+/**
+ * Phase 3: the "living world" stories — transfer rumours, wonderkid buzz,
+ * pundit reaction — as opposed to `generateWeeklyNews`'s table-driven
+ * stories above. Deliberately probabilistic rather than cooldown-gated:
+ * these aren't tied to a standings threshold that's either true or false,
+ * they're the kind of ambient chatter that should turn up unpredictably.
+ *
+ * Grounded the same way the rest of this codebase insists on: no invented
+ * data. A "rumour" only ever names a player who is genuinely
+ * `transferListed` or `wantsMove` (real engine flags, not flavour text
+ * pretending to be one), and a "wonderkid" is read straight off `potential`,
+ * which already exists on every player. Nothing here writes to game state —
+ * these are headlines only, same contract as `generateWeeklyNews`.
+ *
+ * Takes a `days` multiplier so the exact same function can fire from the
+ * legacy weekly cadence (`playRound`, `days = 7`, matching `generateWeeklyNews`'s
+ * one-call-per-round shape) and from the live daily loop (`advanceDay`,
+ * `days = 1`) without keeping two copies of the logic — the same pattern
+ * `applyDailyPlayerSystems` uses for the same reason.
+ */
+export function generateDailyPressStories(s: GameState, days: number, clubs: Club[]): void {
+  const scale = days / 7;
+  const rng = () => Math.random();
+  const clubName = (id: number) => clubs.find((c) => c.id === id)?.name ?? '???';
+
+  // Transfer rumour: a real unsettled or listed player, linked with a real
+  // club of comparable-or-better standing. Never the user's own player and
+  // never a club already in an active negotiation for them — that's the
+  // actual deal, already visible in Transfers; the rumour is about someone
+  // whose situation is public knowledge but nothing is yet underway.
+  if (rng() < 0.09 * scale) {
+    const inActiveDeal = new Set((s.negotiations ?? []).map((n) => n.playerId));
+    const candidates = Object.values(s.players).filter(
+      (p) => p.clubId !== 0 && p.clubId !== s.userClubId && (p.transferListed || p.wantsMove) && !inActiveDeal.has(p.id)
+    );
+    if (candidates.length > 0) {
+      const player = candidates[Math.floor(rng() * candidates.length)];
+      const currentClub = clubs.find((c) => c.id === player.clubId);
+      const suitors = clubs.filter(
+        (c) => c.id !== player.clubId && c.id !== s.userClubId && (c.reputation ?? 3) >= (currentClub?.reputation ?? 3) - 1
+      );
+      if (suitors.length > 0) {
+        const suitor = suitors[Math.floor(rng() * suitors.length)];
+        s.news.unshift(`Rumour: ${suitor.name} keeping tabs on ${player.name}, amid speculation over his future at ${clubName(player.clubId)}.`);
+      }
+    }
+  }
+
+  // Wonderkid buzz: potential-based, not performance-based (that's the
+  // existing "breakout" story) — a teenager with real ceiling, wherever he
+  // is in the pyramid, before he's necessarily played his way into notice.
+  if (rng() < 0.05 * scale) {
+    const teens = Object.values(s.players).filter((p) => p.clubId !== 0 && p.age <= 19 && p.potential >= 82);
+    if (teens.length > 0) {
+      const best = teens.reduce((a, b) => (b.potential > a.potential ? b : a));
+      s.news.unshift(`Wonderkid watch: scouts rave about ${best.name} (${clubName(best.clubId)}), just ${best.age} and rated as a real prospect.`);
+    }
+  }
+
+  // Pundit reaction to the user's own club — deliberately distinct from the
+  // fan-terrace and board-pressure lines already in playRound: this is
+  // outside commentary on a *stable* run, not a threat to the job.
+  if (rng() < 0.04 * scale && s.board.confidence >= 70 && s.fanConfidence >= 65) {
+    s.news.unshift(`Pundits take note: ${s.manager.name} quietly building something solid at the club — form and confidence both up.`);
+  }
+
+  if (s.news.length > 30) s.news.length = 30;
+}

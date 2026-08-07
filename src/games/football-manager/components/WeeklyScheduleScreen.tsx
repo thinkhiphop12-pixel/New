@@ -3,14 +3,27 @@
 import { useMemo } from 'react';
 import type { GameState } from '@/engine/types';
 import { getSquad } from '@/engine/teamManagement';
-import { WEEK_DAY_LABELS, getSchedule, setScheduleDay, setWholeSchedule } from '@/engine/schedule';
+import { WEEK_DAY_LABELS, getSchedule, setScheduleDay, setWholeSchedule, SCHEDULE_PRESETS, projectWeeklySchedule } from '@/engine/schedule';
+import { assistantScheduleAdvice, getAssistant } from '@/engine/assistant';
 import { Icon } from './Icon';
+
+function fmtDelta(n: number): string {
+  const r = Math.round(n * 10) / 10;
+  return `${r > 0 ? '+' : ''}${r}`;
+}
 
 /**
  * Career mode weekly planner: pick Training or Recovery for each day. Training
  * builds match sharpness (faster with a hired analyst coach); Recovery rebuilds
  * fitness (faster with a hired fitness coach). Too many training days in a row
  * is overtraining — fitness stops keeping pace and injury risk climbs.
+ *
+ * Previously this screen showed the current squad averages and nothing
+ * about what a chosen split would actually do to them — a player toggled
+ * days, waited a week, and had no way to attribute the result. The
+ * projection panel below is the fix: `projectWeeklySchedule` runs the exact
+ * formula `applyWeeklySchedule` will, live, against the *current* schedule
+ * on screen, before it's committed to a single day.
  */
 export default function WeeklyScheduleScreen({
   state,
@@ -30,6 +43,12 @@ export default function WeeklyScheduleScreen({
 
   const analyst = state.facilities?.coaches.find((c) => c.role === 'analyst');
   const fitnessCoach = state.facilities?.coaches.find((c) => c.role === 'fitness');
+  const assistant = getAssistant(state);
+  const advice = assistantScheduleAdvice(state);
+
+  const projection = projectWeeklySchedule(state);
+  const projectedSharpness = Math.round(Math.min(100, Math.max(0, avgSharpness + projection.sharpnessDelta)));
+  const projectedFitness = Math.round(Math.min(100, Math.max(0, avgFitness + projection.fitnessDelta)));
 
   return (
     <>
@@ -77,25 +96,74 @@ export default function WeeklyScheduleScreen({
           })}
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-          <button
-            className="fm-btn fm-btn--ghost fm-btn--small"
-            onClick={() => onChange(setWholeSchedule(state, ['training', 'training', 'training', 'training', 'training', 'recovery', 'recovery']))}
-          >
-            Balanced (5:2)
-          </button>
-          <button
-            className="fm-btn fm-btn--ghost fm-btn--small"
-            onClick={() => onChange(setWholeSchedule(state, ['training', 'training', 'training', 'recovery', 'training', 'training', 'recovery']))}
-          >
-            Match-sharp (6:1)
-          </button>
-          <button
-            className="fm-btn fm-btn--ghost fm-btn--small"
-            onClick={() => onChange(setWholeSchedule(state, ['training', 'recovery', 'training', 'recovery', 'training', 'recovery', 'recovery']))}
-          >
-            Light (3:4)
-          </button>
+          {SCHEDULE_PRESETS.map((p) => (
+            <button
+              key={p.id}
+              className="fm-btn fm-btn--ghost fm-btn--small"
+              onClick={() => onChange(setWholeSchedule(state, p.days))}
+            >
+              {p.label}
+            </button>
+          ))}
         </div>
+      </div>
+
+      <div className="fm-panel">
+        <p className="fm-label" style={{ marginTop: 0 }}>Projected — end of week</p>
+        <p className="fm-hint" style={{ textAlign: 'left', margin: '0 0 10px' }}>
+          What this schedule will do to the squad by Sunday, if nothing else changes.
+        </p>
+        <div className="fm-form-strip">
+          <div className="fm-form-dot">
+            <span className="fm-hint">Sharpness</span>
+            <span>
+              {avgSharpness} → {projectedSharpness}{' '}
+              <strong style={{ color: projection.sharpnessDelta >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                ({fmtDelta(projection.sharpnessDelta)})
+              </strong>
+            </span>
+          </div>
+          <div className="fm-form-dot">
+            <span className="fm-hint">Fitness</span>
+            <span>
+              {avgFitness} → {projectedFitness}{' '}
+              <strong style={{ color: projection.fitnessDelta >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                ({fmtDelta(projection.fitnessDelta)})
+              </strong>
+            </span>
+          </div>
+          <div className="fm-form-dot">
+            <span className="fm-hint">Injury risk</span>
+            <span style={{ color: projection.overtrainRisk > 0 ? 'var(--red)' : 'var(--green)' }}>
+              {projection.overtrainRisk > 0 ? `+${Math.round(projection.overtrainRisk * 1000) / 10}%/player` : 'Normal'}
+            </span>
+          </div>
+        </div>
+        {projectedFitness < 60 && (
+          <p className="fm-club-line" style={{ color: 'var(--red)', marginTop: 8 }}>
+            <Icon name="warning" size={13} /> Fitness would drop below 60 by Sunday — that's below matchday-ready for most of the squad.
+          </p>
+        )}
+      </div>
+
+      <div className="fm-panel" style={{ borderColor: advice.suggestion ? 'var(--gold)' : undefined }}>
+        <p className="fm-label" style={{ marginTop: 0 }}>
+          Assistant Manager{assistant ? ` — ${assistant.name}` : ''}
+        </p>
+        <p className="fm-club-line">{advice.quote}</p>
+        {advice.suggestion && (
+          <button
+            className="fm-btn fm-btn--secondary fm-btn--small"
+            onClick={() => onChange(setWholeSchedule(state, advice.suggestion!.days))}
+          >
+            Apply suggestion — {advice.suggestion.label}
+          </button>
+        )}
+        {!assistant && (
+          <p className="fm-hint" style={{ textAlign: 'left', margin: '8px 0 0' }}>
+            No Assistant Manager hired — advice above is a rough read from the general coaching staff. Hire one from the Staff hub for a sharper eye.
+          </p>
+        )}
       </div>
 
       <div className="fm-panel">

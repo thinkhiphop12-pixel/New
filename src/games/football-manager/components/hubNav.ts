@@ -17,7 +17,7 @@ import type { IconName } from './Icon';
  */
 
 export type ScreenId =
-  | 'overview' | 'fixtures' | 'table' | 'cups' | 'european'
+  | 'overview' | 'calendar' | 'fixtures' | 'table' | 'cups' | 'european'
   | 'squad' | 'tactics' | 'training' | 'schedule'
   | 'transfers' | 'scouting'
   | 'inbox' | 'club' | 'facilities' | 'staff' | 'academy' | 'finances' | 'board' | 'jobs';
@@ -40,6 +40,7 @@ export const GROUPS: GroupDef[] = [
     icon: 'stadium',
     screens: [
       { id: 'overview', label: 'Overview', icon: 'home' },
+      { id: 'calendar', label: 'Calendar', icon: 'calendar' },
       { id: 'fixtures', label: 'Fixtures', icon: 'fixtures' },
       { id: 'table', label: 'Table', icon: 'table' },
       { id: 'cups', label: 'Cups', icon: 'trophy' },
