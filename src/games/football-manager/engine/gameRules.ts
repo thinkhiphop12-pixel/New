@@ -597,9 +597,40 @@ export function leagueIdForDivision(division: number): string {
   return DIVISION_TO_LEAGUE[division as Division] ?? 'premier_league';
 }
 
-/** Starting transfer budget for a club in this league. */
+/** Baseline starting transfer budget for this league — the money a *median*
+ *  club in the division has. Individual clubs scale off this; see
+ *  `clubStartingBudget`. */
 export function startingBudget(leagueId: string): number {
   return getLeague(leagueId).startingBudget;
+}
+
+/**
+ * How far a club's kitty sits from its league's baseline, from its standing
+ * within its own division (1 = strongest squad, `of` = weakest).
+ *
+ * A flat per-league budget made every side in a division equally rich, which
+ * is the one thing nobody believes: Arsenal and Burnley are in the same
+ * competition but not in the same market. The curve is exponential rather
+ * than linear because football money is — the gap between 1st and 4th is far
+ * bigger than the gap between 14th and 17th.
+ *
+ * Weakest club ≈ 0.22×, median ≈ 0.75×, strongest ≈ 3.2× the league baseline.
+ * At the Premier League's £40m baseline that runs roughly £9m to £128m.
+ */
+export function statureBudgetMultiplier(rank: number, of: number): number {
+  const n = Math.max(1, of);
+  // 0 for the weakest squad in the division, 1 for the strongest.
+  const standing = n > 1 ? 1 - (Math.min(Math.max(rank, 1), n) - 1) / (n - 1) : 0.5;
+  return 0.22 * Math.exp(2.68 * standing);
+}
+
+/** Starting transfer budget for one specific club: its league's baseline
+ *  scaled by where its squad ranks inside that league. */
+export function clubStartingBudget(leagueId: string, rank: number, of: number): number {
+  const raw = getLeague(leagueId).startingBudget * statureBudgetMultiplier(rank, of);
+  // Round to something a board would actually quote.
+  const step = raw >= 20_000_000 ? 1_000_000 : raw >= 2_000_000 ? 100_000 : 10_000;
+  return Math.max(step, Math.round(raw / step) * step);
 }
 
 /** One-line pitch for a league on the club-select screen. */

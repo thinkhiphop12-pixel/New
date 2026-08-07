@@ -2457,8 +2457,12 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   background: var(--panel-3); color: var(--text-2);
 }
 .fm-club-card__star {
-  font-size: 11px; color: var(--muted); min-width: 0;
+  font-size: 11px; color: var(--muted); min-width: 0; flex: 1 1 auto;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fm-club-card__budget {
+  flex-shrink: 0; font-size: 11px; font-weight: 800; white-space: nowrap;
+  font-variant-numeric: tabular-nums; color: var(--text-2);
 }
 /* Club Select header: manager name, division tabs and club search as one
    settled block rather than four separately-centred elements. */

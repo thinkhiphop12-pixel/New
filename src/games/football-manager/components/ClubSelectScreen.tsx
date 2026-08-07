@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { GameData, ScenarioId } from '@/engine/types';
-import { SIMULATED_LEAGUE_IDS, formatLeagueBlurb, leagueIdForDivision, leagueName, startingBudget } from '@/engine/gameRules';
+import { SIMULATED_LEAGUE_IDS, clubStartingBudget, formatLeagueBlurb, leagueIdForDivision, leagueName } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
 import { Crest } from './Crest';
 
@@ -83,6 +83,14 @@ export default function ClubSelectScreen({
   // sees the whole division's real bottom-half/top-flight shape rather than
   // a shape distorted by whatever the player has typed so far.
   const rankedInDivision = [...shownUnfiltered].sort((a, b) => b.avg - a.avg);
+  // Budget is per club, not per division: the same ranking that drives the
+  // scenario gate prices each side's transfer kitty, so the card shows what
+  // this club would actually hand you rather than a league-wide figure.
+  const budgetByClubId = new Map(
+    rankedInDivision.map((x, i) =>
+      [x.club.id, clubStartingBudget(leagueIdForDivision(x.club.division), i + 1, rankedInDivision.length)] as const,
+    ),
+  );
   const scenarioFiltered = shownUnfiltered.filter((x) =>
     scenarioAllowsClub(scenarioId, x.club.division, rankedInDivision.findIndex((r) => r.club.id === x.club.id) + 1, rankedInDivision.length)
   );
@@ -107,7 +115,9 @@ export default function ClubSelectScreen({
         </div>
         {division !== null && (
           <p className="fm-hint" style={{ margin: 0 }}>
-            {formatLeagueBlurb(division)} Budget {formatMoney(startingBudget(division))}.
+            {formatLeagueBlurb(division)}{rankedInDivision.length > 0 && ` Budgets run ${formatMoney(
+              budgetByClubId.get(rankedInDivision[rankedInDivision.length - 1].club.id) ?? 0
+            )}–${formatMoney(budgetByClubId.get(rankedInDivision[0].club.id) ?? 0)} depending on the club.`}
           </p>
         )}
         <div className="fm-pick-head__fields">
@@ -147,6 +157,12 @@ export default function ClubSelectScreen({
             <span className="fm-club-card__foot">
               <span className="fm-club-card__rating" title={`Squad rating ${avg}`}>{avg}</span>
               <span className="fm-club-card__star">{star ? `★ ${star.name}` : '—'}</span>
+              <span
+                className="fm-club-card__budget"
+                title="Transfer budget the board would give you"
+              >
+                {formatMoney(budgetByClubId.get(club.id) ?? 0)}
+              </span>
             </span>
           </button>
         ))}

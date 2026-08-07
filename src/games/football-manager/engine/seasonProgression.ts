@@ -27,7 +27,7 @@ import {
 } from './europeanCup';
 import { evalScenarioAtSeasonEnd } from './scenarios';
 import {
-  MID_SEASON_RESIGN_REP_COST, boardObjectiveFor, interviewOdds, makeVacancy, tickJobMarket,
+  MID_SEASON_RESIGN_REP_COST, boardObjectiveFor, clubBudget, interviewOdds, makeVacancy, tickJobMarket,
 } from './jobMarket';
 import { pushInbox } from './inbox';
 import { tickFinances, weeklyMatchdayIncome } from './finances';
@@ -446,6 +446,8 @@ export function newGame(
     userClubId,
     seasonYear,
     week: 1,
+    // Placeholder: replaced below with the club-specific figure, once the
+    // squads exist to rank this club against its division.
     budget: startingBudget(userClub.leagueId),
     morale: MORALE_START,
     formationId: '4-3-3',
@@ -491,6 +493,10 @@ export function newGame(
     pressWeek: 0,
   };
   refillPhantomPools(state);
+  // Now that the squads exist, price the club: the kitty is its league's
+  // baseline scaled by how strong this particular side is within it, not a
+  // flat figure every club in the division shares.
+  state.budget = clubBudget(state, userClubId);
   state.fixtures = makeSeasonFixtures(state);
   state.board = makeBoardObjective(state);
   state.cup = makeDomesticCup(state);
@@ -1218,7 +1224,7 @@ export function switchJob(state: GameState, clubId: number, offer?: JobOffer): G
   const club = s.clubs.find((c) => c.id === clubId);
   if (!club) return state;
   s.userClubId = clubId;
-  s.budget = (offer?.budget ?? startingBudget(club.leagueId)) + s.manager.reputation * 100_000;
+  s.budget = (offer?.budget ?? clubBudget(s, clubId)) + s.manager.reputation * 100_000;
   s.chemistry = 45;
   s.morale = MORALE_START;
   s.fanConfidence = 60;
@@ -1838,7 +1844,7 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
   // sensible war chest is spent on wages, facilities and debt over the break, so
   // the transfer kitty stays believable instead of snowballing season on season
   // (which quietly broke the market by the second season).
-  const warChest = startingBudget(userClub.leagueId) * 1.5;
+  const warChest = clubBudget(s, userClub.id) * 1.5;
   let reinvestNote: string | null = null;
   if (s.budget > warChest) {
     const reinvested = Math.round((s.budget - warChest) * 0.75);

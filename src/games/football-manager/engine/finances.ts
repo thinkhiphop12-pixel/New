@@ -49,6 +49,7 @@ import type {
 import { getLeague, SEASON_ROUNDS, leagueAbove } from './gameRules';
 import { clamp, pickRandom, formatMoney } from './utils';
 import { pushInbox } from './inbox';
+import { clubBudget } from './jobMarket';
 
 /* =========================================================================
    Reference constants (£m unless noted). Kept at the reference's own values.
@@ -1087,7 +1088,9 @@ function autoRenewStaleDeals(state: GameState, fin: FinanceState): void {
 export function boardGrantAmount(state: GameState, fin = financesView(state)): number {
   const club = userClub(state);
   const lg = getLeague(club.leagueId);
-  const base = lg.startingBudget * 0.20;
+  // Scaled to the club, not just the division — a board grant at a giant
+  // is worth many times one at a newly promoted side.
+  const base = clubBudget(state, club.id) * 0.20;
   const h = fin.boardConfidence;
   const confMult = h >= 90 ? 1.95 : h >= 85 ? 1.65 : h >= 70 ? 1.30 : h >= 55 ? 1.05 : h >= 35 ? 0.78 : h >= 20 ? 0.52 : 0.28;
   const pos = userPositionSafe(state) / Math.max(1, lg.clubCount);
