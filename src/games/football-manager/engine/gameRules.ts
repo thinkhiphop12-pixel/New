@@ -3,9 +3,10 @@ import type { Division, FormationDef, LeagueDef, Position } from './types';
 /** Calendar weeks in a season. League fixtures occupy 46 of them; the two
  *  WINTER_BREAK weeks carry no domestic league football (gap item 41). */
 export const SEASON_ROUNDS = 48;
-/** Number of league match rounds a 24-club league actually plays. */
+/** Calendar weeks available for league fixtures. The longest league in the
+ *  game (a 24-club Championship playing everyone twice) needs 46 of them;
+ *  shorter divisions simply finish earlier. */
 export const LEAGUE_ROUNDS = 46;
-export const CLUBS_PER_DIVISION = 24;
 export const PROMOTION_SPOTS = 3;
 
 /** Calendar weeks with no domestic league programme — the winter break. Chosen
@@ -100,8 +101,9 @@ export const MAX_SQUAD_SIZE = 30;
    Structure, promotion/relegation counts, UEFA slot allocation and TV
    equal-share values are ported from the reference implementation's
    `LEAGUES` map (js/data.js). `clubCount` is what our own dataset actually
-   supplies (24 per simulated league) rather than the real-world figure —
-   everything else is theirs.
+   supplies for each simulated league — the real size of the competition
+   (20 in the Premier League, 18 in the Bundesliga, 24 in the Championship)
+   — everything else is theirs.
 
    Leagues marked `phantom` are not simulated: they hold no fixtures and never
    appear in the UI. Each exists as a dormant pool feeding the league directly
@@ -115,7 +117,7 @@ export const LEAGUES: LeagueDef[] = [
   // ── England: five tiers ────────────────────────────────────────────────
   {
     id: 'premier_league', name: 'Premier League', country: 'England', level: 1,
-    clubCount: 24, rounds: 2,
+    clubCount: 20, rounds: 2,
     autoPromotion: 0, playoffSpots: 0, relegation: 3,
     championsLeague: 5, clPlayoff: 0, europaLeague: 2, conferenceLeague: 1,
     tvEqualShare: 110,
@@ -157,7 +159,7 @@ export const LEAGUES: LeagueDef[] = [
   // ── Spain ───────────────────────────────────────────────────────────────
   {
     id: 'la_liga', name: 'La Liga', country: 'Spain', level: 1,
-    clubCount: 24, rounds: 2,
+    clubCount: 20, rounds: 2,
     autoPromotion: 0, playoffSpots: 0, relegation: 3,
     championsLeague: 4, clPlayoff: 0, europaLeague: 3, conferenceLeague: 1,
     tvEqualShare: 52,
@@ -183,7 +185,7 @@ export const LEAGUES: LeagueDef[] = [
   // ── Italy ───────────────────────────────────────────────────────────────
   {
     id: 'serie_a', name: 'Serie A', country: 'Italy', level: 1,
-    clubCount: 24, rounds: 2,
+    clubCount: 20, rounds: 2,
     autoPromotion: 0, playoffSpots: 0, relegation: 3,
     championsLeague: 4, clPlayoff: 0, europaLeague: 3, conferenceLeague: 1,
     tvEqualShare: 42,
@@ -209,7 +211,7 @@ export const LEAGUES: LeagueDef[] = [
   // ── Germany: Bundesliga 16th plays the Relegationsspiele ────────────────
   {
     id: 'bundesliga', name: 'Bundesliga', country: 'Germany', level: 1,
-    clubCount: 24, rounds: 2,
+    clubCount: 18, rounds: 2,
     autoPromotion: 0, playoffSpots: 0, relegation: 2, interPlayoff: 'bundesliga_2',
     championsLeague: 4, clPlayoff: 0, europaLeague: 3, conferenceLeague: 1,
     tvEqualShare: 55,
@@ -235,7 +237,7 @@ export const LEAGUES: LeagueDef[] = [
   // ── France: Ligue 1 16th plays the barrage against a 3rd-5th playoff ────
   {
     id: 'ligue_1', name: 'Ligue 1', country: 'France', level: 1,
-    clubCount: 24, rounds: 2,
+    clubCount: 18, rounds: 2,
     autoPromotion: 0, playoffSpots: 0, relegation: 2, interPlayoff: 'ligue_2',
     championsLeague: 3, clPlayoff: 0, europaLeague: 3, conferenceLeague: 2,
     tvEqualShare: 28,
@@ -261,7 +263,7 @@ export const LEAGUES: LeagueDef[] = [
   // ── Netherlands (our dataset carries the Eredivisie; the reference does not) ─
   {
     id: 'eredivisie', name: 'Eredivisie', country: 'Netherlands', level: 1,
-    clubCount: 24, rounds: 2,
+    clubCount: 18, rounds: 2,
     autoPromotion: 0, playoffSpots: 0, relegation: 2,
     championsLeague: 2, clPlayoff: 1, europaLeague: 2, conferenceLeague: 1,
     tvEqualShare: 8,
@@ -279,7 +281,7 @@ export const LEAGUES: LeagueDef[] = [
   // ── Portugal ────────────────────────────────────────────────────────────
   {
     id: 'primeira_liga', name: 'Primeira Liga', country: 'Portugal', level: 1,
-    clubCount: 24, rounds: 2,
+    clubCount: 18, rounds: 2,
     autoPromotion: 0, playoffSpots: 0, relegation: 2,
     championsLeague: 2, clPlayoff: 1, europaLeague: 2, conferenceLeague: 1,
     tvEqualShare: 6,
