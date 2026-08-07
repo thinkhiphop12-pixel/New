@@ -77,7 +77,7 @@ export const GROUPS: GroupDef[] = [
       { id: 'staff', label: 'Staff', icon: 'staff' },
       { id: 'academy', label: 'Academy', icon: 'sprout' },
       { id: 'finances', label: 'Finances', icon: 'finances' },
-      { id: 'board', label: 'Board', icon: 'club' },
+      { id: 'board', label: 'Job Security', icon: 'club' },
       { id: 'jobs', label: 'Jobs', icon: 'document' },
     ],
   },
