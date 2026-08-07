@@ -64,16 +64,45 @@ export function dayOfSeason(state: Pick<GameState, 'week' | 'dayOfSeason'>): num
   return (Math.max(1, state.week) - 1) * DAYS_PER_WEEK;
 }
 
+/** 0 = Monday … 6 = Sunday, for a raw day-of-season number. The `state`-taking
+ *  helpers below (`dayIndex`, `weekOfDay`, …) are thin wrappers around these —
+ *  the Calendar screen needs the same math for days that aren't "today", to
+ *  list a horizon of upcoming days without mutating state to get there. */
+export function dayIndexOfDay(day: number): number {
+  return day % DAYS_PER_WEEK;
+}
+
+/** The *calendar* week a raw day-of-season number sits in. */
+export function weekOfDayNumber(day: number): number {
+  return Math.floor(day / DAYS_PER_WEEK) + 1;
+}
+
+export function gameDateOfDay(seasonYear: number, day: number): Date {
+  const start = new Date(seasonYear, SEASON_START_MONTH, SEASON_START_DATE);
+  start.setDate(start.getDate() + day);
+  return start;
+}
+
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+  'August', 'September', 'October', 'November', 'December'];
+
+/** "Sat 16 Sep" for a raw day-of-season number. */
+export function formatGameDateOfDay(seasonYear: number, day: number): string {
+  const d = gameDateOfDay(seasonYear, day);
+  return `${DAY_LABELS_SHORT[dayIndexOfDay(day)]} ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
+}
+
 /** 0 = Monday … 6 = Sunday. */
 export function dayIndex(state: Pick<GameState, 'week' | 'dayOfSeason'>): number {
-  return dayOfSeason(state) % DAYS_PER_WEEK;
+  return dayIndexOfDay(dayOfSeason(state));
 }
 
 /** The *calendar* week the current day sits in. See the invariant note above:
  *  this equals `state.week` for six days out of seven and trails it by one on
  *  Sunday, once the round has been resolved. */
 export function weekOfDay(state: Pick<GameState, 'week' | 'dayOfSeason'>): number {
-  return Math.floor(dayOfSeason(state) / DAYS_PER_WEEK) + 1;
+  return weekOfDayNumber(dayOfSeason(state));
 }
 
 export function dayName(state: Pick<GameState, 'week' | 'dayOfSeason'>): string {
@@ -94,25 +123,18 @@ export function daysUntilMatchDay(state: Pick<GameState, 'week' | 'dayOfSeason'>
  *  sim never reads it — but it is what lets the UI say "Sat 16 Sep" instead of
  *  "Week 12", which is the whole point of having a clock the player can feel. */
 export function gameDate(state: Pick<GameState, 'week' | 'dayOfSeason' | 'seasonYear'>): Date {
-  const start = new Date(state.seasonYear, SEASON_START_MONTH, SEASON_START_DATE);
-  start.setDate(start.getDate() + dayOfSeason(state));
-  return start;
+  return gameDateOfDay(state.seasonYear, dayOfSeason(state));
 }
-
-const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** "Sat 16 Sep" — the header format. */
 export function formatGameDate(state: Pick<GameState, 'week' | 'dayOfSeason' | 'seasonYear'>): string {
-  const d = gameDate(state);
-  return `${DAY_LABELS_SHORT[dayIndex(state)]} ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
+  return formatGameDateOfDay(state.seasonYear, dayOfSeason(state));
 }
 
 /** "Saturday 16 September 2025" — the day-summary heading. */
 export function formatGameDateLong(state: Pick<GameState, 'week' | 'dayOfSeason' | 'seasonYear'>): string {
   const d = gameDate(state);
-  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
-    'August', 'September', 'October', 'November', 'December'];
-  return `${DAY_LABELS[dayIndex(state)]} ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  return `${DAY_LABELS[dayIndex(state)]} ${d.getDate()} ${MONTHS_LONG[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 /** Turns a day count into the phrasing the dashboard and stop cards use. */

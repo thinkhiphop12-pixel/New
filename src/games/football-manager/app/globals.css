@@ -712,14 +712,6 @@ body {
 @media (max-width: 899px) {
   .fm-actiondock { position: fixed; left: 8px; right: 8px; bottom: 58px; z-index: 44; margin: 0; }
 }
-/* The dock's "hold to fast-forward" indicator — a thin progress rail filling
-   left-to-right while SIM NEXT DAY is held, so a held-down press reads as
-   "working" rather than an unresponsive button. */
-.fm-actiondock__cta { position: relative; overflow: hidden; }
-.fm-actiondock__cta-fill {
-  position: absolute; inset: 0; left: 0; width: 0; background: rgba(0, 0, 0, 0.18);
-  pointer-events: none;
-}
 /* A small pill in the dock when a day's stops have been seen but not yet
    dismissed via Continue — lets the player step away to Inbox/Transfers and
    find their way back without losing the day's context. */
@@ -2391,6 +2383,26 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-msg-row.unread .fm-msg-row__title { color: var(--text); font-weight: 800; }
 .fm-msg-row__meta { font-size: 11px; color: var(--muted-dim); }
 .fm-msg-row__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+/* ── Calendar: the season as days ──
+   Four weeks of rows — date, that day's event or training/recovery, and a
+   Simulate-to-here action on every day but today. */
+.fm-calendar-list { display: flex; flex-direction: column; gap: 2px; }
+.fm-calendar-row {
+  display: flex; align-items: center; gap: 12px; padding: 8px 6px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.fm-calendar-row:last-child { border-bottom: none; }
+.fm-calendar-row--today { background: color-mix(in srgb, var(--green) 8%, transparent); border-radius: var(--r-md); }
+.fm-calendar-row__date { display: flex; flex-direction: column; width: 76px; flex-shrink: 0; line-height: 1.2; }
+.fm-calendar-row__weekday { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; }
+.fm-calendar-row--today .fm-calendar-row__weekday { color: var(--green); }
+.fm-calendar-row__day { font-size: 12px; color: var(--muted-dim); }
+.fm-calendar-row__body { flex: 1; min-width: 0; }
+.fm-calendar-row__event { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+.fm-calendar-row__event--match { color: var(--gold); }
+.fm-calendar-row__event--cup, .fm-calendar-row__event--euro { color: var(--blue); }
+.fm-calendar-row__training { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
 
 /* ── Settings group: titled section of icon-tile rows ──
    Settings modal, More Menu. Groups the flat row list the panel used to be

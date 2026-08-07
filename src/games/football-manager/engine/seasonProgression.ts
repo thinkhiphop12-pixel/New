@@ -962,6 +962,16 @@ export function applyDailyPlayerSystems(state: GameState, tick: DailyTickMode): 
           p.rating++;
           p.value = marketValue(p.rating, p.age);
           if (p.rating >= 75) s.news.unshift(`${p.name} is improving in training (${p.rating} OVR).`);
+          // A real inbox item, not just a news ticker line — "a training
+          // result worth seeing" is one of the events the daily loop is
+          // meant to stop for, and only inbox items can trigger a stop
+          // (engine/dailyTick.ts diffs the inbox to find them).
+          pushInbox(s, {
+            category: 'club',
+            title: `${p.name} improves in training`,
+            body: `${p.name} has been working well on the training pitch and is now rated ${p.rating} overall.`,
+            playerId: p.id,
+          });
         }
       }
     }

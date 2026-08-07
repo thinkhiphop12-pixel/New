@@ -3,6 +3,7 @@
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import type { GameState } from '@/engine/types';
 import Dashboard from './Dashboard';
+import CalendarScreen from './CalendarScreen';
 import InboxScreen from './InboxScreen';
 import SquadScreen from './SquadScreen';
 import TacticsScreen from './TacticsScreen';
@@ -46,6 +47,8 @@ export default function HubScreen({
   onRoute,
   onChange,
   onAbandon,
+  onSimulate,
+  simRunning,
 }: {
   state: GameState;
   /** `null` is the Hub landing — the four group cards and nothing else. */
@@ -53,6 +56,13 @@ export default function HubScreen({
   onRoute: (next: ScreenId | null) => void;
   onChange: (next: GameState) => void;
   onAbandon: () => void;
+  /** Skip straight to the next event, or (with a day-of-season target) to a
+   *  specific day — the same engine the dock's Next Event button uses. Only
+   *  consumed by the Calendar screen's per-day "Simulate to here" today. */
+  onSimulate: (untilDay?: number) => void;
+  /** Whether a run is currently in progress, so Calendar can offer to
+   *  cancel it instead of starting a second one. */
+  simRunning: boolean;
 }) {
   const group = route === null ? null : groupOf(route);
 
@@ -94,6 +104,7 @@ export default function HubScreen({
   const screen = () => {
     switch (route) {
       case 'overview': return <Dashboard state={state} onChange={onChange} onAbandon={onAbandon} onOpenScreen={onRoute} />;
+      case 'calendar': return <CalendarScreen state={state} onSimulate={onSimulate} simRunning={simRunning} />;
       case 'fixtures': return <FixturesScreen state={state} />;
       case 'table': return <TableScreen state={state} />;
       case 'cups': return <CupScreen state={state} />;

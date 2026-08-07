@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from 're
 import type { GameData, GameState, MatchReport, ScenarioId, SeasonSummary, GameSettings, ManagerProfile } from '@/engine/types';
 import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/engine/seasonProgression';
 import { advanceDay, type DayStop } from '@/engine/dailyTick';
-import { formatGameDate } from '@/engine/calendar';
+import { dayOfSeason, formatGameDate } from '@/engine/calendar';
 import { isLineupValid } from '@/engine/teamManagement';
 import { SEASON_ROUNDS } from '@/engine/gameRules';
 import { simulateMatch } from '@/engine/matchSimulation';
@@ -291,13 +291,18 @@ export default function FootballManagerGame() {
     return false;
   };
 
-  /** Runs while `holdingRef.current` stays true — a plain async loop, not a
-   *  React effect, so a quick tap (down immediately followed by up) still
-   *  completes exactly one day: the first iteration runs synchronously,
-   *  before the loop's first `await`, and pointerup flips the ref before
-   *  that await resolves. */
-  const runHold = async () => {
+  /** The engine underneath "Skip to Next Event": ticks days one after
+   *  another — not one-at-a-time clicks — until either a stop fires (a
+   *  player wants to speak to you, training produces something worth
+   *  seeing, a bid lands, matchday arrives…) or, if `untilDay` is given
+   *  (the Calendar screen's "Simulate to here"), that day is reached first.
+   *  Runs while `holdingRef.current` stays true, which a second click on the
+   *  dock (or leaving the screen) flips off — it's a plain async loop, not a
+   *  React effect, so it isn't tied to any component staying mounted. */
+  const runToNextEvent = async (untilDay?: number) => {
     while (holdingRef.current) {
+      const current = gsRef.current;
+      if (untilDay !== undefined && current && dayOfSeason(current) >= untilDay) break;
       const stopped = tickOneDay();
       if (stopped) break;
       await new Promise((r) => setTimeout(r, HOLD_TICK_MS));
@@ -306,22 +311,27 @@ export default function FootballManagerGame() {
     setHolding(false);
   };
 
-  const handleSimPress = () => {
+  /** The dock's primary button and the Calendar screen's per-day "Simulate
+   *  to here" both funnel through this: skip straight to whatever needs the
+   *  manager next, don't make them click through quiet days one at a time.
+   *  A click while already running cancels it — useful if a target day was
+   *  further out than expected and something's caught the player's eye on
+   *  the way there. */
+  const handleSimulate = (untilDay?: number) => {
     // A day already stopped and hasn't been acknowledged — reopen the
     // summary instead of quietly ticking past whatever it's waiting on.
     if (dayStops.length > 0) {
       setView('daysummary');
       return;
     }
-    if (holdingRef.current) return;
+    if (holdingRef.current) {
+      holdingRef.current = false;
+      setHolding(false);
+      return;
+    }
     holdingRef.current = true;
     setHolding(true);
-    runHold();
-  };
-
-  const handleSimRelease = () => {
-    holdingRef.current = false;
-    setHolding(false);
+    runToNextEvent(untilDay);
   };
 
   /** A stop's "resolve" action for anything that isn't matchday — send the
@@ -503,6 +513,8 @@ export default function FootballManagerGame() {
             onRoute={setHubRoute}
             onChange={apply}
             onAbandon={handleAbandon}
+            onSimulate={handleSimulate}
+            simRunning={holding}
           />
         ) : (
           <MainMenuScreen saves={saves} onContinue={handleContinue} onNewGame={handleNewGame} onDelete={handleDelete} onCharacterCustomizer={handleCharacterCustomizerOpen} />
@@ -520,15 +532,18 @@ export default function FootballManagerGame() {
       )}
 
       {/* Persistent action dock (Touchline/Pocket layout): the in-game date
-          and SIM NEXT DAY, reachable from every hub tab — not just Overview.
+          and Next Event, reachable from every hub tab — not just Overview.
           Hub view only, and always in-flow (never position:fixed globally)
           so it can never land on top of `.fm-matchx`'s own bottom control
           bar during a live match.
 
-          Tap advances one day; press-and-hold fast-forwards (see `runHold`)
-          until something needs the manager's attention. Matches are never
-          auto-played from here — matchday is always a stop the Day Summary
-          hands off into, so a match can't be skipped by holding through it. */}
+          This isn't "advance one day" — it's "skip straight to whatever
+          needs me": a player wants to speak to you, a training result worth
+          seeing, a bid lands, matchday arrives. Quiet days in between are
+          never shown one at a time; `runToNextEvent` ticks through them
+          itself. A second click cancels a run in progress. Matches are
+          never auto-played from here — matchday is always a stop the Day
+          Summary hands off into, so a match can't be skipped past. */}
       {view === 'hub' && gs && (() => {
         const lineupOk = isLineupValid(gs, gs.userClubId, gs.lineup);
         const pending = dayStops.length > 0;
@@ -557,12 +572,11 @@ export default function FootballManagerGame() {
             <button
               type="button"
               className="fm-actiondock__cta"
-              onPointerDown={handleSimPress}
-              onPointerUp={handleSimRelease}
-              onPointerLeave={handleSimRelease}
-              onPointerCancel={handleSimRelease}
+              onClick={() => handleSimulate()}
             >
-              <Icon name="play" size={15} /> {pending ? 'Continue' : holding ? 'Simulating…' : 'Sim Next Day'}
+              <Icon name={holding ? 'pause' : 'play'} size={15} />
+              {' '}
+              {pending ? 'Continue' : holding ? 'Stop — running…' : 'Next Event'}
             </button>
           </div>
         );
