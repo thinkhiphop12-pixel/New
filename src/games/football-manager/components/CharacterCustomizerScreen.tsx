@@ -96,10 +96,17 @@ const CATEGORIES: Category[] = [
 
 /** Cosmetic-only randomness for the "Randomize" button — picks which hairstyle
  *  or suit colour to preview, nothing security-sensitive (no tokens, ids, or
- *  auth material derived from it), so `Math.random()` is intentional here
- *  rather than an oversight. */
+ *  auth material derived from it). Built on `crypto.getRandomValues` rather
+ *  than `Math.random` purely to stay clear of static analyzers (Codacy/Semgrep)
+ *  that flag `Math.random` as a weak RNG regardless of what it's used for. */
+function randomFloat(): number {
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return buf[0] / 0xffffffff;
+}
+
 function randomOf<T>(arr: readonly T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)]; // NOSONAR: cosmetic randomness only
+  return arr[Math.floor(randomFloat() * arr.length)];
 }
 
 function randomAvatar(): AvatarConfig {
@@ -121,7 +128,7 @@ function randomAvatar(): AvatarConfig {
     mouthColor: '#a85751',
     accessoryColor: '#2b3445',
     suitColor: randomOf(PALETTE),
-    accessories: Math.random() < 0.35 ? [randomOf(ACCESSORY_STYLES.slice(1)).id] : [], // NOSONAR: cosmetic randomness only
+    accessories: randomFloat() < 0.35 ? [randomOf(ACCESSORY_STYLES.slice(1)).id] : [],
   };
 }
 
@@ -203,9 +210,9 @@ export default function CharacterCustomizerScreen({
   /** The currently-selected variant id for the active category. `accessories`
    *  is an array of at most one, so it reads through its first entry. */
   const activeVariant = (() => {
-    if (!category.shapeKey) return config[category.colorKey!] as string;
+    if (!category.shapeKey) return category.colorKey ? (config[category.colorKey] as string) : '';
     if (category.shapeKey === 'accessories') return config.accessories?.[0] ?? '';
-    return (config[category.shapeKey] as string) ?? '';
+    return config[category.shapeKey] as string;
   })();
 
   const activeColor = category.colorKey ? (config[category.colorKey] as string | undefined) : undefined;
@@ -214,7 +221,8 @@ export default function CharacterCustomizerScreen({
    *  instead of a shape, and skin additionally recomputes the paired shadow. */
   const pickVariant = (id: string) => {
     if (!category.shapeKey) {
-      setConfig({ ...config, [category.colorKey!]: id, ...(category.id === 'skin' ? { skinShadow: shadeColor(id) } : {}) });
+      if (!category.colorKey) return;
+      setConfig({ ...config, [category.colorKey]: id, ...(category.id === 'skin' ? { skinShadow: shadeColor(id) } : {}) });
       return;
     }
     if (category.shapeKey === 'accessories') {
@@ -265,16 +273,16 @@ export default function CharacterCustomizerScreen({
       <div className="fm-creator__head">
         <p className="fm-label" style={{ margin: 0 }}>CREATE YOUR MANAGER</p>
         <div className="fm-creator__head-actions">
-          <button type="button" className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setConfig(randomAvatar())}>
+          <button type="button" className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => { setConfig(randomAvatar()); }}>
             <Icon name="dice" size={14} /> Randomize
           </button>
-          <button type="button" className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setConfig({ ...DEFAULT_AVATAR })}>
+          <button type="button" className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => { setConfig({ ...DEFAULT_AVATAR }); }}>
             Reset
           </button>
           <button
             type="button"
             className="fm-btn fm-btn--ghost fm-btn--small"
-            onClick={() => downloadAvatarPng(`${(name || 'manager').replace(/\s+/g, '_')}.png`)}
+            onClick={() => { downloadAvatarPng(`${(name || 'manager').replace(/\s+/g, '_')}.png`); }}
           >
             <Icon name="download" size={14} /> PNG
           </button>
@@ -329,7 +337,7 @@ export default function CharacterCustomizerScreen({
                       title={hex}
                       className={`fm-creator__swatch${selected ? ' selected' : ''}`}
                       style={{ background: hex }}
-                      onClick={() => pickColor(hex)}
+                      onClick={() => { pickColor(hex); }}
                     />
                   );
                 })}
@@ -355,7 +363,7 @@ export default function CharacterCustomizerScreen({
             aria-controls={`fm-panel-${t.id}`}
             aria-selected={tab === t.id}
             className={`fm-subtab${tab === t.id ? ' active' : ''}`}
-            onClick={() => setTab(t.id)}
+            onClick={() => { setTab(t.id); }}
           >
             <span className="fm-subtab__label">{t.label}</span>
           </button>
@@ -374,7 +382,7 @@ export default function CharacterCustomizerScreen({
                 role="tab"
                 aria-selected={c.id === categoryId}
                 className={`fm-creator__cat${c.id === categoryId ? ' active' : ''}`}
-                onClick={() => setCategoryId(c.id)}
+                onClick={() => { setCategoryId(c.id); }}
               >
                 {c.label}
               </button>
@@ -391,7 +399,9 @@ export default function CharacterCustomizerScreen({
                 ? category.shapeKey === 'accessories'
                   ? { ...config, accessories: variant.id ? [variant.id] : [] }
                   : { ...config, [category.shapeKey]: variant.id }
-                : { ...config, [category.colorKey!]: variant.id, ...(category.id === 'skin' ? { skinShadow: shadeColor(variant.id) } : {}) };
+                : category.colorKey
+                  ? { ...config, [category.colorKey]: variant.id, ...(category.id === 'skin' ? { skinShadow: shadeColor(variant.id) } : {}) }
+                  : config;
               return (
                 <button
                   key={variant.id || `none-${i}`}
@@ -399,7 +409,7 @@ export default function CharacterCustomizerScreen({
                   role="radio"
                   aria-checked={selected}
                   className={`fm-creator__tile${selected ? ' selected' : ''}`}
-                  onClick={() => pickVariant(variant.id)}
+                  onClick={() => { pickVariant(variant.id); }}
                   title={variant.label}
                 >
                   <span className="fm-creator__tile-num">{i + 1}</span>
@@ -422,7 +432,7 @@ export default function CharacterCustomizerScreen({
                 <button
                   key={opt.value}
                   className={`stack-option ${playingBackground === opt.value ? 'active' : ''}`}
-                  onClick={() => setPlayingBackground(opt.value)}
+                  onClick={() => { setPlayingBackground(opt.value); }}
                 >
                   <span className="stack-option__label">{opt.label}</span>
                   <span className="stack-option__desc">{opt.desc}</span>
@@ -442,7 +452,7 @@ export default function CharacterCustomizerScreen({
                 <button
                   key={opt.value}
                   className={`stack-option ${priorRole === opt.value ? 'active' : ''}`}
-                  onClick={() => setPriorRole(opt.value)}
+                  onClick={() => { setPriorRole(opt.value); }}
                 >
                   <span className="stack-option__label">{opt.label}</span>
                   <span className="stack-option__desc">{opt.desc}</span>
@@ -462,7 +472,7 @@ export default function CharacterCustomizerScreen({
                 <button
                   key={opt.value}
                   className={`fm-btn fm-btn--ghost fm-btn--small ${badgeLevel === opt.value ? 'active' : ''}`}
-                  onClick={() => setBadgeLevel(opt.value)}
+                  onClick={() => { setBadgeLevel(opt.value); }}
                   title={opt.desc}
                 >
                   {badgeLevel === opt.value && <Icon name="check" size={11} />}
@@ -484,7 +494,7 @@ export default function CharacterCustomizerScreen({
                 <button
                   key={style}
                   className={`fm-btn fm-btn--ghost fm-btn--small ${coachingStyles.includes(style) ? 'active' : ''}`}
-                  onClick={() => toggleStyle(style)}
+                  onClick={() => { toggleStyle(style); }}
                   disabled={!coachingStyles.includes(style) && coachingStyles.length >= MAX_STYLES}
                 >
                   {coachingStyles.includes(style) && <Icon name="check" size={11} />}
@@ -502,7 +512,7 @@ export default function CharacterCustomizerScreen({
                 <button
                   key={trait}
                   className={`fm-btn fm-btn--ghost fm-btn--small ${personality.includes(trait) ? 'active' : ''}`}
-                  onClick={() => toggleTrait(trait)}
+                  onClick={() => { toggleTrait(trait); }}
                   disabled={!personality.includes(trait) && personality.length >= MAX_TRAITS}
                 >
                   {personality.includes(trait) && <Icon name="check" size={11} />}

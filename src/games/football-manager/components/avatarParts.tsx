@@ -26,6 +26,10 @@ export const PALETTE: string[] = [
   // selected, instead of the default rendering a colour the palette can't
   // reproduce.
   '#e8b48a', '#4a3728', '#3b2b20', '#2b3445', '#a85751',
+  // Every SKIN_TONES id below also needs to exist here — the Skin category's
+  // colour panel reuses this same palette, so picking a variant from that
+  // grid must leave a matching swatch selected too, not just the default.
+  '#d69f6e', '#b57a4d', '#6b4423', '#4a2f19',
 ];
 
 /** Quick-pick complexions for the Skin category's variant grid. The palette
