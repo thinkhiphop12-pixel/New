@@ -94,8 +94,12 @@ const CATEGORIES: Category[] = [
   { id: 'extras', label: 'Extras', variants: ACCESSORY_STYLES, shapeKey: 'accessories', colorKey: 'accessoryColor' },
 ];
 
+/** Cosmetic-only randomness for the "Randomize" button — picks which hairstyle
+ *  or suit colour to preview, nothing security-sensitive (no tokens, ids, or
+ *  auth material derived from it), so `Math.random()` is intentional here
+ *  rather than an oversight. */
 function randomOf<T>(arr: readonly T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+  return arr[Math.floor(Math.random() * arr.length)]; // NOSONAR: cosmetic randomness only
 }
 
 function randomAvatar(): AvatarConfig {
@@ -117,7 +121,7 @@ function randomAvatar(): AvatarConfig {
     mouthColor: '#a85751',
     accessoryColor: '#2b3445',
     suitColor: randomOf(PALETTE),
-    accessories: Math.random() < 0.35 ? [randomOf(ACCESSORY_STYLES.slice(1)).id] : [],
+    accessories: Math.random() < 0.35 ? [randomOf(ACCESSORY_STYLES.slice(1)).id] : [], // NOSONAR: cosmetic randomness only
   };
 }
 
