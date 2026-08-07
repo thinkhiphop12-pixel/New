@@ -17,11 +17,10 @@ import {
 } from '../engine/seasonProgression';
 import { simulateMatch } from '../engine/matchSimulation';
 import { needsDrilling, styleFamiliarity, weeksToDrill } from '../engine/familiarity';
-import { isTransferEmbargoed } from '../engine/finances';
+import { wageBudgetStatus } from '../engine/finances';
 import { cornerRoutineOf, setPieceTaker, setPieceXG, spDefenseMult } from '../engine/setPieces';
 import { simulateTickMatch } from '../engine/tickEngine/sim';
-import { newFacilities, startStandProject, tickFacilitiesWeek, totalCapacity } from '../engine/facilities';
-import type { StandId } from '../engine/types';
+import { newFacilities, startFacilityProject, tickFacilitiesWeek } from '../engine/facilities';
 import { evaluateFeeOffer, evaluateMove, marketStatus, startNegotiation } from '../engine/negotiation';
 import { contextualizeTactics, previewEffectiveXG, squadAvgRating } from '../engine/teamManagement';
 import { computeMarkets, scoreGrid, toOdds } from '../engine/odds';
@@ -551,16 +550,15 @@ assert(
 }
 
 /* --- Phase 8: finances ---------------------------------------------------
- * Regression net for a real bug: sponsor deals expire on a fixed term, and
- * with no Finances-screen UI yet to pick a renewal, an unrenewed slot stays
- * empty forever and commercial income silently craters to zero. Run enough
- * seasons for at least one renewal cycle and assert it never gets stuck. */
+ * Regression net for the budget model: commercial income must never stall at
+ * zero, and the board's season allocation must actually move the transfer and
+ * wage budgets rather than leaving a club on its day-one figures forever. */
 {
   const plClub = data.clubs.find((c: { division: number }) => c.division === 1)!;
   let fs = newGame(data, plClub.id, 'Finance Smoke', 2026);
   let zeroCommercialSeasons = 0;
-  let sawEmbargo = false;
-  let sawLift = false;
+  const budgets: number[] = [];
+  const ceilings: number[] = [];
   for (let season = 0; season < 6; season++) {
     while (!seasonOver(fs)) {
       const fx = Object.values(fs.fixtures).flat().find(
@@ -572,18 +570,26 @@ assert(
       fs = playRound(fs, report as any);
     }
     const fin = fs.finances;
-    if (fin) {
-      if (fin.seasonIncome.sponsorship === 0 && season > 0) zeroCommercialSeasons++;
-      if (isTransferEmbargoed(fs)) sawEmbargo = true;
-      if (sawEmbargo && !isTransferEmbargoed(fs)) sawLift = true;
-    }
+    if (fin && fin.seasonIncome.sponsorship === 0 && season > 0) zeroCommercialSeasons++;
     fs = endSeason(fs).state;
+    budgets.push(fs.budget);
+    ceilings.push(wageBudgetStatus(fs).budget);
   }
   if (zeroCommercialSeasons > 0) {
-    throw new Error(`sponsor income hit zero in ${zeroCommercialSeasons} season(s) after the first — auto-renewal is not firing`);
+    throw new Error(`commercial income hit zero in ${zeroCommercialSeasons} season(s) — the passive stream is not paying out`);
   }
-  console.log(`\nFinances: 6 seasons, commercial income never stuck at zero after a renewal cycle.`);
-  console.log(`  FFP/SCR embargo fired: ${sawEmbargo} · lifted again: ${sawLift}. ✓`);
+  if (new Set(budgets).size === 1) {
+    throw new Error('transfer budget was identical in all six seasons — the board allocation is not being applied');
+  }
+  if (budgets.some((b) => !Number.isFinite(b))) throw new Error('transfer budget went non-finite');
+  // A runaway budget is as broken as a frozen one: six seasons of carryover
+  // must not compound into orders of magnitude above where it started.
+  const growth = budgets[budgets.length - 1] / Math.max(1, budgets[0]);
+  if (growth > 12) throw new Error(`transfer budget grew ${growth.toFixed(1)}x over six seasons — carryover is compounding`);
+  if (ceilings.some((c) => c <= 0)) throw new Error('wage ceiling fell to zero or below');
+  console.log(`\nFinances: 6 seasons, commercial income never zero.`);
+  console.log(`  Transfer budget ${budgets.map((b) => `£${(b / 1e6).toFixed(1)}m`).join(' -> ')} (${growth.toFixed(1)}x). ✓`);
+  console.log(`  Wage ceiling ${ceilings.map((c) => `£${Math.round(c / 1000)}k`).join(' -> ')}/wk. ✓`);
 }
 
 /* --- Phase 10: facilities timed projects ---------------------------------- */
@@ -592,15 +598,13 @@ assert(
   const fs = newFacilities(state);
   state = { ...state, facilities: fs };
 
-  const standId: StandId = 'north';
   const startWeek = state.week;
   const startYear = state.seasonYear;
-  const before = totalCapacity(state.facilities!);
-  const beforeStandTier = state.facilities!.stands[standId].tier;
+  const beforeLevel = state.facilities!.trainingLevel;
 
-  state = startStandProject(state, standId);
-  const project = state.facilities!.projects.find((p) => p.standId === standId && !p.complete);
-  if (!project) throw new Error('stand project did not start');
+  state = startFacilityProject(state, 'training');
+  const project = state.facilities!.projects.find((p) => p.kind === 'training' && !p.complete);
+  if (!project) throw new Error('training project did not start');
   const duration = project.durationWeeks;
   if (duration < 2 || duration > 10) throw new Error(`project duration ${duration}w out of the 2-10w band`);
 
@@ -611,24 +615,21 @@ assert(
   // catch-up effect drives it) and confirm nothing applies early.
   for (let w = 1; w < duration; w++) {
     state = tickFacilitiesWeek({ ...state, week: state.week + 1 });
-    const midTier = state.facilities!.stands[standId].tier;
-    if (midTier !== beforeStandTier) {
-      throw new Error(`stand tier changed after only ${w}/${duration} weeks — partial credit is leaking early`);
+    if (state.facilities!.trainingLevel !== beforeLevel) {
+      throw new Error(`training level changed after only ${w}/${duration} weeks — partial credit is leaking early`);
     }
   }
   // Final week completes it.
   state = tickFacilitiesWeek({ ...state, week: state.week + 1 });
 
-  const after = totalCapacity(state.facilities!);
-  const afterStandTier = state.facilities!.stands[standId].tier;
-  const stillActive = state.facilities!.projects.some((p) => p.standId === standId && !p.complete);
+  const afterLevel = state.facilities!.trainingLevel;
+  const stillActive = state.facilities!.projects.some((p) => p.kind === 'training' && !p.complete);
 
-  console.log(`  ${standId.toUpperCase()} stand tier ${beforeStandTier} -> ${afterStandTier}; ground capacity ${before.toLocaleString()} -> ${after.toLocaleString()}.`);
+  console.log(`  Training ground level ${beforeLevel} -> ${afterLevel}.`);
 
-  if (stillActive) throw new Error('stand project never completed');
-  if (afterStandTier !== beforeStandTier + 1) throw new Error(`stand tier ${afterStandTier}, expected ${beforeStandTier + 1}`);
-  if (after <= before) throw new Error(`ground capacity did not increase (${before} -> ${after})`);
-  console.log('  Project completed on schedule and its capacity effect actually applied. ✓');
+  if (stillActive) throw new Error('training project never completed');
+  if (afterLevel !== beforeLevel + 1) throw new Error(`training level ${afterLevel}, expected ${beforeLevel + 1}`);
+  console.log('  Project completed on schedule and its effect actually applied. ✓');
 }
 
 /* --- Phase 9: continental bracket ---------------------------------------- */

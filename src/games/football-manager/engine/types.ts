@@ -397,6 +397,16 @@ export interface Club {
   reputation?: number;
   /** Per-style and per-formation familiarity, 0–100. */
   tacFam?: TacFam;
+
+  /* --- Phase 8: budgets. Both are seeded by scripts/build-gamedata.mjs. --- */
+  /** This club's share of its division's transfer budget, centred on 1.0.
+   *  Derived from real FC 26 career-mode budgets where published, and from
+   *  squad value where not — see the block comment in build-gamedata.mjs. */
+  budgetMultiplier?: number;
+  /** Where `budgetMultiplier` came from, for previews and debugging. */
+  budgetSource?: 'fc26' | 'derived';
+  /** Weekly wage budget the club starts with: its squad's bill plus headroom. */
+  wageBudget?: number;
 }
 
 /** A club as it appears in the raw dataset, still keyed by division number. */
@@ -407,6 +417,9 @@ export interface DataClub {
   color: string;
   division: Division;
   playerIds: number[];
+  budgetMultiplier?: number;
+  budgetSource?: 'fc26' | 'derived';
+  wageBudget?: number;
 }
 
 export interface SlotDef {
@@ -669,45 +682,6 @@ export interface LedgerEntry {
    render of the Finances screen without a save-version bump.
    ========================================================================= */
 
-/** The three commercial inventory slots a club can sell. */
-export type SponsorSlotId = 'shirt' | 'sleeve' | 'stadium';
-
-/** Ticket pricing tier the club sets for home league fixtures. */
-export type TicketTier = 'cheap' | 'standard' | 'high' | 'premium';
-
-/** Performance bonus written into a sponsor contract. */
-export interface SponsorClause {
-  type: 'win' | 'title' | 'topHalf' | 'promotion';
-  /** Payout in £. */
-  amount: number;
-}
-
-export interface SponsorDeal {
-  name: string;
-  /** 1 regional, 2 national, 3 global — drives the name pool. */
-  tier: 1 | 2 | 3;
-  slot: SponsorSlotId;
-  /** £ per week. */
-  weeklyValue: number;
-  /** Seasons still to run; decremented at each season rollover. */
-  seasonsLeft: number;
-  /** Length the deal was signed for, kept for the UI. */
-  termSeasons: number;
-  clauses: SponsorClause[];
-}
-
-export interface KitDeal {
-  name: string;
-  /** £ per season. */
-  annualValue: number;
-  seasonsLeft: number;
-  termSeasons: number;
-}
-
-/** A deal on the table. `negotiated`/`withdrawn` track one negotiation attempt. */
-export type SponsorOffer = SponsorDeal & { negotiated?: boolean; withdrawn?: boolean };
-export type KitOffer = KitDeal & { negotiated?: boolean; withdrawn?: boolean };
-
 export interface SeasonIncome {
   tv: number;
   matchday: number;
@@ -763,38 +737,16 @@ export interface FinanceState {
   /** Board confidence 0–100 (mirrors and drives `board.confidence`). */
   boardConfidence: number;
 
-  shirt: SponsorDeal | null;
-  sleeve: SponsorDeal | null;
-  stadium: SponsorDeal | null;
-  kitDeal: KitDeal | null;
-  /** Slots whose deal expired and need re-selling. */
-  needsRenewal: SponsorSlotId[];
-  kitNeedsRenewal: boolean;
-  /** Live offer sheets, so a negotiation attempt survives a re-render. */
-  offers: Partial<Record<SponsorSlotId, SponsorOffer[]>>;
-  kitOffers: KitOffer[] | null;
-
-  ticketPricing: TicketTier;
-
   seasonIncome: SeasonIncome;
   seasonExpenses: SeasonExpenses;
   balanceHistory: BalancePoint[];
   history: FinanceSeasonRecord[];
 
-  /** Net profit for each of the last three completed seasons, oldest first. */
-  ffpRolling: number[];
-  ffpBreachWeeks: number;
-  ffpDeductedThisBreach: boolean;
-
   amortizations: Amortization[];
-  /** Last computed squad cost ratio. */
-  scr: number;
-  scrOverWeeks: number;
-  transferEmbargo: boolean;
-  /** Weeks spent under embargo, for the follow-up deduction. */
-  embargoWeeks: number;
 
-  /** Points docked this season, applied to the table exactly once. */
+  /** Points docked this season, applied to the table exactly once. Written only
+   *  by the `points_deduction` scenario now that FFP and the squad cost ratio
+   *  are gone; kept here because `applyPointsDeductions` still reads it. */
   pointsDeduction: number;
   /** Ledger entries already folded into transfers/amortization, so the
    *  ledger scan is idempotent across ticks. */
@@ -931,27 +883,16 @@ export interface DualFormation {
    stadium/academy/staff levels stay live and readable; the new timed-projects
    layer sits alongside, not on top of, them). See engine/facilities.ts. */
 
-/** The eight named zones of the ground: four sides plus four corners. */
-export type StandId = 'north' | 'south' | 'east' | 'west' | 'ne' | 'nw' | 'se' | 'sw';
-
-/** One buildable zone of the stadium. Tier 0 = undeveloped (no capacity). */
-export interface Stand {
-  id: StandId;
-  tier: 0 | 1 | 2 | 3;
-  type: 'seating' | 'terrace' | 'hospitality';
-  capacity: number;
-}
-
-/** Kinds of facility work that go through the timed-project system. */
-export type ProjectKind = 'stand' | 'training' | 'medical' | 'academy';
+/** Kinds of facility work that go through the timed-project system. Stadium
+ *  expansion used to be one of these; it was removed along with the sponsor
+ *  system, so ground capacity is now fixed for the career. */
+export type ProjectKind = 'training' | 'medical' | 'academy';
 
 /** A single in-progress (or just-completed) facility upgrade. Every upgrade
  *  is a project now — see gap item 66 — rather than an instant purchase. */
 export interface FacilityProject {
   id: number;
   kind: ProjectKind;
-  /** Which stand this project targets; only set when kind === 'stand'. */
-  standId?: StandId;
   label: string;
   startWeek: number;
   startYear: number;
@@ -993,12 +934,11 @@ export interface Scout {
 }
 
 export interface FacilitiesState {
-  stands: Record<StandId, Stand>;
-  /** Real ground capacity ceiling this club can build toward, derived from
-   *  its league's stature (DIVERGENCE: no per-club real capacities were
-   *  seeded in the Phase 1 dataset, so this is computed, not looked up —
-   *  see groundCapacityCap() in engine/facilities.ts). */
-  groundCapacityCap: number;
+  /** The club's ground capacity, fixed for the career (DIVERGENCE: no per-club
+   *  real capacities were seeded in the Phase 1 dataset, so this is computed
+   *  from league stature, not looked up — see groundCapacity() in
+   *  engine/facilities.ts). */
+  groundCapacity: number;
   trainingLevel: number; // 1-5
   medicalLevel: number; // 1-5
   academyReputation: number; // 0-100
@@ -1114,7 +1054,6 @@ export interface GameState {
   /** Squad captain (player id). Leaders make better captains. */
   captainId?: number | null;
   staff?: Staff;
-  stadiumLevel?: number; // 1–3, scales gate income
   ledger: LedgerEntry[];
   /** Phase 8 finances. Optional and lazily initialised (see engine/finances.ts)
    *  so pre-Phase-8 saves migrate additively with no version bump. */

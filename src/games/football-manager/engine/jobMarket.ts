@@ -1,5 +1,6 @@
 import type { Board, ChairmanType, Club, GameState, JobOffer, TableRow } from './types';
-import { getLeague, leagueName, startingBudget } from './gameRules';
+import { getLeague, leagueName } from './gameRules';
+import { baseTransferBudget } from './finances';
 import { squadAvgRating } from './teamManagement';
 import { clamp } from './utils';
 
@@ -54,12 +55,21 @@ export const CHAIRMAN_BLURB: Record<ChairmanType, string> = {
   ruthless: 'Spends freely and sacks quickly. Confidence swings hard.',
 };
 
-/** Multiplier a chairman applies to the league's baseline transfer budget. */
+/**
+ * Multiplier a chairman applies to the club's baseline transfer budget.
+ *
+ * Deliberately a narrow band. It used to run 0.65-1.35 against a budget that
+ * was flat across a whole division, which made the chairman the *only* thing
+ * separating Arsenal's war chest from Burnley's — and since the type is hashed
+ * off club id, that came out uncorrelated with club stature (r = -0.06 against
+ * squad value). Real per-club budgets now carry that difference, so the
+ * chairman only colours it: personality should tilt a budget, not decide it.
+ */
 const CHAIRMAN_BUDGET: Record<ChairmanType, number> = {
-  ambitious: 1.35,
+  ambitious: 1.20,
   patient: 1.0,
-  frugal: 0.65,
-  ruthless: 1.15,
+  frugal: 0.85,
+  ruthless: 1.10,
 };
 
 /**
@@ -158,7 +168,7 @@ export function repRequiredFor(state: GameState, clubId: number): number {
 export function jobBudget(state: GameState, clubId: number, chairman: ChairmanType): number {
   const club = state.clubs.find((c) => c.id === clubId);
   if (!club) return 0;
-  return Math.round(startingBudget(club.leagueId) * CHAIRMAN_BUDGET[chairman]);
+  return Math.round(baseTransferBudget(state, club) * CHAIRMAN_BUDGET[chairman]);
 }
 
 /** Build a listing for a club as it stands right now. */

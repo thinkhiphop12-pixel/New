@@ -5,7 +5,7 @@ import type {
 import {
   ACADEMY_UPGRADE_COST, CONTINENTAL_PRIZES, CONTINENTAL_SPOTS, CONTINENTAL_WEEKS, CUP_PRIZES,
   CUP_WEEKS, LEAGUES, MAX_SQUAD_SIZE, MIN_SQUAD_SIZE, MORALE_DRAW, MORALE_LOSS, MORALE_MAX,
-  MORALE_MIN, MORALE_START, MORALE_WIN, SEASON_ROUNDS, SIMULATED_LEAGUE_IDS, STADIUM_UPGRADE_COST,
+  MORALE_MIN, MORALE_START, MORALE_WIN, SEASON_ROUNDS, SIMULATED_LEAGUE_IDS,
   STAFF_MAX_LEVEL, STAFF_UPGRADE_COST, STAFF_WEEKLY_WAGE, gateBase, getFormation, getLeague,
   isPhantomLeague, isWinterBreakWeek, leagueAbove, leagueBelow, leagueIdForDivision, leagueName,
   prizeMoney, roundToWeek, startingBudget,
@@ -448,7 +448,7 @@ export function newGame(
     seasonYear,
     week: 1,
     dayOfSeason: 0,
-    budget: startingBudget(userClub.leagueId),
+    budget: Math.round(startingBudget(userClub.leagueId) * (userClub.budgetMultiplier ?? 1)),
     morale: MORALE_START,
     formationId: '4-3-3',
     lineup: [],
@@ -471,7 +471,6 @@ export function newGame(
     academyLevel: 1,
     captainId: null,
     staff: { coach: 0, physio: 0, scout: 0 },
-    stadiumLevel: 1,
     ledger: [],
     cup: { name: '', weeks: [], rounds: [], byes: [], round: 0, winnerId: null },
     continental: { name: '', weeks: [], ties: [], seedRank: {}, directQualifiers: [], round: 0, winnerId: null },
@@ -600,16 +599,13 @@ export function getStaff(state: GameState): Staff {
   return state.staff ?? { coach: 0, physio: 0, scout: 0 };
 }
 
-export function getStadiumLevel(state: GameState): number {
-  return state.stadiumLevel ?? 1;
-}
-
-/** Weekly matchday income: league base scaled by position, fans and stadium. */
+/** Weekly matchday income. */
 export function gateIncome(state: GameState): number {
-  // Phase 8: delegates to the capacity × ticket-tier × opponent matchday model
-  // in engine/finances.ts, which pays per home fixture instead of the old flat
-  // per-week `gateBase` drip.
-  return weeklyMatchdayIncome(state) * (1 + 0.25 * (getStadiumLevel(state) - 1));
+  // Phase 8: delegates to the stature × opponent matchday model in
+  // engine/finances.ts, which pays per home fixture instead of the old flat
+  // per-week `gateBase` drip. Stadium expansion was removed, so there is no
+  // longer a build level scaling it.
+  return weeklyMatchdayIncome(state);
 }
 
 /** The user's total weekly wage bill (loanees are off the books). */
@@ -1223,19 +1219,6 @@ export function upgradeStaff(state: GameState, role: keyof Staff): GameState {
   return s;
 }
 
-/** Expand the stadium (level 2, then 3) — permanently boosts gate income. */
-export function upgradeStadium(state: GameState): GameState {
-  const level = getStadiumLevel(state);
-  const cost = STADIUM_UPGRADE_COST[level + 1];
-  if (!cost || cost > state.budget) return state;
-  const s: GameState = structuredClone(state);
-  s.stadiumLevel = level + 1;
-  s.budget -= cost;
-  s.ledger.unshift({ week: s.week, desc: `Stadium expansion (level ${s.stadiumLevel})`, amount: -cost });
-  s.news.unshift(`Stadium expanded to level ${s.stadiumLevel} — matchday income will rise.`);
-  return s;
-}
-
 export type PressTone = 'confident' | 'cautious' | 'bullish';
 
 export interface PressResult {
@@ -1320,13 +1303,13 @@ export function switchJob(state: GameState, clubId: number, offer?: JobOffer): G
   const club = s.clubs.find((c) => c.id === clubId);
   if (!club) return state;
   s.userClubId = clubId;
-  s.budget = (offer?.budget ?? startingBudget(club.leagueId)) + s.manager.reputation * 100_000;
+  s.budget = (offer?.budget ?? Math.round(startingBudget(club.leagueId) * (club.budgetMultiplier ?? 1)))
+    + s.manager.reputation * 100_000;
   s.chemistry = 45;
   s.morale = MORALE_START;
   s.fanConfidence = 60;
   s.academyLevel = 1;
   s.staff = { coach: 0, physio: 0, scout: 0 };
-  s.stadiumLevel = 1;
   s.captainId = null;
   s.legacy = {};
   s.records = { biggestWin: null, bestFinish: null, topSeasonScorer: null };

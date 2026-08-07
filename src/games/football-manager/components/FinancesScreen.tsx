@@ -1,17 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import type { GameState, KitOffer, SponsorOffer, SponsorSlotId, TicketTier, FinanceState } from '@/engine/types';
-import { gateIncome, weeklyWageBill, staffWageBill, userLeagueId, userPosition, userLeague } from '@/engine/seasonProgression';
+import type { GameState, FinanceState } from '@/engine/types';
+import { gateIncome, weeklyWageBill, staffWageBill, userLeagueId, userPosition } from '@/engine/seasonProgression';
 import { SEASON_ROUNDS, leagueName } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
-import { totalCapacity } from '@/engine/facilities';
+import { groundCapacity } from '@/engine/facilities';
 import { ReputationStars, Bar, ordinalSuffix } from './visuals';
 import { Icon } from './Icon';
 import {
-  SPONSOR_SLOTS, TICKET_TIERS, acceptKitOffer, acceptSponsorOffer, canRequestBoardFunds,
-  ffpStatus, financesView, genKitOffers, genSponsorOffers, requestBoardFunds, scrStatus,
-  setTicketPricing, terminateSponsorDeal, terminationFee,
+  canRequestBoardFunds, financesView, requestBoardFunds, wageBudgetStatus,
 } from '@/engine/finances';
 
 export default function FinancesScreen({
@@ -21,8 +18,6 @@ export default function FinancesScreen({
   state: GameState;
   onChange: (next: GameState) => void;
 }) {
-  const [openSlot, setOpenSlot] = useState<SponsorSlotId | 'kit' | null>(null);
-
   const fin = financesView(state);
   const gate = gateIncome(state);
   const playerWages = weeklyWageBill(state);
@@ -31,131 +26,28 @@ export default function FinancesScreen({
   const weeksRemaining = Math.max(0, SEASON_ROUNDS - state.week + 1);
   const projectedSeasonBalance = weeklyBalance * weeksRemaining;
 
-  const ffp = ffpStatus(state, fin);
-  const scr = scrStatus(state, fin);
   const trend = fin.balanceHistory.slice(-24);
   const maxAbsBalance = Math.max(1, ...trend.map((p) => Math.abs(p.balance)));
 
   return (
     <>
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>Current Budget</p>
-        <p style={{ fontSize: '28px', fontWeight: 900, color: 'var(--green)', margin: '4px 0 0' }}>
-          {formatMoney(state.budget)}
-        </p>
-        {scr.embargo && (
-          <p className="fm-error-text" style={{ textAlign: 'left', marginTop: 6 }}>
-            Transfer embargo — squad cost ratio has been over the {Math.round(scr.limit * 100)}% limit too long.
-          </p>
-        )}
-      </div>
+      {/* ── The two budgets ── */}
+      <Budgets state={state} />
 
       {/* ── Income & Expenditure bars ── */}
       <IncomeExpenseBars fin={fin} />
 
       {/* ── Stadium attendance ── */}
-      <StadiumAttendance state={state} fin={fin} />
+      <StadiumAttendance state={state} />
 
       {/* ── Board confidence ── */}
       <BoardConfidence state={state} />
-
-      {/* --- FFP / SCR status --------------------------------------------- */}
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>Financial Fair Play</p>
-        <div className="fm-ffp-row">
-          <div>
-            <span className="fm-hint">FFP (3-year rolling)</span>
-            <p className={`fm-ffp-status fm-ffp-status--${ffp.ok ? 'ok' : 'bad'}`}>{ffp.label}</p>
-            <p className="fm-hint">{formatMoney(ffp.rolling)} of {formatMoney(ffp.limit)} allowed</p>
-          </div>
-          <div>
-            <span className="fm-hint">Squad Cost Ratio</span>
-            <p className={`fm-ffp-status fm-ffp-status--${scr.scr <= scr.limit ? 'ok' : 'bad'}`}>
-              {Math.round(scr.scr * 100)}%
-            </p>
-            <p className="fm-hint">limit {Math.round(scr.limit * 100)}% · wages+amort {formatMoney(scr.squadCost)} / revenue {formatMoney(scr.revenue)}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* --- Sponsorship ---------------------------------------------------- */}
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>Sponsorship</p>
-        <div className="fm-sponsor-grid">
-          {(Object.keys(SPONSOR_SLOTS) as SponsorSlotId[]).map((slot) => {
-            const deal = fin[slot];
-            const cfg = SPONSOR_SLOTS[slot];
-            return (
-              <div key={slot} className="fm-sponsor-card">
-                <span className="fm-sponsor-card__label">{cfg.label}</span>
-                {deal ? (
-                  <>
-                    <span className="fm-sponsor-card__name">{deal.name}</span>
-                    <span className="fm-sponsor-card__value">{formatMoney(deal.weeklyValue)}/wk</span>
-                    <span className="fm-hint">{deal.seasonsLeft} season{deal.seasonsLeft === 1 ? '' : 's'} left</span>
-                    <button
-                      className="fm-btn fm-btn--small fm-btn--ghost"
-                      onClick={() => onChange(terminateSponsorDeal(state, slot))}
-                    >
-                      Terminate ({formatMoney(terminationFee(deal))})
-                    </button>
-                  </>
-                ) : (
-                  <button className="fm-btn fm-btn--small fm-btn--primary" onClick={() => setOpenSlot(slot)}>
-                    Find a sponsor
-                  </button>
-                )}
-              </div>
-            );
-          })}
-          <div className="fm-sponsor-card">
-            <span className="fm-sponsor-card__label">Kit Deal</span>
-            {fin.kitDeal ? (
-              <>
-                <span className="fm-sponsor-card__name">{fin.kitDeal.name}</span>
-                <span className="fm-sponsor-card__value">{formatMoney(fin.kitDeal.annualValue)}/season</span>
-                <span className="fm-hint">{fin.kitDeal.seasonsLeft} season{fin.kitDeal.seasonsLeft === 1 ? '' : 's'} left</span>
-              </>
-            ) : (
-              <button className="fm-btn fm-btn--small fm-btn--primary" onClick={() => setOpenSlot('kit')}>
-                Find a kit maker
-              </button>
-            )}
-          </div>
-        </div>
-
-        {openSlot && (
-          <SponsorOfferPicker
-            state={state}
-            slot={openSlot}
-            onPick={(next) => { onChange(next); setOpenSlot(null); }}
-            onClose={() => setOpenSlot(null)}
-          />
-        )}
-      </div>
-
-      {/* --- Ticket pricing -------------------------------------------------- */}
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>Ticket Pricing</p>
-        <div className="fm-pills">
-          {(Object.keys(TICKET_TIERS) as TicketTier[]).map((tier) => (
-            <button
-              key={tier}
-              className={`fm-pill${fin.ticketPricing === tier ? ' active' : ''}`}
-              onClick={() => onChange(setTicketPricing(state, tier))}
-            >
-              {TICKET_TIERS[tier].label}
-            </button>
-          ))}
-        </div>
-        <p className="fm-hint">{TICKET_TIERS[fin.ticketPricing].desc}</p>
-      </div>
 
       {/* --- Weekly summary --------------------------------------------------- */}
       <div className="fm-panel">
         <p className="fm-label" style={{ marginTop: 0 }}>Weekly Financial Summary</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <Row label="Gate & Sponsorship" value={gate} />
+          <Row label="Gate & Commercial" value={gate} />
           <Row label="Player Wages" value={-playerWages} />
           {staffWages > 0 && <Row label="Staff Wages" value={-staffWages} />}
           <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 8, display: 'flex', justifyContent: 'space-between' }}>
@@ -249,6 +141,52 @@ export default function FinancesScreen({
   );
 }
 
+/**
+ * The two budgets, side by side — the transfer budget as cash, the wage budget
+ * as a capacity bar. The bar is the useful half: a club can sit on a large
+ * transfer budget and still be unable to sign anyone, and that is only obvious
+ * when the committed wage bill is shown against its ceiling.
+ */
+function Budgets({ state }: { state: GameState }) {
+  const wage = wageBudgetStatus(state);
+  const pct = Math.min(100, Math.max(0, wage.pct * 100));
+  const tight = wage.free <= 0;
+  return (
+    <div className="fm-panel">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 14px' }}>
+        <div>
+          <p className="fm-label" style={{ marginTop: 0 }}>Transfer Budget</p>
+          <p style={{ fontSize: '26px', fontWeight: 900, color: state.budget >= 0 ? 'var(--green)' : 'var(--red)', margin: '4px 0 0' }}>
+            {formatMoney(state.budget)}
+          </p>
+          <p className="fm-hint" style={{ margin: '2px 0 0' }}>Available for fees</p>
+        </div>
+        <div>
+          <p className="fm-label" style={{ marginTop: 0 }}>Wage Budget</p>
+          <p style={{ fontSize: '26px', fontWeight: 900, color: tight ? 'var(--red)' : 'var(--green)', margin: '4px 0 0' }}>
+            {formatMoney(wage.budget)}
+          </p>
+          <p className="fm-hint" style={{ margin: '2px 0 0' }}>Per week</p>
+        </div>
+      </div>
+      <div style={{ marginTop: 12 }}>
+        <div className="fm-attendance__track">
+          <div
+            className="fm-attendance__fill"
+            style={{ width: `${pct}%`, background: tight ? 'var(--red)' : pct > 90 ? 'var(--gold)' : 'var(--green)' }}
+          />
+        </div>
+        <span className="fm-hint" style={{ marginTop: 4, display: 'block' }}>
+          {formatMoney(wage.committed)}/wk committed of {formatMoney(wage.budget)}
+          {tight
+            ? ' — over the ceiling, no room to sign'
+            : ` · ${formatMoney(wage.free)}/wk free`}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function Row({ label, value }: { label: string; value: number }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -266,7 +204,7 @@ type CatDef = { key: string; label: string; color: string };
 const INCOME_CATS: CatDef[] = [
   { key: 'tv', label: 'TV', color: 'var(--green)' },
   { key: 'matchday', label: 'Matchday', color: 'var(--green-600)' },
-  { key: 'sponsorship', label: 'Sponsorship', color: 'var(--green)' },
+  { key: 'sponsorship', label: 'Commercial', color: 'var(--green)' },
   { key: 'merchandise', label: 'Merch', color: 'var(--gold)' },
   { key: 'prizes', label: 'Prizes', color: 'var(--gold-2)' },
   { key: 'sales', label: 'Sales', color: 'var(--gold)' },
@@ -354,46 +292,26 @@ function IncomeExpenseBars({ fin }: { fin: FinanceState }) {
   );
 }
 
-function StadiumAttendance({ state, fin }: { state: GameState; fin: FinanceState }) {
-  const fs = state.facilities;
-  const capUsed = fs ? totalCapacity(fs) : 0;
-  const capMax = fs ? fs.groundCapacityCap : 0;
+function StadiumAttendance({ state }: { state: GameState }) {
+  const capacity = groundCapacity(state, state.userClubId);
   const pos = userPosition(state);
-  const lg = userLeague(state);
   const gate = gateIncome(state);
-  const ticketTier = fin.ticketPricing ? TICKET_TIERS[fin.ticketPricing] : null;
-  const attendancePct = capMax > 0 ? Math.min(100, (capUsed / capMax) * 100) : 0;
-  const attendanceLabel = capMax > 0 ? `${Math.round(attendancePct)}% built` : 'no stadium data';
   const positionLabel = pos > 0 ? `${pos}${ordinalSuffix(pos)} place in ${leagueName(userLeagueId(state))}` : 'Not yet ranked';
 
   return (
     <div className="fm-panel">
-      <p className="fm-label" style={{ marginTop: 0 }}>Stadium Attendance</p>
+      <p className="fm-label" style={{ marginTop: 0 }}>Matchday</p>
       <div className="fm-qstat" style={{ marginBottom: 12 }}>
         <span className="fm-qstat__icon"><Icon name="stadium" size={15} /></span>
-        <span className="fm-qstat__val">{capMax > 0 ? `${capUsed.toLocaleString()} / ${capMax.toLocaleString()}` : '—'}</span>
-        <span className="fm-qstat__lbl">capacity</span>
+        <span className="fm-qstat__val">{capacity > 0 ? capacity.toLocaleString() : '—'}</span>
+        <span className="fm-qstat__lbl">ground capacity</span>
       </div>
-      <div className="fm-qstat" style={{ marginBottom: 12 }}>
+      <div className="fm-qstat">
         <span className="fm-qstat__icon"><Icon name="finances" size={15} /></span>
         <span className="fm-qstat__val">{gate > 0 ? formatMoney(gate) : '—'}/wk</span>
         <span className="fm-qstat__lbl">gate income</span>
       </div>
-      <div className="fm-qstat">
-        <span className="fm-qstat__icon"><Icon name="stadium" size={15} /></span>
-        <span className="fm-qstat__val">{ticketTier ? ticketTier.label : '—'}</span>
-        <span className="fm-qstat__lbl">ticket tier</span>
-      </div>
-      {capMax > 0 && (
-        <div style={{ marginTop: 10 }}>
-          <div className="fm-attendance__track">
-            <div className="fm-attendance__fill" style={{ width: `${attendancePct}%` }} />
-          </div>
-          <span className="fm-hint" style={{ marginTop: 4, display: 'block' }}>
-            {attendanceLabel} · {positionLabel}
-          </span>
-        </div>
-      )}
+      <span className="fm-hint" style={{ marginTop: 8, display: 'block' }}>{positionLabel}</span>
     </div>
   );
 }
@@ -423,49 +341,6 @@ function BoardConfidence({ state }: { state: GameState }) {
           Confidence is low — wins improve morale quickly.
         </p>
       ) : null}
-    </div>
-  );
-}
-
-function SponsorOfferPicker({
-  state,
-  slot,
-  onPick,
-  onClose,
-}: {
-  state: GameState;
-  slot: SponsorSlotId | 'kit';
-  onPick: (next: GameState) => void;
-  onClose: () => void;
-}) {
-  const sponsorOffers = slot === 'kit' ? [] : genSponsorOffers(state, slot);
-  const kitOffers = slot === 'kit' ? genKitOffers(state) : [];
-  const label = slot === 'kit' ? 'Kit Deal' : SPONSOR_SLOTS[slot].label;
-  return (
-    <div className="fm-sponsor-offers">
-      <div className="fm-sponsor-offers__header">
-        <span className="fm-label">Offers for {label}</span>
-        <button className="fm-btn fm-btn--small fm-btn--ghost" onClick={onClose}>Close</button>
-      </div>
-      {slot === 'kit'
-        ? kitOffers.map((offer: KitOffer, i) => (
-            <div key={i} className="fm-sponsor-offers__row">
-              <span className="fm-sponsor-offers__name">{offer.name}</span>
-              <span className="fm-hint">{formatMoney(offer.annualValue)}/season · {offer.termSeasons}y</span>
-              <button className="fm-btn fm-btn--small fm-btn--primary" onClick={() => onPick(acceptKitOffer(state, offer))}>
-                Sign
-              </button>
-            </div>
-          ))
-        : sponsorOffers.map((offer: SponsorOffer, i) => (
-            <div key={i} className="fm-sponsor-offers__row">
-              <span className="fm-sponsor-offers__name">{offer.name}</span>
-              <span className="fm-hint">{formatMoney(offer.weeklyValue)}/wk · {offer.termSeasons}y</span>
-              <button className="fm-btn fm-btn--small fm-btn--primary" onClick={() => onPick(acceptSponsorOffer(state, slot as SponsorSlotId, offer))}>
-                Sign
-              </button>
-            </div>
-          ))}
     </div>
   );
 }

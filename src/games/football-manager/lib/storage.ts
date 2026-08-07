@@ -119,7 +119,6 @@ function migrate(raw: RawSave): GameState {
   // needed here beyond the field being optional on the type.
   s.academyLevel = s.academyLevel ?? 1;
   s.staff = s.staff ?? { coach: 0, physio: 0, scout: 0 };
-  s.stadiumLevel = s.stadiumLevel ?? 1;
   s.captainId = s.captainId ?? null;
   s.ledger = s.ledger ?? [];
   s.jobOffers = s.jobOffers ?? [];
