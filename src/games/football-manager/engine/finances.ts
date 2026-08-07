@@ -316,33 +316,6 @@ export function economyScale(state: GameState, leagueId: string): number {
  *  still breaches, which is the behaviour the SCR ladder exists to produce. */
 export const TARGET_WAGE_SHARE = 0.52;
 
-/** A median club in this league's season revenue, without needing a live
- *  state — the same target `economyScale` anchors the revenue model on. */
-export function leagueRevenueProxy(leagueId: string): number {
-  const lg = getLeague(leagueId);
-  return lg.gateBase * SEASON_ROUNDS * (REVENUE_UPLIFT[Math.min(lg.level, 5)] ?? 1.2);
-}
-
-/**
- * How many times the base wage formula this league should pay.
- *
- * Derived from the league's own revenue against what its clubs would earn on
- * the base formula, so it self-normalises for every division in the game
- * rather than keying off `level`. That distinction is the whole point: the
- * Premier League and the Scottish Premiership are both level 1, but one pays
- * roughly ten times the other, and a level-keyed multiplier put Scottish
- * clubs at 277% of revenue — permanently embargoed from the first week.
- *
- * Never returns below 1: the shipped dataset's wages are already right for
- * the bottom of the pyramid, and cutting them there would only inflate
- * profits at clubs that are supposed to be scraping by.
- */
-export function wageScaleFor(leagueId: string, medianBaseAnnualWageBill: number): number {
-  if (medianBaseAnnualWageBill <= 0) return 1;
-  const target = TARGET_WAGE_SHARE * leagueRevenueProxy(leagueId);
-  return clamp(target / medianBaseAnnualWageBill, 1, 15);
-}
-
 /* =========================================================================
    Revenue streams (all in £/season unless the name says otherwise)
    ========================================================================= */
