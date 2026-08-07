@@ -188,19 +188,22 @@ const num = (v) => {
   return Number.isFinite(n) ? n : 0;
 };
 
+/** Own-property lookup so CSV text can never read an inherited key (e.g. "constructor"). */
+const getOwn = (obj, key) => (Object.prototype.hasOwnProperty.call(obj, key) ? obj[key] : undefined);
+
 const byClub = new Map();
 for (const r of rows) {
-  const division = DIVISION_OF_LEAGUE[r.League];
+  const division = getOwn(DIVISION_OF_LEAGUE, r.League);
   if (division === undefined) continue;
-  const role = POS_GROUP[r.Position] ? r.Position : null;
+  const role = getOwn(POS_GROUP, r.Position) ? r.Position : null;
   if (!role) continue;
-  const name = DISPLAY_NAME[r.Team] ?? r.Team;
+  const name = getOwn(DISPLAY_NAME, r.Team) ?? r.Team;
   if (!byClub.has(name)) byClub.set(name, { name, division, players: [] });
   byClub.get(name).players.push({
     name: shortName(r.Name),
     nat: r.Nation,
     role,
-    pos: POS_GROUP[role],
+    pos: getOwn(POS_GROUP, role),
     // For goalkeepers the CSV fills these six columns with the keeper's own
     // ratings (diving, handling, kicking, reflexes, speed, positioning), so
     // they carry across unchanged.
