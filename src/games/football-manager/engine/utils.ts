@@ -38,9 +38,23 @@ export function formatMoney(v: number): string {
   return `£${v}`;
 }
 
-/** Weekly wage for a player — must stay in sync with scripts/build-gamedata.mjs. */
-export function weeklyWage(value: number, rating: number): number {
-  return Math.max(500, Math.round((value * 0.0005 + rating * 15) / 100) * 100);
+/** Lowest weekly wage anyone is on. Only binds where `scale` is well below 1 —
+ *  the semi-professional end of the smallest leagues, where a £500 floor
+ *  across a 25-man squad cost more than the club's entire modelled revenue and
+ *  put it in permanent breach of the squad-cost limit from kick-off. */
+export const WAGE_FLOOR = 200;
+
+/** Weekly wage for a player — must stay in sync with scripts/build-gamedata.mjs.
+ *
+ *  The formula is calibrated against the game's *base* economy, which is
+ *  roughly the fourth tier of English football. Richer divisions pay a
+ *  multiple of it: pass `scale` from `clubWageScale` (engine/finances.ts),
+ *  which derives that multiple from the club's own revenue rather than from
+ *  its league's level — "level 1" spans both the Premier League and the
+ *  Scottish Premiership, whose revenues differ by an order of magnitude. */
+export function weeklyWage(value: number, rating: number, scale = 1): number {
+  const base = value * 0.0005 + rating * 15;
+  return Math.max(WAGE_FLOOR, Math.round((base * scale) / 100) * 100);
 }
 
 /** Market value formula — must stay in sync with scripts/build-gamedata.mjs. */

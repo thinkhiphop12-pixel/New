@@ -47,7 +47,7 @@ import type {
   LeagueDef, SponsorClause, SponsorDeal, SponsorOffer, SponsorSlotId, TicketTier,
 } from './types';
 import { getLeague, SEASON_ROUNDS, leagueAbove } from './gameRules';
-import { clamp, pickRandom, formatMoney } from './utils';
+import { clamp, pickRandom, formatMoney, weeklyWage } from './utils';
 import { pushInbox } from './inbox';
 import { clubBudget } from './jobMarket';
 
@@ -304,6 +304,46 @@ export function economyScale(state: GameState, leagueId: string): number {
 }
 
 /* =========================================================================
+   Wage calibration
+   ========================================================================= */
+
+/** Share of a club's football revenue its player wages should cost.
+ *
+ *  Real clubs run 60-70%, and the squad-cost ratio that triggers an embargo
+ *  is 70% — but SCR counts wages *plus* transfer amortization, so wages alone
+ *  have to leave room for a normal amount of transfer spending underneath the
+ *  limit. 0.52 puts a well-run club comfortably clear while a heavy spender
+ *  still breaches, which is the behaviour the SCR ladder exists to produce. */
+export const TARGET_WAGE_SHARE = 0.52;
+
+/** A median club in this league's season revenue, without needing a live
+ *  state — the same target `economyScale` anchors the revenue model on. */
+export function leagueRevenueProxy(leagueId: string): number {
+  const lg = getLeague(leagueId);
+  return lg.gateBase * SEASON_ROUNDS * (REVENUE_UPLIFT[Math.min(lg.level, 5)] ?? 1.2);
+}
+
+/**
+ * How many times the base wage formula this league should pay.
+ *
+ * Derived from the league's own revenue against what its clubs would earn on
+ * the base formula, so it self-normalises for every division in the game
+ * rather than keying off `level`. That distinction is the whole point: the
+ * Premier League and the Scottish Premiership are both level 1, but one pays
+ * roughly ten times the other, and a level-keyed multiplier put Scottish
+ * clubs at 277% of revenue — permanently embargoed from the first week.
+ *
+ * Never returns below 1: the shipped dataset's wages are already right for
+ * the bottom of the pyramid, and cutting them there would only inflate
+ * profits at clubs that are supposed to be scraping by.
+ */
+export function wageScaleFor(leagueId: string, medianBaseAnnualWageBill: number): number {
+  if (medianBaseAnnualWageBill <= 0) return 1;
+  const target = TARGET_WAGE_SHARE * leagueRevenueProxy(leagueId);
+  return clamp(target / medianBaseAnnualWageBill, 1, 15);
+}
+
+/* =========================================================================
    Revenue streams (all in £/season unless the name says otherwise)
    ========================================================================= */
 
@@ -366,6 +406,69 @@ export function annualFootballRevenue(state: GameState, fin = financesView(state
   const lg = getLeague(club.leagueId);
   const md = matchdayBase(state, club) * ticketMult(fin.ticketPricing, lg.level);
   return tvIncomeAnnual(state, club) + md + md * MERCH_RATIO + weeklyCommercial(fin) * YEAR_WEEKS;
+}
+
+/**
+ * The same revenue base for *any* club, at market rates.
+ *
+ * `annualFootballRevenue` reads the user's negotiated sponsorship and ticket
+ * pricing, neither of which exists for an AI club (or for anyone on the very
+ * first week of a save). This values the commercial line at what the club
+ * would command instead, so wage calibration can price all 542 clubs on the
+ * same basis the SCR will later judge them by.
+ */
+export function clubFootballRevenue(state: GameState, club: Club): number {
+  const md = matchdayBase(state, club);
+  const commercialSlots = SPONSOR_SLOTS.shirt.share + SPONSOR_SLOTS.sleeve.share + SPONSOR_SLOTS.stadium.share;
+  const commercial = sponsorMarketAnnual(state, club) * commercialSlots + kitMarketAnnual(state, club);
+  return tvIncomeAnnual(state, club) + md + md * MERCH_RATIO + commercial;
+}
+
+/**
+ * Rescale every club's wage bill to a realistic share of its own revenue.
+ *
+ * Run once at `newGame`, after squads, reputations and stature exist. Working
+ * club by club rather than league by league matters: a league-wide multiple
+ * leaves the poorest side in each division at 150%+ of revenue and therefore
+ * embargoed within eight weeks of kick-off, through no decision of the
+ * player's. Priced individually, every club starts on a sound footing and any
+ * later breach is something the manager actually did.
+ *
+ * The target is jittered deterministically by club id so a division isn't a
+ * row of identical ratios — real clubs run anywhere from prudent to reckless.
+ *
+ * It scales down as well as up. A handful of clubs in the smallest leagues
+ * ship with wage bills above their whole revenue (Cork City at 150%), which
+ * predates this calibration but would embargo anyone who took the job inside
+ * two months. Pricing them to the same target fixes that without a per-club
+ * exception list.
+ */
+export function clubWageScale(state: GameState, club: Club): number {
+  const squad = club.playerIds.map((id) => state.players[id]).filter(Boolean);
+  if (!squad.length) return 1;
+  // Measured against the *unscaled* formula, not the squad's current pay, so
+  // the answer is the same however many times this has already been applied.
+  const baseBill = squad.reduce((t, p) => t + weeklyWage(p.value, p.rating), 0) * YEAR_WEEKS;
+  const revenue = clubFootballRevenue(state, club);
+  if (baseBill <= 0 || revenue <= 0) return 1;
+  // ±0.06 around the target, stable for a given club.
+  const jitter = ((club.id * 2654435761) % 1000) / 1000 * 0.12 - 0.06;
+  return clamp(((TARGET_WAGE_SHARE + jitter) * revenue) / baseBill, 0.25, 15);
+}
+
+/** Price one club's squad against its own revenue. Idempotent — `clubWageScale`
+ *  reads the unscaled formula, so re-running never compounds. Call it after
+ *  handing a club a newly generated squad. */
+export function calibrateClubWages(state: GameState, club: Club): void {
+  const scale = clubWageScale(state, club);
+  for (const id of club.playerIds) {
+    const p = state.players[id];
+    if (p) p.wage = weeklyWage(p.value, p.rating, scale);
+  }
+}
+
+export function calibrateWages(state: GameState): void {
+  for (const club of state.clubs) calibrateClubWages(state, club);
 }
 
 /* =========================================================================

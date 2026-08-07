@@ -30,7 +30,7 @@ import {
   MID_SEASON_RESIGN_REP_COST, boardObjectiveFor, clubBudget, interviewOdds, makeVacancy, tickJobMarket,
 } from './jobMarket';
 import { pushInbox } from './inbox';
-import { tickFinances, weeklyMatchdayIncome } from './finances';
+import { calibrateClubWages, calibrateWages, clubWageScale, tickFinances, weeklyMatchdayIncome } from './finances';
 import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
 import { tickFacilitiesWeek } from './facilities';
 import { applyWeeklySchedule } from './schedule';
@@ -207,7 +207,7 @@ const YOUTH_FIRST = ['Alfie', 'Ben', 'Callum', 'Dan', 'Eli', 'Finn', 'George', '
 const YOUTH_LAST = ['Abbott', 'Barnes', 'Clarke', 'Dawson', 'Ellis', 'Foster', 'Grant', 'Hayes', 'Ingram', 'Jennings', 'Kerr', 'Lowe', 'Mercer', 'Nolan', 'Osborne', 'Price', 'Quinn', 'Reid', 'Shaw', 'Turner'];
 const YOUTH_ROLES: [Position, string][] = [['GK', 'GK'], ['DEF', 'CB'], ['DEF', 'RB'], ['MID', 'CM'], ['MID', 'CAM'], ['FWD', 'ST'], ['FWD', 'LW']];
 
-export function makeYouthPlayer(id: number, clubId: number, academyLevel: number, seasonYear = 2026): Player {
+export function makeYouthPlayer(id: number, clubId: number, academyLevel: number, seasonYear = 2026, wageScale = 1): Player {
   const [pos, role] = pickRandom(YOUTH_ROLES);
   const base = 52 + academyLevel * 4;
   const rating = base + Math.floor(Math.random() * 9);
@@ -232,7 +232,7 @@ export function makeYouthPlayer(id: number, clubId: number, academyLevel: number
     altPos: [],
     age,
     value,
-    wage: weeklyWage(value, rating),
+    wage: weeklyWage(value, rating, wageScale),
     clubId,
     form: 1,
     injuryWeeks: 0,
@@ -276,7 +276,7 @@ const FILLER_ROLES: [Position, string][] = [
   ['FWD', 'LW'], ['FWD', 'RW'], ['FWD', 'ST'], ['FWD', 'ST'], ['FWD', 'ST'],
 ];
 
-function makeFillerPlayer(id: number, clubId: number, target: number, seasonYear: number, slot: number): Player {
+function makeFillerPlayer(id: number, clubId: number, target: number, seasonYear: number, slot: number, wageScale = 1): Player {
   const [pos, role] = FILLER_ROLES[slot % FILLER_ROLES.length];
   const rating = clamp(target + Math.floor(Math.random() * 9) - 4, 40, 90);
   const age = 18 + Math.floor(Math.random() * 15);
@@ -295,7 +295,7 @@ function makeFillerPlayer(id: number, clubId: number, target: number, seasonYear
     height: pos === 'GK' ? 185 + Math.floor(Math.random() * 15) : 168 + Math.floor(Math.random() * 24),
     altPos: [],
     age, value,
-    wage: weeklyWage(value, rating),
+    wage: weeklyWage(value, rating, wageScale),
     clubId,
     form: 1,
     injuryWeeks: 0,
@@ -378,6 +378,8 @@ function wakePoolClub(s: GameState, club: Club, targetLeagueId: string, seasonYe
     s.players[p.id] = p;
     club.playerIds.push(p.id);
   }
+  // The squad has to exist before it can be priced against the club's revenue.
+  calibrateClubWages(s, club);
 }
 
 /** Starting-reputation bonus from the Credentials step of the Manager
@@ -505,6 +507,9 @@ export function newGame(
   // Give every club a play-style identity and reputation band before the first
   // drilling tick, so familiarity has something to work from.
   seedClubIdentities(state);
+  // Wages must be priced before the board's wage ceiling is derived from them.
+  // Needs club reputation, so it runs after seedClubIdentities.
+  calibrateWages(state);
   ensureSquadNumbers(state);
   // Sanctioned wage bill: what the inherited squad costs, plus headroom.
   state.wageBudget = Math.round(weeklyWageBill(state) * WAGE_BUDGET_HEADROOM);
@@ -1687,7 +1692,7 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
   const intakeCount = s.academyLevel >= 3 ? 2 : 1;
   if (!userClub.youthPlayerIds) userClub.youthPlayerIds = [];
   for (let i = 0; i < intakeCount; i++) {
-    const kid = makeYouthPlayer(s.nextPlayerId++, s.userClubId, s.academyLevel, s.seasonYear);
+    const kid = makeYouthPlayer(s.nextPlayerId++, s.userClubId, s.academyLevel, s.seasonYear, clubWageScale(s, userClub));
     s.players[kid.id] = kid;
     userClub.youthPlayerIds.push(kid.id);
     s.news.unshift(`Academy intake: ${kid.name} (${kid.role}, ${kid.rating} OVR, ${kid.potential} PA) joins the youth squad.`);
@@ -1806,6 +1811,7 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
       club.playerIds.push(p.id);
       signed.push(p);
     }
+    calibrateClubWages(s, club);
     if (club.id === s.userClubId) {
       s.news.unshift(`With retirements leaving the squad short, the board signs ${signed.length} emergency free agents.`);
       pushInbox(s, {
