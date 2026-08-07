@@ -165,6 +165,14 @@ export default function ClubScreen({
           Reputation {m.reputation} · {m.seasons} season{m.seasons === 1 ? '' : 's'} · Record {m.wins}W {m.draws}D{' '}
           {m.losses}L
         </p>
+        {((state.managerProfile?.coachingStyles?.length ?? 0) > 0 ||
+          (state.managerProfile?.personality?.length ?? 0) > 0) && (
+          <p className="fm-hint" style={{ textAlign: 'left', margin: '0 0 0.5rem 0' }}>
+            {state.managerProfile?.coachingStyles?.length ? state.managerProfile.coachingStyles.join(', ') : ''}
+            {state.managerProfile?.coachingStyles?.length && state.managerProfile?.personality?.length ? ' — ' : ''}
+            {state.managerProfile?.personality?.length ? state.managerProfile.personality.join(', ') : ''}
+          </p>
+        )}
         {m.trophies.length > 0 ? (
           <ul className="fm-news">
             {m.trophies.slice(-6).map((t, i) => (

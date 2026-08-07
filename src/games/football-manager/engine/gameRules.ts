@@ -308,8 +308,12 @@ export const LEAGUES: LeagueDef[] = [
     startingBudget: 3_000_000, gateBase: 55_000, prizeTop: 2_500_000, prizeStep: 120_000,
   },
   {
+    // phantom:true, like every other tier-2 league below — pre-existing gap
+    // that only surfaced once Scottish Premiership got real clubs to
+    // relegate: without it, there's no pool to promote a club back up from,
+    // and the Premiership loses a club every season it relegates.
     id: 'scottish_championship', name: 'Scottish Championship', country: 'Scotland', level: 2,
-    clubCount: 10, rounds: 4,
+    clubCount: 0, rounds: 4, phantom: true,
     autoPromotion: 1, playoffSpots: 0, relegation: 1, interPlayoffFeeder: 'scottish_premiership', interPlayoffFeederSpots: 3,
     championsLeague: 0, clPlayoff: 0, europaLeague: 0, conferenceLeague: 0,
     tvEqualShare: 0.2,
@@ -322,6 +326,155 @@ export const LEAGUES: LeagueDef[] = [
     championsLeague: 0, clPlayoff: 0, europaLeague: 0, conferenceLeague: 0,
     tvEqualShare: 0,
     startingBudget: 250_000, gateBase: 8_000, prizeTop: 150_000, prizeStep: 5_000,
+  },
+
+  // ── Single-tier leagues sourced from the EA FC 26 ratings export: real
+  // clubs and real rosters, but no modelled lower division since the export
+  // only carries each country's top flight. ───────────────────────────────
+  {
+    id: 'pro_league', name: 'Pro League', country: 'Belgium', level: 1,
+    clubCount: 16, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 1, europaLeague: 1, conferenceLeague: 2,
+    tvEqualShare: 3.5,
+    startingBudget: 6_000_000, gateBase: 100_000, prizeTop: 5_000_000, prizeStep: 180_000,
+  },
+  {
+    // rounds:1, not 2 — 30 clubs is more than the 24-club double round-robin
+    // the 46-week season is built around (2*(clubCount-1) must fit in 46
+    // match weeks); a single round-robin (29 rounds) fits without cutting
+    // any of the real clubs down to 24.
+    id: 'mls', name: 'MLS', country: 'United States', level: 1,
+    clubCount: 30, rounds: 1,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 0, clPlayoff: 0, europaLeague: 0, conferenceLeague: 0,
+    tvEqualShare: 5,
+    startingBudget: 8_000_000, gateBase: 130_000, prizeTop: 6_000_000, prizeStep: 220_000,
+  },
+  {
+    id: 'superliga', name: 'Superliga', country: 'Denmark', level: 1,
+    clubCount: 12, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 1, europaLeague: 1, conferenceLeague: 1,
+    tvEqualShare: 2,
+    startingBudget: 3_500_000, gateBase: 60_000, prizeTop: 2_800_000, prizeStep: 100_000,
+  },
+  {
+    // rounds:1 for the same reason as MLS above: 30 clubs won't fit a
+    // double round-robin in a 46-week season.
+    id: 'argentina_lpf', name: 'Liga Profesional', country: 'Argentina', level: 1,
+    clubCount: 30, rounds: 1,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 2, clPlayoff: 0, europaLeague: 2, conferenceLeague: 1,
+    tvEqualShare: 4,
+    startingBudget: 5_000_000, gateBase: 90_000, prizeTop: 4_000_000, prizeStep: 150_000,
+  },
+  {
+    id: 'super_lig', name: 'Süper Lig', country: 'Turkey', level: 1,
+    clubCount: 18, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 2, clPlayoff: 0, europaLeague: 2, conferenceLeague: 1,
+    tvEqualShare: 9,
+    startingBudget: 11_000_000, gateBase: 170_000, prizeTop: 9_000_000, prizeStep: 320_000,
+  },
+  {
+    id: 'saudi_pro_league', name: 'Saudi Pro League', country: 'Saudi Arabia', level: 1,
+    clubCount: 18, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 0, europaLeague: 1, conferenceLeague: 1,
+    tvEqualShare: 12,
+    startingBudget: 15_000_000, gateBase: 160_000, prizeTop: 12_000_000, prizeStep: 400_000,
+  },
+  {
+    id: 'chinese_super_league', name: 'Chinese Super League', country: 'China', level: 1,
+    clubCount: 16, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 0, europaLeague: 1, conferenceLeague: 0,
+    tvEqualShare: 4,
+    startingBudget: 4_500_000, gateBase: 80_000, prizeTop: 3_500_000, prizeStep: 140_000,
+  },
+  {
+    id: 'k_league_1', name: 'K League 1', country: 'South Korea', level: 1,
+    clubCount: 12, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 0, europaLeague: 1, conferenceLeague: 0,
+    tvEqualShare: 2.5,
+    startingBudget: 3_000_000, gateBase: 55_000, prizeTop: 2_400_000, prizeStep: 90_000,
+  },
+  {
+    id: 'ekstraklasa', name: 'Ekstraklasa', country: 'Poland', level: 1,
+    clubCount: 18, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 1, europaLeague: 1, conferenceLeague: 1,
+    tvEqualShare: 2,
+    startingBudget: 2_500_000, gateBase: 50_000, prizeTop: 2_000_000, prizeStep: 80_000,
+  },
+  {
+    id: 'liga_1_romania', name: 'Superliga', country: 'Romania', level: 1,
+    clubCount: 16, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 1, europaLeague: 1, conferenceLeague: 2,
+    tvEqualShare: 1.5,
+    startingBudget: 2_000_000, gateBase: 40_000, prizeTop: 1_600_000, prizeStep: 60_000,
+  },
+  {
+    id: 'eliteserien', name: 'Eliteserien', country: 'Norway', level: 1,
+    clubCount: 16, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 1, europaLeague: 1, conferenceLeague: 1,
+    tvEqualShare: 2,
+    startingBudget: 2_200_000, gateBase: 45_000, prizeTop: 1_800_000, prizeStep: 70_000,
+  },
+  {
+    id: 'allsvenskan', name: 'Allsvenskan', country: 'Sweden', level: 1,
+    clubCount: 16, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 1, europaLeague: 1, conferenceLeague: 1,
+    tvEqualShare: 2,
+    startingBudget: 2_200_000, gateBase: 45_000, prizeTop: 1_800_000, prizeStep: 70_000,
+  },
+  {
+    id: 'swiss_super_league', name: 'Swiss Super League', country: 'Switzerland', level: 1,
+    clubCount: 12, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 1, europaLeague: 1, conferenceLeague: 1,
+    tvEqualShare: 3,
+    startingBudget: 3_200_000, gateBase: 58_000, prizeTop: 2_600_000, prizeStep: 95_000,
+  },
+  {
+    id: 'austrian_bundesliga', name: 'Austrian Bundesliga', country: 'Austria', level: 1,
+    clubCount: 12, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 1, europaLeague: 1, conferenceLeague: 1,
+    tvEqualShare: 2.5,
+    startingBudget: 2_800_000, gateBase: 50_000, prizeTop: 2_200_000, prizeStep: 85_000,
+  },
+  {
+    id: 'a_league_men', name: 'A-League Men', country: 'Australia', level: 1,
+    clubCount: 12, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 0, europaLeague: 0, conferenceLeague: 0,
+    tvEqualShare: 1.5,
+    startingBudget: 1_600_000, gateBase: 35_000, prizeTop: 1_300_000, prizeStep: 50_000,
+  },
+  {
+    // clubCount 10, not the real 11 — the round-robin scheduler (roundRobin()
+    // in seasonProgression.ts) only supports an even club count; trimmed the
+    // weakest-rated club (Punjab FC) rather than touch that shared scheduler.
+    id: 'indian_super_league', name: 'Indian Super League', country: 'India', level: 1,
+    clubCount: 10, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 0, europaLeague: 0, conferenceLeague: 0,
+    tvEqualShare: 1.2,
+    startingBudget: 1_200_000, gateBase: 28_000, prizeTop: 1_000_000, prizeStep: 40_000,
+  },
+  {
+    id: 'league_of_ireland_premier', name: 'Premier Division', country: 'Ireland', level: 1,
+    clubCount: 10, rounds: 2,
+    autoPromotion: 0, playoffSpots: 0, relegation: 0,
+    championsLeague: 1, clPlayoff: 1, europaLeague: 1, conferenceLeague: 1,
+    tvEqualShare: 0.8,
+    startingBudget: 900_000, gateBase: 20_000, prizeTop: 700_000, prizeStep: 25_000,
   },
 ];
 
@@ -418,6 +571,24 @@ export const DIVISION_TO_LEAGUE: Record<Division, string> = {
   8: 'ligue_1',
   9: 'eredivisie',
   10: 'primeira_liga',
+  11: 'pro_league',
+  13: 'mls',
+  14: 'superliga',
+  15: 'argentina_lpf',
+  16: 'super_lig',
+  17: 'saudi_pro_league',
+  18: 'chinese_super_league',
+  19: 'k_league_1',
+  20: 'ekstraklasa',
+  21: 'liga_1_romania',
+  22: 'eliteserien',
+  23: 'allsvenskan',
+  24: 'swiss_super_league',
+  25: 'austrian_bundesliga',
+  26: 'scottish_premiership',
+  27: 'a_league_men',
+  28: 'indian_super_league',
+  29: 'league_of_ireland_premier',
 };
 
 export function leagueIdForDivision(division: number): string {

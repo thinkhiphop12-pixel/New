@@ -18,7 +18,10 @@ export interface TacFam {
 
 /** Legacy division number, kept only for the raw dataset (gamedata.json) and
  *  the pre-v4 save migration. Live game state keys off `LeagueDef.id`. */
-export type Division = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+export type Division =
+  | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11
+  | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20
+  | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29;
 
 /**
  * One league in the pyramid. Structure, promotion/relegation counts, UEFA slot
@@ -180,6 +183,24 @@ export interface Player {
   promiseBreachWeeks?: number;
   /** Consecutive weeks he has gone without an appearance. */
   benchWeeks?: number;
+
+  /** Career mode: an individual development focus layered on top of the
+   *  squad-wide `GameState.training` focus. Absent means "balanced / auto" —
+   *  the pre-existing generic per-player roll in seasonProgression.ts. */
+  devPlan?: DevPlan;
+  /** Season week a "not playing enough"-style complaint last fired for this
+   *  player, so the inbox doesn't spam him every week. */
+  lastComplaintWeek?: number;
+}
+
+/** A per-player development focus set from `PlayerModal`. `stat` mode
+ *  doubles growth odds for `statFocus`; `position` mode counts down
+ *  `weeksRemaining` and, on reaching 0, adds `targetPos` to `altPos`. */
+export interface DevPlan {
+  mode: 'balanced' | 'stat' | 'position';
+  statFocus?: 'pac' | 'sho' | 'pas' | 'dri' | 'def' | 'phy';
+  targetPos?: string;
+  weeksRemaining?: number;
 }
 
 /** A live loan spell, held on the player while he sits in the borrower's squad. */
@@ -323,6 +344,12 @@ export interface Club {
   /** LeagueDef.id this club is registered in. Exactly one, always. */
   leagueId: string;
   playerIds: number[];
+  /** Youth-team players attached to this club: not part of the first-team
+   *  squad, excluded from `playerIds`-based wage bills, squad-size checks
+   *  and lineup/tactics selection. `promoteYouthPlayer` moves an id from
+   *  here into `playerIds`. Optional so old saves without a youth squad
+   *  still deserialize fine. */
+  youthPlayerIds?: number[];
   /** Dormant club sitting in a phantom league's pool — no fixtures, no
    *  transfer activity, waiting to rotate up. */
   dormant?: boolean;
@@ -879,9 +906,26 @@ export interface FacilityProject {
 export interface Coach {
   id: number;
   name: string;
-  role: 'head' | 'fitness' | 'goalkeeping';
+  /** `attack`/`midfield`/`defense` are positional coaches (development speed
+   *  boost for players in that position group); `analyst` boosts sharpness
+   *  gained from training days (see engine/schedule.ts). */
+  role: 'head' | 'fitness' | 'goalkeeping' | 'attack' | 'midfield' | 'defense' | 'analyst';
   /** 1–99, like a player attribute. */
   quality: number;
+  wage: number;
+}
+
+/** A named scout, permanently on the books (unlike the ad-hoc
+ *  `ScoutAssignment` tasks he works through). Star rating drives both how
+ *  quickly he files reports and how sharp the picks in them are. */
+export interface Scout {
+  id: number;
+  name: string;
+  /** 1–5 star rating. */
+  stars: number;
+  /** Country/region he is assigned to comb for talent — free text drawn
+   *  from the existing nationality pool used across the dataset. */
+  region: string;
   wage: number;
 }
 
@@ -930,6 +974,20 @@ export interface OpponentReport {
   weaknesses: string[];
 }
 
+/** A transfer-target lead a scout has filed, surfaced through the inbox and
+ *  actionable straight from TransfersScreen. Detail/accuracy of the note
+ *  scale with the filing scout's star rating. */
+export interface ScoutReport {
+  id: number;
+  playerId: number;
+  scoutName: string;
+  stars: number;
+  region: string;
+  weekGenerated: number;
+  yearGenerated: number;
+  note: string;
+}
+
 export interface ScoutingState {
   assignments: ScoutAssignment[];
   /** Persisted shortlist of scouted player ids — was local-only React state
@@ -938,6 +996,13 @@ export interface ScoutingState {
   reports: OpponentReport[];
   nextAssignmentId: number;
   nextReportId: number;
+  /** Career mode: a permanent scouting network, each scout combing one
+   *  region, filing player leads into `playerReports` on a cadence set by
+   *  his star rating (see engine/scouting.ts). */
+  scouts?: Scout[];
+  nextScoutId?: number;
+  playerReports?: ScoutReport[];
+  nextPlayerReportId?: number;
 }
 
 export interface GameState {
@@ -1038,7 +1103,16 @@ export interface GameState {
   /** Phase 10: scout assignments, opponent reports and the persisted
    *  shortlist. */
   scouting?: ScoutingState;
+  /** Career mode weekly planner: one entry per day, Monday first. Optional —
+   *  absent means "the default split" (see engine/schedule.ts DEFAULT_SCHEDULE).
+   *  Drives per-day sharpness/fitness/injury-risk in the weekly tick. */
+  weeklySchedule?: ScheduleDay[];
+  /** Manual training mini-game: drills run so far this week, reset to 0 in
+   *  `playRound`'s weekly-advance section. Capped at `DRILLS_PER_WEEK`. */
+  drillsUsedThisWeek?: number;
 }
+
+export type ScheduleDay = 'training' | 'recovery';
 
 export type InboxCategory = 'club' | 'transfer' | 'injury' | 'contract' | 'youth' | 'board' | 'match' | 'press';
 
@@ -1052,6 +1126,9 @@ export interface InboxItem {
   /** Player this article is about, shown as a card alongside the text. */
   playerId?: number;
   read: boolean;
+  /** Set once a complaint-type item has been responded to, so the response
+   *  buttons in InboxScreen disappear after one use. */
+  responded?: boolean;
 }
 
 export type MatchSpeed = 'slow' | 'normal' | 'fast' | 'instant';
@@ -1090,12 +1167,32 @@ export interface AvatarConfig {
   accessories?: string[];
 }
 
+/** Playing career tier chosen in the Credentials step — feeds the starting
+ *  reputation formula in `engine/seasonProgression.ts` (`newGame`). */
+export type PlayingBackground =
+  | 'world-class' | 'top-flight' | 'lower-league' | 'semi-pro' | 'none';
+
+/** Non-playing background before taking the manager's chair, if any. */
+export type PriorRole = 'coaching' | 'recruitment' | 'media' | 'none';
+
+/** Coaching badge tier attained. */
+export type BadgeLevel = 'none' | 'basic' | 'advanced' | 'pro';
+
 export interface ManagerProfile {
   id: string;
   name: string;
   avatarConfig: AvatarConfig;
   createdAt: Date;
   updatedAt: Date;
+  /** Backstory/credentials (Phase: Manager Creator). All optional so
+   *  existing saves/profiles load unchanged and simply skip the bonus. */
+  playingBackground?: PlayingBackground;
+  priorRole?: PriorRole;
+  badgeLevel?: BadgeLevel;
+  /** Up to 3 coaching-style flavor tags. */
+  coachingStyles?: string[];
+  /** Up to 2 personality flavor tags. */
+  personality?: string[];
 }
 
 export interface GameData {
