@@ -268,7 +268,11 @@ export default function FootballManagerGame() {
 
   const handleAcceptJob = (clubId: number) => {
     if (!gs) return;
-    apply(switchJob(gs, clubId));
+    // Pass the offer through so the budget the season-end screen quoted is the
+    // budget you actually get — a frugal chairman's kitty is not the league
+    // baseline `switchJob` would otherwise fall back to.
+    const offer = gs.jobOffers.find((o) => o.clubId === clubId);
+    apply(switchJob(gs, clubId, offer));
     setView('hub');
   };
 

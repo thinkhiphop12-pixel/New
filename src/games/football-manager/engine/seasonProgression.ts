@@ -4,7 +4,7 @@ import type {
 } from './types';
 import {
   ACADEMY_UPGRADE_COST, CONTINENTAL_PRIZES, CONTINENTAL_SPOTS, CONTINENTAL_WEEKS, CUP_PRIZES,
-  CUP_WEEKS, LEAGUES, MAX_SQUAD_SIZE, MORALE_DRAW, MORALE_LOSS, MORALE_MAX,
+  CUP_WEEKS, LEAGUES, MAX_SQUAD_SIZE, MIN_SQUAD_SIZE, MORALE_DRAW, MORALE_LOSS, MORALE_MAX,
   MORALE_MIN, MORALE_START, MORALE_WIN, SEASON_ROUNDS, SIMULATED_LEAGUE_IDS, STADIUM_UPGRADE_COST,
   STAFF_MAX_LEVEL, STAFF_UPGRADE_COST, STAFF_WEEKLY_WAGE, gateBase, getFormation, getLeague,
   isPhantomLeague, isWinterBreakWeek, leagueAbove, leagueBelow, leagueIdForDivision, leagueName,
@@ -26,6 +26,9 @@ import {
   isContinentalClubAlive, playContinentalRound, tieAggregate, tieComplete, userContinentalTie,
 } from './europeanCup';
 import { evalScenarioAtSeasonEnd } from './scenarios';
+import {
+  MID_SEASON_RESIGN_REP_COST, boardObjectiveFor, interviewOdds, makeVacancy, tickJobMarket,
+} from './jobMarket';
 import { pushInbox } from './inbox';
 import { tickFinances, weeklyMatchdayIncome } from './finances';
 import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
@@ -167,44 +170,13 @@ export function applySplits(s: GameState): void {
  * Board expectations from the club's squad rank inside its own league, graded
  * against that league's real promotion / play-off / relegation shape rather
  * than a fixed 1–3 up, 22–24 down assumption.
+ *
+ * The rule itself now lives in `jobMarket`, because a job listing has to be
+ * able to state the expectation of a club you don't manage yet. This wrapper
+ * keeps every existing caller reading the user's own board.
  */
 export function makeBoardObjective(state: GameState): Board {
-  const club = state.clubs.find((c) => c.id === state.userClubId)!;
-  const lg = getLeague(club.leagueId);
-  const peers = leagueClubs(state, club.leagueId)
-    .map((c) => ({ id: c.id, avg: squadAvgRating(state, c.id) }))
-    .sort((a, b) => b.avg - a.avg);
-  const n = Math.max(peers.length, 1);
-  const rank = peers.findIndex((p) => p.id === club.id) + 1;
-  const up = lg.autoPromotion;
-  const po = up + lg.playoffSpots;
-  const safe = n - lg.relegation;
-
-  let objective: string;
-  let minPosition: number;
-  if (lg.level === 1 && rank <= 2) {
-    objective = 'Challenge for the title (finish top 2)';
-    minPosition = 2;
-  } else if (up > 0 && rank <= up) {
-    objective = `Win automatic promotion (finish top ${up})`;
-    minPosition = up;
-  } else if (po > up && rank <= po) {
-    objective = `Reach the promotion play-offs (finish top ${po})`;
-    minPosition = po;
-  } else if (lg.level === 1 && rank <= Math.max(4, lg.championsLeague)) {
-    objective = `Qualify for Europe (finish top ${Math.max(4, lg.championsLeague)})`;
-    minPosition = Math.max(4, lg.championsLeague);
-  } else if (rank <= Math.ceil(n / 4)) {
-    objective = 'Finish in the top 6';
-    minPosition = 6;
-  } else if (rank <= Math.ceil(n / 2)) {
-    objective = 'Finish in the top half';
-    minPosition = Math.floor(n / 2);
-  } else {
-    objective = 'Avoid relegation';
-    minPosition = Math.max(1, safe);
-  }
-  return { objective, minPosition, confidence: 60 };
+  return boardObjectiveFor(state, state.userClubId);
 }
 
 /** Domestic cup for one season: all clubs, byes to square the bracket. */
@@ -1081,6 +1053,14 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   applySplits(s);
   s.incomingOffers = generateWeeklyOffers(s);
 
+  // Job market: clubs adrift of where their squad says they should be sack
+  // their managers, and those openings become listings you can apply for.
+  // Standings are computed here rather than inside the job market so that
+  // module needs no import back into this one.
+  const standings: Record<string, TableRow[]> = {};
+  for (const id of activeLeagueIds(s)) standings[id] = computeTable(s, id);
+  tickJobMarket(s, standings);
+
   // Advance facilities projects and scouting assignments by one week.
   const facilityState = tickFacilitiesWeek(s);
   s.facilities = facilityState.facilities;
@@ -1224,13 +1204,21 @@ export function setPlayerHappiness(state: GameState, playerId: number, unhappy: 
   return s;
 }
 
-/** Take a job at another club (from a season-end offer). */
-export function switchJob(state: GameState, clubId: number): GameState {
+/**
+ * Take a job at another club — from a season-end offer, or from a live
+ * vacancy via `applyForJob`.
+ *
+ * `offer` is the listing you accepted, when there was one. Its budget was
+ * quoted to you before you committed (a frugal chairman's kitty is not the
+ * league baseline), so honouring it here is what stops the Job Market screen
+ * from promising money the board never had.
+ */
+export function switchJob(state: GameState, clubId: number, offer?: JobOffer): GameState {
   const s: GameState = structuredClone(state);
   const club = s.clubs.find((c) => c.id === clubId);
   if (!club) return state;
   s.userClubId = clubId;
-  s.budget = startingBudget(club.leagueId) + s.manager.reputation * 100_000;
+  s.budget = (offer?.budget ?? startingBudget(club.leagueId)) + s.manager.reputation * 100_000;
   s.chemistry = 45;
   s.morale = MORALE_START;
   s.fanConfidence = 60;
@@ -1242,6 +1230,7 @@ export function switchJob(state: GameState, clubId: number): GameState {
   s.records = { biggestWin: null, bestFinish: null, topSeasonScorer: null };
   s.ledger = [];
   s.jobOffers = [];
+  s.vacancies = [];
   s.incomingOffers = [];
   s.board = makeBoardObjective(s);
   s.lineup = autoPickLineup(s, clubId, getFormation(s.formationId));
@@ -1253,6 +1242,61 @@ export function switchJob(state: GameState, clubId: number): GameState {
     body: `You have taken charge of ${club.name}.\n\nThe board's objective this season: ${s.board.objective}. Finish ${s.board.minPosition}${ordinal(s.board.minPosition)} or higher to keep their confidence.`,
   });
   return s;
+}
+
+export interface JobApplication {
+  state: GameState;
+  hired: boolean;
+  /** What to tell the player, whichever way it went. */
+  message: string;
+}
+
+/**
+ * Apply for a live vacancy: sit the interview, and move clubs if it goes your
+ * way.
+ *
+ * Applying while employed *is* the resignation — you walk out of one job into
+ * another, which mid-season costs you reputation. A rejection closes that
+ * listing to you rather than letting you re-roll the same board until the dice
+ * land, but leaves the rest of the market open.
+ */
+export function applyForJob(state: GameState, clubId: number): JobApplication {
+  const offer = (state.vacancies ?? []).find((v) => v.clubId === clubId);
+  if (!offer) return { state, hired: false, message: 'That job is no longer available.' };
+  const club = state.clubs.find((c) => c.id === clubId);
+  if (!club) return { state, hired: false, message: 'That club no longer exists.' };
+  if (clubId === state.userClubId) {
+    return { state, hired: false, message: 'You already manage that club.' };
+  }
+
+  const odds = interviewOdds(state, offer);
+  if (Math.random() * 100 >= odds) {
+    const s: GameState = structuredClone(state);
+    s.vacancies = (s.vacancies ?? []).filter((v) => v.clubId !== clubId);
+    pushInbox(s, {
+      category: 'club',
+      title: `Interview unsuccessful — ${club.name}`,
+      body: `${club.name} have appointed someone else.\n\nTheir board were looking for a manager of around ${offer.repRequired} reputation; yours stands at ${s.manager.reputation}.\n\nBuild your record and the bigger jobs will come.`,
+    });
+    return { state: s, hired: false, message: `${club.name} went with another candidate.` };
+  }
+
+  // Walking out on a squad mid-campaign is remembered; moving between seasons
+  // is normal and costs nothing.
+  const midSeason = state.week > 1 && !seasonOver(state);
+  const departing = state.clubs.find((c) => c.id === state.userClubId);
+  let s = switchJob(state, clubId, offer);
+  if (midSeason) {
+    s.manager.reputation = Math.max(0, s.manager.reputation - MID_SEASON_RESIGN_REP_COST);
+    if (departing) {
+      s.news.unshift(`${s.manager.name} walks out on ${departing.name} mid-season to join ${club.name}.`);
+    }
+  }
+  return {
+    state: s,
+    hired: true,
+    message: `${club.name} have appointed you${midSeason ? ' — the press will not be kind about the timing' : ''}.`,
+  };
 }
 
 /* ===========================================================================
@@ -1602,7 +1646,7 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     if (p.contractYears === 0) {
       if (p.clubId === s.userClubId) {
         const club = s.clubs.find((c) => c.id === p.clubId)!;
-        if (club.playerIds.length <= 15) {
+        if (club.playerIds.length <= MIN_SQUAD_SIZE) {
           // Can't afford to lose him with the squad this thin — a grudging 1-year deal.
           p.contractYears = 1;
           p.contractEnd = contractEndFor(s.seasonYear + 1, 1);
@@ -1735,6 +1779,37 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     s.incomingOffers = s.incomingOffers.filter((o) => s.players[o.playerId]);
   }
 
+  // Any squad — the user's included — that retirement has thinned below a
+  // fieldable XI gets topped up with filler signings, the same way a
+  // promoted phantom-pool club is given one (see wakePoolClub above).
+  // Retirement is age-driven and can't be deferred by a transfer-window
+  // decision the way contract expiry can (see the MIN_SQUAD_SIZE guard above), so
+  // it's the one path that can drop even the user under MIN_SQUAD_SIZE with
+  // no action open to stop it. Nothing here runs for the AI transfer
+  // market's own slow, one-at-a-time signings, which can't outpace
+  // retirement across hundreds of clubs.
+  for (const club of s.clubs) {
+    if (club.dormant) continue;
+    if (club.playerIds.length >= MIN_SQUAD_SIZE) continue;
+    const target = clamp(Math.round(squadAvgRating(s, club.id)) || 60, 46, 88);
+    let slot = club.playerIds.length;
+    const signed: Player[] = [];
+    while (club.playerIds.length < MIN_SQUAD_SIZE + 2) {
+      const p = makeFillerPlayer(s.nextPlayerId++, club.id, target, s.seasonYear + 1, slot++);
+      s.players[p.id] = p;
+      club.playerIds.push(p.id);
+      signed.push(p);
+    }
+    if (club.id === s.userClubId) {
+      s.news.unshift(`With retirements leaving the squad short, the board signs ${signed.length} emergency free agents.`);
+      pushInbox(s, {
+        category: 'club',
+        title: 'Emergency squad signings',
+        body: `A wave of retirements left the squad unable to field a side, so the board has brought in ${signed.length} free agents to make up the numbers: ${signed.map((p) => p.name).join(', ')}.\n\nThey're stopgaps, not first-team quality — replace them properly once the transfer window opens.`,
+      });
+    }
+  }
+
   // Job offers: rescue jobs when sacked, step-up offers after a strong season.
   s.jobOffers = [];
   const myAvg = squadAvgRating(s, s.userClubId);
@@ -1745,14 +1820,18 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
       .sort((a, b) => squadAvgRating(s, a.id) - squadAvgRating(s, b.id))
       .slice(0, 4);
     for (const c of rescuers.sort(() => Math.random() - 0.5).slice(0, 2)) {
-      s.jobOffers.push({ clubId: c.id, note: `${leagueName(c.leagueId)} — a chance to rebuild your reputation.` });
+      const offer = makeVacancy(s, c.id, `${leagueName(c.leagueId)} — a chance to rebuild your reputation.`);
+      if (offer) s.jobOffers.push(offer);
     }
   } else if (s.manager.reputation >= 60 && position <= 6 && Math.random() < 0.7) {
     const suitor = others
       .filter((c) => !c.dormant && getLeague(c.leagueId).level <= lg.level && squadAvgRating(s, c.id) > myAvg + 1)
       .sort((a, b) => squadAvgRating(s, b.id) - squadAvgRating(s, a.id))
       .slice(0, 3)[Math.floor(Math.random() * 3)];
-    if (suitor) s.jobOffers.push({ clubId: suitor.id, note: `${leagueName(suitor.leagueId)} — a bigger club wants you.` });
+    if (suitor) {
+      const offer = makeVacancy(s, suitor.id, `${leagueName(suitor.leagueId)} — a bigger club wants you.`);
+      if (offer) s.jobOffers.push(offer);
+    }
   }
 
   // Board reinvestment: a club doesn't hoard cash indefinitely. Surplus above a

@@ -195,6 +195,15 @@ function migrate(raw: RawSave): GameState {
   s.transferBans = s.transferBans ?? {};
   s.transferNews = s.transferNews ?? [];
 
+  // --- Job market. Also additive: an older save starts with an empty market,
+  // which the weekly tick refills within a round. Season-end offers stored in
+  // the old {clubId, note} shape are dropped rather than back-filled — the
+  // budget/objective/reputation on a listing are derived from league and
+  // squad state at the moment the job opened, and inventing them now would
+  // quote the player a job the board never actually offered.
+  s.vacancies = s.vacancies ?? [];
+  s.jobOffers = (s.jobOffers ?? []).filter((o) => 'repRequired' in o);
+
   seedClubIdentities(s);
   s.playStyle = s.playStyle ?? s.clubs.find((c) => c.id === s.userClubId)?.playStyle ?? 'balanced';
 
