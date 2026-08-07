@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { GameState } from '@/engine/types';
 import { getSquad } from '@/engine/teamManagement';
 import { WEEK_DAY_LABELS, getSchedule, setScheduleDay, setWholeSchedule, SCHEDULE_PRESETS, projectWeeklySchedule } from '@/engine/schedule';
@@ -50,6 +50,9 @@ export default function WeeklyScheduleScreen({
   const projectedSharpness = Math.round(Math.min(100, Math.max(0, avgSharpness + projection.sharpnessDelta)));
   const projectedFitness = Math.round(Math.min(100, Math.max(0, avgFitness + projection.fitnessDelta)));
 
+  const [showDays, setShowDays] = useState(false);
+  const activePreset = SCHEDULE_PRESETS.find((p) => p.days.every((d, i) => d === days[i]));
+
   return (
     <>
       <div className="fm-panel">
@@ -59,16 +62,16 @@ export default function WeeklyScheduleScreen({
             <strong style={{ color: 'var(--red)' }}>Five or more training days is overtraining — injury risk rises.</strong>
           )}
         </p>
-        <div className="fm-form-strip">
-          <div className="fm-form-dot">
+        <div className="fm-stat-strip">
+          <div className="fm-stat-dot">
             <span className="fm-hint">Squad sharpness</span>
             <span>{avgSharpness}/100</span>
           </div>
-          <div className="fm-form-dot">
+          <div className="fm-stat-dot">
             <span className="fm-hint">Squad fitness</span>
             <span>{avgFitness}/100</span>
           </div>
-          <div className="fm-form-dot">
+          <div className="fm-stat-dot">
             <span className="fm-hint">Training : Recovery</span>
             <span>{trainingDays} : {recoveryDays}</span>
           </div>
@@ -77,35 +80,48 @@ export default function WeeklyScheduleScreen({
 
       <div className="fm-panel">
         <p className="fm-label" style={{ marginTop: 0 }}>This Week</p>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {WEEK_DAY_LABELS.map((label, i) => {
-            const day = days[i];
-            return (
-              <button
-                key={label}
-                type="button"
-                className={`fm-btn fm-btn--small${day === 'training' ? ' fm-btn--primary' : ' fm-btn--secondary'}`}
-                style={{ flex: '1 1 60px', flexDirection: 'column', gap: 2 }}
-                onClick={() => onChange(setScheduleDay(state, i, day === 'training' ? 'recovery' : 'training'))}
-                title={day === 'training' ? 'Training day — tap for Recovery' : 'Recovery day — tap for Training'}
-              >
-                <span>{label}</span>
-                <Icon name={day === 'training' ? 'training' : 'fitness'} size={13} />
-              </button>
-            );
-          })}
-        </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+        <p className="fm-hint" style={{ textAlign: 'left', margin: '0 0 10px' }}>
+          Pick an approach — everyone on the squad follows it, no per-player setup needed.
+        </p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {SCHEDULE_PRESETS.map((p) => (
             <button
               key={p.id}
-              className="fm-btn fm-btn--ghost fm-btn--small"
+              className={`fm-btn fm-btn--small${activePreset?.id === p.id ? ' fm-btn--primary' : ' fm-btn--secondary'}`}
               onClick={() => onChange(setWholeSchedule(state, p.days))}
             >
               {p.label}
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          className="fm-btn fm-btn--ghost fm-btn--small"
+          style={{ marginTop: 10 }}
+          onClick={() => setShowDays((v) => !v)}
+        >
+          {showDays ? 'Hide day-by-day' : 'Customize day-by-day'}
+        </button>
+        {showDays && (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+            {WEEK_DAY_LABELS.map((label, i) => {
+              const day = days[i];
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  className={`fm-btn fm-btn--small${day === 'training' ? ' fm-btn--primary' : ' fm-btn--secondary'}`}
+                  style={{ flex: '1 1 60px', flexDirection: 'column', gap: 2 }}
+                  onClick={() => onChange(setScheduleDay(state, i, day === 'training' ? 'recovery' : 'training'))}
+                  title={day === 'training' ? 'Training day — tap for Recovery' : 'Recovery day — tap for Training'}
+                >
+                  <span>{label}</span>
+                  <Icon name={day === 'training' ? 'training' : 'fitness'} size={13} />
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="fm-panel">
@@ -113,8 +129,8 @@ export default function WeeklyScheduleScreen({
         <p className="fm-hint" style={{ textAlign: 'left', margin: '0 0 10px' }}>
           What this schedule will do to the squad by Sunday, if nothing else changes.
         </p>
-        <div className="fm-form-strip">
-          <div className="fm-form-dot">
+        <div className="fm-stat-strip">
+          <div className="fm-stat-dot">
             <span className="fm-hint">Sharpness</span>
             <span>
               {avgSharpness} → {projectedSharpness}{' '}
@@ -123,7 +139,7 @@ export default function WeeklyScheduleScreen({
               </strong>
             </span>
           </div>
-          <div className="fm-form-dot">
+          <div className="fm-stat-dot">
             <span className="fm-hint">Fitness</span>
             <span>
               {avgFitness} → {projectedFitness}{' '}
@@ -132,7 +148,7 @@ export default function WeeklyScheduleScreen({
               </strong>
             </span>
           </div>
-          <div className="fm-form-dot">
+          <div className="fm-stat-dot">
             <span className="fm-hint">Injury risk</span>
             <span style={{ color: projection.overtrainRisk > 0 ? 'var(--red)' : 'var(--green)' }}>
               {projection.overtrainRisk > 0 ? `+${Math.round(projection.overtrainRisk * 1000) / 10}%/player` : 'Normal'}

@@ -865,6 +865,15 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-form-dot--d { background: var(--gold-dim); color: var(--gold-2); }
 .fm-form-dot--l { background: rgba(255,107,107,0.14); color: var(--red); }
 
+/* Stat strip — label-over-value readout tiles (e.g. "Squad sharpness / 88/100"),
+   distinct from .fm-form-strip/.fm-form-dot above which are fixed 17px W/D/L
+   badges and overflow badly if used for multi-line text. */
+.fm-stat-strip { display: flex; gap: 10px; flex-wrap: wrap; }
+.fm-stat-dot {
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 90px; flex: 1 1 90px;
+}
+
 .fm-table__club-inner { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .fm-table__club-name {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;

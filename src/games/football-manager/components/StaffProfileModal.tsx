@@ -65,21 +65,21 @@ export default function StaffProfileModal({
             ✕
           </button>
         </div>
-        <div className="fm-form-strip">
-          <div className="fm-form-dot">
+        <div className="fm-stat-strip">
+          <div className="fm-stat-dot">
             <span className="fm-hint">Role</span>
             <span>{coach.role.replace(/_/g, ' ')}</span>
           </div>
-          <div className="fm-form-dot">
+          <div className="fm-stat-dot">
             <span className="fm-hint">Quality</span>
             <span>{coach.quality}/99</span>
           </div>
-          <div className="fm-form-dot">
+          <div className="fm-stat-dot">
             <span className="fm-hint">Wage</span>
             <span>{formatMoney(coach.wage)}/wk</span>
           </div>
         </div>
-        <div className="fm-form-strip">
+        <div className="fm-stat-strip">
           <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={() => onClose()}>
             Negotiate contract
           </button>
