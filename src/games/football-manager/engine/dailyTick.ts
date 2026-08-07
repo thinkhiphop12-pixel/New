@@ -126,6 +126,9 @@ export function advanceDay(state: GameState, settings?: GameSettings): DayTickRe
         category: 'youth',
         title: 'Youth intake arrived',
         body: `Your academy has generated ${withIntake.trialistPool.length} new trialists. Review them in the Youth Academy and sign or release each prospect.`,
+        week: s.week,
+        seasonYear: s.seasonYear,
+        read: false,
         playerId: undefined,
       });
     }
