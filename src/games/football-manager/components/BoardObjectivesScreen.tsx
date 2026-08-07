@@ -3,9 +3,20 @@
 import type { GameState } from '@/engine/types';
 import { userLeagueId, userPosition, userLeague } from '@/engine/seasonProgression';
 import { leagueName } from '@/engine/gameRules';
+import { CHAIRMAN_BLURB, CHAIRMAN_LABEL, chairmanFor } from '@/engine/jobMarket';
 import { ReputationStars, Bar } from './visuals';
 import { Icon } from './Icon';
 
+/**
+ * Job security in one screen: the three factions who can each make your job
+ * harder — board, fans, squad — read together instead of scattered across
+ * Club, Finances, and here. Board confidence is what actually gets you
+ * sacked (`engine/seasonProgression.ts` — `sacked = !objectiveMet &&
+ * board.confidence < 20`, checked once at season end); fan confidence and
+ * squad morale don't carry a firing threshold of their own, but they're what
+ * a manager watches in practice, so they get the same verdict treatment
+ * rather than reading as decoration next to the number that "really" counts.
+ */
 export default function BoardObjectivesScreen({ state }: { state: GameState }) {
   const board = state.board;
   const leagueId = userLeagueId(state);
@@ -13,11 +24,32 @@ export default function BoardObjectivesScreen({ state }: { state: GameState }) {
   const pos = userPosition(state);
   const ranked = pos > 0;
   const onTrack = ranked && pos <= board.minPosition;
+  const chairman = chairmanFor(state.userClubId);
 
-  const bars: { label: string; value: number }[] = [
-    { label: 'Board', value: board.confidence },
-    { label: 'Fan Confidence', value: state.fanConfidence },
-    { label: 'Team Chemistry', value: state.chemistry },
+  const factions: {
+    label: string;
+    value: number;
+    priority: string;
+    verdict: (v: number) => string;
+  }[] = [
+    {
+      label: 'Board',
+      value: board.confidence,
+      priority: `${CHAIRMAN_LABEL[chairman]} chairman — ${CHAIRMAN_BLURB[chairman].toLowerCase()} Moved by league position against the objective, and by finances staying out of the red.`,
+      verdict: (v) => (v < 20 ? 'Sacked at season end if this holds' : v < 30 ? 'On the hot seat' : v < 50 ? 'Under pressure' : 'Secure'),
+    },
+    {
+      label: 'Fans',
+      value: state.fanConfidence,
+      priority: 'Want to see the team win, in the league and in cup competitions, regardless of what the board asked for. Slower to move than the board, but a long run without a win turns the stands.',
+      verdict: (v) => (v <= 25 ? 'Protests in the stands' : v < 45 ? 'Grumbling' : v >= 85 ? 'Singing your name' : 'Content'),
+    },
+    {
+      label: 'Squad Morale',
+      value: state.morale,
+      priority: 'Wants results and playing time. Match outcomes, cup runs, and your press-conference tone all feed it directly — a squad that stops believing in you plays worse, which feeds the other two.',
+      verdict: (v) => (v < 40 ? 'Dressing room is restless' : v < 60 ? 'Steady' : 'Fully behind you'),
+    },
   ];
 
   return (
@@ -49,10 +81,23 @@ export default function BoardObjectivesScreen({ state }: { state: GameState }) {
       </div>
 
       <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>Board Metrics</p>
-        {bars.map((b) => (
-          <Bar key={b.label} value={b.value} label={b.label} />
-        ))}
+        <p className="fm-label" style={{ marginTop: 0 }}>Who You Answer To</p>
+        <p className="fm-hint" style={{ marginTop: 0 }}>
+          Three factions, three priorities. Keeping the board happy is what keeps your job — the other two are what
+          make the club worth managing.
+        </p>
+        {factions.map((f) => {
+          const tone = f.value >= 65 ? 'var(--green)' : f.value >= 35 ? 'var(--gold)' : 'var(--red)';
+          return (
+            <div key={f.label} style={{ marginBottom: 14 }}>
+              <Bar value={f.value} label={f.label} />
+              <p className="fm-club-line" style={{ margin: '2px 0 2px', color: tone, fontSize: 13 }}>
+                {f.verdict(f.value)}
+              </p>
+              <p className="fm-hint" style={{ margin: 0 }}>{f.priority}</p>
+            </div>
+          );
+        })}
       </div>
 
       <div className="fm-panel">
@@ -64,38 +109,19 @@ export default function BoardObjectivesScreen({ state }: { state: GameState }) {
       </div>
 
       <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>Objective History</p>
-        {state.history.length === 0 ? (
-          <p className="fm-hint">No previous seasons to display.</p>
-        ) : (
-          <table className="fm-finance-table">
-            <thead>
-              <tr><th>Season</th><th>Position</th><th>Objective</th><th>Completed</th></tr>
-            </thead>
-            <tbody>
-              {[...state.history].reverse().map((h) => (
-                <tr key={h.year}>
-                  <td>{h.year}</td>
-                  <td>P{h.position}</td>
-                  <td>{h.objective}</td>
-                  <td className={h.objectiveMet ? 'in' : 'out'}>{h.objectiveMet ? '✓' : '✗'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <div className="fm-panel">
         <p className="fm-label" style={{ marginTop: 0 }}>Dismissal Risk</p>
-        <p className="fm-club-line" style={{ color: board.confidence < 30 ? 'var(--red)' : board.confidence < 50 ? 'var(--gold)' : 'var(--green)' }}>
-          Confidence is {board.confidence}/100 — {board.confidence < 20 ? 'you will be sacked at season end' : board.confidence < 30 ? 'on the hot seat' : board.confidence < 50 ? 'under pressure' : 'secure'}
+        <p
+          className="fm-club-line"
+          style={{ display: 'flex', alignItems: 'center', gap: 6, color: board.confidence < 30 ? 'var(--red)' : board.confidence < 50 ? 'var(--gold)' : 'var(--green)' }}
+        >
+          {board.confidence < 30 && <Icon name="warning" size={14} />}
+          Board confidence is {board.confidence}/100 — {board.confidence < 20 ? 'you will be sacked at season end' : board.confidence < 30 ? 'on the hot seat' : board.confidence < 50 ? 'under pressure' : 'secure'}
         </p>
         <p className="fm-hint">
-          Confidence is driven by league position, cup fixtures, and off-pitch results. Win matches to restore trust.
+          Only board confidence carries a firing threshold. Fan and squad sentiment don&apos;t end your job on their
+          own, but a squad that stops believing plays worse — which is exactly what drags board confidence down.
         </p>
       </div>
     </>
   );
 }
-

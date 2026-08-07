@@ -219,7 +219,13 @@ body {
    nowrap row — Club Select's four league pills, for one — pushed itself
    wider than the viewport and, being centred, got clipped at BOTH edges on
    Portrait instead of scrolling. */
-.fm-view-fade { animation: fm-view-fade 0.3s ease; min-width: 0; }
+/* Every view — the pre-game screens that carry `.fm-screen` themselves and
+   the hub, which lays out its own rail + panel shell — is measured here, on
+   the one wrapper they all pass through. Before this, `.fm-hub-shell` had no
+   cap of its own and ran the full width of `.fm-main` while Nation Select
+   and Club Select stopped at `--w-screen`, so the game visibly changed
+   width the moment you took a job. */
+.fm-view-fade { animation: fm-view-fade 0.3s ease; min-width: 0; width: 100%; max-width: var(--w-screen); margin-inline: auto; }
 @keyframes fm-view-fade {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
@@ -395,7 +401,7 @@ body {
 }
 .fm-nation-card:hover { border-color: var(--border-bright); transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .fm-nation-card:active { transform: translateY(0); }
-.fm-nation-card__flag { font-size: 48px; display: block; }
+.fm-nation-card__flag { display: block; line-height: 0; box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.4)); border-radius: 3px; }
 .fm-nation-card__name { font-weight: 800; font-size: 18px; color: var(--text); }
 .fm-nation-card__divisions { font-size: 12px; color: var(--muted); font-weight: 600; }
 .fm-nation-card__desc { font-size: 12px; color: var(--muted-dim); line-height: 1.4; margin: 0; }
@@ -619,63 +625,6 @@ body {
 .fm-hubcal__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .fm-hubcal__label { font-size: 11.5px; font-weight: 800; color: var(--text-2); }
 .fm-hubcal__sub { font-size: 12px; font-weight: 600; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-.fm-groupgrid { display: grid; grid-template-columns: 1fr; gap: 10px; }
-@media (min-width: 560px) { .fm-groupgrid { grid-template-columns: repeat(2, 1fr); } }
-
-.fm-groupcard {
-  display: flex; align-items: center; gap: 13px; width: 100%; text-align: left;
-  background: var(--card-gradient); border: 1px solid var(--border);
-  border-radius: var(--r-xl); padding: 16px 15px; cursor: pointer;
-  font-family: inherit; color: var(--text); position: relative; overflow: hidden;
-  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
-}
-/* Group tint: a hairline down the leading edge, the one place each group
-   gets its own colour. These are the fixed semantic accents, not --brand,
-   which stays reserved for active nav state and primary buttons. */
-.fm-groupcard::before {
-  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-  background: var(--groupcard-tint, var(--green));
-}
-.fm-groupcard--matchday { --groupcard-tint: var(--green); }
-.fm-groupcard--team { --groupcard-tint: var(--blue); }
-.fm-groupcard--market { --groupcard-tint: var(--gold); }
-.fm-groupcard--club { --groupcard-tint: var(--accent-purple); }
-
-.fm-groupcard:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-bright);
-  box-shadow: var(--shadow-md);
-}
-.fm-groupcard:active { transform: translateY(0); }
-
-.fm-groupcard__icon {
-  display: flex; align-items: center; justify-content: center; flex: 0 0 44px;
-  height: 44px; border-radius: var(--r-md);
-  background: color-mix(in srgb, var(--groupcard-tint) 14%, transparent);
-  color: var(--groupcard-tint);
-}
-.fm-groupcard__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
-.fm-groupcard__name {
-  font-family: var(--font-display);
-  font-size: 17px; font-weight: 900; line-height: 1.1; letter-spacing: -0.2px;
-}
-.fm-groupcard__line {
-  display: flex; align-items: center; gap: 4px;
-  font-size: 12px; color: var(--muted); font-weight: 600;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.fm-groupcard__line--warn { color: var(--gold-2); }
-.fm-groupcard__badge {
-  background: var(--red); color: #fff; border-radius: 999px;
-  font-size: 10px; font-weight: 900; padding: 2px 7px; flex-shrink: 0;
-}
-.fm-groupcard__chev { color: var(--text-dim); flex-shrink: 0; }
-
-@media (prefers-reduced-motion: reduce) {
-  .fm-groupcard { transition: none; }
-  .fm-groupcard:hover, .fm-groupcard:active { transform: none; }
-}
 
 /* Screen-reader-only text. No such utility existed in this stylesheet; the
    nav badge counts need one so a bare "3" reads as "3 needing attention". */
@@ -1957,13 +1906,13 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 /* ── Landscape / Wide Screen Responsive ── */
 @media (min-width: 920px) {
   /* On wide desktops, increase max-width to use available space */
-  .fm-screen { max-width: var(--w-wide); }
+  .fm-screen, .fm-view-fade, .fm-bottom-ad, .fm-actiondock { max-width: var(--w-wide); }
   .fm-main { padding: 16px 16px 80px; }
 }
 
 @media (min-width: 1200px) {
   /* Extra wide screens */
-  .fm-screen { max-width: var(--w-xwide); }
+  .fm-screen, .fm-view-fade, .fm-bottom-ad, .fm-actiondock { max-width: var(--w-xwide); }
   .fm-main { padding: 20px 20px 80px; }
 
   /* Improve tab layout for many tabs */

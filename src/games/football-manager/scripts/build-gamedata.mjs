@@ -116,7 +116,7 @@ const CLUB_COLORS = {
   'Manchester United': '#f87171', Chelsea: '#3b82f6', 'Tottenham Hotspur': '#e2e8f0',
   'Newcastle United': '#94a3b8', 'Aston Villa': '#a78bfa', 'West Ham United': '#b45309',
   Everton: '#2563eb', 'Brighton & Hove Albion': '#60a5fa', 'Crystal Palace': '#818cf8',
-  Fulham: '#d1d5db', Brentford: '#fb7185', Wolverhampton: '#f59e0b', Burnley: '#9f1239',
+  'Fulham FC': '#d1d5db', Brentford: '#fb7185', 'Wolverhampton Wanderers': '#f59e0b', Burnley: '#9f1239',
   'Leeds United': '#fde047', Sunderland: '#f87171', 'Nottingham Forest': '#ef4444',
   'AFC Bournemouth': '#dc2626', 'Leicester City': '#3b82f6', Southampton: '#ef4444',
   'Sheffield United': '#f43f5e', 'West Bromwich Albion': '#1d4ed8', Middlesbrough: '#ef4444',
@@ -139,6 +139,11 @@ function clubCode(name) {
 
 // --- Load source ------------------------------------------------------------
 const raw = JSON.parse(readFileSync(SRC, 'utf8'));
+
+/* Club-to-league membership, and therefore the size of every division, comes
+ * from the CSV via scripts/build-source.mjs — see the note at the top of that
+ * file. Nothing is padded or trimmed here. */
+
 let nextId = 1;
 const players = [];
 const clubs = [];

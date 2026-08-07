@@ -1,79 +1,38 @@
 'use client';
 
-/** Manager avatar — a hand-customised counterpart to the procedural
- *  `PlayerFace`. Shares the same head/shoulders silhouette primitives so the
- *  two read as one visual family, but every layer here is driven by an
- *  explicit `AvatarConfig` rather than derived from a player id.
+/** Manager avatar — a layered SVG portrait driven entirely by an explicit
+ *  `AvatarConfig`. Every part comes from the catalog in `avatarParts.tsx`, so
+ *  the creator screen and this renderer can never drift out of sync about
+ *  which variants exist.
  *
- *  Rendered as a single self-contained inline SVG (no network fetch), so it
- *  can be canvas-rendered for PNG export and reused anywhere at any size. */
+ *  Self-contained inline SVG (no network fetch, no shared element ids), so it
+ *  can be canvas-rendered for PNG export and safely rendered many times at
+ *  once at any size. */
 
 import type { CSSProperties } from 'react';
 import type { AvatarConfig } from '@/engine/types';
+import { Accessory, Attire, Eyebrows, Eyes, FacialHair, Hair, Mouth } from './avatarParts';
 
-/** Darken a `#rrggbb`/`rrggbb` colour by `amount` (0–1) for the paired
- *  shadow tone — the "one real idea" from the reference: shading that stays
- *  correct across every skin tone instead of a single flat fill. */
+/** Option values are stored as bare hex (`c1ad60`) but SVG `fill`/`stroke`
+ *  need `#c1ad60` — a bare value is invalid and silently renders black.
+ *  Passes through anything already prefixed or a CSS `var(...)` untouched. */
+function cssColor(value: string): string {
+  if (!value) return 'none';
+  if (value.startsWith('#') || value.startsWith('var(')) return value;
+  return `#${value}`;
+}
+
+/** Darken (or lighten, with a negative `amount`) a hex colour for the paired
+ *  shadow tone — shading that stays correct across every skin tone instead of
+ *  a single flat fill. */
 export function shadeColor(hex: string, amount = 0.18): string {
   const h = hex.replace('#', '');
   const num = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
   if (Number.isNaN(num)) return hex;
-  const r = Math.max(0, Math.round(((num >> 16) & 0xff) * (1 - amount)));
-  const g = Math.max(0, Math.round(((num >> 8) & 0xff) * (1 - amount)));
-  const b = Math.max(0, Math.round((num & 0xff) * (1 - amount)));
+  const r = Math.max(0, Math.min(255, Math.round(((num >> 16) & 0xff) * (1 - amount))));
+  const g = Math.max(0, Math.min(255, Math.round(((num >> 8) & 0xff) * (1 - amount))));
+  const b = Math.max(0, Math.min(255, Math.round((num & 0xff) * (1 - amount))));
   return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-}
-
-/** The five hairstyles, drawn over a head centred at (50,55) with r=34 —
- *  same head geometry as `PlayerFace`'s `Hair`, keyed by name instead of a
- *  seeded index so the customizer can pick one explicitly. */
-function Hair({ style, color }: { style: string; color: string }) {
-  switch (style) {
-    case 'short01': // short crop
-      return <path d="M16 52 A34 34 0 0 1 84 52 L84 44 A34 30 0 0 0 16 44 Z" fill={color} />;
-    case 'buzz': // buzz cut
-      return <path d="M18 48 A32 32 0 0 1 82 48 L82 42 A32 26 0 0 0 18 42 Z" fill={color} />;
-    case 'curly01': // curly / afro
-      return (
-        <g fill={color}>
-          <circle cx="50" cy="34" r="26" />
-          <circle cx="26" cy="46" r="13" />
-          <circle cx="74" cy="46" r="13" />
-        </g>
-      );
-    case 'long01': // long, with side panels
-      return (
-        <g fill={color}>
-          <path d="M16 52 A34 34 0 0 1 84 52 L84 42 A34 30 0 0 0 16 42 Z" />
-          <path d="M16 50 L16 74 Q21 78 24 70 L24 50 Z" />
-          <path d="M84 50 L84 74 Q79 78 76 70 L76 50 Z" />
-        </g>
-      );
-    case 'straight01': // wavy medium
-      return (
-        <g fill={color}>
-          <path d="M17 50 A33 33 0 0 1 83 50 L83 40 A33 28 0 0 0 17 40 Z" />
-          <path d="M17 48 Q14 60 19 68 L23 66 Q18 58 21 48 Z" />
-          <path d="M83 48 Q86 60 81 68 L77 66 Q82 58 79 48 Z" />
-        </g>
-      );
-    default: // bald
-      return null;
-  }
-}
-
-function FacialHair({ style, color }: { style: string; color: string }) {
-  if (!style) return null;
-  if (style === 'beardMajestic') {
-    return <path d="M20 56 A30 34 0 0 0 80 56 A30 28 0 0 1 20 56 Z" fill={color} opacity="0.9" />;
-  }
-  if (style === 'beardLight') {
-    return <path d="M32 70 Q50 82 68 70 L66 62 Q50 72 34 62 Z" fill={color} opacity="0.9" />;
-  }
-  if (style === 'moustache') {
-    return <path d="M38 66 Q50 62 62 66 Q50 70 38 66 Z" fill={color} opacity="0.9" />;
-  }
-  return null;
 }
 
 export type CompactAvatarProps = {
@@ -82,14 +41,32 @@ export type CompactAvatarProps = {
   className?: string;
   title?: string;
   style?: CSSProperties;
+  /** Draws the rounded backdrop disc behind the portrait. Off for the large
+   *  framed preview, where the frame itself provides the background. */
+  backdrop?: boolean;
 };
 
-/** Renders the avatar SVG. Self-contained per instance (no shared ids), so
- *  it's safe to render several at once (dugout + header, say). */
-export default function ManagerAvatar({ config, size = 40, className = '', title, style }: CompactAvatarProps) {
-  const skinShadow = config.skinShadow || shadeColor(config.skinTone);
-  const eyebrowColor = config.eyebrowColor || shadeColor(config.hairColor, -0.1);
-  const hasGlasses = (config.accessories ?? []).includes('glasses');
+export default function ManagerAvatar({
+  config,
+  size = 40,
+  className = '',
+  title,
+  style,
+  backdrop = true,
+}: CompactAvatarProps) {
+  const skinTone = cssColor(config.skinTone);
+  const skinShadow = cssColor(config.skinShadow || shadeColor(cssColor(config.skinTone)));
+  const hairColor = cssColor(config.hairColor);
+  const hairShadow = shadeColor(hairColor, 0.25);
+  const eyeColor = cssColor(config.eyeColor);
+  const eyebrowColor = cssColor(config.eyebrowColor || shadeColor(cssColor(config.hairColor), 0.1));
+  const mouthColor = cssColor(config.mouthColor || '#a85751');
+  const accessoryColor = cssColor(config.accessoryColor || '#2b3445');
+  const suitColor = config.suitColor ? cssColor(config.suitColor) : 'var(--panel-2)';
+  const suitShadow = config.suitColor ? shadeColor(cssColor(config.suitColor), 0.3) : 'var(--panel-3)';
+  // `accessories` is stored as an array for backwards compatibility, but only
+  // one accessory is ever selectable.
+  const accessory = config.accessories?.[0] ?? '';
 
   return (
     <svg
@@ -101,30 +78,28 @@ export default function ManagerAvatar({ config, size = 40, className = '', title
       aria-label={title ?? 'Manager avatar'}
       style={style}
     >
-      <circle cx="50" cy="50" r="50" fill="var(--panel-3)" />
-      {/* shoulders / suit */}
-      <path d="M10 100 Q50 66 90 100 Z" fill="var(--panel-2)" />
-      {/* neck + head, two-tone: primary fill with a shadow wedge on the
-          right so the face reads with volume at every skin tone */}
-      <circle cx="50" cy="55" r="34" fill={config.skinTone} />
-      <path d="M50 21 A34 34 0 0 1 84 55 A34 34 0 0 1 66 85 A40 40 0 0 0 50 21 Z" fill={skinShadow} opacity="0.55" />
-      <FacialHair style={config.facialHair} color={config.hairColor} />
-      <Hair style={config.hairStyle} color={config.hairColor} />
-      {/* eyebrows — independent colour axis from hair */}
-      <path d="M34 48 Q39 45 44 48" stroke={eyebrowColor} strokeWidth="2.2" fill="none" strokeLinecap="round" />
-      <path d="M56 48 Q61 45 66 48" stroke={eyebrowColor} strokeWidth="2.2" fill="none" strokeLinecap="round" />
-      {/* eyes */}
-      <circle cx="39" cy="56" r="3.2" fill={config.eyeColor} />
-      <circle cx="61" cy="56" r="3.2" fill={config.eyeColor} />
-      {hasGlasses && (
-        <g stroke="#20242c" strokeWidth="2" fill="none" opacity="0.85">
-          <circle cx="39" cy="56" r="7" />
-          <circle cx="61" cy="56" r="7" />
-          <path d="M46 56 L54 56" />
-        </g>
-      )}
-      {/* mouth */}
-      <path d="M42 68 Q50 72 58 68" stroke="#5a3a2a" strokeWidth="2" fill="none" strokeLinecap="round" />
+      {backdrop && <circle cx="50" cy="50" r="50" fill="var(--panel-3)" />}
+
+      {/* neck, tucked behind the outfit so the collar reads on top */}
+      <path d="M43 70 L57 70 L57 84 L43 84 Z" fill={skinShadow} />
+
+      <Attire style={config.attire ?? 'suittie'} color={suitColor} shadow={suitShadow} />
+
+      {/* ears sit behind the head so only the outer curve shows */}
+      <circle cx="18" cy="57" r="6" fill={skinShadow} />
+      <circle cx="82" cy="57" r="6" fill={skinShadow} />
+
+      {/* head, two-tone: flat fill plus a shadow wedge on the right so the
+          face reads with volume at every skin tone */}
+      <circle cx="50" cy="54" r="31" fill={skinTone} />
+      <path d="M50 23 A31 31 0 0 1 81 54 A31 31 0 0 1 65 81 A37 37 0 0 0 50 23 Z" fill={skinShadow} opacity="0.5" />
+
+      <FacialHair style={config.facialHair} color={hairColor} />
+      <Eyebrows style={config.eyebrows ?? 'default'} color={eyebrowColor} />
+      <Eyes style={config.eyes || 'default'} color={eyeColor} />
+      <Mouth style={config.mouth || 'default'} color={mouthColor} />
+      <Hair style={config.hairStyle} color={hairColor} shadow={hairShadow} />
+      <Accessory style={accessory} color={accessoryColor} />
     </svg>
   );
 }

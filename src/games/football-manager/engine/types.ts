@@ -831,9 +831,39 @@ export interface Board {
   confidence: number; // 0–100; too low = sacked at season end
 }
 
+/** Personality of a club's chairman, which colours what the job is like
+ *  before you take it: how much of the wage bill they'll let you spend, and
+ *  how fast their confidence moves once you're in the door. */
+export type ChairmanType = 'ambitious' | 'patient' | 'frugal' | 'ruthless';
+
+/**
+ * A manager's job — either a live vacancy on the market or an offer put to
+ * you at season end. Both are the same shape so the Job Market screen and
+ * the season-end screen can render one card.
+ *
+ * `note` stays the human sentence; everything else is what the board is
+ * actually offering, so the choice between two jobs is legible before you
+ * take one rather than only afterwards.
+ */
 export interface JobOffer {
   clubId: number;
   note: string;
+  /** League the club is in when the job opens. Stored rather than read off
+   *  the club, so a listing can't silently change tier under the player
+   *  between the vacancy opening and them applying. */
+  leagueId: string;
+  /** Transfer budget the board would hand over on day one. */
+  budget: number;
+  /** What the board will expect, in the same words as `Board.objective`. */
+  objective: string;
+  minPosition: number;
+  /** Manager reputation the board is looking for, 0–100. Applying below this
+   *  is allowed but the interview can go against you. */
+  repRequired: number;
+  chairman: ChairmanType;
+  /** Season this vacancy opened, so stale listings can be swept. */
+  openedWeek: number;
+  openedYear: number;
 }
 
 export interface ClubRecords {
@@ -1076,7 +1106,14 @@ export interface GameState {
   finances?: FinanceState;
   cup: Knockout;
   continental: Continental;
+  /** Offers put directly to you at season end — a rescue job after a sacking,
+   *  or a step up after a strong year. Cleared every rollover. */
   jobOffers: JobOffer[];
+  /** The live job market: openings at other clubs you can apply for at any
+   *  point in the season. Churns weekly as bot clubs sack their managers.
+   *  Optional so pre-job-market saves load with an empty market rather than
+   *  needing a version bump. */
+  vacancies?: JobOffer[];
   records: ClubRecords;
   legacy: Record<number, LegacyEntry>;
   nextPlayerId: number; // for youth academy generation
@@ -1216,6 +1253,20 @@ export interface AvatarConfig {
   eyes: string;
   nose: string;
   accessories?: string[];
+  /** Suit/jacket fill for the shoulders silhouette. Optional — falls back to
+   *  `var(--panel-2)` when absent (older saves predate this field). */
+  suitColor?: string;
+  /** Eyebrow shape, independent of eyebrow colour. Optional — falls back to
+   *  the arched default when absent (older saves predate this field). */
+  eyebrows?: string;
+  /** Outfit shape (suit & tie, turtleneck, tracksuit…). Optional — falls back
+   *  to 'suittie' when absent. */
+  attire?: string;
+  /** Lip colour. Optional — falls back to a muted default when absent. */
+  mouthColor?: string;
+  /** Frame/stud colour for glasses and earrings. Optional — falls back to a
+   *  dark neutral when absent. */
+  accessoryColor?: string;
 }
 
 /** Playing career tier chosen in the Credentials step — feeds the starting

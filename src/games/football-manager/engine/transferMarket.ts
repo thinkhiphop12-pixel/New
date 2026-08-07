@@ -891,7 +891,15 @@ function completeIncomingSale(s: GameState, N: Negotiation): string {
 
 /* ------------------------------------------------------------------ loans */
 
-/** Move a loanee back to his parent club immediately. */
+/**
+ * Move a loanee back to his parent club immediately.
+ *
+ * If the parent's first-team roster is already at `MAX_SQUAD_SIZE` — every
+ * other path onto a squad (signings, promotions, borrowing) is gated on that
+ * cap, but a loan return isn't a choice the club gets to defer — he is
+ * released as a free agent instead of pushing the roster over the limit
+ * everything else in the game treats as a hard ceiling.
+ */
 function executeLoanReturn(s: GameState, p: Player): void {
   const L = p.loan;
   if (!L) return;
@@ -900,11 +908,22 @@ function executeLoanReturn(s: GameState, p: Player): void {
   if (at) at.playerIds = at.playerIds.filter((id) => id !== p.id);
   delete p.loan;
   p.loanListed = false;
-  if (parent) {
+  if (parent && parent.playerIds.length < MAX_SQUAD_SIZE) {
     parent.playerIds.push(p.id);
     p.clubId = parent.id;
     p.chem = Math.max(p.chem ?? 40, 45); // coming home, not arriving somewhere new
   } else {
+    if (parent) {
+      s.news.unshift(`${p.name} is released by ${parent.name} on returning from loan — no room in the squad.`);
+      if (parent.id === s.userClubId) {
+        pushInbox(s, {
+          category: 'transfer',
+          title: `${p.name} released`,
+          body: `${p.name} returned from his loan spell to a squad already at its ${MAX_SQUAD_SIZE}-player limit, and has been released as a free agent.`,
+          playerId: p.id,
+        });
+      }
+    }
     p.clubId = 0;
   }
   if (at?.id === s.userClubId || parent?.id === s.userClubId) {

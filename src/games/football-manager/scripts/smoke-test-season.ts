@@ -28,7 +28,7 @@ import { computeMarkets, scoreGrid, toOdds } from '../engine/odds';
 import { continentalEntrants } from '../engine/seasonProgression';
 import { continentalTieWinner, tieAggregate, tieComplete } from '../engine/europeanCup';
 import {
-  CLUBS_PER_DIVISION, LEAGUES, MAX_SQUAD_SIZE, MIN_SQUAD_SIZE, SEASON_ROUNDS, WINTER_BREAK,
+  LEAGUES, MAX_SQUAD_SIZE, MIN_SQUAD_SIZE, SEASON_ROUNDS, WINTER_BREAK,
   buildCustomFormation, getFormation, getLeague, isPhantomLeague, leagueAbove, leagueIdForDivision, leagueName,
 } from '../engine/gameRules';
 
@@ -43,26 +43,30 @@ const gamedataPath = join(__dirname, '..', 'public', 'data', 'gamedata.json');
 const data: GameData = JSON.parse(readFileSync(gamedataPath, 'utf8'));
 
 console.log(`Loaded ${data.clubs.length} clubs, ${data.players.length} players.`);
-const EXTRA_DIVISION_SIZE: Record<number, number> = {
-  11: 16, 13: 30, 14: 12, 15: 30, 16: 18, 17: 18, 18: 16, 19: 12, 20: 18,
-  21: 16, 22: 16, 23: 16, 24: 12, 25: 12, 26: 12, 27: 12, 28: 10, 29: 10,
-};
-const extraTotal = Object.values(EXTRA_DIVISION_SIZE).reduce((a, b) => a + b, 0);
-assert(
-  data.clubs.length === CLUBS_PER_DIVISION * 10 + extraTotal,
-  `expected ${CLUBS_PER_DIVISION * 10 + extraTotal} clubs total, got ${data.clubs.length}`
+// Every simulated league is as big as the real competition (20 in the
+// Premier League, 24 in the Championship, 18 in the Bundesliga …), taken
+// from the EA FC 26 export by scripts/build-source.mjs. `clubCount` in
+// gameRules is what the rest of the engine sizes itself against, so the
+// dataset has to agree with it league by league.
+const DIVISION_OF_LEAGUE = new Map(
+  Array.from({ length: 29 }, (_, i) => i + 1).map((d) => [leagueIdForDivision(d), d]),
+);
+const EXTRA_DIVISION_SIZE: Record<number, number> = Object.fromEntries(
+  LEAGUES.filter((l) => !l.phantom && l.country !== 'England' && DIVISION_OF_LEAGUE.has(l.id))
+    .map((l) => [DIVISION_OF_LEAGUE.get(l.id)!, l.clubCount]),
 );
 
-for (const d of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+for (const d of [1, 2, 3, 4]) {
   const lid = leagueIdForDivision(d);
+  const expected = getLeague(lid).clubCount;
   const count = data.clubs.filter((c) => c.division === d).length;
   console.log(`  ${leagueName(lid)}: ${count} clubs`);
-  assert(count === CLUBS_PER_DIVISION, `${lid} has ${count} clubs, expected ${CLUBS_PER_DIVISION}`);
+  assert(count === expected, `${lid} has ${count} clubs, expected ${expected}`);
 }
 
-// Divisions 11+ (Belgium, MLS, Denmark, and 15 more leagues from the EA FC
-// 26 ratings export) sit outside the modelled 10-division pyramid above,
-// each with its own real club count and no lower tier.
+// Divisions 5+ (La Liga, Serie A, Belgium, MLS, and the rest of the leagues
+// in the EA FC 26 ratings export) each sit alone in their own country's
+// pyramid, above a phantom pool rather than a simulated lower tier.
 for (const [d, expected] of Object.entries(EXTRA_DIVISION_SIZE)) {
   const division = Number(d);
   const lid = leagueIdForDivision(division);
@@ -633,7 +637,7 @@ assert(
   let es = newGame(data, plClub.id, 'Euro Smoke', 2026);
 
   const entrants = continentalEntrants(es);
-  assert(entrants.length <= CLUBS_PER_DIVISION * 10 && entrants.length > 0, 'no continental entrants found');
+  assert(entrants.length <= data.clubs.length && entrants.length > 0, 'no continental entrants found');
   assert(es.continental.directQualifiers.length <= 8, 'more than 8 direct qualifiers');
 
   let weeksPlayed = 0;

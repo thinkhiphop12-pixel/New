@@ -15,6 +15,7 @@ import ClubScreen from './ClubScreen';
 import FacilitiesScreen from './FacilitiesScreen';
 import FinancesScreen from './FinancesScreen';
 import BoardObjectivesScreen from './BoardObjectivesScreen';
+import JobMarketScreen from './JobMarketScreen';
 import EuropeanScreen from './EuropeanScreen';
 import TrainingScreen from './TrainingScreen';
 import WeeklyScheduleScreen from './WeeklyScheduleScreen';
@@ -122,6 +123,7 @@ export default function HubScreen({
       case 'academy': return <YouthAcademyScreen state={state} onChange={onChange} />;
       case 'finances': return <FinancesScreen state={state} onChange={onChange} />;
       case 'board': return <BoardObjectivesScreen state={state} />;
+      case 'jobs': return <JobMarketScreen state={state} onChange={onChange} />;
       default: return null;
     }
   };
