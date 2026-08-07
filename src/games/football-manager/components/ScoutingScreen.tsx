@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { GameState } from '@/engine/types';
 import { newScouting } from '@/engine/facilities';
 import { getPlayerReports, getScouts, hireScout, fireScout, reassignScout, SCOUT_REGIONS, scoutWage } from '@/engine/scouting';
@@ -24,7 +24,13 @@ export default function ScoutingScreen({
 }) {
   const [hireStars, setHireStars] = useState(3);
   const [hireRegion, setHireRegion] = useState<string>(SCOUT_REGIONS[0]);
-  if (!state.scouting) onChange({ ...state, scouting: newScouting() });
+  // Lazy-init on the trailing edge of render, not during it — calling
+  // onChange synchronously here (the original code) triggered React's
+  // "Cannot update a component while rendering a different component"
+  // warning on this screen every time a save predates scouting.
+  useEffect(() => {
+    if (!state.scouting) onChange({ ...state, scouting: newScouting() });
+  }, [state, onChange]);
 
   const scouts = getScouts(state);
   const reports = getPlayerReports(state);

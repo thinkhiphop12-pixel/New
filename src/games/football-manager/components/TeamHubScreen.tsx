@@ -24,7 +24,7 @@ export default function TeamHubScreen({
 }) {
   const squad = getSquad(state, state.userClubId);
   const available = availableSquad(state, state.userClubId);
-  const avg = squadAvgRating(state, state.userClubId);
+  const avg = Math.round(squadAvgRating(state, state.userClubId));
   const lineupOk = isLineupValid(state, state.userClubId, state.lineup);
 
   const injured = squad.filter((p) => p.injuryWeeks > 0);

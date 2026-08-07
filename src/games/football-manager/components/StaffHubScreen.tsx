@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Coach, GameState } from '@/engine/types';
 import { fireCoach, hireCoach, newFacilities } from '@/engine/facilities';
 import { staffWageBill } from '@/engine/seasonProgression';
@@ -37,7 +37,12 @@ export default function StaffHubScreen({
 }) {
   const [profileCoachId, setProfileCoachId] = useState<number | null>(null);
   const fs = state.facilities ?? newFacilities(state);
-  if (!state.facilities) onChange({ ...state, facilities: fs });
+  // Same lazy-init-after-render fix as ScoutingScreen — the previous
+  // onChange-during-render call triggered a React setState warning on
+  // this screen for any save predating facilities.
+  useEffect(() => {
+    if (!state.facilities) onChange({ ...state, facilities: fs });
+  }, [state, fs, onChange]);
 
   const wageBill = staffWageBill(state);
   const hired = ROLES.map((r) => fs.coaches.find((c) => c.role === r.id)).filter(Boolean) as Coach[];
