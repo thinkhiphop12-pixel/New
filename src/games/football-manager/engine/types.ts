@@ -1165,6 +1165,15 @@ export interface GameState {
   /** Phase 10: scout assignments, opponent reports and the persisted
    *  shortlist. */
   scouting?: ScoutingState;
+  /** Temporary trialist pool from September youth intake awaiting accept/reject. */
+  trialistPool?: Array<{
+    playerId: number;
+    trialistId: string;
+    starRating: number;
+    pos: Position;
+    ca: number;
+    pa: number;
+  }>;
   /** Career mode weekly planner: one entry per day, Monday first. Optional —
    *  absent means "the default split" (see engine/schedule.ts DEFAULT_SCHEDULE).
    *  Drives per-day sharpness/fitness/injury-risk in the weekly tick. */
