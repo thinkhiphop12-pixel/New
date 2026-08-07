@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { GameState, Player } from '@/engine/types';
-import { getYouthSquad, promoteYouthPlayer } from '@/engine/youthAcademy';
+import { getYouthSquad, promoteYouthPlayer, acceptTrialist, rejectTrialist } from '@/engine/youthAcademy';
 import { MAX_SQUAD_SIZE } from '@/engine/gameRules';
 import { Icon } from './Icon';
 import { PlayerFace } from './PlayerFace';
@@ -34,9 +34,80 @@ export default function YouthAcademyScreen({
   const squadFull = firstTeamSize >= MAX_SQUAD_SIZE;
 
   const nextIntakeCount = state.academyLevel >= 3 ? 2 : 1;
+  const trialists = state.trialistPool ?? [];
 
   return (
     <>
+      {trialists.length > 0 && (
+        <div className="fm-mod">
+          <div className="fm-mod__head"><h2 className="fm-mod__title">Trialist Intake</h2></div>
+          <div className="fm-player-list">
+            {trialists.map((t) => {
+              const player = state.players[t.playerId];
+              if (!player) return null;
+              return (
+                <div
+                  key={t.playerId}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '40px 1fr auto',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '8px 12px',
+                    borderBottom: '1px solid var(--border)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        width: 26,
+                        height: 26,
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--muted)',
+                        fontSize: 10,
+                        lineHeight: '26px',
+                        textAlign: 'center',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {player.pos}
+                    </span>
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
+                      {player.name}
+                      {t.starRating > 0 && (
+                        <span style={{ marginLeft: 6, fontSize: 12, color: 'var(--gold)' }}>
+                          {'★'.repeat(t.starRating)}
+                        </span>
+                      )}
+                    </p>
+                    <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--muted)' }}>
+                      CA {t.ca} · PA {t.pa} · {player.age}y
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      className="fm-btn fm-btn--secondary fm-btn--small"
+                      onClick={() => onChange(acceptTrialist(state, t.playerId))}
+                    >
+                      Sign
+                    </button>
+                    <button
+                      className="fm-btn fm-btn--ghost fm-btn--small"
+                      onClick={() => onChange(rejectTrialist(state, t.playerId))}
+                    >
+                      Release
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="fm-panel">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 12 }}>
           <div>

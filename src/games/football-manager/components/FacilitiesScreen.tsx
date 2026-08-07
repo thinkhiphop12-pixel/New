@@ -13,6 +13,7 @@ import {
   newFacilities, startFacilityProject, startStandProject,
 } from '@/engine/facilities';
 import { formatMoney } from '@/engine/utils';
+import { generateYouthIntake } from '@/engine/youthAcademy';
 import { Icon } from './Icon';
 import StadiumBuilder from './StadiumBuilder';
 
@@ -160,6 +161,14 @@ function StadiumTab({
               onClick={() => onChange(upgradeAcademy(state))}
             >
               Legacy intake upgrade → level {state.academyLevel + 1} — {ACADEMY_UPGRADE_COST[state.academyLevel + 1] ? formatMoney(ACADEMY_UPGRADE_COST[state.academyLevel + 1]) : '—'}
+            </button>
+          )}
+          {(!state.trialistPool || state.trialistPool.length === 0) && (
+            <button
+              className="fm-btn fm-btn--ghost fm-btn--small"
+              onClick={() => onChange(generateYouthIntake(state))}
+            >
+              Generate intake (test)
             </button>
           )}
         </div>

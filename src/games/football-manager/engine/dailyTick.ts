@@ -1,9 +1,10 @@
 import type { GameState, GameSettings, InboxCategory } from './types';
-import { dayIndex, dayOfSeason, daysUntilMatchDay, isMatchDay } from './calendar';
+import { dayIndex, dayOfSeason, daysUntilMatchDay, isMatchDay, gameDate } from './calendar';
 import { applyDailyPlayerSystems, leagueClubs, nextUserFixture, userLeagueId } from './seasonProgression';
 import { generateDailyPressStories } from './news';
 import { tickScoutNetwork } from './scouting';
 import { getSquad } from './teamManagement';
+import { generateYouthIntake } from './youthAcademy';
 
 /**
  * The live daily loop — the replacement for "the only way time moves is a
@@ -111,6 +112,24 @@ export function advanceDay(state: GameState, settings?: GameSettings): DayTickRe
   s.news = s.news.slice(0, 14);
 
   s.dayOfSeason = dayOfSeason(state) + 1;
+
+  // Youth intake trigger: September 25 each season
+  const today = gameDate(s);
+  if (today.getMonth() === 8 && today.getDate() === 25 && (!s.trialistPool || s.trialistPool.length === 0)) {
+    const withIntake = generateYouthIntake(s);
+    if (withIntake.trialistPool && withIntake.trialistPool.length > 0) {
+      s.trialistPool = withIntake.trialistPool;
+      s.players = withIntake.players;
+      s.nextPlayerId = withIntake.nextPlayerId;
+      s.inbox.push({
+        id: s.nextInboxId++,
+        category: 'youth',
+        title: 'Youth intake arrived',
+        body: `Your academy has generated ${withIntake.trialistPool.length} new trialists. Review them in the Youth Academy and sign or release each prospect.`,
+        playerId: undefined,
+      });
+    }
+  }
 
   const stops: DayStop[] = [];
   // Press stories are pure flavour — nothing to act on, so they're digest
