@@ -614,14 +614,20 @@ export function startingBudget(leagueId: string): number {
  * than linear because football money is — the gap between 1st and 4th is far
  * bigger than the gap between 14th and 17th.
  *
- * Weakest club ≈ 0.22×, median ≈ 0.75×, strongest ≈ 3.2× the league baseline.
- * At the Premier League's £40m baseline that runs roughly £9m to £128m.
+ * Weakest club ≈ 0.25×, median ≈ 0.64×, strongest ≈ 1.63× the league baseline.
+ * At the Premier League's £40m baseline that runs roughly £10m to £65m.
+ *
+ * The ceiling is deliberately tighter than real-world spending because this
+ * game's market is cheap: an 85-rated player asks around £6.6m, so a £120m
+ * kitty buys most of an XI in a single window and the market stops meaning
+ * anything. The ratio between top and bottom is what sells the hierarchy —
+ * about 6.5:1 here — not the absolute ceiling.
  */
 export function statureBudgetMultiplier(rank: number, of: number): number {
   const n = Math.max(1, of);
   // 0 for the weakest squad in the division, 1 for the strongest.
   const standing = n > 1 ? 1 - (Math.min(Math.max(rank, 1), n) - 1) / (n - 1) : 0.5;
-  return 0.22 * Math.exp(2.68 * standing);
+  return 0.25 * Math.exp(1.87 * standing);
 }
 
 /** Starting transfer budget for one specific club: its league's baseline
