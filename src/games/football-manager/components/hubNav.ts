@@ -20,7 +20,7 @@ export type ScreenId =
   | 'overview' | 'fixtures' | 'table' | 'cups' | 'european'
   | 'squad' | 'tactics' | 'training' | 'schedule'
   | 'transfers' | 'scouting'
-  | 'inbox' | 'club' | 'facilities' | 'staff' | 'academy' | 'finances' | 'board';
+  | 'inbox' | 'club' | 'facilities' | 'staff' | 'academy' | 'finances' | 'board' | 'jobs';
 
 export type GroupId = 'matchday' | 'team' | 'market' | 'club';
 
@@ -78,6 +78,7 @@ export const GROUPS: GroupDef[] = [
       { id: 'academy', label: 'Academy', icon: 'sprout' },
       { id: 'finances', label: 'Finances', icon: 'finances' },
       { id: 'board', label: 'Board', icon: 'club' },
+      { id: 'jobs', label: 'Jobs', icon: 'document' },
     ],
   },
 ];
@@ -120,6 +121,14 @@ export function screenBadge(state: GameState, id: ScreenId): number {
   // as a *disabled* action-dock button — flagged, but unreachable from
   // anywhere. Badging Tactics puts it on the rail from every screen.
   if (id === 'tactics') return isLineupValid(state, state.userClubId, state.lineup) ? 0 : 1;
+  // Jobs badges only when the market is worth looking at *from where you are*:
+  // your own board has lost patience and something is open. There is almost
+  // always a vacancy somewhere, so badging on the count alone would be noise
+  // the player learns to ignore.
+  if (id === 'jobs') {
+    const open = (state.vacancies ?? []).length;
+    return open > 0 && state.board.confidence < 30 ? open : 0;
+  }
   return 0;
 }
 
