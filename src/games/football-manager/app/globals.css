@@ -470,7 +470,13 @@ body {
    no second nav element and no overflow sheet — five items fit across a
    phone, which is the whole point of grouping the fourteen screens. */
 @media (max-width: 899px) {
-  .fm-hub-shell { flex-direction: column; }
+  /* `align-items: flex-start` above is a desktop-row concern (stops the
+     sticky rail stretching to the content's height); flipping to a column
+     here swaps the cross axis to horizontal, so without resetting it the
+     same `flex-start` shrink-wraps `.fm-hub-shell__main` to its content
+     width instead of stretching it to fill the column — the visible gap
+     down the right side of every hub screen on mobile. */
+  .fm-hub-shell { flex-direction: column; align-items: stretch; }
   .fm-rail {
     position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 45;
     flex-direction: row; width: auto; border-radius: 0;
