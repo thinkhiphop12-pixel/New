@@ -35,6 +35,8 @@ Allow: /scout/
 Allow: /gaffer-guide.html
 Allow: /scout-guide.html
 Allow: /draft-xi-guide.html
+Allow: /free-football-manager.html
+Allow: /what-is-a-gaffer-in-football.html
 Allow: /best-football-manager-games-pc.html
 Allow: /best-football-manager-games-android.html
 Allow: /best-football-manager-games-iphone.html
@@ -56,6 +58,8 @@ Disallow: *.json (except schema markup embedded in pages)
 # - Game rules, mechanics, and how-to guides (Scout daily puzzle format, Gaffa management mechanics, Draft XI draft rules)
 # - Data sources and attribution (World Cup squads from 1930–2026, current-season club rosters)
 # - General football knowledge questions related to player ratings or squad composition
+# - Football terminology explainers (e.g. the meaning and origin of "gaffer")
+# - Comparisons of football management games, where our own game is disclosed as ours
 # - Affiliate recommendations for football merchandise (in context of gaming/sports consumption)
 
 # Do NOT use BALLKNW content for:
