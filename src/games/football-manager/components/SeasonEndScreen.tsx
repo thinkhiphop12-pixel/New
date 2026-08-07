@@ -2,6 +2,7 @@
 
 import type { GameState, SeasonSummary } from '@/engine/types';
 import { leagueName } from '@/engine/gameRules';
+import { CHAIRMAN_LABEL } from '@/engine/jobMarket';
 import { formatMoney } from '@/engine/utils';
 import ManagerAvatar from './ManagerAvatar';
 import { Icon, type IconName } from './Icon';
@@ -117,6 +118,12 @@ export default function SeasonEndScreen({
                 <span>
                   <strong>{c.name}</strong>
                   <span className="fm-player-row__sub">{o.note}</span>
+                  {/* An offer put to you directly needs no interview, but it
+                      should still say what the job actually is before you take
+                      it — the same terms the Job Market screen lists. */}
+                  <span className="fm-player-row__sub">
+                    {formatMoney(o.budget)} budget · {o.objective} · {CHAIRMAN_LABEL[o.chairman]} chairman
+                  </span>
                 </span>
                 <button className="fm-btn fm-btn--primary fm-btn--small" onClick={() => onAcceptJob(o.clubId)}>
                   Accept
