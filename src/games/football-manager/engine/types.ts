@@ -1234,6 +1234,13 @@ export interface GameSettings {
    *  `defaultContinueStops()`; a settings blob from before this system
    *  existed behaves exactly as those defaults. */
   continueStops?: Partial<Record<InboxCategory, boolean>>;
+  /** Assistant Manager delegation (engine/dailyTick.ts's `advanceDay`):
+   *  which categories the assistant handles automatically — applying the
+   *  same default a human would (Reassure, Offer new deal, or the
+   *  assistant's own schedule suggestion) — instead of stopping the sim.
+   *  All off by default; delegating is an opt-in, not a hidden behavior
+   *  change for existing saves. */
+  assistantDelegation?: Partial<Record<'complaints' | 'contracts' | 'schedule', boolean>>;
 }
 
 export interface AvatarConfig {

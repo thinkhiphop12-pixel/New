@@ -19,6 +19,15 @@ const STOP_ROWS: { id: InboxCategory; label: string; desc: string }[] = [
   { id: 'press', label: 'Press', desc: 'Media stories about you and your club' },
 ];
 
+/** Assistant Manager delegation rows — which of these the assistant handles
+ *  automatically (the same default a human would reach for) instead of
+ *  stopping the sim for a look. */
+const DELEGATION_ROWS: { id: 'complaints' | 'contracts' | 'schedule'; label: string; desc: string }[] = [
+  { id: 'complaints', label: 'Player complaints', desc: 'Auto-reassure an unhappy player (never the riskier "promise" option)' },
+  { id: 'contracts', label: 'Contract renewals', desc: 'Auto-offer a new deal when a player enters his final year, if affordable' },
+  { id: 'schedule', label: 'Weekly schedule', desc: "Auto-apply the assistant's own training/recovery suggestion each Monday" },
+];
+
 const SPEEDS: { id: MatchSpeed; label: string }[] = [
   { id: 'slow', label: 'Slow' },
   { id: 'normal', label: 'Normal' },
@@ -215,6 +224,33 @@ export default function SettingsPanel({
                     onClick={() => update({ continueStops: { ...settings.continueStops, [row.id]: !on } })}
                     aria-pressed={on}
                     aria-label={`Toggle stop on ${row.label}`}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="fm-setgroup">
+            <p className="fm-setgroup__title">Assistant Manager</p>
+            <p className="fm-hint" style={{ textAlign: 'left', margin: '0 0 10px' }}>
+              Hand these off — the assistant acts on your behalf instead of stopping the sim to ask.
+              Off by default; every category above still stops normally until you switch it on here.
+            </p>
+            {DELEGATION_ROWS.map((row) => {
+              const on = settings.assistantDelegation?.[row.id] ?? false;
+              return (
+                <div key={row.id} className="fm-settings-row">
+                  <div className="fm-settings-row__head">
+                    <div>
+                      <div className="fm-settings-label">{row.label}</div>
+                      <div className="fm-settings-desc">{row.desc}</div>
+                    </div>
+                  </div>
+                  <button
+                    className={`fm-toggle${on ? ' on' : ''}`}
+                    onClick={() => update({ assistantDelegation: { ...settings.assistantDelegation, [row.id]: !on } })}
+                    aria-pressed={on}
+                    aria-label={`Toggle assistant handling ${row.label}`}
                   />
                 </div>
               );

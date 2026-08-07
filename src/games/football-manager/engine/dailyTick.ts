@@ -4,6 +4,9 @@ import { applyDailyPlayerSystems, leagueClubs, nextUserFixture, userLeagueId } f
 import { generateDailyPressStories } from './news';
 import { tickScoutNetwork } from './scouting';
 import { getSquad } from './teamManagement';
+import { renewContract, respondToComplaint } from './transferMarket';
+import { assistantScheduleAdvice } from './assistant';
+import { setWholeSchedule } from './schedule';
 
 /**
  * The live daily loop — the replacement for "the only way time moves is a
@@ -76,7 +79,7 @@ function pendingOfferCount(state: GameState): number {
 }
 
 export function advanceDay(state: GameState, settings?: GameSettings): DayTickResult {
-  const s: GameState = structuredClone(state);
+  let s: GameState = structuredClone(state);
   const dIdx = dayIndex(state);
 
   // Snapshot what "new since this tick" means, before anything mutates.
@@ -118,9 +121,71 @@ export function advanceDay(state: GameState, settings?: GameSettings): DayTickRe
   // split below (which only looks at inbox items).
   const digest: string[] = [...newStoryLines];
 
+  // Assistant Manager delegation ("hand things to your assistant so the AI
+  // can handle certain parts for you"): for whichever categories the player
+  // has switched on in Settings, auto-apply the same sensible default a
+  // human would reach for, log it to the digest, and mark the underlying
+  // inbox item resolved — so it never becomes a stop below. Runs after the
+  // systems that generate these items (inside `applyDailyPlayerSystems`
+  // above) and before the stop/digest split, so a delegated item is caught
+  // before it's ever considered for a stop.
+  const delegation = settings?.assistantDelegation;
+  const delegatedIds = new Set<number>();
+
+  if (delegation?.complaints) {
+    const ids = s.inbox
+      .filter((i) => !seenInboxIds.has(i.id) && i.kind === 'complaint' && !i.responded)
+      .map((i) => i.id);
+    for (const id of ids) {
+      const item = s.inbox.find((i) => i.id === id);
+      if (!item || item.playerId == null) continue;
+      const playerName = s.players[item.playerId]?.name ?? 'a player';
+      s = respondToComplaint(s, item.playerId, 'reassure');
+      const target = s.inbox.find((i) => i.id === id);
+      if (target) {
+        target.responded = true;
+        target.read = true;
+      }
+      delegatedIds.add(id);
+      digest.push(`Assistant reassured ${playerName} about his game time.`);
+    }
+  }
+
+  if (delegation?.contracts) {
+    const ids = s.inbox
+      .filter((i) => !seenInboxIds.has(i.id) && i.kind === 'contractExpiring')
+      .map((i) => i.id);
+    for (const id of ids) {
+      const item = s.inbox.find((i) => i.id === id);
+      if (!item || item.playerId == null) continue;
+      const p = s.players[item.playerId];
+      // Can't afford the signing bonus — leave this one as a real stop
+      // rather than silently failing to renew.
+      if (!p || p.wage * 10 > s.budget) continue;
+      s = renewContract(s, item.playerId);
+      const target = s.inbox.find((i) => i.id === id);
+      if (target) target.read = true;
+      delegatedIds.add(id);
+      digest.push(`Assistant offered ${p.name} a new deal.`);
+    }
+  }
+
+  // Schedule delegation runs once a calendar week, on the Monday tick —
+  // matching the cadence the Weekly Schedule screen's own "This Week"
+  // grid plans against, not once a day (which would fight the player's own
+  // edits mid-week).
+  if (delegation?.schedule && dIdx === 0) {
+    const advice = assistantScheduleAdvice(s);
+    if (advice.suggestion) {
+      s = setWholeSchedule(s, advice.suggestion.days);
+      digest.push(`Assistant set this week's schedule: ${advice.suggestion.label}.`);
+    }
+  }
+
   // Anything freshly added to the inbox this tick becomes either a stop or a
-  // digest line, depending on the player's Continue Rules for its category.
-  const newItems = s.inbox.filter((i) => !seenInboxIds.has(i.id));
+  // digest line, depending on the player's Continue Rules for its category —
+  // except whatever delegation already resolved above.
+  const newItems = s.inbox.filter((i) => !seenInboxIds.has(i.id) && !delegatedIds.has(i.id));
   for (const item of [...newItems].reverse()) {
     if (stopEnabled(settings, item.category)) {
       stops.push({

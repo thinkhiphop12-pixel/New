@@ -125,9 +125,15 @@ export default function DaySummaryScreen({
       )}
 
       <div className="fm-daysummary__actions">
-        <button type="button" className="fm-btn fm-btn--primary" onClick={onContinue}>
-          <Icon name="play" size={15} /> Continue
-        </button>
+        {matchStop ? (
+          <p className="fm-hint" style={{ margin: 0 }}>
+            Prepare for the match above to continue — matchday can't be skipped.
+          </p>
+        ) : (
+          <button type="button" className="fm-btn fm-btn--primary" onClick={onContinue}>
+            <Icon name="play" size={15} /> Continue
+          </button>
+        )}
       </div>
     </div>
   );
