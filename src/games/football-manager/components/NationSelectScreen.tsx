@@ -1,17 +1,7 @@
 'use client';
 
+import Flag from '@/components/Flag';
 import { COUNTRIES, LEAGUES, SIMULATED_LEAGUE_IDS, leagueName, pyramidOf } from '@/engine/gameRules';
-
-const FLAGS: Record<string, string> = {
-  England: '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}',
-  Spain: '🇪🇸', Italy: '🇮🇹', Germany: '🇩🇪', France: '🇫🇷',
-  Netherlands: '🇳🇱', Portugal: '🇵🇹', Scotland: '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}',
-  Belgium: '🇧🇪', 'United States': '🇺🇸', Denmark: '🇩🇰',
-  Argentina: '🇦🇷', Turkey: '🇹🇷', 'Saudi Arabia': '🇸🇦', China: '🇨🇳',
-  'South Korea': '🇰🇷', Poland: '🇵🇱', Romania: '🇷🇴', Norway: '🇳🇴',
-  Sweden: '🇸🇪', Switzerland: '🇨🇭', Austria: '🇦🇹', Australia: '🇦🇺',
-  India: '🇮🇳', Ireland: '🇮🇪',
-};
 
 const BLURBS: Record<string, string> = {
   England: 'A five-tier pyramid — Premier League down to the National League',
@@ -45,7 +35,6 @@ const BLURBS: Record<string, string> = {
 const NATIONS = COUNTRIES.map((country) => ({
   id: country.toLowerCase(),
   name: country,
-  flag: FLAGS[country] ?? '—',
   leagueIds: pyramidOf(country).filter((l) => !l.phantom).map((l) => l.id),
   description: BLURBS[country] ?? `${leagueName(pyramidOf(country)[0].id)} and the tiers below it`,
 })).filter((n) => n.leagueIds.length > 0);
@@ -72,7 +61,9 @@ export default function NationSelectScreen({
             className="fm-nation-card"
             onClick={() => onPick(nation.leagueIds)}
           >
-            <span className="fm-nation-card__flag">{nation.flag}</span>
+            <span className="fm-nation-card__flag">
+              <Flag country={nation.name} size={54} />
+            </span>
             <span className="fm-nation-card__name">{nation.name}</span>
             <span className="fm-nation-card__divisions">
               {nation.leagueIds.map((id) => leagueName(id)).join(', ')}

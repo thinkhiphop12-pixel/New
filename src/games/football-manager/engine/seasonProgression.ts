@@ -4,7 +4,7 @@ import type {
 } from './types';
 import {
   ACADEMY_UPGRADE_COST, CONTINENTAL_PRIZES, CONTINENTAL_SPOTS, CONTINENTAL_WEEKS, CUP_PRIZES,
-  CUP_WEEKS, LEAGUES, MAX_SQUAD_SIZE, MORALE_DRAW, MORALE_LOSS, MORALE_MAX,
+  CUP_WEEKS, LEAGUES, MAX_SQUAD_SIZE, MIN_SQUAD_SIZE, MORALE_DRAW, MORALE_LOSS, MORALE_MAX,
   MORALE_MIN, MORALE_START, MORALE_WIN, SEASON_ROUNDS, SIMULATED_LEAGUE_IDS, STADIUM_UPGRADE_COST,
   STAFF_MAX_LEVEL, STAFF_UPGRADE_COST, STAFF_WEEKLY_WAGE, gateBase, getFormation, getLeague,
   isPhantomLeague, isWinterBreakWeek, leagueAbove, leagueBelow, leagueIdForDivision, leagueName,
@@ -1646,7 +1646,7 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     if (p.contractYears === 0) {
       if (p.clubId === s.userClubId) {
         const club = s.clubs.find((c) => c.id === p.clubId)!;
-        if (club.playerIds.length <= 15) {
+        if (club.playerIds.length <= MIN_SQUAD_SIZE) {
           // Can't afford to lose him with the squad this thin — a grudging 1-year deal.
           p.contractYears = 1;
           p.contractEnd = contractEndFor(s.seasonYear + 1, 1);
@@ -1777,6 +1777,37 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     s.lineup = s.lineup.map((id) => (id !== null && !s.players[id] ? null : id));
     if (s.captainId != null && !s.players[s.captainId]) s.captainId = null;
     s.incomingOffers = s.incomingOffers.filter((o) => s.players[o.playerId]);
+  }
+
+  // Any squad — the user's included — that retirement has thinned below a
+  // fieldable XI gets topped up with filler signings, the same way a
+  // promoted phantom-pool club is given one (see wakePoolClub above).
+  // Retirement is age-driven and can't be deferred by a transfer-window
+  // decision the way contract expiry can (see the MIN_SQUAD_SIZE guard above), so
+  // it's the one path that can drop even the user under MIN_SQUAD_SIZE with
+  // no action open to stop it. Nothing here runs for the AI transfer
+  // market's own slow, one-at-a-time signings, which can't outpace
+  // retirement across hundreds of clubs.
+  for (const club of s.clubs) {
+    if (club.dormant) continue;
+    if (club.playerIds.length >= MIN_SQUAD_SIZE) continue;
+    const target = clamp(Math.round(squadAvgRating(s, club.id)) || 60, 46, 88);
+    let slot = club.playerIds.length;
+    const signed: Player[] = [];
+    while (club.playerIds.length < MIN_SQUAD_SIZE + 2) {
+      const p = makeFillerPlayer(s.nextPlayerId++, club.id, target, s.seasonYear + 1, slot++);
+      s.players[p.id] = p;
+      club.playerIds.push(p.id);
+      signed.push(p);
+    }
+    if (club.id === s.userClubId) {
+      s.news.unshift(`With retirements leaving the squad short, the board signs ${signed.length} emergency free agents.`);
+      pushInbox(s, {
+        category: 'club',
+        title: 'Emergency squad signings',
+        body: `A wave of retirements left the squad unable to field a side, so the board has brought in ${signed.length} free agents to make up the numbers: ${signed.map((p) => p.name).join(', ')}.\n\nThey're stopgaps, not first-team quality — replace them properly once the transfer window opens.`,
+      });
+    }
   }
 
   // Job offers: rescue jobs when sacked, step-up offers after a strong season.
