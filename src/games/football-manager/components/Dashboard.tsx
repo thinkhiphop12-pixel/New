@@ -11,7 +11,6 @@ import { daysUntilMatchDay, relativeDays } from '@/engine/calendar';
 import { formatMoney } from '@/engine/utils';
 import { ReputationStars, tint } from './visuals';
 import { Crest } from './Crest';
-import ManagerAvatar from './ManagerAvatar';
 import PressConferenceModal from './PressConferenceModal';
 import { Icon, type IconName } from './Icon';
 import type { ScreenId } from './hubNav';
@@ -107,15 +106,6 @@ export default function Dashboard({
             {state.seasonYear}/{(state.seasonYear + 1) % 100} · {position > 0 ? `${position}${ord(position)} in the ${leagueName(leagueId)}` : leagueName(leagueId)}
           </p>
         </div>
-        {state.managerProfile && (
-          <ManagerAvatar
-            config={state.managerProfile.avatarConfig}
-            size={40}
-            title={state.managerProfile.name}
-            className="fm-portal__manager-avatar"
-            style={{ borderRadius: '50%', border: '2px solid rgba(90, 242, 184, 0.3)', flexShrink: 0 }}
-          />
-        )}
         <div className="fm-portal__week-badge">
           <span className="week-num">{Math.min(state.week, SEASON_ROUNDS)}</span>
           <span className="week-lbl">Wk {Math.min(state.week, SEASON_ROUNDS)}/{SEASON_ROUNDS}</span>

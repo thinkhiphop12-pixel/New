@@ -18,7 +18,7 @@ import { formatMoney } from '@/engine/utils';
 import { Icon } from './Icon';
 import PlayerModal from './PlayerModal';
 
-type MarketTab = 'hub' | 'search' | 'shortlist' | 'sent' | 'received';
+type MarketTab = 'search' | 'shortlist' | 'sent' | 'received';
 const POSITIONS: (Position | 'ALL')[] = ['ALL', 'GK', 'DEF', 'MID', 'FWD'];
 const AVAIL: { key: string; label: string }[] = [
   { key: 'all', label: 'Any' },
@@ -28,7 +28,6 @@ const AVAIL: { key: string; label: string }[] = [
   { key: 'expiring', label: 'Expiring' },
 ];
 const TABS: { id: MarketTab; label: string }[] = [
-  { id: 'hub', label: 'Hub' },
   { id: 'search', label: 'Search' },
   { id: 'shortlist', label: 'Shortlist' },
   { id: 'sent', label: 'Offers Sent' },
@@ -42,7 +41,7 @@ export default function TransfersScreen({
   state: GameState;
   onChange: (next: GameState) => void;
 }) {
-  const [tab, setTab] = useState<MarketTab>('hub');
+  const [tab, setTab] = useState<MarketTab>('search');
   const [posFilter, setPosFilter] = useState<Position | 'ALL'>('ALL');
   const [availFilter, setAvailFilter] = useState('all');
   const [natFilter, setNatFilter] = useState('');
@@ -162,20 +161,6 @@ export default function TransfersScreen({
 
       {error && <p className="fm-error-text">{error}</p>}
       {notice && !error && <p className="fm-hint" style={{ color: 'var(--green-600)' }}>{notice}</p>}
-
-      {tab === 'hub' && (
-        <div role="tabpanel">
-          <TransferHub
-          state={state}
-          sc={sc}
-          activeAssignments={activeAssignments}
-          clubName={clubName}
-          opponentClubs={opponentClubs}
-          onChange={onChange}
-          onGo={setTab}
-        />
-        </div>
-      )}
 
       {tab === 'search' && (
         <div role="tabpanel">

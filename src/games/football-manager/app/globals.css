@@ -280,6 +280,7 @@ body {
 .fm-btn--gold { background: var(--gold-gradient); color: #1a0f00; }
 .fm-btn--large { padding: var(--s-4) var(--s-6); font-size: 16px; width: 100%; }
 .fm-btn--small { padding: var(--s-2) var(--s-4); font-size: var(--fs-sm); }
+@media (max-width: 700px) { .fm-btn--small { padding: var(--s-1) var(--s-3); font-size: 11px; } }
 .fm-btn--icon { padding: var(--s-2); border-radius: var(--r-sm); min-width: var(--tap-min); }
 
 /* ── Panels / Cards ── */
@@ -783,10 +784,13 @@ body {
 /* ── Player rows ── */
 .fm-player-list { display: flex; flex-direction: column; gap: 5px; }
 .fm-player-row {
-  display: grid; grid-template-columns: 40px 1fr auto auto; align-items: center; gap: 8px;
+  display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 8px;
   background: var(--panel); border: 1px solid var(--border-soft);
   border-radius: var(--r-md); padding: 8px 10px; color: var(--text); text-align: left;
   font-size: 13px; transition: border-color 0.12s, background 0.12s;
+}
+@media (min-width: 700px) {
+  .fm-player-row { grid-template-columns: 40px 1fr auto auto; }
 }
 button.fm-player-row { cursor: pointer; font-family: inherit; }
 button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); background: var(--panel-2); }
@@ -2205,8 +2209,9 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
    ===================================================================== */
 
 /* ── Filter cards: Search tab's Position/Nationality/Status/Age tiles ── */
-.fm-filtercards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
-@media (min-width: 700px) { .fm-filtercards { grid-template-columns: repeat(4, 1fr); } }
+.fm-filtercards { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px; }
+@media (min-width: 520px) { .fm-filtercards { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 900px) { .fm-filtercards { grid-template-columns: repeat(4, 1fr); } }
 .fm-filtercard { background: var(--panel); border: 1px solid var(--border-soft); border-radius: var(--r-lg); padding: 12px; text-align: center; }
 .fm-filtercard__label { font-size: 11.5px; font-weight: 800; color: var(--text-2); margin: 0 0 10px; }
 

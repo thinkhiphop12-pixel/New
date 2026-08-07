@@ -38,16 +38,30 @@ export default function YouthAcademyScreen({
   return (
     <>
       <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}><Icon name="sprout" size={13} /> Youth Academy</p>
-        <p className="fm-club-line">
-          Reputation {state.facilities?.academyReputation ?? 20}/100, intake level {state.academyLevel}/3 —
-          higher reputation and level raise both the number and quality of prospects who join the youth
-          squad at each season's intake. Manage upgrades from the Facilities screen.
-        </p>
-        <p className="fm-hint" style={{ marginBottom: 0 }}>
-          Next season-end intake: {nextIntakeCount} prospect{nextIntakeCount > 1 ? 's' : ''}. First team{' '}
-          {firstTeamSize}/{MAX_SQUAD_SIZE}{squadFull ? ' — full, promotions blocked until you free up a slot' : ''}.
-        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 12 }}>
+          <div>
+            <p className="fm-label" style={{ marginTop: 0, marginBottom: 4 }}>Reputation</p>
+            <div className="fm-bar">
+              <div className="fm-bar__fill good" style={{ width: `${((state.facilities?.academyReputation ?? 20) / 100) * 100}%` }} />
+            </div>
+            <p className="fm-hint" style={{ margin: '4px 0 0' }}>{state.facilities?.academyReputation ?? 20}/100</p>
+          </div>
+          <div>
+            <p className="fm-label" style={{ marginTop: 0, marginBottom: 4 }}>Level</p>
+            <div className="fm-bar">
+              <div className="fm-bar__fill good" style={{ width: `${(state.academyLevel / 3) * 100}%` }} />
+            </div>
+            <p className="fm-hint" style={{ margin: '4px 0 0' }}>{state.academyLevel}/3</p>
+          </div>
+          <div>
+            <p className="fm-label" style={{ marginTop: 0, marginBottom: 4 }}>Next intake</p>
+            <p style={{ fontSize: 18, fontWeight: 900, margin: 0 }}>{nextIntakeCount}</p>
+            <p className="fm-hint" style={{ margin: '4px 0 0' }}>prospect{nextIntakeCount > 1 ? 's' : ''}</p>
+          </div>
+        </div>
+        {squadFull && (
+          <p className="fm-hint" style={{ marginBottom: 0, color: 'var(--red)' }}>Squad full — promote to free space</p>
+        )}
       </div>
 
       <div className="fm-mod">
