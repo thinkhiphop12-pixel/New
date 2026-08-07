@@ -908,18 +908,37 @@ export function applyDailyPlayerSystems(state: GameState, tick: DailyTickMode): 
       p.unhappy = true;
       s.news.unshift(`${p.name} is unhappy with his lack of game time.`);
       // Also a real inbox item (previously news-only) so it shows up as an
-      // action-required stop rather than scrolling past in the news feed —
-      // the title matches InboxScreen's existing complaint-detection regex,
-      // so the Reassure/Promise buttons appear with no UI change needed.
+      // action-required stop rather than scrolling past in the news feed.
       pushInbox(s, {
         category: 'club',
         title: `${p.name} unhappy about his lack of playing time`,
         body: `${p.name} has grown frustrated at being left out of the side. He wants more assurances about his role, or he may start looking elsewhere.`,
         playerId: p.id,
+        kind: 'complaint',
       });
     } else if (starting && p.unhappy && Math.random() < 0.3 * scale) {
       p.unhappy = false;
     }
+  }
+
+  // Contract expiring: a squad player has entered his final contract year
+  // and hasn't been flagged yet this season. Previously the only contract
+  // inbox items were after-the-fact (auto-renewed, left on a free) — there
+  // was no proactive nudge to actually make the decision while there's
+  // still a choice to make. Fires once per player per season (`contractWarned`,
+  // reset every rollover in `endSeason`); the day it fires doesn't depend on
+  // `days`/`scale` since it isn't a rate, just a threshold crossing.
+  for (const id of userClub.playerIds) {
+    const p = s.players[id];
+    if (!p || p.contractYears !== 1 || p.contractWarned) continue;
+    p.contractWarned = true;
+    pushInbox(s, {
+      category: 'contract',
+      title: `${p.name}'s contract expires in the summer`,
+      body: `${p.name} has entered the final year of his deal. Offer fresh terms now, or risk losing him for nothing when it runs out.`,
+      playerId: p.id,
+      kind: 'contractExpiring',
+    });
   }
 
   // Backroom staff: a good coach sharpens training, a good physio speeds healing.
@@ -971,6 +990,7 @@ export function applyDailyPlayerSystems(state: GameState, tick: DailyTickMode): 
             title: `${p.name} improves in training`,
             body: `${p.name} has been working well on the training pitch and is now rated ${p.rating} overall.`,
             playerId: p.id,
+            kind: 'trainingImprovement',
           });
         }
       }
@@ -1676,6 +1696,10 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     if (p.clubId === 0) continue;
     p.contractYears = Math.max(0, p.contractYears - 1);
     p.contractEnd = contractEndFor(s.seasonYear + 1, p.contractYears);
+    // Re-arm the "contract expiring" nudge below for next season — a player
+    // who signs a short extension and lands back on his final year should
+    // be warned about it again, not just once ever.
+    p.contractWarned = false;
     if (p.contractYears === 0) {
       if (p.clubId === s.userClubId) {
         const club = s.clubs.find((c) => c.id === p.clubId)!;

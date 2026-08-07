@@ -168,6 +168,10 @@ export interface Player {
   seasonRatingCount?: number;
   /** Wants more minutes or a move — attracts extra transfer interest. */
   unhappy?: boolean;
+  /** Whether the "contract expiring soon" inbox nudge has already fired for
+   *  this player this season — reset at every season rollover, so a player
+   *  who re-enters his final contract year later gets warned again. */
+  contractWarned?: boolean;
 
   /* --- Phase 7: transfers. All optional; absent means "nothing going on". --- */
   /** Why he asked to leave. */
@@ -923,7 +927,7 @@ export interface Coach {
   /** `attack`/`midfield`/`defense` are positional coaches (development speed
    *  boost for players in that position group); `analyst` boosts sharpness
    *  gained from training days (see engine/schedule.ts). */
-  role: 'head' | 'fitness' | 'goalkeeping' | 'attack' | 'midfield' | 'defense' | 'analyst';
+  role: 'head' | 'fitness' | 'goalkeeping' | 'attack' | 'midfield' | 'defense' | 'analyst' | 'assistant';
   /** 1–99, like a player attribute. */
   quality: number;
   wage: number;
@@ -1137,6 +1141,22 @@ export type ScheduleDay = 'training' | 'recovery';
 
 export type InboxCategory = 'club' | 'transfer' | 'injury' | 'contract' | 'youth' | 'board' | 'match' | 'press';
 
+/**
+ * What kind of real, one-click action an inbox item carries, if any. Absent
+ * means the item is purely informational — no `kind` renders no action row.
+ * Previously InboxScreen guessed this from a regex on the title
+ * (`/playing time|complain/i`, `/captain/i`); a message with no matching
+ * word was unactionable regardless of what it was actually about. This
+ * makes "does this item have a real action" a fact from the engine, not a
+ * pattern match against the copy.
+ */
+export type InboxActionKind =
+  | 'complaint'          // Reassure / Promise (respondToComplaint)
+  | 'contractExpiring'   // Offer new deal (renewContract) / open Squad
+  | 'scoutLead'          // Open in Transfers
+  | 'devMilestone'       // View player
+  | 'trainingImprovement'; // View player
+
 export interface InboxItem {
   id: number;
   week: number;
@@ -1150,6 +1170,8 @@ export interface InboxItem {
   /** Set once a complaint-type item has been responded to, so the response
    *  buttons in InboxScreen disappear after one use. */
   responded?: boolean;
+  /** What action row (if any) InboxScreen should render for this item. */
+  kind?: InboxActionKind;
 }
 
 export type MatchSpeed = 'slow' | 'normal' | 'fast' | 'instant';

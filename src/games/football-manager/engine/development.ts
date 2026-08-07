@@ -108,6 +108,7 @@ export function applyDevPlans(state: GameState, days = 7): void {
           title: `${p.name} adds a new position`,
           body: `${p.name}'s development plan has paid off — he can now also play ${plan.targetPos}.`,
           playerId: p.id,
+          kind: 'devMilestone',
         });
         delete p.devPlan;
       }

@@ -117,7 +117,7 @@ export function tickScoutNetwork(state: GameState, days = 7): GameState {
     news.unshift(`${scout.name} filed a scouting lead on ${pick.name} (${scout.region}).`);
     inboxAdds.push({
       title: `Scouting lead: ${pick.name}`,
-      body: `${scout.name} (${scout.stars}★, ${scout.region}) has filed a report on ${pick.name}.\n\n${report.note}\n\nHe has been added to your shortlist — check Transfers to take it further.`,
+      body: `${scout.name} (${scout.stars}★, ${scout.region}) has filed a report on ${pick.name}.\n\n${report.note}\n\nHe has been added to your shortlist.`,
       playerId: pick.id,
     });
   }
@@ -140,6 +140,7 @@ export function tickScoutNetwork(state: GameState, days = 7): GameState {
       title: item.title,
       body: item.body,
       playerId: item.playerId,
+      kind: 'scoutLead',
     });
   }
   next.inbox = next.inbox.slice(0, 40);

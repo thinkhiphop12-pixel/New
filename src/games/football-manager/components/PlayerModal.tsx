@@ -293,17 +293,35 @@ export default function PlayerModal({
             </div>
 
             {p.devPlan?.mode === 'stat' && (
-              <div className="fm-pills" style={{ marginTop: 8 }}>
-                {STAT_FOCUS_OPTIONS.map((o) => (
-                  <button
-                    key={o.key}
-                    className={`fm-pill${p.devPlan?.statFocus === o.key ? ' active' : ''}`}
-                    onClick={() => onChange(setDevPlan(state, p.id, { mode: 'stat', statFocus: o.key }))}
-                  >
-                    {o.label}
-                  </button>
-                ))}
-              </div>
+              <>
+                <div className="fm-pills" style={{ marginTop: 8 }}>
+                  {STAT_FOCUS_OPTIONS.map((o) => (
+                    <button
+                      key={o.key}
+                      className={`fm-pill${p.devPlan?.statFocus === o.key ? ' active' : ''}`}
+                      onClick={() => onChange(setDevPlan(state, p.id, { mode: 'stat', statFocus: o.key }))}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+                {/* Progress toward the next +1 on the focused stat. Used to be
+                    a flat 6%-per-week coin flip with nothing to show for it
+                    between successes — this is the same expected rate spent
+                    as visible, guaranteed-forward progress instead. */}
+                <div className="fm-meter-row" style={{ marginTop: 10 }}>
+                  <div className="fm-meter-row__head">
+                    <span>Progress to next point</span>
+                    <span className="fm-meter-row__value">{Math.round((p.devPlan.statProgress ?? 0) * 100)}%</span>
+                  </div>
+                  <div className="fm-meter-row__track">
+                    <div
+                      className="fm-meter-row__fill"
+                      style={{ width: `${Math.round((p.devPlan.statProgress ?? 0) * 100)}%`, background: 'var(--green)' }}
+                    />
+                  </div>
+                </div>
+              </>
             )}
 
             {p.devPlan?.mode === 'position' && (
@@ -319,10 +337,27 @@ export default function PlayerModal({
                     </button>
                   ))}
                 </div>
-                <p className="fm-hint" style={{ textAlign: 'left', marginTop: 6 }}>
-                  Est. {p.devPlan.weeksRemaining ?? estimateConversionWeeks(p, p.devPlan.targetPos ?? '')} week
-                  {(p.devPlan.weeksRemaining ?? 0) === 1 ? '' : 's'} remaining.
-                </p>
+                {(() => {
+                  const total = p.devPlan.totalDays ?? (p.devPlan.weeksRemaining ?? estimateConversionWeeks(p, p.devPlan.targetPos ?? '')) * 7;
+                  const remaining = p.devPlan.daysRemaining ?? total;
+                  const pct = total > 0 ? Math.round(((total - remaining) / total) * 100) : 0;
+                  const weeksLeft = Math.ceil(remaining / 7);
+                  return (
+                    <div className="fm-meter-row" style={{ marginTop: 10 }}>
+                      <div className="fm-meter-row__head">
+                        <span>Conversion progress</span>
+                        <span className="fm-meter-row__value">{pct}%</span>
+                      </div>
+                      <div className="fm-meter-row__track">
+                        <div className="fm-meter-row__fill" style={{ width: `${pct}%`, background: 'var(--blue)' }} />
+                      </div>
+                      <p className="fm-hint" style={{ textAlign: 'left', marginTop: 6 }}>
+                        {weeksLeft <= 0 ? 'Finishing up.' : `~${weeksLeft} week${weeksLeft === 1 ? '' : 's'} remaining.`}
+                        {' '}Will unlock {p.devPlan.targetPos} as a playable position on completion.
+                      </p>
+                    </div>
+                  );
+                })()}
               </>
             )}
           </>

@@ -1,9 +1,9 @@
-import type { GameState, InboxCategory } from './types';
+import type { GameState, InboxActionKind, InboxCategory } from './types';
 
 /** Log a full inbox article (headline + body + optional player card) alongside the news ticker. */
 export function pushInbox(
   s: GameState,
-  item: { category: InboxCategory; title: string; body: string; playerId?: number }
+  item: { category: InboxCategory; title: string; body: string; playerId?: number; kind?: InboxActionKind }
 ): void {
   s.inbox.unshift({ id: s.nextInboxId++, week: s.week, seasonYear: s.seasonYear, read: false, ...item });
   s.inbox = s.inbox.slice(0, 40);

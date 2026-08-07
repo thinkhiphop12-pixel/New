@@ -115,7 +115,7 @@ export default function HubScreen({
       case 'schedule': return <WeeklyScheduleScreen state={state} onChange={onChange} />;
       case 'transfers': return <TransfersScreen state={state} onChange={onChange} />;
       case 'scouting': return <ScoutingScreen state={state} onChange={onChange} />;
-      case 'inbox': return <InboxScreen state={state} onChange={onChange} />;
+      case 'inbox': return <InboxScreen state={state} onChange={onChange} onOpenScreen={onRoute} />;
       case 'club': return <ClubScreen state={state} onChange={onChange} />;
       case 'facilities': return <FacilitiesScreen state={state} onChange={onChange} />;
       case 'staff': return <StaffHubScreen state={state} onChange={onChange} />;

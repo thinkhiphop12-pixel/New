@@ -17,6 +17,17 @@ export const DEFAULT_SCHEDULE: ScheduleDay[] = [
   'training', 'training', 'training', 'training', 'training', 'recovery', 'recovery',
 ];
 
+/** The three quick-pick presets, shared between the Weekly Schedule screen's
+ *  buttons and the Assistant Manager's advice (engine/assistant.ts) — the
+ *  assistant only ever suggests a schedule the screen itself already offers,
+ *  so "Apply suggestion" is never a mystery preset the player can't also
+ *  reach by hand. */
+export const SCHEDULE_PRESETS: { id: string; label: string; days: ScheduleDay[] }[] = [
+  { id: 'balanced', label: 'Balanced (5:2)', days: ['training', 'training', 'training', 'training', 'training', 'recovery', 'recovery'] },
+  { id: 'match-sharp', label: 'Match-sharp (6:1)', days: ['training', 'training', 'training', 'recovery', 'training', 'training', 'recovery'] },
+  { id: 'light', label: 'Light (3:4)', days: ['training', 'recovery', 'training', 'recovery', 'training', 'recovery', 'recovery'] },
+];
+
 /** Per-day-type constants the weekly aggregate below is built from — shared
  *  with `applyScheduleDay` (engine/dailyTick.ts's per-day counterpart) so the
  *  two can never drift apart into disagreeing about what a training or
