@@ -88,6 +88,25 @@ export function attrBand(val: number): string {
   return 'chip-bad';
 }
 
+/** The same five-band ramp as `attrBand`, as a raw colour rather than a class
+ *  name — feeds `.fm-ring`'s `--ring-color` so a rating ring reads on exactly
+ *  the same scale as the attribute bars beside it. */
+export function ratingRingColor(val: number): string {
+  if (val >= 85) return 'var(--chip-vhigh)';
+  if (val >= 72) return 'var(--chip-high)';
+  if (val >= 58) return 'var(--chip-mid)';
+  if (val >= 45) return 'var(--chip-low)';
+  return 'var(--chip-bad)';
+}
+
+/** Two-letter monogram for a player's avatar: first and last initial. */
+export function initials(name: string): string {
+  const parts = name.split(' ').filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 /** CSS colour for a 1-5 fixture difficulty rating (5 = hardest). */
 export function difficultyColor(rating: number): string {
   const clamped = Math.max(1, Math.min(5, Math.round(rating)));

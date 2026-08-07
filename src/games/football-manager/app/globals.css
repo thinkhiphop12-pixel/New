@@ -2016,32 +2016,72 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-inbox__nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .fm-inbox__nav-spacer { flex: 1; }
 
+/* Player card (inbox article aside, negotiation panel).
+   A panel like every other surface in the game — the position colour is the
+   only tint, carried in from `.fm-pos-*` so a GK card reads gold and a
+   forward's red exactly as their squad-list rows do. */
 .fm-newscard {
   display: flex; flex-direction: column; align-items: center; text-align: center;
-  background: linear-gradient(180deg, #f7d774 0%, #e0a721 55%, #c98c15 100%);
-  border: 1px solid #8a5f0c; border-radius: var(--r-lg); padding: 14px 12px;
-  color: #3a2705; box-shadow: var(--shadow-lg);
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-radius: var(--r-lg); padding: 14px 12px;
+  color: var(--text); box-shadow: var(--shadow-md);
+  position: relative; overflow: hidden;
 }
-.fm-newscard__top { display: flex; justify-content: space-between; width: 100%; font-size: 10px; font-weight: 800; }
-.fm-newscard__pos { background: rgba(58,39,5,0.18); border-radius: 4px; padding: 2px 6px; }
-.fm-newscard__nat { background: rgba(58,39,5,0.18); border-radius: 4px; padding: 2px 6px; }
-.fm-newscard__portrait {
-  width: 72px; height: 72px; border-radius: 50%; background: rgba(58,39,5,0.15);
-  display: flex; align-items: center; justify-content: center; font-size: 34px;
-  margin: 8px 0 4px; border: 2px solid rgba(58,39,5,0.3);
+/* A wash of the position colour behind the portrait, so the card is tinted
+   without any of its text losing contrast against the panel. */
+.fm-newscard::before {
+  content: ''; position: absolute; inset: 0 0 auto; height: 108px;
+  background: linear-gradient(180deg, var(--newscard-tint, transparent) 0%, transparent 100%);
+  pointer-events: none;
 }
-.fm-newscard__crests { margin-bottom: 6px; }
-.fm-newscard__crest {
-  display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px;
-  border-radius: 6px; color: #fff; font-size: 9px; font-weight: 900; border: 1px solid rgba(255,255,255,0.5);
+.fm-pos-GK.fm-newscard { --newscard-tint: rgba(201,162,39,0.16); }
+.fm-pos-DEF.fm-newscard { --newscard-tint: rgba(127,180,255,0.16); }
+.fm-pos-MID.fm-newscard { --newscard-tint: rgba(184,255,60,0.14); }
+.fm-pos-FWD.fm-newscard { --newscard-tint: rgba(242,102,122,0.16); }
+
+.fm-newscard > * { position: relative; }
+.fm-newscard__top { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 8px; }
+.fm-newscard__top .fm-player-row__badge { padding: 4px 8px; }
+.fm-newscard__nat {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px;
+  font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px;
 }
-.fm-newscard__name { font-weight: 900; font-size: 15px; text-transform: uppercase; }
-.fm-newscard__role { font-size: 11px; font-weight: 700; opacity: 0.85; margin-bottom: 8px; }
+.fm-newscard__ring { margin: 10px 0 6px; }
+.fm-newscard__avatar {
+  /* Positioned for the same reason `.fm-ring__value` is: the ring paints its
+     inner disc as an absolutely-positioned ::before, which would otherwise
+     cover a static child. */
+  position: relative;
+  width: 62px; height: 62px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-weight: 900; font-size: 19px; letter-spacing: 0.5px;
+  box-shadow: 0 0 0 2px var(--border-bright);
+}
+.fm-newscard__crests { margin-bottom: 6px; display: flex; justify-content: center; }
+.fm-newscard__freeagent { font-size: 10.5px; font-weight: 800; color: var(--muted); }
+.fm-newscard__name {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-weight: 900; font-size: 15px; text-transform: uppercase;
+}
+.fm-newscard__num {
+  font-size: 11px; font-weight: 900; color: var(--muted-dim);
+  font-variant-numeric: tabular-nums;
+}
+.fm-newscard__role {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  font-size: 11px; font-weight: 700; color: var(--muted); margin: 2px 0 10px;
+}
 .fm-newscard__rows { width: 100%; display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
-.fm-newscard__row { display: flex; justify-content: space-between; font-size: 11px; border-top: 1px solid rgba(58,39,5,0.18); padding-top: 3px; }
-.fm-newscard__row span { opacity: 0.75; }
-.fm-newscard__foot { display: flex; gap: 10px; font-size: 12px; font-weight: 800; border-top: 1px solid rgba(58,39,5,0.25); padding-top: 8px; width: 100%; justify-content: center; }
-.fm-newscard__star, .fm-newscard__stat { display: inline-flex; align-items: center; gap: 3px; }
+.fm-newscard__row {
+  display: flex; justify-content: space-between; gap: 8px; font-size: 11px;
+  border-top: 1px solid var(--border-soft); padding-top: 4px;
+}
+.fm-newscard__row span { color: var(--muted); }
+.fm-newscard__row strong { font-variant-numeric: tabular-nums; }
+.fm-newscard__foot {
+  display: flex; gap: 12px; font-size: 12px; font-weight: 800; color: var(--muted);
+  border-top: 1px solid var(--border-soft); padding-top: 8px; width: 100%; justify-content: center;
+}
+.fm-newscard__stat { display: inline-flex; align-items: center; gap: 4px; }
 
 @media (max-width: 640px) {
   .fm-inbox__article-body { flex-direction: column; }
@@ -2175,6 +2215,10 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 /* Player modal (Phase 3) */
 .pm-header { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
 .pm-avatar {
+  /* Positioned so the ring's absolutely-positioned inner disc (`.fm-ring::before`)
+     paints behind the monogram instead of over it — without this the avatar is
+     invisible inside the ring, the same reason `.fm-ring__value` is relative. */
+  position: relative;
   width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   font-weight: 900; font-size: 18px; letter-spacing: 0.5px; flex-shrink: 0; box-shadow: 0 0 0 2px var(--border-bright);
 }
