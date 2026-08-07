@@ -3,7 +3,7 @@
 import { useState, type CSSProperties } from 'react';
 import { Icon } from './Icon';
 import type { Club, GameState, Player } from '@/engine/types';
-import { canLoanOut, loanOut, renewContract } from '@/engine/transferMarket';
+import { canLoanOut, exerciseLoanOption, loanOut, renewContract } from '@/engine/transferMarket';
 import { isOnLoan } from '@/engine/teamManagement';
 import { getRolesByPosition } from '@/lib/playerRoles';
 import { setPlayerRole } from '@/engine/teamManagement';
@@ -450,6 +450,20 @@ export default function PlayerModal({
               onClick={() => onChange(loanOut(state, p.id))}
             >
               Loan out for the season
+            </button>
+          )}
+          {/* A player currently on loan TO us with an agreed buy option —
+              from a negotiated `loan_to_buy` deal (see NegotiationPanel), or
+              the quick-loan path's own auto-set option. `exerciseLoanOption`
+              existed in the engine already but had no button anywhere. */}
+          {p.clubId === state.userClubId && p.loan && p.loan.optionToBuy > 0 && (
+            <button
+              className="fm-btn fm-btn--primary fm-btn--small"
+              disabled={p.loan.optionToBuy > state.budget}
+              onClick={() => onChange(exerciseLoanOption(state, p.id).state)}
+              title={`Make the move permanent now, ${formatMoney(p.loan.optionToBuy)} paid to ${p.loan.parentClubName}.`}
+            >
+              Exercise buy option ({formatMoney(p.loan.optionToBuy)})
             </button>
           )}
           <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={onClose}>

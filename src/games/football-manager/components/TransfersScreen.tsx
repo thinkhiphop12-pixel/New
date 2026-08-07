@@ -5,18 +5,21 @@ import type { GameState, Negotiation, Player, Position } from '@/engine/types';
 import {
   acceptIncomingOffer, askingPrice, buyPlayer, canBuy, counterIncomingOffer, delistPlayer,
   dismissNegotiation, getLoanMarket, getTransferMarket, isTransferBanned, listForSale,
-  openNegotiation, rejectIncomingOffer, requestLoanIn, scoutRecommendations, submitFeeOffer,
-  submitTermsOffer, toggleLoanList, transferTargets, triggerReleaseClause, walkAwayNegotiation,
+  openLoanNegotiation, openNegotiation, rejectIncomingOffer, requestLoanIn, scoutRecommendations,
+  submitFeeOffer, submitLoanTermsOffer, submitTermsOffer, toggleLoanList, transferTargets,
+  triggerReleaseClause, walkAwayNegotiation,
   type MarketEntry, type MarketFilters,
 } from '@/engine/transferMarket';
-import { statusLabel, STATUS_ORDER } from '@/engine/negotiation';
+import { LOAN_PLAYTIME, statusLabel, STATUS_ORDER } from '@/engine/negotiation';
 import { getSquad, wageCeiling } from '@/engine/teamManagement';
 import { assignScout, newScouting, tickFacilitiesWeek, toggleShortlist } from '@/engine/facilities';
 import { TRANSFER_WINDOWS, transferWindow } from '@/engine/gameRules';
 import { weeklyWageBill } from '@/engine/seasonProgression';
 import { formatMoney } from '@/engine/utils';
+import { traitNames } from '@/engine/traits';
 import { Icon } from './Icon';
 import PlayerModal from './PlayerModal';
+import { PlayerCard } from './InboxScreen';
 
 type MarketTab = 'hub' | 'search' | 'shortlist' | 'sent' | 'received';
 const POSITIONS: (Position | 'ALL')[] = ['ALL', 'GK', 'DEF', 'MID', 'FWD'];
@@ -108,6 +111,17 @@ export default function TransfersScreen({
   const openTalks = (p: MarketEntry | Player) => {
     if (isTransferBanned(state, p.id)) { setError(`${p.name} won't talk to your club again this season.`); return; }
     const result = openNegotiation(state, p.id);
+    apply(result);
+    if (result.ok) {
+      setTab('sent');
+      const opened = (result.state.negotiations ?? []).find((n) => n.type === 'outgoing' && n.playerId === p.id);
+      if (opened) setActiveNegId(opened.id);
+    }
+  };
+
+  const openLoanTalks = (p: MarketEntry | Player, offerType: 'loan' | 'loan_to_buy') => {
+    if (isTransferBanned(state, p.id)) { setError(`${p.name} won't talk to your club again this season.`); return; }
+    const result = openLoanNegotiation(state, p.id, offerType);
     apply(result);
     if (result.ok) {
       setTab('sent');
@@ -302,10 +316,28 @@ export default function TransfersScreen({
                 <button
                   className="fm-btn fm-btn--small fm-btn--primary"
                   disabled={p.fee > state.budget || !win.open}
-                  title={!win.open ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}` : undefined}
+                  title={!win.open ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}` : 'Instant yes/no — no back-and-forth'}
                   onClick={(e) => { e.stopPropagation(); apply(requestLoanIn(state, p.id)); }}
                 >
-                  {!win.open ? 'Window shut' : `Enquire ${formatMoney(p.fee)}`}
+                  {!win.open ? 'Window shut' : `Quick loan ${formatMoney(p.fee)}`}
+                </button>
+                {/* The negotiated alternative to the instant Quick Loan above —
+                    opens real talks over wage share / playing time, and (Loan +
+                    option) a buy-option fee, through the same negotiation panel
+                    a transfer uses. */}
+                <button
+                  className="fm-btn fm-btn--small fm-btn--secondary"
+                  disabled={!win.open}
+                  onClick={(e) => { e.stopPropagation(); openLoanTalks(p, 'loan'); }}
+                >
+                  Negotiate loan
+                </button>
+                <button
+                  className="fm-btn fm-btn--small fm-btn--ghost"
+                  disabled={!win.open}
+                  onClick={(e) => { e.stopPropagation(); openLoanTalks(p, 'loan_to_buy'); }}
+                >
+                  + buy option
                 </button>
                 <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
                   {p.rating}
@@ -725,13 +757,55 @@ function FilterCard({ label, icon, children }: { label: string; icon: Parameters
   );
 }
 
-/**
- * A negotiation is a conversation, not a form — the log reads top to bottom
- * like a transcript, and only the action the current stage actually allows
- * (a fee, then terms) is offered. A `.fm-ledger` summary sits above it so
- * the current ask vs your live offer reads at a glance before scrolling the
- * transcript, matching the mock's Negotiation Detail card.
- */
+function Stepper({
+  value,
+  onChange,
+  step,
+  min = 0,
+  max,
+  format,
+  locked,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  step: number;
+  min?: number;
+  max?: number;
+  format: (v: number) => string;
+  locked?: boolean;
+}) {
+  if (locked) {
+    return (
+      <div className="fm-stepper fm-stepper--locked">
+        <span className="fm-stepper__value">{format(value)}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="fm-stepper">
+      <button
+        type="button"
+        className="fm-stepper__btn"
+        disabled={value - step < min}
+        onClick={() => onChange(Math.max(min, value - step))}
+      >
+        −
+      </button>
+      <span className="fm-stepper__value">{format(value)}</span>
+      <button
+        type="button"
+        className="fm-stepper__btn"
+        disabled={max != null && value + step > max}
+        onClick={() => onChange(max != null ? Math.min(max, value + step) : value + step)}
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
+type NegTab = 'current' | 'previous' | 'interest';
+
 function NegotiationPanel({
   state,
   neg,
@@ -743,110 +817,218 @@ function NegotiationPanel({
   onApply: (r: { state: GameState; ok: boolean; message: string }) => void;
   onBack: () => void;
 }) {
-  const [fee, setFee] = useState(String(neg.neg.asking));
-  const [wage, setWage] = useState(String(neg.neg.wageDemand));
+  const [tab, setTab] = useState<NegTab>('current');
+  const [fee, setFee] = useState(neg.neg.asking);
+  const [wage, setWage] = useState(neg.neg.wageDemand);
   const [years, setYears] = useState(neg.contractYears);
   const [status, setStatus] = useState(neg.promisedStatus);
   const [bonus, setBonus] = useState(0);
+  const [wageShare, setWageShare] = useState(neg.loanTerms?.minWageShare ?? 0.5);
+  const [playingTime, setPlayingTime] = useState<'regular' | 'occasional' | null>(
+    neg.loanTerms?.requiresPlayingTime ? 'regular' : null
+  );
+  const [buyOptionFee, setBuyOptionFee] = useState(neg.loanTerms?.minBuyOption ?? 0);
 
-  const ledgerRows: { label: string; current: string; offer: string | null }[] = [
-    { label: 'Fee', current: formatMoney(neg.neg.asking), offer: neg.lastFee != null ? formatMoney(neg.lastFee) : null },
-    { label: 'Wage', current: formatMoney(neg.neg.wageDemand), offer: neg.lastWage != null ? formatMoney(neg.lastWage) : null },
-  ];
-  if (neg.contractYears) ledgerRows.push({ label: 'Contract', current: '—', offer: `${neg.contractYears}y` });
+  const offerType = neg.offerType ?? 'transfer';
+  const player = state.players[neg.playerId];
+  const traits = player ? traitNames(player) : [];
+  const advice = neg.log[1]?.text ?? neg.log[0]?.text;
+
+  const walk = () => { onApply(walkAwayNegotiation(state, neg.id)); onBack(); };
 
   return (
     <div className="fm-panel fm-negotiation">
       <button className="fm-btn fm-btn--small fm-btn--ghost" onClick={onBack}>&larr; All negotiations</button>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', margin: '10px 0 4px' }}>
+
+      <div className="fm-split" style={{ ['--split-ratio' as string]: '0.38', marginTop: 10 }}>
+        <div className="fm-negotiation__card">
+          {player && <PlayerCard p={player} club={state.clubs.find((c) => c.id === player.clubId)} seasonYear={state.seasonYear} />}
+          {traits.length > 0 && (
+            <div className="fm-negotiation__traits">
+              {traits.map((t) => <span key={t} className="fm-trait">{t}</span>)}
+            </div>
+          )}
+          <div className="fm-negotiation__meta">
+            <div className="fm-negotiation__meta-row">
+              <span className="fm-negotiation__meta-label">Squad status</span>
+              <span className="fm-negotiation__meta-value">{statusLabel(neg.projectedStatus)}</span>
+            </div>
+            <div className="fm-negotiation__meta-row">
+              <span className="fm-negotiation__meta-label">Interested clubs</span>
+              <span className="fm-negotiation__meta-value">{neg.rival ? `1 — ${neg.rival.clubName}` : 'None yet'}</span>
+            </div>
+          </div>
+          {advice && (
+            <div className="fm-assistant-banner">
+              <Icon name="staff" size={16} />
+              <div>
+                <p className="fm-assistant-banner__label">Assistant advice</p>
+                <p className="fm-assistant-banner__text">{advice}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div>
-          <h3 style={{ margin: 0 }}>{neg.playerName}</h3>
-          <p className="fm-hint" style={{ margin: 0 }}>{neg.clubName} · {neg.playerPos}</p>
-        </div>
-        <span className={`fm-badge${neg.awaiting === 'club' ? '' : ' fm-badge--new'}`}>
-          {statusLabel(neg.projectedStatus)}
-        </span>
-      </div>
-
-      <div className="fm-ledger-card">
-        {ledgerRows.map((r) => (
-          <div className="fm-ledger-card__row" key={r.label}>
-            <span className="fm-ledger-card__label">{r.label}</span>
-            <span className="fm-ledger-card__current">{r.current}</span>
-            <span className={`fm-ledger-card__offer${r.offer ? ' fm-ledger-card__offer--up' : ''}`}>{r.offer ?? '—'}</span>
+          <div className="fm-subnav__tabs">
+            <button className={`fm-subtab${tab === 'current' ? ' fm-subtab--active' : ''}`} onClick={() => setTab('current')}>Current Offer</button>
+            <button className={`fm-subtab${tab === 'previous' ? ' fm-subtab--active' : ''}`} onClick={() => setTab('previous')}>Previous Offer</button>
+            <button className={`fm-subtab${tab === 'interest' ? ' fm-subtab--active' : ''}`} onClick={() => setTab('interest')}>Interested Clubs</button>
           </div>
-        ))}
-      </div>
-      {neg.demands.length > 0 && <p className="fm-hint">Wants: {neg.demands.join(', ')}</p>}
 
-      <div className="fm-negotiation__log">
-        {neg.log.map((m, i) => (
-          <p key={i} className={`fm-negotiation__msg fm-negotiation__msg--${m.tone}`}>{m.text}</p>
-        ))}
-      </div>
+          {tab === 'previous' && (
+            <div className="fm-negotiation__log" style={{ marginTop: 12 }}>
+              {neg.log.length === 0 && <p className="fm-hint">No offers exchanged yet.</p>}
+              {neg.log.map((m, i) => (
+                <p key={i} className={`fm-negotiation__msg fm-negotiation__msg--${m.tone}`}>{m.text}</p>
+              ))}
+            </div>
+          )}
 
-      {neg.awaiting === 'club' ? (
-        <p className="fm-hint">Waiting on {neg.clubName}'s reply next week.</p>
-      ) : neg.stage === 'fee' ? (
-        <div className="fm-negotiation__form">
-          <label>
-            Fee offer
-            <input value={fee} onChange={(e) => setFee(e.target.value)} inputMode="numeric" />
-          </label>
-          <div className="fm-negotiation__actions">
-            <button className="fm-btn fm-btn--primary" onClick={() => onApply(submitFeeOffer(state, neg.id, Number(fee) || 0))}>
-              Submit bid
-            </button>
-            <button className="fm-btn fm-btn--ghost" onClick={() => { onApply(walkAwayNegotiation(state, neg.id)); onBack(); }}>
-              Walk away
-            </button>
-          </div>
+          {tab === 'interest' && (
+            <div style={{ marginTop: 12 }}>
+              {neg.rival ? (
+                <p className="fm-hint">{neg.rival.clubName} are also in talks for {neg.playerName}, offering {formatMoney(neg.rival.offer)}.</p>
+              ) : (
+                <p className="fm-hint">No other clubs are known to be interested right now.</p>
+              )}
+            </div>
+          )}
+
+          {tab === 'current' && (
+            <div style={{ marginTop: 12 }}>
+              <div className="fm-offer-status">
+                <div className="fm-offer-status__item">
+                  <span className="fm-offer-status__label">Offer type</span>
+                  <span className="fm-offer-status__value">
+                    {offerType === 'transfer' ? 'Transfer' : offerType === 'loan' ? 'Loan' : 'Loan + buy option'}
+                  </span>
+                </div>
+                <div className="fm-offer-status__item">
+                  <span className="fm-offer-status__label">Budget</span>
+                  <span className="fm-offer-status__value">{formatMoney(state.budget)}</span>
+                </div>
+              </div>
+
+              {neg.demands.length > 0 && <p className="fm-hint">Wants: {neg.demands.join(', ')}</p>}
+
+              {neg.awaiting === 'club' ? (
+                <p className="fm-hint">Waiting on {neg.clubName}'s reply next week.</p>
+              ) : neg.stage === 'fee' ? (
+                <>
+                  <div className="fm-offer-grid">
+                    <div className="fm-offer-field">
+                      <span className="fm-offer-field__label">Fee offer</span>
+                      <Stepper value={fee} onChange={setFee} step={100000} format={formatMoney} />
+                    </div>
+                    <div className="fm-offer-field">
+                      <span className="fm-offer-field__label">Transfer date</span>
+                      <Stepper value={0} onChange={() => {}} step={1} format={() => 'Immediate'} locked />
+                    </div>
+                    <div className="fm-offer-field">
+                      <span className="fm-offer-field__label">Exchange player</span>
+                      <Stepper value={0} onChange={() => {}} step={1} format={() => 'None'} locked />
+                    </div>
+                  </div>
+                  <div className="fm-negotiation__actions">
+                    <button className="fm-btn fm-btn--ghost" onClick={() => setFee(neg.neg.asking)}>Match asking price</button>
+                    <button className="fm-btn fm-btn--primary" onClick={() => onApply(submitFeeOffer(state, neg.id, fee))}>Submit bid</button>
+                    <button className="fm-btn fm-btn--ghost" onClick={walk}>Reject / walk away</button>
+                  </div>
+                </>
+              ) : neg.stage === 'terms' ? (
+                <>
+                  <div className="fm-offer-grid">
+                    <div className="fm-offer-field">
+                      <span className="fm-offer-field__label">Weekly wage</span>
+                      <Stepper value={wage} onChange={setWage} step={500} format={formatMoney} />
+                    </div>
+                    <div className="fm-offer-field">
+                      <span className="fm-offer-field__label">Contract length</span>
+                      <select value={years} onChange={(e) => setYears(Number(e.target.value))}>
+                        {[1, 2, 3, 4, 5].map((y) => <option key={y} value={y}>{y} year{y > 1 ? 's' : ''}</option>)}
+                      </select>
+                    </div>
+                    <div className="fm-offer-field">
+                      <span className="fm-offer-field__label">Promised status</span>
+                      <select value={status ?? ''} onChange={(e) => setStatus((e.target.value || null) as typeof status)}>
+                        <option value="">No promise</option>
+                        {STATUS_ORDER.map((s) => <option key={s} value={s}>{statusLabel(s)}</option>)}
+                      </select>
+                    </div>
+                    <div className="fm-offer-field">
+                      <span className="fm-offer-field__label">Signing bonus</span>
+                      <Stepper value={bonus} onChange={setBonus} step={50000} format={formatMoney} />
+                    </div>
+                  </div>
+                  <div className="fm-negotiation__actions">
+                    <button className="fm-btn fm-btn--ghost" onClick={() => setWage(neg.neg.wageDemand)}>Match asking wage</button>
+                    <button
+                      className="fm-btn fm-btn--primary"
+                      onClick={() => onApply(submitTermsOffer(state, neg.id, wage, {
+                        contractYears: years, promisedStatus: status, signingBonus: bonus,
+                      }))}
+                    >
+                      Offer terms
+                    </button>
+                    <button className="fm-btn fm-btn--ghost" onClick={walk}>Reject / walk away</button>
+                  </div>
+                </>
+              ) : neg.stage === 'loan_terms' ? (
+                <>
+                  <div className="fm-offer-grid">
+                    <div className="fm-offer-field">
+                      <span className="fm-offer-field__label">Wage share (you pay)</span>
+                      <Stepper value={Math.round(wageShare * 100)} onChange={(v) => setWageShare(v / 100)} step={5} max={100} format={(v) => `${v}%`} />
+                    </div>
+                    <div className="fm-offer-field">
+                      <span className="fm-offer-field__label">Playing time</span>
+                      <select value={playingTime ?? ''} onChange={(e) => setPlayingTime((e.target.value || null) as typeof playingTime)}>
+                        <option value="">No promise</option>
+                        <option value="occasional">Occasional</option>
+                        <option value="regular">Regular</option>
+                      </select>
+                    </div>
+                    {offerType === 'loan_to_buy' && (
+                      <div className="fm-offer-field">
+                        <span className="fm-offer-field__label">Buy option fee</span>
+                        <Stepper value={buyOptionFee} onChange={setBuyOptionFee} step={100000} format={formatMoney} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="fm-negotiation__actions">
+                    <button
+                      className="fm-btn fm-btn--ghost"
+                      onClick={() => {
+                        setWageShare(neg.loanTerms?.minWageShare ?? wageShare);
+                        setBuyOptionFee(neg.loanTerms?.minBuyOption ?? buyOptionFee);
+                      }}
+                    >
+                      Match asking terms
+                    </button>
+                    <button
+                      className="fm-btn fm-btn--primary"
+                      onClick={() => onApply(submitLoanTermsOffer(state, neg.id, {
+                        wageShare, playingTime, buyOptionFee: offerType === 'loan_to_buy' ? buyOptionFee : undefined,
+                      }))}
+                    >
+                      Offer loan terms
+                    </button>
+                    <button className="fm-btn fm-btn--ghost" onClick={walk}>Reject / walk away</button>
+                  </div>
+                </>
+              ) : (
+                <div className="fm-negotiation__actions">
+                  <p className="fm-hint">Outbid — a rival club has agreed a deal ahead of you.</p>
+                  <button className="fm-btn fm-btn--ghost" onClick={() => { onApply(dismissNegotiation(state, neg.id)); onBack(); }}>
+                    Dismiss
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      ) : neg.stage === 'terms' ? (
-        <div className="fm-negotiation__form">
-          <label>
-            Weekly wage
-            <input value={wage} onChange={(e) => setWage(e.target.value)} inputMode="numeric" />
-          </label>
-          <label>
-            Contract length
-            <select value={years} onChange={(e) => setYears(Number(e.target.value))}>
-              {[1, 2, 3, 4, 5].map((y) => <option key={y} value={y}>{y} year{y > 1 ? 's' : ''}</option>)}
-            </select>
-          </label>
-          <label>
-            Promised status
-            <select value={status ?? ''} onChange={(e) => setStatus((e.target.value || null) as typeof status)}>
-              <option value="">No promise</option>
-              {STATUS_ORDER.map((s) => <option key={s} value={s}>{statusLabel(s)}</option>)}
-            </select>
-          </label>
-          <label>
-            Signing bonus
-            <input value={bonus} onChange={(e) => setBonus(Number(e.target.value) || 0)} inputMode="numeric" />
-          </label>
-          <div className="fm-negotiation__actions">
-            <button
-              className="fm-btn fm-btn--primary"
-              onClick={() => onApply(submitTermsOffer(state, neg.id, Number(wage) || 0, {
-                contractYears: years, promisedStatus: status, signingBonus: bonus,
-              }))}
-            >
-              Offer terms
-            </button>
-            <button className="fm-btn fm-btn--ghost" onClick={() => { onApply(walkAwayNegotiation(state, neg.id)); onBack(); }}>
-              Walk away
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="fm-negotiation__actions">
-          <p className="fm-hint">Outbid — a rival club has agreed a deal ahead of you.</p>
-          <button className="fm-btn fm-btn--ghost" onClick={() => { onApply(dismissNegotiation(state, neg.id)); onBack(); }}>
-            Dismiss
-          </button>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

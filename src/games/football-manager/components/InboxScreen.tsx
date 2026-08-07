@@ -67,8 +67,11 @@ function articleDate(item: InboxItem): string {
 }
 
 /** Gold FM-style player card: portrait silhouette, nation, club crest and
- *  the usual DOB/age/value/wage/contract rows plus a star rating strip. */
-function PlayerCard({ p, club, seasonYear }: { p: Player; club: { name: string; color: string } | undefined; seasonYear: number }) {
+ *  the usual DOB/age/value/wage/contract rows plus a star rating strip.
+ *  Exported — TransfersScreen's negotiation panel reuses this exact card
+ *  rather than building a second player-card style, adding its own extra
+ *  rows (traits, squad status, interest) as siblings underneath it. */
+export function PlayerCard({ p, club, seasonYear }: { p: Player; club: { name: string; color: string } | undefined; seasonYear: number }) {
   const dobYear = seasonYear - p.age;
   const contractExpiry = p.clubId === 0 ? 'Free agent' : `30/6/${seasonYear + Math.max(0, p.contractYears)}`;
   return (

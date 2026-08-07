@@ -494,6 +494,68 @@ export function loanFee(p: Player): number {
   return Math.max(20_000, roundFee(p.value * 0.05));
 }
 
+/**
+ * The lending club's opening position for a negotiated outgoing loan
+ * (`openLoanNegotiation` in transferMarket.ts) — the loan counterpart to
+ * `startNegotiation`. There is no fee to haggle (`loanFee` is a fixed
+ * up-front cost, not negotiated); the three real levers are how much of the
+ * wage the borrower covers, whether a playing-time guarantee is required,
+ * and — `loan_to_buy` only — the option-to-buy fee. A "development loan"
+ * (young, below the parent's own level) wants a lower wage share but a firm
+ * playing-time promise in return; anyone else wants their wages covered
+ * near-in-full and doesn't care how much he plays.
+ */
+export interface LoanTerms {
+  minWageShare: number;
+  requiresPlayingTime: boolean;
+  minBuyOption: number;
+  round: number;
+}
+
+export function startLoanNegotiation(
+  p: Player,
+  ownerRating: number,
+  offerType: 'loan' | 'loan_to_buy',
+  rng: () => number = Math.random
+): LoanTerms {
+  const devLoan = p.age <= 23 && p.rating < ownerRating;
+  const minWageShare = Math.min(1, (devLoan ? 0.5 : 0.75) + rand(0, 20, rng) / 100);
+  // Same "above his current value" logic `requestLoanIn`'s auto-set option
+  // uses, just as a negotiated minimum instead of a fixed number.
+  const minBuyOption = offerType === 'loan_to_buy' ? roundFee(p.value * (devLoan ? 1.15 : 1.35)) : 0;
+  return { minWageShare, requiresPlayingTime: devLoan, minBuyOption, round: 0 };
+}
+
+export type LoanDecision =
+  | { decision: 'accept' }
+  | { decision: 'counter'; reason: 'wageShare' | 'buyOption'; counter: number }
+  | { decision: 'reject' }
+  | { decision: 'walk' };
+
+/** Accept / counter / reject a loan terms package. Checked in a fixed order
+ *  — wage share, then the playing-time guarantee (a hard requirement, not
+ *  negotiable, so it rejects rather than counters), then the buy option —
+ *  and walks after 3 rounds of an unmet wage share or buy option, same
+ *  cadence `evaluateFeeOffer` uses. */
+export function evaluateLoanTermsOffer(
+  terms: LoanTerms,
+  offer: { wageShare: number; playingTime: 'regular' | 'occasional' | null; buyOptionFee?: number }
+): LoanDecision {
+  terms.round++;
+  if (offer.wageShare < terms.minWageShare - 0.02) {
+    if (terms.round >= 3) return { decision: 'walk' };
+    return { decision: 'counter', reason: 'wageShare', counter: terms.minWageShare };
+  }
+  if (terms.requiresPlayingTime && offer.playingTime !== 'regular') {
+    return { decision: 'reject' };
+  }
+  if (terms.minBuyOption > 0 && (offer.buyOptionFee ?? 0) < terms.minBuyOption) {
+    if (terms.round >= 3) return { decision: 'walk' };
+    return { decision: 'counter', reason: 'buyOption', counter: terms.minBuyOption };
+  }
+  return { decision: 'accept' };
+}
+
 /** Text summary of a loan's clause set, for the UI and the inbox. */
 export function loanClauseText(
   wageShare: number,
