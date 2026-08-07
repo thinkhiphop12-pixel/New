@@ -11,9 +11,9 @@ import { pushInbox } from './inbox';
 import { recordScenarioSale } from './scenarios';
 import {
   LOAN_PLAYTIME, SQUAD_STATUS, askingGuide, askingMultiplier, contractMonthsLeft,
-  evaluateFeeOffer, evaluateMove, evaluateTermsOffer, isLoanAvailable, loanClauseText,
-  loanFee, marketStatus, playerAmbition, prestigeRejectChance, roundFee, roundWage,
-  stanceLine, startNegotiation, statusLabel,
+  evaluateFeeOffer, evaluateLoanTermsOffer, evaluateMove, evaluateTermsOffer, isLoanAvailable,
+  loanClauseText, loanFee, marketStatus, playerAmbition, prestigeRejectChance, roundFee, roundWage,
+  stanceLine, startLoanNegotiation, startNegotiation, statusLabel,
 } from './negotiation';
 
 /** What another club (or agent) wants for a player. */
@@ -577,6 +577,79 @@ export function openNegotiation(state: GameState, playerId: number): TransferRes
 }
 
 /**
+ * Open a negotiated loan (`offerType` 'loan' or 'loan_to_buy') — the
+ * negotiated counterpart to `requestLoanIn`'s instant accept/reject roll.
+ * Same availability/rival/willingness guards `requestLoanIn` uses, but
+ * instead of resolving immediately it opens a `Negotiation` at the
+ * `loan_terms` stage so wage share, a playing-time guarantee, and (for
+ * `loan_to_buy`) a buy-option fee can actually be haggled over — the fast
+ * `requestLoanIn` path stays untouched alongside this as the "quick loan"
+ * shortcut for whoever doesn't want to negotiate one.
+ */
+export function openLoanNegotiation(
+  state: GameState,
+  playerId: number,
+  offerType: 'loan' | 'loan_to_buy'
+): TransferResult {
+  const s: GameState = structuredClone(state);
+  ensureArrays(s);
+  const p = s.players[playerId];
+  if (!p) return fail(state, 'Unknown player.');
+  if (p.loan) return fail(state, "He's already out on loan.");
+  if (p.clubId === s.userClubId) return fail(state, 'He is already yours.');
+  if (!transferWindow(s.week).open) return fail(state, windowShutReason(s.week, 'Loan market'));
+  const owner = clubOf(s, p.clubId);
+  if (!owner || owner.id === s.userClubId) return fail(state, 'He is not available to borrow.');
+  if (isTransferBanned(s, playerId)) return fail(state, `${owner.name} have already said no this season.`);
+  const mine = clubOf(s, s.userClubId)!;
+  if (mine.playerIds.length >= MAX_SQUAD_SIZE) return fail(state, `Squad is full (max ${MAX_SQUAD_SIZE}).`);
+  const fee = loanFee(p);
+  if (fee > s.budget) return fail(state, `Not enough funds for the ${money(fee)} loan fee.`);
+  const existing = s.negotiations!.find((n) => n.type === 'outgoing' && n.playerId === playerId);
+  if (existing) return { state, ok: true, message: 'Talks are already open.' };
+
+  const ownerRating = squadAvgRating(s, owner.id);
+  const rival = owner.leagueId === mine.leagueId;
+  if (!isLoanAvailable(p, ownerRating)) {
+    return fail(state, `${owner.name} aren't looking to loan ${p.name} out.`);
+  }
+  if (rival) {
+    return fail(state, `${owner.name} won't strengthen a direct rival — no loan for ${p.name}.`);
+  }
+
+  const la = assessMove(s, playerId, s.userClubId, { loan: true })!;
+  if (la.verdict === 'refuses') {
+    markTransferBan(s, playerId);
+    const worst = la.factors.filter((f) => f.delta < 0).sort((a, b) => a.delta - b.delta)[0];
+    return { state: s, ok: false, message: `${p.name} turned the loan down${worst ? ` — ${(worst.detail ?? worst.label).toLowerCase()}` : ''}.` };
+  }
+
+  const terms = startLoanNegotiation(p, ownerRating, offerType);
+  const N: Negotiation = {
+    id: newId('neg'), type: 'outgoing',
+    playerId, clubId: owner.id, clubName: owner.name,
+    playerName: p.name, playerPos: p.pos, playerRating: p.rating,
+    stage: 'loan_terms', awaiting: 'user', responseWeek: null, lastTouchWeek: s.week,
+    // No fee to haggle for a loan — `neg` carries the fixed loan fee purely
+    // so the UI has somewhere consistent to read it from alongside every
+    // other negotiation, not because it's negotiable.
+    neg: { asking: fee, minFee: fee, wageDemand: 0, minWage: 0, feeRound: 0, wageRound: 0, holdOut: 0, wageHoldOut: 0 },
+    lastFee: fee, lastWage: null, agreedFee: null, agreedWage: null,
+    contractYears: 1, promisedStatus: null, signingBonus: 0, releaseClause: 0,
+    stance: la.verdict, stanceScore: la.score, demands: la.demands,
+    projectedStatus: la.projectedStatus, rival: null, preContract: false,
+    offerType, loanTerms: terms,
+    marketValue: p.value,
+    log: [
+      { text: `${owner.name} will discuss loaning ${p.name} out.`, tone: 'info' },
+      { text: stanceLine(p.name, la), tone: la.verdict === 'keen' ? 'good' : la.verdict === 'reluctant' ? 'bad' : 'info' },
+    ],
+  };
+  s.negotiations!.push(N);
+  return { state: s, ok: true, message: `Loan talks opened with ${owner.name} over ${p.name}.` };
+}
+
+/**
  * Meeting a release clause skips the fee haggling entirely — but the PLAYER
  * still has to want to come, which stops it being a cheat code.
  */
@@ -673,6 +746,41 @@ export function submitTermsOffer(
   return { state: s, ok: true, message: `Contract offer sent to ${N.playerName}.` };
 }
 
+/** Offer loan terms — wage share, an optional playing-time guarantee, and
+ *  (only for `loan_to_buy`) a buy-option fee. The lending club replies next
+ *  week, same cadence `submitFeeOffer`/`submitTermsOffer` use. */
+export function submitLoanTermsOffer(
+  state: GameState,
+  negId: string,
+  offer: { wageShare: number; playingTime: 'regular' | 'occasional' | null; buyOptionFee?: number }
+): TransferResult {
+  const s: GameState = structuredClone(state);
+  ensureArrays(s);
+  const N = s.negotiations!.find((n) => n.id === negId);
+  if (!N || N.type !== 'outgoing' || N.stage !== 'loan_terms' || !N.loanTerms) {
+    return fail(state, 'No loan terms to negotiate.');
+  }
+  const buyOptionFee = Math.max(0, Math.round(offer.buyOptionFee ?? 0));
+  if (N.offerType === 'loan_to_buy' && buyOptionFee > s.budget) {
+    return fail(state, "You can't cover that buy-option fee.");
+  }
+  N.loanWageShare = clamp(offer.wageShare, 0, 1);
+  N.loanPlayingTime = offer.playingTime;
+  N.buyOptionFee = buyOptionFee;
+  N.awaiting = 'club';
+  N.responseWeek = s.week + 1;
+  N.lastTouchWeek = s.week;
+  pushLog(
+    N,
+    `You offer ${Math.round(N.loanWageShare * 100)}% of his wages` +
+      `${offer.playingTime ? `, a ${LOAN_PLAYTIME[offer.playingTime].label.toLowerCase()} clause` : ''}` +
+      `${N.offerType === 'loan_to_buy' ? `, buy option ${money(buyOptionFee)}` : ''}.`,
+    'you'
+  );
+  pushLog(N, `${N.clubName} will consider it.`, 'info');
+  return { state: s, ok: true, message: `Loan terms sent to ${N.clubName}.` };
+}
+
 /** Walk away. He won't talk to you again this season. */
 export function walkAwayNegotiation(state: GameState, negId: string): TransferResult {
   const s: GameState = structuredClone(state);
@@ -745,6 +853,52 @@ function completeTransfer(s: GameState, N: Negotiation): string {
     playerId: p.id,
   });
   return `Signed ${p.name} for ${money(fee)} on ${money(wage)}/wk!`;
+}
+
+/** Close out an agreed outgoing loan negotiation: move him across on the
+ *  agreed wage-share/playing-time/buy-option terms. Mirrors
+ *  `requestLoanIn`'s move-across block, but with negotiated `p.loan` fields
+ *  instead of the quick path's devLoan-derived defaults. */
+function completeLoanNegotiation(s: GameState, N: Negotiation): string {
+  const p = s.players[N.playerId];
+  const owner = clubOf(s, N.clubId);
+  s.negotiations = (s.negotiations ?? []).filter((n) => n.id !== N.id);
+  if (!p || !owner || p.clubId !== owner.id) return `The ${N.playerName} loan collapsed — he moved on elsewhere.`;
+  const fee = N.lastFee ?? loanFee(p);
+  if (fee > s.budget) return `Not enough funds to complete the ${p.name} loan — budget is ${money(s.budget)}.`;
+  if (getSquad(s, s.userClubId).length >= MAX_SQUAD_SIZE) {
+    return `No room in the squad for ${p.name} (max ${MAX_SQUAD_SIZE}).`;
+  }
+  owner.playerIds = owner.playerIds.filter((id) => id !== p.id);
+  const mine = clubOf(s, s.userClubId)!;
+  mine.playerIds.push(p.id);
+  p.clubId = s.userClubId;
+  ensureSquadNumbers(s);
+  p.loan = {
+    parentClubId: owner.id, parentClubName: owner.name,
+    untilSeason: s.seasonYear + 1,
+    // `p.loan.wageShare` is "fraction the borrowing (our) club pays" — same
+    // definition `N.loanWageShare` was negotiated under, so no inversion.
+    wageShare: N.loanWageShare ?? 1,
+    playingTime: N.loanPlayingTime ?? 'occasional',
+    optionToBuy: N.offerType === 'loan_to_buy' ? (N.buyOptionFee ?? 0) : 0,
+    startApps: p.apps, startGoals: p.goals,
+    startClubPlayed: clubGamesPlayed(s, s.userClubId),
+    clauseBroken: false, warnedGames: null,
+  };
+  clearTransferUnrest(p);
+  p.chem = 30;
+  s.budget -= fee;
+  s.ledger.unshift({ week: s.week, desc: `${p.name} loan fee`, amount: -fee });
+  const clauses = loanClauseText(p.loan.wageShare, p.loan.playingTime, p.loan.optionToBuy, money);
+  s.news.unshift(`${p.name} joins on loan from ${owner.name}.`);
+  pushInbox(s, {
+    category: 'transfer',
+    title: `${p.name} joins on loan`,
+    body: `${p.name} has joined from ${owner.name} on loan until the end of the season — ${clauses}.`,
+    playerId: p.id,
+  });
+  return `${p.name} joins on loan — ${clauses}.`;
 }
 
 function clearTransferUnrest(p: Player): void {
@@ -1204,6 +1358,30 @@ function resolveOutgoingResponse(s: GameState, N: Negotiation, keep: Negotiation
     } else {
       markTransferBan(s, N.playerId);
       headlines.push(`${seller.name} have ended negotiations over ${p.name}.`);
+    }
+    return;
+  }
+  if (N.stage === 'loan_terms' && N.loanTerms) {
+    const r = evaluateLoanTermsOffer(N.loanTerms, {
+      wageShare: N.loanWageShare ?? 1,
+      playingTime: N.loanPlayingTime ?? null,
+      buyOptionFee: N.buyOptionFee,
+    });
+    if (r.decision === 'accept') {
+      headlines.push(completeLoanNegotiation(s, N));
+    } else if (r.decision === 'counter') {
+      if (r.reason === 'wageShare') {
+        pushLog(N, `${seller.name} want more of the wages covered — at least ${Math.round(r.counter * 100)}% from your side.`, 'info');
+      } else {
+        pushLog(N, `${seller.name} won't set the buy option below ${money(r.counter)}.`, 'info');
+      }
+      keep.push(N);
+    } else if (r.decision === 'reject') {
+      pushLog(N, `${seller.name} won't loan him out without a playing-time guarantee.`, 'bad');
+      keep.push(N);
+    } else {
+      markTransferBan(s, N.playerId);
+      headlines.push(`${seller.name} have ended loan talks over ${p.name}.`);
     }
     return;
   }

@@ -286,7 +286,7 @@ export interface NegotiationTerms {
   wageHoldOut: number;
 }
 
-export type NegotiationStage = 'fee' | 'terms' | 'outbid';
+export type NegotiationStage = 'fee' | 'terms' | 'loan_terms' | 'outbid';
 export type NegotiationTone = 'info' | 'good' | 'bad' | 'you';
 
 export interface NegotiationMsg {
@@ -339,6 +339,21 @@ export interface Negotiation {
   marketValue?: number;
   loanWageShare?: number;
   loanPlayingTime?: 'regular' | 'occasional' | null;
+  /** Which deal shape this negotiation is: a permanent transfer (the
+   *  default, absent on any negotiation from before this field existed —
+   *  they were all transfers), a loan, or a loan with a negotiated option
+   *  to make it permanent. Drives which fields `NegotiationPanel` shows and
+   *  which engine path (`openNegotiation` vs `openLoanNegotiation`)
+   *  resolves the stage machine. */
+  offerType?: 'transfer' | 'loan' | 'loan_to_buy';
+  /** The lending club's minimum terms for an outgoing loan negotiation
+   *  (`offerType` loan/loan_to_buy) — set once when talks open, mutated by
+   *  `evaluateLoanTermsOffer` as rounds pass, same role `neg`
+   *  (`NegotiationTerms`) plays for a permanent transfer's fee/wage haggle. */
+  loanTerms?: { minWageShare: number; requiresPlayingTime: boolean; minBuyOption: number; round: number };
+  /** The user's current offered buy-option fee, `loan_to_buy` only — becomes
+   *  the loan's `PlayerLoanState.optionToBuy` once terms are agreed. */
+  buyOptionFee?: number;
   log: NegotiationMsg[];
 }
 
