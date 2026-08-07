@@ -9,11 +9,12 @@ import {
 import { clamp, contractEndFor, weeklyWage } from './utils';
 import { pushInbox } from './inbox';
 import { recordScenarioSale } from './scenarios';
+import type { DealClauses } from './negotiation';
 import {
-  LOAN_PLAYTIME, SQUAD_STATUS, askingGuide, askingMultiplier, contractMonthsLeft,
-  evaluateFeeOffer, evaluateLoanTermsOffer, evaluateMove, evaluateTermsOffer, isLoanAvailable,
-  loanClauseText, loanFee, marketStatus, playerAmbition, prestigeRejectChance, roundFee, roundWage,
-  stanceLine, startLoanNegotiation, startNegotiation, statusLabel,
+  LOAN_PLAYTIME, SELL_ON_MAX, SQUAD_STATUS, askingGuide, askingMultiplier, clauseText,
+  contractMonthsLeft, evaluateFeeOffer, evaluateLoanTermsOffer, evaluateMove, evaluateTermsOffer,
+  isLoanAvailable, loanClauseText, loanFee, marketStatus, playerAmbition, prestigeRejectChance,
+  roundFee, roundWage, stanceLine, startLoanNegotiation, startNegotiation, statusLabel,
 } from './negotiation';
 
 /** What another club (or agent) wants for a player. */
@@ -105,7 +106,8 @@ export function sellPlayer(state: GameState, playerId: number, offer?: TransferO
   } else {
     p.clubId = 0; // released to the market
   }
-  s.budget += amount;
+  const { net, note } = settleSellOn(s, p, amount);
+  s.budget += net;
   s.chemistry = clamp(s.chemistry - 3, 0, 100);
   s.lineup = s.lineup.map((id) => (id === playerId ? null : id));
   s.incomingOffers = s.incomingOffers.filter((o) => o.playerId !== playerId);
@@ -114,7 +116,7 @@ export function sellPlayer(state: GameState, playerId: number, offer?: TransferO
   pushInbox(s, {
     category: 'transfer',
     title: `${p.name} departs the club`,
-    body: `${p.name} has left the club for ${money(amount)}${offer ? ` after a bid from ${s.clubs.find((c) => c.id === offer.fromClubId)?.name ?? 'another club'}` : ' on the open market'}.\n\nThe funds have been added to the transfer budget.`,
+    body: `${p.name} has left the club for ${money(amount)}${offer ? ` after a bid from ${s.clubs.find((c) => c.id === offer.fromClubId)?.name ?? 'another club'}` : ' on the open market'}.\n\n${money(net)} has been added to the transfer budget.${note}`,
     playerId: p.id,
   });
   return s;
@@ -696,19 +698,80 @@ export function triggerReleaseClause(state: GameState, playerId: number): Transf
   return { state: s, ok: true, message: `Clause triggered — now agree personal terms with ${p.name}.` };
 }
 
-/** Submit a bid. It does not resolve inline: the seller replies next week. */
-export function submitFeeOffer(state: GameState, negId: string, fee: number): TransferResult {
+/** The non-cash terms a bid can carry, as the UI collects them. */
+export interface OfferClauses {
+  sellOnPct?: number;
+  buyBackFee?: number;
+  exchangePlayerId?: number | null;
+  endOfSeason?: boolean;
+}
+
+/** Read the clauses back off a negotiation in the shape the engine values
+ *  them in — resolving the part-exchange player id to a valuation. */
+export function negotiationClauses(s: GameState, N: Negotiation): DealClauses {
+  const swap = N.exchangePlayerId != null ? s.players[N.exchangePlayerId] : null;
+  return {
+    sellOnPct: N.sellOnPct ?? 0,
+    buyBackFee: N.buyBackFee ?? 0,
+    // A swap only counts while he is still yours to give away.
+    exchangeValue: swap && swap.clubId === s.userClubId ? saleValue(swap) : 0,
+    endOfSeason: !!N.endOfSeason,
+  };
+}
+
+/**
+ * Submit a bid. It does not resolve inline: the seller replies next week.
+ *
+ * `clauses` is the rest of the offer sheet — a sell-on share, a buy-back, a
+ * player in part-exchange, and whether he moves now or at the end of the
+ * season. Only the cash `fee` is checked against the budget; the clauses cost
+ * nothing today, which is exactly why `effectiveBid` discounts them.
+ */
+export function submitFeeOffer(
+  state: GameState,
+  negId: string,
+  fee: number,
+  clauses: OfferClauses = {}
+): TransferResult {
   const s: GameState = structuredClone(state);
   ensureArrays(s);
   const N = s.negotiations!.find((n) => n.id === negId);
   if (!N || N.type !== 'outgoing' || N.stage !== 'fee') return fail(state, 'No fee to negotiate.');
   if (!Number.isFinite(fee) || fee < 0) return fail(state, 'Enter a valid amount.');
   if (fee > s.budget) return fail(state, `Not enough funds — your budget is ${money(s.budget)}.`);
+
+  const sellOnPct = clamp(clauses.sellOnPct ?? 0, 0, SELL_ON_MAX);
+  const buyBackFee = Math.max(0, Math.round(clauses.buyBackFee ?? 0));
+  // A buy-back below what you just paid is a club buying a player back at a
+  // discount for doing nothing — no seller-facing logic would ever price it.
+  if (buyBackFee > 0 && buyBackFee < fee) {
+    return fail(state, `A buy-back has to be at least what you pay for him (${money(roundFee(fee))}).`);
+  }
+
+  let swapId: number | null = null;
+  if (clauses.exchangePlayerId != null) {
+    const swap = s.players[clauses.exchangePlayerId];
+    if (!swap || swap.clubId !== s.userClubId) return fail(state, 'That player is not yours to offer.');
+    if (isOnLoan(swap) || swap.loan) return fail(state, "You can't trade a player you don't own outright.");
+    if (getSquad(s, s.userClubId).length <= MIN_SQUAD_SIZE) {
+      return fail(state, `Squad too small to trade anyone away (min ${MIN_SQUAD_SIZE}).`);
+    }
+    swapId = swap.id;
+  }
+  // A pre-contract is already a next-season arrival; stacking a deferral on
+  // top of it would just be the same deal described twice.
+  const endOfSeason = !!clauses.endOfSeason && !N.preContract;
+
   N.lastFee = roundFee(fee);
+  N.sellOnPct = sellOnPct;
+  N.buyBackFee = buyBackFee;
+  N.exchangePlayerId = swapId;
+  N.endOfSeason = endOfSeason;
   N.awaiting = 'club';
   N.responseWeek = s.week + 1;
   N.lastTouchWeek = s.week;
-  pushLog(N, `You bid ${money(N.lastFee)}.`, 'you');
+  const extras = clauseText(negotiationClauses(s, N), money);
+  pushLog(N, `You bid ${money(N.lastFee)}${extras ? ` with ${extras}` : ''}.`, 'you');
   pushLog(N, `${N.clubName} will consider your offer.`, 'info');
   return { state: s, ok: true, message: `Bid of ${money(N.lastFee)} sent to ${N.clubName}.` };
 }
@@ -814,20 +877,55 @@ function completeTransfer(s: GameState, N: Negotiation): string {
   if (getSquad(s, s.userClubId).length >= MAX_SQUAD_SIZE) {
     return `No room in the squad for ${p.name} (max ${MAX_SQUAD_SIZE}).`;
   }
-  if (N.preContract) {
+  // Part-exchange: he goes the other way as the deal closes. Done before the
+  // squad-room check below is spent, so a swap frees the slot it fills.
+  const swap = N.exchangePlayerId != null ? s.players[N.exchangePlayerId] : null;
+  const swapOk = !!swap && swap.clubId === s.userClubId && !swap.loan;
+  const clauseNote =
+    (N.sellOnPct ?? 0) > 0 || (N.buyBackFee ?? 0) > 0 || swapOk
+      ? `\n\nThe deal carries ${clauseText({
+        sellOnPct: N.sellOnPct, buyBackFee: N.buyBackFee,
+        exchangeValue: swapOk ? 1 : 0,
+      }, money)}${swapOk ? ` (${swap!.name})` : ''}.`
+      : '';
+
+  if (N.preContract || N.endOfSeason) {
     s.preContracts = s.preContracts ?? [];
     s.preContracts.push({
       id: newId('pre'), playerId: p.id, playerName: p.name, fromClubId: seller.id,
       agreedWage: wage, agreedYears: N.contractYears, activatesSeason: s.seasonYear + 1,
+      // A deferred transfer is paid for on agreement, not on arrival — the
+      // money is committed now, so the budget can't be spent twice and the
+      // deal can never collapse for want of funds a season later.
+      fee: N.preContract ? 0 : fee,
+      sellOnPct: N.sellOnPct, buyBackFee: N.buyBackFee,
     });
+    if (!N.preContract) {
+      // The swap goes across when the deal is struck, not when he arrives —
+      // it is part of the consideration, and gating it on a non-zero fee
+      // would let a pure swap deal keep both players.
+      if (swapOk) sendSwapPlayer(s, swap!, seller);
+      if (fee > 0) {
+        s.budget -= fee;
+        s.ledger.unshift({ week: s.week, desc: `${p.name} (end of season)`, amount: -fee });
+      }
+    }
+    const headline = N.preContract
+      ? `Pre-contract agreed with ${p.name}`
+      : `End-of-season deal agreed for ${p.name}`;
     pushInbox(s, {
       category: 'transfer',
-      title: `Pre-contract agreed with ${p.name}`,
-      body: `${p.name} will join on a free transfer when his ${seller.name} contract expires, on ${money(wage)} per week for ${N.contractYears} years.\n\nHe arrives at the start of next season.`,
+      title: headline,
+      body: N.preContract
+        ? `${p.name} will join on a free transfer when his ${seller.name} contract expires, on ${money(wage)} per week for ${N.contractYears} years.\n\nHe arrives at the start of next season.`
+        : `${seller.name} have accepted ${money(fee)} for ${p.name}, who stays with them until the end of the season and joins on ${money(wage)} per week for ${N.contractYears} years.\n\nThe fee has already left your transfer budget.${clauseNote}`,
       playerId: p.id,
     });
-    return `Pre-contract agreed with ${p.name} — he joins next season on a free.`;
+    return N.preContract
+      ? `Pre-contract agreed with ${p.name} — he joins next season on a free.`
+      : `${p.name} joins at the end of the season for ${money(fee)}.`;
   }
+  if (swapOk) sendSwapPlayer(s, swap!, seller);
   seller.playerIds = seller.playerIds.filter((id) => id !== p.id);
   const mine = clubOf(s, s.userClubId)!;
   mine.playerIds.push(p.id);
@@ -841,6 +939,7 @@ function completeTransfer(s: GameState, N: Negotiation): string {
   p.promiseBreachWeeks = 0;
   p.releaseClause = N.releaseClause > 0 ? N.releaseClause : 0;
   p.chem = 30; // a new signing integrates over the following weeks
+  applyDealClauses(p, seller.id, N.sellOnPct, N.buyBackFee);
   clearTransferUnrest(p);
   s.budget -= fee + N.signingBonus;
   s.chemistry = clamp(s.chemistry - 6, 0, 100);
@@ -849,10 +948,48 @@ function completeTransfer(s: GameState, N: Negotiation): string {
   pushInbox(s, {
     category: 'transfer',
     title: `${p.name} signs for the club`,
-    body: `${p.name} has joined from ${seller.name} for ${money(fee)} on ${money(wage)} per week, signing a ${N.contractYears}-year deal.${N.promisedStatus ? `\n\nHe was promised ${statusLabel(N.promisedStatus)} status — deliver the game time or he will down tools.` : ''}${N.releaseClause > 0 ? `\n\nHis contract carries a ${money(N.releaseClause)} release clause.` : ''}`,
+    body: `${p.name} has joined from ${seller.name} for ${money(fee)} on ${money(wage)} per week, signing a ${N.contractYears}-year deal.${N.promisedStatus ? `\n\nHe was promised ${statusLabel(N.promisedStatus)} status — deliver the game time or he will down tools.` : ''}${N.releaseClause > 0 ? `\n\nHis contract carries a ${money(N.releaseClause)} release clause.` : ''}${clauseNote}`,
     playerId: p.id,
   });
   return `Signed ${p.name} for ${money(fee)} on ${money(wage)}/wk!`;
+}
+
+/** Stamp the clauses an agreed deal attached onto the registration itself, so
+ *  they still bite long after the negotiation record is gone. */
+function applyDealClauses(p: Player, sellerId: number, sellOnPct?: number, buyBackFee?: number): void {
+  if ((sellOnPct ?? 0) > 0) {
+    p.sellOnPct = clamp(sellOnPct ?? 0, 0, SELL_ON_MAX);
+    p.sellOnClubId = sellerId;
+  } else {
+    // A fresh transfer clears whatever the previous owner had negotiated —
+    // a sell-on follows the sale it was agreed in, not the player forever.
+    delete p.sellOnPct;
+    delete p.sellOnClubId;
+  }
+  if ((buyBackFee ?? 0) > 0) {
+    p.buyBackFee = Math.round(buyBackFee ?? 0);
+    p.buyBackClubId = sellerId;
+  } else {
+    delete p.buyBackFee;
+    delete p.buyBackClubId;
+  }
+}
+
+/** Move a part-exchange player across to the selling club as a deal closes. */
+function sendSwapPlayer(s: GameState, swap: Player, buyer: Club): void {
+  const mine = clubOf(s, s.userClubId);
+  if (mine) mine.playerIds = mine.playerIds.filter((id) => id !== swap.id);
+  if (buyer.playerIds.length < MAX_SQUAD_SIZE) {
+    buyer.playerIds.push(swap.id);
+    swap.clubId = buyer.id;
+  } else {
+    swap.clubId = 0;
+  }
+  swap.chem = 30;
+  swap.promisedStatus = null;
+  clearTransferUnrest(swap);
+  s.lineup = s.lineup.map((id) => (id === swap.id ? null : id));
+  s.news.unshift(`${swap.name} joins ${buyer.name} as part of the deal.`);
 }
 
 /** Close out an agreed outgoing loan negotiation: move him across on the
@@ -899,6 +1036,32 @@ function completeLoanNegotiation(s: GameState, N: Negotiation): string {
     playerId: p.id,
   });
   return `${p.name} joins on loan — ${clauses}.`;
+}
+
+/**
+ * Settle a sell-on clause when you sell a player you bought with one.
+ *
+ * The clause is on the *profit*, not the fee — a club that sells at a loss
+ * owes nothing — and it is paid out of the money you receive. Returns what
+ * you actually bank, and appends the ledger line and the news copy so both
+ * sale paths report the deduction identically.
+ */
+function settleSellOn(s: GameState, p: Player, fee: number): { net: number; note: string } {
+  const pct = p.sellOnPct ?? 0;
+  const owedTo = p.sellOnClubId;
+  if (pct <= 0 || owedTo == null) return { net: fee, note: '' };
+  // What the registration cost you is the yardstick for profit. Market value
+  // is the only purchase price we carry forward, and it tracks it closely
+  // enough for a clause this coarse.
+  const profit = Math.max(0, fee - p.value);
+  const cut = Math.round(profit * pct);
+  if (cut <= 0) return { net: fee, note: '' };
+  const club = clubOf(s, owedTo);
+  s.ledger.unshift({ week: s.week, desc: `${p.name} sell-on to ${club?.name ?? 'former club'}`, amount: -cut });
+  return {
+    net: fee - cut,
+    note: `\n\n${club?.name ?? 'His former club'} take ${money(cut)} of the fee under the ${Math.round(pct * 100)}% sell-on clause agreed when you signed him.`,
+  };
 }
 
 function clearTransferUnrest(p: Player): void {
@@ -1024,10 +1187,11 @@ function completeIncomingSale(s: GameState, N: Negotiation): string {
   } else {
     p.clubId = 0;
   }
+  const { net, note } = settleSellOn(s, p, fee);
   clearTransferUnrest(p);
   p.promisedStatus = null;
   p.chem = 30;
-  s.budget += fee;
+  s.budget += net;
   s.chemistry = clamp(s.chemistry - 3, 0, 100);
   s.lineup = s.lineup.map((id) => (id === p.id ? null : id));
   // Clear every other bid for this player, including a rival club's.
@@ -1037,7 +1201,7 @@ function completeIncomingSale(s: GameState, N: Negotiation): string {
   pushInbox(s, {
     category: 'transfer',
     title: `${p.name} departs the club`,
-    body: `${p.name} has joined ${buyer?.name ?? 'another club'} for ${money(fee)}.\n\nThe funds have been added to your transfer budget.`,
+    body: `${p.name} has joined ${buyer?.name ?? 'another club'} for ${money(fee)}.\n\n${money(net)} has been added to your transfer budget.${note}`,
     playerId: p.id,
   });
   return `${p.name} sold to ${buyer?.name ?? 'another club'} for ${money(fee)}!`;
@@ -1298,12 +1462,22 @@ function activatePreContracts(s: GameState, headlines: string[]): void {
     p.contractYears = pc.agreedYears;
     p.contractEnd = contractEndFor(s.seasonYear, pc.agreedYears);
     p.chem = 30;
+    // A deferred transfer brings its clauses with it; the fee itself was
+    // taken from the budget when the deal was struck, so nothing is paid now.
+    const deferred = (pc.fee ?? 0) > 0;
+    if (deferred) applyDealClauses(p, pc.fromClubId, pc.sellOnPct, pc.buyBackFee);
     clearTransferUnrest(p);
-    headlines.push(`${p.name} arrives on a free transfer — the pre-contract is done.`);
+    headlines.push(
+      deferred
+        ? `${p.name} arrives — the end-of-season deal is done.`
+        : `${p.name} arrives on a free transfer — the pre-contract is done.`
+    );
     pushInbox(s, {
       category: 'transfer',
-      title: `${p.name} joins on a free`,
-      body: `${p.name}'s pre-contract has activated. He joins on ${money(pc.agreedWage)} per week for ${pc.agreedYears} years, with no fee paid.`,
+      title: deferred ? `${p.name} completes his move` : `${p.name} joins on a free`,
+      body: deferred
+        ? `${p.name}'s end-of-season transfer has gone through. He joins on ${money(pc.agreedWage)} per week for ${pc.agreedYears} years; the ${money(pc.fee ?? 0)} fee was paid when the deal was agreed.`
+        : `${p.name}'s pre-contract has activated. He joins on ${money(pc.agreedWage)} per week for ${pc.agreedYears} years, with no fee paid.`,
       playerId: p.id,
     });
   }
@@ -1337,7 +1511,9 @@ function resolveOutgoingResponse(s: GameState, N: Negotiation, keep: Negotiation
   N.awaiting = 'user';
   N.lastTouchWeek = s.week;
   if (N.stage === 'fee') {
-    const r = evaluateFeeOffer(N.neg, N.lastFee ?? 0);
+    const r = evaluateFeeOffer(
+      N.neg, N.lastFee ?? 0, Math.random, negotiationClauses(s, N), N.marketValue ?? p.value
+    );
     if (r.decision === 'accept') {
       N.agreedFee = N.lastFee;
       N.stage = 'terms';

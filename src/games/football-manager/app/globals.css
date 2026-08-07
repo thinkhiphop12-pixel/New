@@ -1073,21 +1073,121 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
    player card at a fixed width and a wide detail pane; `.fm-negotiation`
    itself carries no max-width (unlike the old single-column form it
    replaces) so `.fm-split` can actually use the available width. */
-.fm-negotiation { padding: 4px 2px 12px; margin: 0 auto; }
-.fm-negotiation__card { display: flex; flex-direction: column; gap: 10px; }
+.fm-negotiation { padding: 4px 2px 12px; margin: 0 auto; container-type: inline-size; }
+/* Card beside sheet once the panel itself is wide enough — measured against
+   the panel, not the viewport, because the Sent tab hands this panel only its
+   own right-hand column. `minmax(0, …)` on both tracks so the offer grid and
+   its long <select> options shrink instead of forcing an overflow. */
+.fm-negotiation__layout { display: grid; grid-template-columns: 1fr; gap: var(--s-4); }
+@container (min-width: 760px) {
+  .fm-negotiation__layout {
+    grid-template-columns: minmax(0, 0.62fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+.fm-negotiation__card { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .fm-negotiation__traits { display: flex; flex-wrap: wrap; gap: 6px; }
 .fm-negotiation__meta { display: flex; flex-direction: column; gap: 8px; }
 .fm-negotiation__meta-row { display: flex; flex-direction: column; gap: 1px; }
 .fm-negotiation__meta-label { font-size: 10.5px; color: var(--muted-dim); text-transform: uppercase; letter-spacing: 0.4px; }
 .fm-negotiation__meta-value { font-size: 14px; font-weight: 800; }
 
-/* Offer-type / field grid on the Current Offer tab. */
-.fm-offer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px 18px; }
-.fm-offer-field { display: flex; flex-direction: column; gap: 6px; }
+/* --- The offer sheet -----------------------------------------------------
+   Everything below is the Current Offer tab: a tab strip with an info toggle,
+   a fixed three-across field grid, the board's budget strip, and a footer of
+   three actions. The grid is deliberately `repeat(3, 1fr)` rather than the
+   auto-fit it used to be — the sheet is read as two rows of three related
+   fields (what you pay / what you concede), and auto-fit reflowed that into
+   whatever fitted, which broke the pairing. */
+.fm-offer-sheet { display: flex; flex-direction: column; gap: 16px; margin-top: 14px; }
+
+.fm-offer-tabs { display: flex; align-items: center; gap: 8px; }
+.fm-offer-tabs__set {
+  display: flex; flex: 1; min-width: 0; border-radius: var(--r-full);
+  background: var(--panel-2); border: 1px solid var(--border); overflow: hidden;
+}
+.fm-offer-tab {
+  flex: 1; min-width: 0; padding: 9px 8px; border: none; background: transparent;
+  color: var(--muted); font-family: inherit; font-size: 12.5px; font-weight: 800;
+  cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.fm-offer-tab:hover { color: var(--text); }
+.fm-offer-tab--active { background: var(--brand-gradient); color: var(--brand-text); }
+.fm-offer-info {
+  flex: 0 0 auto; width: 34px; height: 34px; display: flex; align-items: center;
+  justify-content: center; border-radius: var(--r-full); cursor: pointer;
+  background: var(--panel-2); border: 1px solid var(--border); color: var(--blue);
+}
+.fm-offer-info:hover { border-color: var(--border-bright); }
+.fm-offer-info--on { background: color-mix(in srgb, var(--blue) 20%, var(--panel)); }
+.fm-offer-help {
+  padding: 12px 14px; border-radius: var(--r-lg); background: var(--panel-2);
+  border: 1px solid var(--border); display: flex; flex-direction: column; gap: 7px;
+}
+.fm-offer-help p { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+.fm-offer-help strong { color: var(--text); }
+
+.fm-offer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 18px; }
+/* The personal-terms/loan block sits under the fee block and has four fields,
+   so it wraps on its own terms instead of inheriting the fee row's three. */
+.fm-offer-grid--terms {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  padding-top: 16px; border-top: 1px solid var(--border);
+}
+@media (max-width: 640px) { .fm-offer-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 400px) { .fm-offer-grid { grid-template-columns: 1fr; } }
+.fm-offer-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .fm-offer-field__label {
   display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800;
   color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px;
 }
+.fm-offer-field__lock { color: var(--muted-dim); }
+.fm-offer-field__hint { font-size: 10.5px; color: var(--muted-dim); line-height: 1.35; }
+.fm-offer-field select {
+  min-height: 34px; padding: 0 10px; border-radius: var(--r-full);
+  background: var(--green-600); color: #fff; border: none;
+  font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer;
+  text-align: center; text-align-last: center; width: 100%;
+}
+.fm-offer-field select:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+/* A buy-back is opt-in: the switch arms the clause, and the stepper stays in
+   its locked "Not Set" state until it does. */
+.fm-offer-togglerow { display: flex; align-items: center; gap: 8px; }
+.fm-offer-togglerow .fm-stepper { flex: 1; min-width: 0; }
+.fm-offer-toggle {
+  flex: 0 0 auto; width: 26px; height: 26px; border-radius: var(--r-full);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  background: var(--panel-3); border: 1px solid var(--border); color: transparent;
+}
+.fm-offer-toggle--on { background: var(--green-600); border-color: var(--green-600); color: #fff; }
+
+/* Board budgets and patience, read-only. */
+.fm-offer-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 24px;
+  padding: 12px 14px; border-radius: var(--r-lg);
+  background: var(--panel-2); border: 1px solid var(--border);
+}
+.fm-offer-bar__item { display: flex; align-items: baseline; gap: 8px; }
+.fm-offer-bar__item--mood { align-items: center; margin-left: auto; }
+.fm-offer-bar__label {
+  font-size: 10.5px; font-weight: 800; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.fm-offer-bar__value { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.fm-offer-bar__value em { font-style: normal; font-size: 11px; color: var(--muted); font-weight: 700; }
+.fm-offer-meter {
+  display: block; width: 96px; height: 8px; border-radius: var(--r-full);
+  background: var(--panel-3); overflow: hidden;
+}
+.fm-offer-meter__fill { display: block; height: 100%; background: var(--gold-gradient); }
+
+/* Close / Reject / Accept. Accept is pushed right so the destructive action
+   never sits under the thumb that is reaching for it. */
+.fm-offer-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.fm-offer-actions .fm-btn { flex: 1; min-width: 110px; }
+.fm-offer-actions .fm-btn--primary { flex: 1.4; }
 
 /* +/- numeric control — fee, wage-share %, buy-option fee. No prior
    analogue in this codebase; every negotiation field before this was a
@@ -1109,11 +1209,15 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-stepper--locked { background: var(--panel-3); }
 .fm-stepper--locked .fm-stepper__value { color: var(--muted); }
-
-.fm-offer-status { display: flex; flex-wrap: wrap; gap: 18px; margin: 16px 0; font-size: 13px; }
-.fm-offer-status__item { display: flex; align-items: center; gap: 6px; }
-.fm-offer-status__label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
-.fm-offer-status__value { font-weight: 800; }
+/* The one number the two sides are actually arguing over. Outlined rather
+   than recoloured so it stays legible against the same green as its
+   neighbours — the point is "this is the live field", not "this is wrong". */
+.fm-stepper--hot {
+  background: var(--panel-3);
+  box-shadow: inset 0 0 0 2px var(--gold-2);
+}
+.fm-stepper--hot .fm-stepper__value { color: var(--gold-2); }
+.fm-stepper--hot .fm-stepper__btn { color: var(--gold-2); }
 
 /* Assistant Advice banner — same shape WeeklyScheduleScreen's Assistant
    Manager panel uses, just tinted to read as a distinct callout here. */
