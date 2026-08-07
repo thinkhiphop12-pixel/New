@@ -1,6 +1,7 @@
 import type { GameState, GameSettings, InboxCategory } from './types';
 import { dayIndex, dayOfSeason, daysUntilMatchDay, isMatchDay } from './calendar';
-import { applyDailyPlayerSystems, nextUserFixture } from './seasonProgression';
+import { applyDailyPlayerSystems, leagueClubs, nextUserFixture, userLeagueId } from './seasonProgression';
+import { generateDailyPressStories } from './news';
 import { tickScoutNetwork } from './scouting';
 import { getSquad } from './teamManagement';
 
@@ -97,12 +98,25 @@ export function advanceDay(state: GameState, settings?: GameSettings): DayTickRe
   s.news = scouted.news;
   s.inbox = scouted.inbox;
   s.nextInboxId = scouted.nextInboxId;
+
+  // Phase 3: transfer rumours, wonderkid buzz, pundit chatter — the same
+  // generator the weekly cadence uses (`playRound`), called with `days = 1`
+  // so it can fire on any day rather than only landing in a batch on
+  // matchday. Tracked by set-diff, not by inbox id, since this writes to the
+  // plain-text news ticker rather than a structured inbox item.
+  const newsBeforeStories = new Set(s.news);
+  generateDailyPressStories(s, 1, leagueClubs(s, userLeagueId(s)));
+  const newStoryLines = s.news.filter((n) => !newsBeforeStories.has(n));
+
   s.news = s.news.slice(0, 14);
 
   s.dayOfSeason = dayOfSeason(state) + 1;
 
   const stops: DayStop[] = [];
-  const digest: string[] = [];
+  // Press stories are pure flavour — nothing to act on, so they're digest
+  // lines from the start rather than routed through the stop-or-digest
+  // split below (which only looks at inbox items).
+  const digest: string[] = [...newStoryLines];
 
   // Anything freshly added to the inbox this tick becomes either a stop or a
   // digest line, depending on the player's Continue Rules for its category.

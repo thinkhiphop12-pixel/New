@@ -292,6 +292,22 @@ export default function Dashboard({
           </div>
         </div>
 
+        {/* League news: the plain-text press ticker (title races, breakout
+            youngsters, transfer rumours, wonderkid buzz, pundit chatter —
+            engine/news.ts) — a wider "what's happening out there" feed,
+            distinct from the inbox headline below which is specifically
+            about you and your club. */}
+        {state.news.length > 0 && (
+          <div className="fm-mod">
+            <div className="fm-mod__head"><h2 className="fm-mod__title">League news</h2></div>
+            <ul className="fm-card__news">
+              {state.news.slice(0, 4).map((n, i) => (
+                <li key={i} className="fm-card__news-item">{n}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Latest news + league table window. */}
         <div className="fm-mod">
           <div className="fm-mod__head">

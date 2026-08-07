@@ -17,7 +17,7 @@ import {
 } from './teamManagement';
 import { clamp, contractEndFor, marketValue, pickRandom, rollRetireAge, weeklyWage } from './utils';
 import { tickTacticalFamiliarity } from './familiarity';
-import { generateWeeklyNews } from './news';
+import { generateDailyPressStories, generateWeeklyNews } from './news';
 import { seedClubIdentities } from './clubIdentity';
 import { aiWeeklyTransfers, generateWeeklyOffers } from './transferMarket';
 import { clubRunName, createKnockout, isClubAlive, knockoutRoundDue, playKnockoutRound, roundName, tieWinner, userTieThisRound } from './cups';
@@ -1075,7 +1075,12 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   // anything below mutates form/fitness for next week.
   {
     const newsLeagueId = userLeagueId(s);
-    generateWeeklyNews(s, newsLeagueId, computeTable(s, newsLeagueId), leagueClubs(s, newsLeagueId));
+    const newsClubs = leagueClubs(s, newsLeagueId);
+    generateWeeklyNews(s, newsLeagueId, computeTable(s, newsLeagueId), newsClubs);
+    // Phase 3: rumours/wonderkids/pundit chatter — days=7 matches this
+    // call's weekly cadence exactly; the live daily loop calls the same
+    // function with days=1 (engine/dailyTick.ts).
+    generateDailyPressStories(s, 7, newsClubs);
   }
 
   // Form drift, injury recovery, the Weekly Schedule, squad happiness,
