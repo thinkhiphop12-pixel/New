@@ -24,7 +24,8 @@ const CONFIG = {
   BANNER_MIN_FIT: 300,   // px — narrower than this and the banner scales down
   NATIVE_MIN_H: 90,     // px — slot never collapses below this while measuring
   NATIVE_MAX_H: 640,     // px — hard ceiling so a runaway unit can't eat the page
-  MEASURE_MS: 6000,      // how long to keep re-measuring a native unit
+  MEASURE_MS: 6000,      // fast re-measure window for a native unit
+  MEASURE_TAIL_MS: 30000,// slow re-measure window after that, for slow fills
   PRELOAD_OFFSET: 200,   // px of preload margin for lazy loading
   ADBLOCK_NOTICE: true,  // polite, dismissible whitelist prompt only
 };
@@ -86,8 +87,11 @@ function injectBaseAdStyles() {
     .ad-frame-wrap.is-fixed{overflow:hidden;}
     .ad-frame-wrap.is-fixed iframe{position:absolute;top:50%;left:50%;transform-origin:center center;}
     /* A slot that never got a paying ad collapses instead of holding open a
-       tall empty rectangle (the 160x600 rail was the worst offender). */
-    .ad-slot.is-blank{display:none!important;}
+       tall empty rectangle (the 160x600 rail was the worst offender). It is
+       collapsed visually, not with display:none — the frame has to keep a
+       layout box or it could never be measured again if the ad arrives late. */
+    .ad-slot.is-blank{visibility:hidden;height:0!important;min-height:0!important;
+      margin:0!important;padding:0!important;border:0!important;overflow:hidden!important;}
     .soft-banner{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:600;
       max-width:min(92vw,480px);background:#10131a;border:1px solid rgba(255,255,255,.14);
       border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;
@@ -173,9 +177,10 @@ function fitFixedFrame(slot, wrap, frame) {
 // The responsive/native unit has no declared height, so the old hardcoded
 // 100px either cropped it (the in-game slot) or left a tall empty box (the
 // 160x600 rail). Measure the iframe's own document instead and follow it.
-function trackNativeHeight(slot, wrap, frame) {
+function trackNativeHeight(slot, wrap, frame, onFirstRender) {
   const started = Date.now();
   let settled = 0;
+  let rendered = false;
 
   function measure() {
     let h = 0;
@@ -200,13 +205,21 @@ function trackNativeHeight(slot, wrap, frame) {
         slot.style.minHeight = Math.max(clamped, 1) + 'px';
       }
     }
-    if (Date.now() - started < CONFIG.MEASURE_MS) {
-      setTimeout(measure, 250);
-    } else if (settled < 20) {
-      // Nothing ever rendered: blocked, unfilled, or no demand. Collapse the
-      // slot rather than leaving an empty framed rectangle on the page.
-      slot.classList.add('is-blank');
+    if (settled >= 20 && !rendered) {
+      rendered = true;
+      if (onFirstRender) onFirstRender();
     }
+
+    // Once the fast window is up with nothing rendered — blocked, unfilled,
+    // or no demand — collapse the slot rather than leave an empty framed
+    // rectangle on the page. The collapse is visual only (the frame keeps its
+    // layout box), so a unit that simply arrives late is still measured and
+    // still gets shown.
+    const age = Date.now() - started;
+    if (age >= CONFIG.MEASURE_MS) slot.classList.toggle('is-blank', settled < 20);
+
+    if (age < CONFIG.MEASURE_MS) setTimeout(measure, 250);
+    else if (age < CONFIG.MEASURE_TAIL_MS) setTimeout(measure, 1000);
   }
   measure();
 }
@@ -254,14 +267,17 @@ function fillSlotWithNetwork(slot) {
     window.addEventListener('resize', refit, { passive: true });
     window.addEventListener('orientationchange', refit);
     if ('ResizeObserver' in window) new ResizeObserver(refit).observe(slot);
+    recordAdEvent(slot.id || 'network', 'impression');
   } else {
     frame.style.width = '100%';
     frame.style.height = CONFIG.NATIVE_MIN_H + 'px';
     wrap.style.height = CONFIG.NATIVE_MIN_H + 'px';
-    trackNativeHeight(slot, wrap, frame);
+    // Counted when the unit actually draws something, not when the empty
+    // frame is created — a collapsed slot is not an impression.
+    trackNativeHeight(slot, wrap, frame, () => {
+      recordAdEvent(slot.id || 'network', 'impression');
+    });
   }
-
-  recordAdEvent(slot.id || 'network', 'impression');
   return true;
 }
 
