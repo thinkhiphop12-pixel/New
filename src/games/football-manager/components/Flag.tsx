@@ -179,9 +179,13 @@ const FLAGS: Record<string, FlagSpec> = {
   Ireland: { rects: pales(['#169b62', '#ffffff', '#ff883e']) },
 };
 
+function getFlag(country: string): FlagSpec | undefined {
+  return Object.prototype.hasOwnProperty.call(FLAGS, country) ? FLAGS[country] : undefined;
+}
+
 /** True where the game knows how to draw this nation's flag. */
 export function hasFlag(country: string): boolean {
-  return country in FLAGS;
+  return getFlag(country) !== undefined;
 }
 
 export default function Flag({
@@ -189,11 +193,11 @@ export default function Flag({
   size = 48,
   className,
 }: {
-  country: string;
-  size?: number;
-  className?: string;
+  readonly country: string;
+  readonly size?: number;
+  readonly className?: string;
 }) {
-  const spec = FLAGS[country];
+  const spec = getFlag(country);
   const width = size;
   const height = Math.round((size * 2) / 3);
 

@@ -221,6 +221,7 @@ function strength(club) {
 // division with an odd count sheds its weakest side (the Indian Super
 // League's eleventh club) rather than complicating the shared scheduler.
 const clubs = [];
+const freeAgentOverflow = [];
 const divisions = [...new Set([...byClub.values()].map((c) => c.division))].sort((a, b) => a - b);
 for (const division of divisions) {
   let inDivision = [...byClub.values()]
@@ -230,19 +231,31 @@ for (const division of divisions) {
     const dropped = inDivision.pop();
     console.log(`  division ${division}: dropped ${dropped.name} (odd club count)`);
   }
-  for (const c of inDivision) c.players.sort((a, b) => b.rating - a.rating);
+  for (const c of inDivision) {
+    c.players.sort((a, b) => b.rating - a.rating);
+    // The engine treats 30 as a hard roster cap (MAX_SQUAD_SIZE in
+    // gameRules.ts) — every signing, loan and promotion is gated on it. The
+    // CSV's real-world squads run deeper than that at some clubs (30+ contract
+    // players is normal for a top-flight side), so anything past the best 30
+    // becomes a free agent rather than being dropped from the game outright.
+    if (c.players.length > 30) {
+      const overflow = c.players.splice(30);
+      for (const p of overflow) freeAgentOverflow.push(p);
+    }
+  }
   clubs.push(...inDivision);
 }
 
-// Free agents have no club and therefore no row in the club data — carry the
-// existing pool across rather than inventing one.
+// Free agents proper (no club, no row in the CSV's club column) plus the
+// roster overflow trimmed above.
 const previous = existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')) : { freeAgents: [] };
+const freeAgents = [...(previous.freeAgents ?? []), ...freeAgentOverflow];
 
-writeFileSync(OUT, JSON.stringify({ clubs, freeAgents: previous.freeAgents ?? [] }, null, 0));
+writeFileSync(OUT, JSON.stringify({ clubs, freeAgents }, null, 0));
 const players = clubs.reduce((s, c) => s + c.players.length, 0);
 console.log(
   `fc26-source.json written: ${clubs.length} clubs, ${players} contracted players, ` +
-  `${previous.freeAgents?.length ?? 0} free agents, ${divisions.length} divisions`
+  `${freeAgents.length} free agents (${freeAgentOverflow.length} from squad-cap overflow), ${divisions.length} divisions`
 );
 for (const d of divisions) {
   console.log(`  ${d}: ${clubs.filter((c) => c.division === d).length} clubs`);
