@@ -712,6 +712,36 @@ body {
 @media (max-width: 899px) {
   .fm-actiondock { position: fixed; left: 8px; right: 8px; bottom: 58px; z-index: 44; margin: 0; }
 }
+/* The dock's "hold to fast-forward" indicator — a thin progress rail filling
+   left-to-right while SIM NEXT DAY is held, so a held-down press reads as
+   "working" rather than an unresponsive button. */
+.fm-actiondock__cta { position: relative; overflow: hidden; }
+.fm-actiondock__cta-fill {
+  position: absolute; inset: 0; left: 0; width: 0; background: rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+}
+/* A small pill in the dock when a day's stops have been seen but not yet
+   dismissed via Continue — lets the player step away to Inbox/Transfers and
+   find their way back without losing the day's context. */
+.fm-actiondock__pending {
+  border: none; border-radius: var(--r-full); padding: 8px 14px;
+  font-weight: 800; font-size: 12px; cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  background: var(--red-soft); color: var(--red);
+}
+
+/* ── Day Summary — what "Sim Next Day" stops on ── */
+.fm-daysummary { display: flex; flex-direction: column; gap: 12px; max-width: var(--w-screen); margin: 0 auto; padding-bottom: 90px; }
+.fm-daysummary__head { padding: 4px 2px 0; }
+.fm-daysummary__date { margin: 2px 0 0; font-size: 20px; font-weight: 900; }
+.fm-daysummary__match {
+  display: flex; align-items: center; gap: 12px; text-align: left;
+  background: var(--panel); border: 1px solid var(--gold); border-radius: var(--r-lg);
+  padding: 14px; cursor: pointer; font-family: inherit; color: inherit;
+}
+.fm-daysummary__match-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.fm-daysummary__match-title { font-weight: 800; font-size: 15px; }
+.fm-daysummary__actions { display: flex; justify-content: center; padding: 6px 0 0; }
 
 /* ── Hub module grid (Touchline) ──
    The hero next-match panel plus a responsive card grid, replacing the

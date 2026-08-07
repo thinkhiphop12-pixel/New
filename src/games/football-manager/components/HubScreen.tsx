@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, type KeyboardEvent } from 'react';
 import type { GameState } from '@/engine/types';
-import GroupHub from './GroupHub';
-import PortalHub from './PortalHub';
+import Dashboard from './Dashboard';
 import InboxScreen from './InboxScreen';
 import SquadScreen from './SquadScreen';
 import TacticsScreen from './TacticsScreen';
@@ -94,7 +93,7 @@ export default function HubScreen({
 
   const screen = () => {
     switch (route) {
-      case 'overview': return <PortalHub state={state} onChange={onChange} onAbandon={onAbandon} />;
+      case 'overview': return <Dashboard state={state} onChange={onChange} onAbandon={onAbandon} onOpenScreen={onRoute} />;
       case 'fixtures': return <FixturesScreen state={state} />;
       case 'table': return <TableScreen state={state} />;
       case 'cups': return <CupScreen state={state} />;
@@ -211,7 +210,7 @@ export default function HubScreen({
             </div>
           </>
         ) : (
-          <GroupHub state={state} onOpen={(g) => onRoute(firstScreenOf(g))} />
+          <Dashboard state={state} onChange={onChange} onAbandon={onAbandon} onOpenScreen={onRoute} />
         )}
       </div>
     </div>

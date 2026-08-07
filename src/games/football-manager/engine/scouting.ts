@@ -72,11 +72,16 @@ function reportNote(stars: number, name: string, region: string): string {
   return `${name} has flagged some early interest from ${region} — still just a name to keep an eye on.`;
 }
 
-/** Advance the scouting network by one week: each scout independently rolls
- *  a chance (by star rating) to file a lead from his assigned region — an
- *  existing free/rival player, added to the shortlist with an inbox report.
- *  Idempotent per call, same contract as tickFacilitiesWeek. */
-export function tickScoutNetwork(state: GameState): GameState {
+/** Advance the scouting network by `days` days (default 7 — one full week,
+ *  the legacy cadence): each scout independently rolls a chance (by star
+ *  rating, scaled to the number of days covered) to file a lead from his
+ *  assigned region — an existing free/rival player, added to the shortlist
+ *  with an inbox report. Idempotent per call, same contract as
+ *  tickFacilitiesWeek. Called with `days = 1` from the live daily loop
+ *  (engine/dailyTick.ts) so a report can land on any day rather than only
+ *  ever arriving in the same breath as a match result — that's what makes a
+ *  scouting lead feel like news instead of a footnote. */
+export function tickScoutNetwork(state: GameState, days = 7): GameState {
   const sc = state.scouting;
   if (!sc || !sc.scouts || sc.scouts.length === 0) return state;
 
@@ -87,7 +92,7 @@ export function tickScoutNetwork(state: GameState): GameState {
   const inboxAdds: { title: string; body: string; playerId: number }[] = [];
 
   for (const scout of sc.scouts) {
-    if (Math.random() > fileChance(scout.stars)) continue;
+    if (Math.random() > fileChance(scout.stars) * (days / 7)) continue;
     const pool = Object.values(state.players).filter(
       (p) => p.clubId !== state.userClubId && p.clubId !== 0 && p.nat === scout.region && !shortlist.includes(p.id)
     );

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { GameData, GameState, MatchReport, ScenarioId, SeasonSummary, GameSettings, ManagerProfile } from '@/engine/types';
 import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/engine/seasonProgression';
+import { advanceDay, type DayStop } from '@/engine/dailyTick';
+import { formatGameDate } from '@/engine/calendar';
 import { isLineupValid } from '@/engine/teamManagement';
 import { SEASON_ROUNDS } from '@/engine/gameRules';
 import { simulateMatch } from '@/engine/matchSimulation';
@@ -19,6 +21,7 @@ import NationSelectScreen from './NationSelectScreen';
 import ClubSelectScreen from './ClubSelectScreen';
 import ScenarioPickScreen from './ScenarioPickScreen';
 import HubScreen from './HubScreen';
+import DaySummaryScreen from './DaySummaryScreen';
 import MatchScreen from './match/MatchScreen';
 import SeasonEndScreen from './SeasonEndScreen';
 import SettingsPanel, { loadSettings } from './SettingsPanel';
@@ -29,7 +32,12 @@ import { ToastHost, pushToast } from './ToastQueue';
 import { Icon, IconSprite } from './Icon';
 import type { ScreenId } from './hubNav';
 
-type View = 'menu' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'match' | 'seasonend' | 'character';
+type View = 'menu' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'daysummary' | 'match' | 'seasonend' | 'character';
+
+/** How long a held SIM NEXT DAY press waits between days — fast enough that
+ *  a run of quiet days feels like a montage, slow enough that the date in
+ *  the dock is still readable as it changes. */
+const HOLD_TICK_MS = 260;
 
 export default function FootballManagerGame() {
   const [data, setData] = useState<GameData | null>(null);
@@ -56,6 +64,20 @@ export default function FootballManagerGame() {
   // Progress label for the scenario fast-forward below. Non-null means a long
   // synchronous engine job is being run in yielded chunks; see `handlePickClub`.
   const [busy, setBusy] = useState<string | null>(null);
+
+  // The daily loop (SIM NEXT DAY). `dayStops` are what the last stopped day
+  // is waiting on — kept around after the player navigates off to Inbox or
+  // Transfers to resolve one, so "Continue" back on the dock reopens the
+  // same summary rather than silently ticking past unresolved items.
+  // `dayDigest` accumulates the quiet-day lines shown in that same summary.
+  const [dayStops, setDayStops] = useState<DayStop[]>([]);
+  const [dayDigest, setDayDigest] = useState<string[]>([]);
+  const [holding, setHolding] = useState(false);
+  // Whether a held press should keep ticking. A ref, not state — the ticking
+  // loop below is a plain async function, not a React effect, so it needs a
+  // value it can read synchronously between awaits without waiting on a
+  // re-render.
+  const holdingRef = useRef(false);
 
   useEffect(() => {
     loadGameData()
@@ -222,6 +244,11 @@ export default function FootballManagerGame() {
     pushToast(`Full time: ${userGoals}-${oppGoals} vs ${oppName}`, outcome);
 
     const played = playRound(gs, report);
+    // The match was today's stop — it's resolved now, and playRound has
+    // rolled the calendar into next week, so anything still sitting in
+    // `dayStops`/`dayDigest` is from a week that's now over.
+    setDayStops([]);
+    setDayDigest([]);
     if (seasonOver(played)) {
       const { state: next, summary: sum } = endSeason(played);
       apply(next);
@@ -234,6 +261,91 @@ export default function FootballManagerGame() {
       setHubRoute('overview');
       setView('hub');
     }
+  };
+
+  // Keeps the daily loop's async tick function reading live state without
+  // being torn down and rebuilt (and losing its place mid-run) on every
+  // render `apply()` causes.
+  const gsRef = useRef<GameState | null>(null);
+  useEffect(() => { gsRef.current = gs; }, [gs]);
+  const settingsRef = useRef<GameSettings | null>(null);
+  useEffect(() => { settingsRef.current = settings; }, [settings]);
+
+  /** One tick of the daily loop. Runs the day, applies the result, and — if
+   *  it produced a stop — opens the Day Summary and reports back `true` so a
+   *  held press knows to stop ticking. A season that has already ended is
+   *  also treated as a stop: there's nothing left for the daily loop to do
+   *  until the player moves on from Season End. */
+  const tickOneDay = (): boolean => {
+    const current = gsRef.current;
+    if (!current || seasonOver(current)) return true;
+    const result = advanceDay(current, settingsRef.current ?? undefined);
+    gsRef.current = result.state;
+    apply(result.state);
+    if (result.digest.length) setDayDigest((d) => [...d, ...result.digest]);
+    if (result.stops.length) {
+      setDayStops((prev) => [...prev, ...result.stops]);
+      setView('daysummary');
+      return true;
+    }
+    return false;
+  };
+
+  /** Runs while `holdingRef.current` stays true — a plain async loop, not a
+   *  React effect, so a quick tap (down immediately followed by up) still
+   *  completes exactly one day: the first iteration runs synchronously,
+   *  before the loop's first `await`, and pointerup flips the ref before
+   *  that await resolves. */
+  const runHold = async () => {
+    while (holdingRef.current) {
+      const stopped = tickOneDay();
+      if (stopped) break;
+      await new Promise((r) => setTimeout(r, HOLD_TICK_MS));
+    }
+    holdingRef.current = false;
+    setHolding(false);
+  };
+
+  const handleSimPress = () => {
+    // A day already stopped and hasn't been acknowledged — reopen the
+    // summary instead of quietly ticking past whatever it's waiting on.
+    if (dayStops.length > 0) {
+      setView('daysummary');
+      return;
+    }
+    if (holdingRef.current) return;
+    holdingRef.current = true;
+    setHolding(true);
+    runHold();
+  };
+
+  const handleSimRelease = () => {
+    holdingRef.current = false;
+    setHolding(false);
+  };
+
+  /** A stop's "resolve" action for anything that isn't matchday — send the
+   *  player to the screen that can actually act on it, leaving `dayStops` in
+   *  place so the pending pill can bring them back to finish reviewing. */
+  const handleResolveStop = (route: ScreenId) => {
+    setHubRoute(route);
+    setView('hub');
+  };
+
+  const handlePrepareFromSummary = () => {
+    if (!gs) return;
+    if (!isLineupValid(gs, gs.userClubId, gs.lineup)) {
+      setHubRoute('tactics');
+      setView('hub');
+      return;
+    }
+    handlePlayMatch();
+  };
+
+  const handleContinueFromSummary = () => {
+    setDayStops([]);
+    setDayDigest([]);
+    setView('hub');
   };
 
   const handleAcceptJob = (clubId: number) => {
@@ -374,6 +486,16 @@ export default function FootballManagerGame() {
             onAcceptJob={handleAcceptJob}
             onRetire={handleAbandon}
           />
+        ) : view === 'daysummary' && gs ? (
+          <DaySummaryScreen
+            state={gs}
+            stops={dayStops}
+            digest={dayDigest}
+            onOpenInbox={() => handleResolveStop('inbox')}
+            onOpenTransfers={() => handleResolveStop('transfers')}
+            onPrepareMatch={handlePrepareFromSummary}
+            onContinue={handleContinueFromSummary}
+          />
         ) : gs ? (
           <HubScreen
             state={gs}
@@ -398,38 +520,50 @@ export default function FootballManagerGame() {
       )}
 
       {/* Persistent action dock (Touchline/Pocket layout): the in-game date
-          and the Play Week / Fix-lineup CTA, reachable from every hub tab —
-          not just PortalHub. Hub view only, and always in-flow (never
-          position:fixed globally) so it can never land on top of
-          `.fm-matchx`'s own bottom control bar during a live match. */}
+          and SIM NEXT DAY, reachable from every hub tab — not just Overview.
+          Hub view only, and always in-flow (never position:fixed globally)
+          so it can never land on top of `.fm-matchx`'s own bottom control
+          bar during a live match.
+
+          Tap advances one day; press-and-hold fast-forwards (see `runHold`)
+          until something needs the manager's attention. Matches are never
+          auto-played from here — matchday is always a stop the Day Summary
+          hands off into, so a match can't be skipped by holding through it. */}
       {view === 'hub' && gs && (() => {
-        const fixture = nextUserFixture(gs);
         const lineupOk = isLineupValid(gs, gs.userClubId, gs.lineup);
+        const pending = dayStops.length > 0;
         return (
           <div className="fm-actiondock">
             <div className="fm-actiondock__date">
-              <b>Week {Math.min(gs.week, SEASON_ROUNDS)}/{SEASON_ROUNDS}</b>
-              <span>{gs.seasonYear}/{(gs.seasonYear + 1) % 100} season</span>
+              <b>{formatGameDate(gs)}</b>
+              <span>Week {Math.min(gs.week, SEASON_ROUNDS)}/{SEASON_ROUNDS} · {gs.seasonYear}/{(gs.seasonYear + 1) % 100}</span>
             </div>
-            <span className="fm-actiondock__spacer" />
-            {fixture ? (
+            {!lineupOk && (
               <button
-                className={`fm-actiondock__cta${lineupOk ? '' : ' fm-actiondock__cta--warn'}`}
-                onClick={lineupOk ? handlePlayMatch : () => setHubRoute('tactics')}
+                type="button"
+                className="fm-actiondock__pending"
+                onClick={() => setHubRoute('tactics')}
+                title="Lineup needs 11 fit players before your next match"
               >
-                {lineupOk ? (
-                  <>
-                    <Icon name="play" size={15} /> Play Week {gs.week}
-                  </>
-                ) : (
-                  <>
-                    <Icon name="warning" size={15} /> Fix your lineup
-                  </>
-                )}
+                <Icon name="warning" size={13} /> Lineup
               </button>
-            ) : (
-              <span className="fm-hint" style={{ margin: 0 }}>No fixture this week</span>
             )}
+            <span className="fm-actiondock__spacer" />
+            {pending && (
+              <button type="button" className="fm-actiondock__pending" onClick={() => setView('daysummary')}>
+                <Icon name="warning" size={13} /> {dayStops.length} waiting
+              </button>
+            )}
+            <button
+              type="button"
+              className="fm-actiondock__cta"
+              onPointerDown={handleSimPress}
+              onPointerUp={handleSimRelease}
+              onPointerLeave={handleSimRelease}
+              onPointerCancel={handleSimRelease}
+            >
+              <Icon name="play" size={15} /> {pending ? 'Continue' : holding ? 'Simulating…' : 'Sim Next Day'}
+            </button>
           </div>
         );
       })()}

@@ -201,6 +201,20 @@ export interface DevPlan {
   statFocus?: 'pac' | 'sho' | 'pas' | 'dri' | 'def' | 'phy';
   targetPos?: string;
   weeksRemaining?: number;
+  /** Days left on a position conversion. The day clock's finer-grained
+   *  counterpart to `weeksRemaining`, which is kept in sync as
+   *  `ceil(daysRemaining / 7)` so every screen already reading weeks keeps
+   *  working. Seeded on the next daily tick for a plan set before the
+   *  calendar existed. */
+  daysRemaining?: number;
+  /** Total days the conversion was estimated to take, so progress can be
+   *  drawn as a percentage rather than a bare countdown — a retraining plan
+   *  used to show the player nothing at all for 8-12 weeks. */
+  totalDays?: number;
+  /** Accumulated 0..1 progress toward the next +1 on `statFocus`. A stat plan
+   *  was previously a 6%-per-week coin flip with no visible movement between
+   *  successes; this holds the same expected rate but makes it legible. */
+  statProgress?: number;
 }
 
 /** A live loan spell, held on the player while he sits in the borrower's squad. */
@@ -1011,6 +1025,13 @@ export interface GameState {
   seasonYear: number;
   /** Next round to be played, 1..SEASON_ROUNDS. > SEASON_ROUNDS means season over. */
   week: number;
+  /** 0-based day counter since the season opened — the calendar's source of
+   *  truth (see engine/calendar.ts). Optional so pre-calendar saves load: they
+   *  resume on Monday of whatever week they were saved on. `week` above keeps
+   *  its old meaning as the fixture round and is still what fixture lookups
+   *  key off; the two are held in step by resolving exactly one round per
+   *  calendar week, on MATCH_DAY. */
+  dayOfSeason?: number;
   budget: number;
   /** Weekly wage ceiling the board sanctions, separate from the transfer
    *  budget above — a signing can be affordable to buy and still unaffordable
@@ -1146,6 +1167,14 @@ export interface GameSettings {
   showTeamTalks: boolean;
   /** AI opponent difficulty multiplier (0.85 = easy, 1.0 = normal, 1.15 = hard). */
   difficulty: number;
+  /** Continue Rules for the daily loop (engine/dailyTick.ts): which inbox
+   *  categories halt "Sim Next Day" for a look, vs. just logging to the Day
+   *  Summary digest and rolling on. Matchday is a hard stop and isn't in
+   *  here — "the user should never accidentally skip a match" isn't a
+   *  preference. Optional/partial so an unset category falls back to
+   *  `defaultContinueStops()`; a settings blob from before this system
+   *  existed behaves exactly as those defaults. */
+  continueStops?: Partial<Record<InboxCategory, boolean>>;
 }
 
 export interface AvatarConfig {
