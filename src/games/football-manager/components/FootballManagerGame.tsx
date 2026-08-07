@@ -394,7 +394,7 @@ export default function FootballManagerGame() {
           repositioned to "fit" — so it can never overlap `.fm-matchx`'s own
           controls or intercept a tap meant for the pitch/menus. */}
       {view !== 'match' && (
-        <div className="fm-bottom-ad ad-slot" id="gaffaBottomAd" aria-label="Advertisement" />
+        <div className="fm-bottom-ad ad-slot" id="gaffaBottomAd" data-ad-format="banner" aria-label="Advertisement" />
       )}
 
       {/* Persistent action dock (Touchline/Pocket layout): the in-game date

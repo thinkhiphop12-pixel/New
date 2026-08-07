@@ -175,21 +175,6 @@ body::before{
 .step-body h3{font-size:14px;font-weight:800;letter-spacing:-.01em;margin-bottom:3px}
 .step-body p{font-size:12.5px;color:var(--muted);line-height:1.55}
 
-/* ── COMING SOON ── */
-.soon-grid{display:grid;grid-template-columns:1fr;gap:10px}
-.soon-card{
-  display:flex;align-items:center;gap:12px;
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r);padding:13px 14px;
-  transition:border-color .18s;
-}
-.soon-card:hover{border-color:var(--border-hi)}
-.soon-thumb{flex-shrink:0;width:48px;height:38px;border-radius:7px;overflow:hidden;border:1px solid var(--border)}
-.soon-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.soon-body h3{font-size:13.5px;font-weight:700;letter-spacing:-.01em}
-.soon-body p{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4}
-.soon-chip{margin-left:auto;flex-shrink:0;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--glass);border:1px solid var(--border);padding:3px 8px;border-radius:999px;white-space:nowrap}
-
 /* ── FAQ ── */
 .faq-list{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:6px}
 .faq-item{background:var(--surface);border:1px solid var(--border);border-radius:11px;overflow:hidden}
@@ -199,6 +184,47 @@ body::before{
 .faq-item[open] summary::after{content:"–"}
 .faq-item p{color:var(--muted);font-size:13px;padding:0 14px 13px;line-height:1.65}
 
+/* ── CLOSING BOARD ── */
+.closer{padding-top:8px}
+.board{
+  border:1px solid var(--border-hi);border-radius:16px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02));
+  box-shadow:0 24px 70px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.06);
+}
+.board-top{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:11px 16px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.28);
+  font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+}
+.board-top .live{display:inline-flex;align-items:center;gap:7px;color:var(--lime)}
+.board-top .live b{color:var(--lime);font-weight:800;letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.board-top .dot{width:6px;height:6px;flex-shrink:0;border-radius:50%;background:var(--lime);box-shadow:0 0 7px var(--lime);animation:blink 2s ease-in-out infinite}
+.board-main{display:grid;grid-template-columns:1.1fr .9fr}
+.board-left{padding:26px 22px;display:flex;flex-direction:column;align-items:flex-start;gap:14px;border-right:1px solid var(--border)}
+.board-left h2{font-size:clamp(1.4rem,4.6vw,2.3rem);font-weight:900;letter-spacing:-.035em;line-height:1.05}
+.board-left p{color:var(--muted);font-size:13.5px;line-height:1.6;max-width:38ch}
+.board-right{padding:16px 18px;display:flex;flex-direction:column;justify-content:center}
+.fx{
+  display:flex;align-items:center;gap:12px;padding:11px 2px;
+  border-bottom:1px solid var(--border);font-size:13px;min-height:44px;
+  transition:color .15s;
+}
+.fx:last-child{border-bottom:0}
+.fx:hover .fx-name,.fx:focus-visible .fx-name{color:var(--lime)}
+.fx .k{flex-shrink:0;width:58px;font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.fx-name{transition:color .15s}
+.fx-go{margin-left:auto;color:var(--muted)}
+.sponsor-bar{
+  display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;
+  padding:12px 16px;border-top:1px solid var(--border);background:rgba(0,0,0,.32);
+}
+.sponsor-bar .sponsored-kicker{margin-bottom:0}
+@media(max-width:720px){
+  .board-main{grid-template-columns:1fr}
+  .board-left{border-right:0;border-bottom:1px solid var(--border);padding:22px 18px}
+  .board-left .btn{align-self:stretch}
+}
+
 /* ── AD SLOTS ── */
 .sponsored-kicker{font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;opacity:.6}
 .col-ad-rail{position:fixed;top:70px;right:calc(50% - 540px - 180px);width:160px;display:flex;flex-direction:column;gap:14px;z-index:5;pointer-events:none}
@@ -207,9 +233,19 @@ body::before{
 .ad-slot{background:var(--surface);border:1px solid var(--border);border-radius:10px;position:relative;display:flex;align-items:center;justify-content:center;min-height:90px;color:var(--muted);font-size:11px;overflow:hidden}
 .ad-slot-label{opacity:0.35}
 .ad-slot:empty::before{content:"Advertisement";opacity:0.25;font-size:10.5px;letter-spacing:.04em}
-.ad-slot iframe{display:block;width:100%;max-width:100%;border:0;background:transparent}
-#rightColAd{min-height:600px;width:160px;aspect-ratio:160/600}
-#topAdBanner,#middleAdBanner,#bottomAdBanner{min-height:90px}
+.ad-slot iframe{display:block;max-width:100%;border:0;background:transparent}
+/* The rail reserves its 160x600 footprint only until the unit reports a real
+   height; ads.js sets an inline min-height from that measurement, and hides
+   the slot outright if nothing ever renders. */
+#rightColAd{min-height:250px;width:160px}
+/* The banner in the sponsor bar carries no chrome of its own — the bar is the
+   frame — and it is sized by ads.js (468x60, scaled to fit narrow screens). */
+.sponsor-bar .ad-slot{
+  margin:0;max-width:468px;min-height:60px;width:100%;
+  background:transparent;border:0;border-radius:0;padding:0;
+}
+/* the bar's own kicker labels the unit — no second "Advertisement" inside it */
+.sponsor-bar .ad-slot:empty::before{content:none}
 
 /* ── FOOTER ── */
 footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top:24px;padding:22px 0}
@@ -348,7 +384,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 
 <!-- COLUMN AD RAIL (right side only, desktop ≥1440px) -->
 <aside class="col-ad-rail" aria-label="Advertisement">
-  <div class="ad-slot" id="rightColAd"></div>
+  <div class="ad-slot" id="rightColAd" data-ad-format="native"></div>
 </aside>
 
 <!-- NAV -->
@@ -439,31 +475,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </section>
 
-<!-- COMING SOON -->
-<section class="section" style="padding-top:10px">
-  <div class="wrap">
-    <div class="section-head" style="text-align:center">
-      <div class="eyebrow">Also free</div>
-      <h2>More ways to play</h2>
-    </div>
-    <div class="soon-grid">
-      <div class="soon-card" style="opacity:1">
-        <div class="soon-thumb"><img src="/assets/badge-scout.svg" alt="" width="64" height="52" loading="lazy"></div>
-        <div class="soon-body"><h3>Scout</h3><p>Daily mystery-player puzzle. Build a streak.</p></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ADVERTISEMENT -->
-<section class="section" style="padding-top:0">
-  <div class="wrap">
-    <div class="sponsored-kicker">Advertisement</div>
-    <div class="ad-slot" id="middleAdBanner"><span class="ad-slot-label">Advertisement</span></div>
-  </div>
-</section>
-
-
 <!-- FAQ -->
 <section id="faq" class="section">
   <div class="wrap">
@@ -496,11 +507,33 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </section>
 
-<!-- ADVERTISEMENT (bottom of page) -->
-<section class="section" style="padding-top:0">
+<!-- CLOSING SECTION — matchday board, with the banner built into the sponsor bar -->
+<section class="section closer">
   <div class="wrap">
-    <div class="sponsored-kicker">Advertisement</div>
-    <div class="ad-slot" id="bottomAdBanner"><span class="ad-slot-label">Advertisement</span></div>
+    <div class="board">
+      <div class="board-top">
+        <span class="live"><span class="dot"></span><b data-live-count>—</b>&nbsp;playing now</span>
+        <span class="board-top-meta">Matchday hub</span>
+      </div>
+      <div class="board-main">
+        <div class="board-left">
+          <div class="eyebrow">Before you go</div>
+          <h2>Three games.<br>One tab. Still free.</h2>
+          <p>Your save, streak and squad live in this browser — close the tab, come back, pick the season up where you left it.</p>
+          <a href="/gaffa/" class="btn btn-primary">Play Gaffa</a>
+        </div>
+        <div class="board-right">
+          <a class="fx" href="/gaffa/"><span class="k">Career</span><span class="fx-name">Gaffa · full season</span><span class="fx-go" aria-hidden="true">→</span></a>
+          <a class="fx" href="/perfect-cup/"><span class="k">Draft</span><span class="fx-name">Draft XI · build a squad</span><span class="fx-go" aria-hidden="true">→</span></a>
+          <a class="fx" href="/scout/"><span class="k">Daily</span><span class="fx-name">Scout · today's puzzle</span><span class="fx-go" aria-hidden="true">→</span></a>
+          <a class="fx" href="/gaffer-guide.html"><span class="k">Guide</span><span class="fx-name">Tactics &amp; transfers</span><span class="fx-go" aria-hidden="true">→</span></a>
+        </div>
+      </div>
+      <div class="sponsor-bar">
+        <span class="sponsored-kicker">Advertisement</span>
+        <div class="ad-slot" id="closerAdBanner" data-ad-format="banner"></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -527,8 +560,8 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 <script>
 /* Daily live-player counter */
 (function () {
-  var el = document.getElementById('liveCount');
-  if (!el) return;
+  var els = document.querySelectorAll('#liveCount, [data-live-count]');
+  if (!els.length) return;
   function todayKey() {
     var d = new Date();
     return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
@@ -551,7 +584,8 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
     var key = todayKey();
     var base = baseForToday(key);
     var count = base + minutesSinceMidnight();
-    el.textContent = count.toLocaleString();
+    var text = count.toLocaleString();
+    for (var i = 0; i < els.length; i++) els[i].textContent = text;
   }
   update();
   setInterval(update, 60000);
