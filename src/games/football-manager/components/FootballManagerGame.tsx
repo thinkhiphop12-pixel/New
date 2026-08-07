@@ -315,8 +315,15 @@ export default function FootballManagerGame() {
   const handleCharacterSave = (profile: ManagerProfile) => {
     setManagerProfile(profile);
     // Legacy key: still the source of truth before any career exists (the
-    // main menu can open the customizer with no `gs` yet).
-    localStorage.setItem('managerProfile', JSON.stringify(profile));
+    // main menu can open the customizer with no `gs` yet). Guarded the same
+    // way as the read on mount — storage can be full or blocked (private
+    // browsing) — so a throw here can't strand the player on this screen;
+    // the profile still travels with the save slot below regardless.
+    try {
+      localStorage.setItem('managerProfile', JSON.stringify(profile));
+    } catch {
+      // ignore corrupt/blocked/full storage
+    }
     // If a career is in progress, keep the profile travelling with the save
     // slot rather than only the device-wide key.
     if (gs) apply({ ...gs, managerProfile: profile });

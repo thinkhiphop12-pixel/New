@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Icon } from './Icon';
 import type {
   AvatarConfig, BadgeLevel, ManagerProfile, PlayingBackground, PriorRole,
@@ -179,6 +179,7 @@ export default function CharacterCustomizerScreen({
   const [tab, setTab] = useState<CustomizerTab>('appearance');
   const [categoryId, setCategoryId] = useState(CATEGORIES[1].id);
   const [error, setError] = useState<string | null>(null);
+  const nameRef = useRef<HTMLInputElement | null>(null);
 
   const category = useMemo(
     () => CATEGORIES.find((c) => c.id === categoryId) ?? CATEGORIES[0],
@@ -241,6 +242,7 @@ export default function CharacterCustomizerScreen({
     if (!name.trim()) {
       setError('Give your manager a name first.');
       setTab('appearance');
+      nameRef.current?.focus();
       return;
     }
     setError(null);
@@ -263,13 +265,14 @@ export default function CharacterCustomizerScreen({
       <div className="fm-creator__head">
         <p className="fm-label" style={{ margin: 0 }}>CREATE YOUR MANAGER</p>
         <div className="fm-creator__head-actions">
-          <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setConfig(randomAvatar())}>
+          <button type="button" className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setConfig(randomAvatar())}>
             <Icon name="dice" size={14} /> Randomize
           </button>
-          <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setConfig({ ...DEFAULT_AVATAR })}>
+          <button type="button" className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setConfig({ ...DEFAULT_AVATAR })}>
             Reset
           </button>
           <button
+            type="button"
             className="fm-btn fm-btn--ghost fm-btn--small"
             onClick={() => downloadAvatarPng(`${(name || 'manager').replace(/\s+/g, '_')}.png`)}
           >
@@ -294,13 +297,16 @@ export default function CharacterCustomizerScreen({
             <label className="fm-creator__label" htmlFor="manager-name">Manager Name</label>
             <input
               id="manager-name"
+              ref={nameRef}
               className="fm-search"
               placeholder="Enter a name"
               value={name}
               maxLength={24}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? 'manager-name-error' : undefined}
               onChange={(e) => { setName(e.target.value); if (error) setError(null); }}
             />
-            {error && <p className="fm-creator__error">{error}</p>}
+            {error && <p id="manager-name-error" role="alert" className="fm-creator__error">{error}</p>}
           </div>
         </div>
 
@@ -345,6 +351,8 @@ export default function CharacterCustomizerScreen({
             key={t.id}
             type="button"
             role="tab"
+            id={`fm-tab-${t.id}`}
+            aria-controls={`fm-panel-${t.id}`}
             aria-selected={tab === t.id}
             className={`fm-subtab${tab === t.id ? ' active' : ''}`}
             onClick={() => setTab(t.id)}
@@ -357,7 +365,7 @@ export default function CharacterCustomizerScreen({
       {/* Appearance: category strip + numbered variant grid, the reference's
           core interaction — pick a part category, then pick a numbered variant. */}
       {tab === 'appearance' && (
-        <div className="fm-creator__parts">
+        <div className="fm-creator__parts" id="fm-panel-appearance" role="tabpanel" aria-labelledby="fm-tab-appearance">
           <div className="fm-creator__cats" role="tablist" aria-label="Part categories">
             {CATEGORIES.map((c) => (
               <button
@@ -405,7 +413,7 @@ export default function CharacterCustomizerScreen({
       )}
 
       {tab === 'credentials' && (
-        <div className="fm-creator__panel" role="tabpanel" aria-label="Credentials">
+        <div className="fm-creator__panel" id="fm-panel-credentials" role="tabpanel" aria-labelledby="fm-tab-credentials">
           <div className="form-group">
             <label className="fm-label-small">Playing Career</label>
             <p className="fm-category-desc">Your pedigree as a player — the biggest factor in your starting reputation.</p>
@@ -467,7 +475,7 @@ export default function CharacterCustomizerScreen({
       )}
 
       {tab === 'style' && (
-        <div className="fm-creator__panel" role="tabpanel" aria-label="Style and personality">
+        <div className="fm-creator__panel" id="fm-panel-style" role="tabpanel" aria-labelledby="fm-tab-style">
           <div className="form-group">
             <label className="fm-label-small">Coaching Style ({coachingStyles.length}/{MAX_STYLES})</label>
             <p className="fm-category-desc">Pick up to {MAX_STYLES} tags that describe your approach on the training ground and touchline.</p>
@@ -518,8 +526,8 @@ export default function CharacterCustomizerScreen({
       )}
 
       <div className="fm-creator__foot">
-        <button className="fm-btn fm-btn--ghost" onClick={onBack}>Back</button>
-        <button className="fm-btn fm-btn--primary" onClick={handleConfirm}>
+        <button type="button" className="fm-btn fm-btn--ghost" onClick={onBack}>Back</button>
+        <button type="button" className="fm-btn fm-btn--primary" onClick={handleConfirm}>
           {initialProfile ? 'Save Manager' : 'Start Career'}
         </button>
       </div>

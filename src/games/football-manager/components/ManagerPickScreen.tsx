@@ -29,13 +29,13 @@ export default function ManagerPickScreen({
       </div>
 
       <div className="fm-actions">
-        <button className="fm-btn fm-btn--ghost" onClick={onBack}>
+        <button type="button" className="fm-btn fm-btn--ghost" onClick={onBack}>
           Back
         </button>
-        <button className="fm-btn fm-btn--secondary" onClick={onCreateNew}>
+        <button type="button" className="fm-btn fm-btn--secondary" onClick={onCreateNew}>
           Create New Manager
         </button>
-        <button className="fm-btn fm-btn--primary" onClick={onContinue}>
+        <button type="button" className="fm-btn fm-btn--primary" onClick={onContinue}>
           Continue as {profile.name}
         </button>
       </div>

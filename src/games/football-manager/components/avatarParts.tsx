@@ -21,6 +21,11 @@ export const PALETTE: string[] = [
   '#f7d9b6', '#d93b3b', '#e0457b', '#e9a8bf',
   '#f0c98a', '#c98a4b', '#8b5a2b', '#e8b4a0',
   '#1a1a1a', '#4a4a4a', '#9a9a9a', '#efefef',
+  // DEFAULT_AVATAR's starting colours (CharacterCustomizerScreen.tsx) — kept
+  // in the palette so the very first swatch a player sees actually reads as
+  // selected, instead of the default rendering a colour the palette can't
+  // reproduce.
+  '#e8b48a', '#4a3728', '#3b2b20', '#2b3445', '#a85751',
 ];
 
 /** Quick-pick complexions for the Skin category's variant grid. The palette
