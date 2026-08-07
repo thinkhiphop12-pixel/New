@@ -682,79 +682,31 @@ export interface LedgerEntry {
    render of the Finances screen without a save-version bump.
    ========================================================================= */
 
-export interface SeasonIncome {
-  tv: number;
-  matchday: number;
-  sponsorship: number;
-  merchandise: number;
-  prizes: number;
-  sales: number;
-  parachute: number;
-  grants: number;
-}
-
-export interface SeasonExpenses {
-  wages: number;
-  staff: number;
-  transfers: number;
-  agentFees: number;
-  academyUpkeep: number;
-  stadiumMaint: number;
-}
-
-/** A transfer fee spread across the signed contract length. Accounting only —
- *  the cash left the balance at signing, this only feeds the squad cost ratio. */
-export interface Amortization {
-  /** £ per week. */
-  weeklyCost: number;
-  weeksLeft: number;
-}
-
+/** One completed season's budget record, for the Finances history table. */
 export interface FinanceSeasonRecord {
   year: number;
   leagueId: string;
   position: number;
-  income: number;
-  expenses: number;
-  profit: number;
-  balance: number;
+  /** Transfer budget the season closed on. */
+  budget: number;
+  /** Weekly wage ceiling the season closed on. */
+  wageBudget: number;
   confidence: number;
-}
-
-/** One point on the balance sparkline. */
-export interface BalancePoint {
-  year: number;
-  week: number;
-  balance: number;
 }
 
 export interface FinanceState {
   /** Season this state was last rolled over into — drives lazy season-end
    *  finalisation without a second hook in seasonProgression. */
   seasonYear: number;
-  /** League the club was in at the last rollover, for parachute detection. */
+  /** League the club was in at the last rollover, so a promotion or relegation
+   *  is visible when the board sets the new budgets. */
   leagueId: string;
   /** Board confidence 0–100 (mirrors and drives `board.confidence`). */
   boardConfidence: number;
-
-  seasonIncome: SeasonIncome;
-  seasonExpenses: SeasonExpenses;
-  balanceHistory: BalancePoint[];
   history: FinanceSeasonRecord[];
-
-  amortizations: Amortization[];
-
-  /** Points docked this season, applied to the table exactly once. Written only
-   *  by the `points_deduction` scenario now that FFP and the squad cost ratio
-   *  are gone; kept here because `applyPointsDeductions` still reads it. */
+  /** Points docked this season, applied to the table exactly once. Written
+   *  only by the `points_deduction` scenario. */
   pointsDeduction: number;
-  /** Ledger entries already folded into transfers/amortization, so the
-   *  ledger scan is idempotent across ticks. */
-  seenLedger: string[];
-
-  parachuteYears: number;
-  boardFundsRequested: boolean;
-  weeksElapsed: number;
 }
 
 export type ScenarioId =

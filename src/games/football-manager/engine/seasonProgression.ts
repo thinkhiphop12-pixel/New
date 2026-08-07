@@ -30,7 +30,7 @@ import {
   MID_SEASON_RESIGN_REP_COST, boardObjectiveFor, interviewOdds, makeVacancy, tickJobMarket,
 } from './jobMarket';
 import { pushInbox } from './inbox';
-import { tickFinances, weeklyMatchdayIncome } from './finances';
+import { tickFinances } from './finances';
 import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
 import { tickFacilitiesWeek } from './facilities';
 import { applyScheduleDay, applyWeeklySchedule, getSchedule } from './schedule';
@@ -599,14 +599,7 @@ export function getStaff(state: GameState): Staff {
   return state.staff ?? { coach: 0, physio: 0, scout: 0 };
 }
 
-/** Weekly matchday income. */
-export function gateIncome(state: GameState): number {
-  // Phase 8: delegates to the stature × opponent matchday model in
-  // engine/finances.ts, which pays per home fixture instead of the old flat
-  // per-week `gateBase` drip. Stadium expansion was removed, so there is no
-  // longer a build level scaling it.
-  return weeklyMatchdayIncome(state);
-}
+
 
 /** The user's total weekly wage bill (loanees are off the books). */
 export function weeklyWageBill(state: GameState): number {
@@ -1080,20 +1073,11 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
     }
   }
 
-  // Finances: gate receipts in, player and staff wages out.
-  const gate = gateIncome(s);
-  const wages = weeklyWageBill(s);
-  const staffWages = staffWageBill(s);
-  s.budget += gate - wages - staffWages;
-  s.ledger.unshift({ week: round, desc: 'Gate receipts', amount: gate });
-  s.ledger.unshift({ week: round, desc: 'Player wages', amount: -wages });
-  if (staffWages > 0) s.ledger.unshift({ week: round, desc: 'Staff wages', amount: -staffWages });
-  if (s.budget < 0) {
-    s.board.confidence = clamp(s.board.confidence - 2, 1, 99);
-    if (round % 3 === 0) s.news.unshift('The club is in the red — the board is uneasy about the finances.');
-  }
-  s.ledger = s.ledger.slice(0, 24);
-  tickFinances(s, round); // Phase 8 — see engine/finances.ts (sole hook into this file).
+  // Finances: wages are a capacity the wage budget caps, not a weekly debit,
+  // and there is no income model — the board sets the budgets each summer
+  // instead. Prize money is the one thing that still pays into `budget`
+  // mid-season, and it is credited where it is won.
+  tickFinances(s); // Phase 8 — see engine/finances.ts (sole hook into this file).
 
   // Board confidence tracks performance against the objective.
   const pos = userPosition(s);

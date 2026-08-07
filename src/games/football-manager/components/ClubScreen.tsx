@@ -3,7 +3,7 @@
 import type { GameState, Staff } from '@/engine/types';
 import { ACADEMY_UPGRADE_COST, STAFF_MAX_LEVEL, STAFF_UPGRADE_COST, leagueName } from '@/engine/gameRules';
 import {
-  gateIncome, getStaff, setCaptain, staffWageBill, upgradeAcademy,
+  getStaff, setCaptain, staffWageBill, upgradeAcademy,
   upgradeStaff, weeklyWageBill, computeTable, userLeague, userLeagueId,
 } from '@/engine/seasonProgression';
 import { getSquad } from '@/engine/teamManagement';
@@ -30,7 +30,6 @@ export default function ClubScreen({
   const m = state.manager;
   const wages = weeklyWageBill(state);
   const staffWages = staffWageBill(state);
-  const gate = gateIncome(state);
   const upgradeCost = ACADEMY_UPGRADE_COST[state.academyLevel + 1];
   const staff = getStaff(state);
   const squad = getSquad(state, state.userClubId).sort((a, b) => b.rating - a.rating);
@@ -95,11 +94,8 @@ export default function ClubScreen({
         </div>
         <div className="fm-qstat" style={{ marginBottom: 8 }}>
           <span className="fm-qstat__icon"><Icon name="stadium" size={16} /></span>
-          <span className="fm-qstat__val">{gate > 0 ? formatMoney(gate) : '—'}/wk</span>
-          <span className="fm-qstat__lbl">gate income</span>
-          <span className="fm-qstat__lbl" style={{ marginLeft: 12 }}>
-            {capacity ? `${capacity.toLocaleString()} capacity` : 'capacity N/A'}
-          </span>
+          <span className="fm-qstat__val">{capacity ? capacity.toLocaleString() : '—'}</span>
+          <span className="fm-qstat__lbl">ground capacity</span>
         </div>
         <div className="fm-qstat">
           <span className="fm-qstat__icon"><Icon name="finances" size={16} /></span>
@@ -170,11 +166,12 @@ export default function ClubScreen({
           Finances
         </p>
         <p className="fm-club-line">
-          Weekly: {formatMoney(gate)} gate income − {formatMoney(wages)} player wages
-          {staffWages > 0 ? ` − ${formatMoney(staffWages)} staff wages` : ''} ={' '}
-          <strong style={{ color: gate - wages - staffWages >= 0 ? 'var(--green)' : 'var(--red)' }}>
-            {formatMoney(gate - wages - staffWages)}
+          Transfer budget{' '}
+          <strong style={{ color: state.budget >= 0 ? 'var(--green)' : 'var(--red)' }}>
+            {formatMoney(state.budget)}
           </strong>
+          {' '}· wage bill {formatMoney(wages)}/wk
+          {staffWages > 0 ? ` plus ${formatMoney(staffWages)}/wk of staff` : ''}
         </p>
         {state.ledger.length > 0 && (
           <ul className="fm-ledger">

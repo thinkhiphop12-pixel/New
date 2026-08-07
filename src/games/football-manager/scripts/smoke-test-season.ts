@@ -550,13 +550,12 @@ assert(
 }
 
 /* --- Phase 8: finances ---------------------------------------------------
- * Regression net for the budget model: commercial income must never stall at
- * zero, and the board's season allocation must actually move the transfer and
- * wage budgets rather than leaving a club on its day-one figures forever. */
+ * Regression net for the budget model: the board's season allocation must
+ * actually move the transfer and wage budgets rather than leaving a club on
+ * its day-one figures forever, and must not compound without bound. */
 {
   const plClub = data.clubs.find((c: { division: number }) => c.division === 1)!;
   let fs = newGame(data, plClub.id, 'Finance Smoke', 2026);
-  let zeroCommercialSeasons = 0;
   const budgets: number[] = [];
   const ceilings: number[] = [];
   for (let season = 0; season < 6; season++) {
@@ -569,14 +568,9 @@ assert(
         : { homeId: 0, awayId: 0, homeGoals: 0, awayGoals: 0, events: [], playerRatings: {} };
       fs = playRound(fs, report as any);
     }
-    const fin = fs.finances;
-    if (fin && fin.seasonIncome.sponsorship === 0 && season > 0) zeroCommercialSeasons++;
     fs = endSeason(fs).state;
     budgets.push(fs.budget);
     ceilings.push(wageBudgetStatus(fs).budget);
-  }
-  if (zeroCommercialSeasons > 0) {
-    throw new Error(`commercial income hit zero in ${zeroCommercialSeasons} season(s) — the passive stream is not paying out`);
   }
   if (new Set(budgets).size === 1) {
     throw new Error('transfer budget was identical in all six seasons — the board allocation is not being applied');
@@ -587,7 +581,7 @@ assert(
   const growth = budgets[budgets.length - 1] / Math.max(1, budgets[0]);
   if (growth > 12) throw new Error(`transfer budget grew ${growth.toFixed(1)}x over six seasons — carryover is compounding`);
   if (ceilings.some((c) => c <= 0)) throw new Error('wage ceiling fell to zero or below');
-  console.log(`\nFinances: 6 seasons, commercial income never zero.`);
+  console.log(`\nFinances: 6 seasons of board budget allocations.`);
   console.log(`  Transfer budget ${budgets.map((b) => `£${(b / 1e6).toFixed(1)}m`).join(' -> ')} (${growth.toFixed(1)}x). ✓`);
   console.log(`  Wage ceiling ${ceilings.map((c) => `£${Math.round(c / 1000)}k`).join(' -> ')}/wk. ✓`);
 }
