@@ -46,9 +46,10 @@
 .tbl-wrap{overflow-x:auto;margin:18px 0}
 table.data{width:100%;border-collapse:collapse;min-width:540px;font-size:14px}
 table.data th,table.data td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
-table.data th{background:var(--surface);color:var(--lime);font-weight:700;font-size:12.5px;letter-spacing:.03em}
-table.data td:first-child{font-weight:700;color:var(--white)}
-table.data.nowrap-first td:first-child{white-space:nowrap}
+table.data thead th{background:var(--surface);color:var(--lime);font-weight:700;font-size:12.5px;letter-spacing:.03em}
+/* first cell of each body row is a row header, not a column one */
+table.data tbody th{font-weight:700;color:var(--white);font-size:14px}
+table.data.nowrap-first tbody th{white-space:nowrap}
 
 /* ── PULL QUOTES / ASIDES ── */
 blockquote{border-left:3px solid var(--lime);padding:2px 0 2px 16px;margin:18px 0;color:var(--muted);font-style:italic}
