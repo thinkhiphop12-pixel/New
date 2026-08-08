@@ -366,6 +366,75 @@ export function startNegotiation(
   };
 }
 
+/* ------------------------------------------------------------ deal clauses */
+
+/**
+ * The non-cash half of a transfer offer — the things a buying club puts on the
+ * table when it can't (or won't) simply pay the asking price.
+ *
+ * Every field is optional and absent means "not offered", so a bid that is
+ * pure cash behaves exactly as it did before any of this existed.
+ */
+export interface DealClauses {
+  /** Share of any future profit that goes back to the selling club, 0–`SELL_ON_MAX`. */
+  sellOnPct?: number;
+  /** Fee at which the seller may buy him back later. 0 = no buy-back offered. */
+  buyBackFee?: number;
+  /** Market value of a player sent the other way as part of the deal. */
+  exchangeValue?: number;
+  /** He stays with the seller until the season ends instead of moving now. */
+  endOfSeason?: boolean;
+}
+
+/** Hard ceiling on a sell-on share. Beyond half the upside nobody signs. */
+export const SELL_ON_MAX = 0.5;
+
+/**
+ * What the selling club actually hears when you bid `fee` alongside `clauses`.
+ *
+ * Clauses are consideration, not magic: each is discounted for being
+ * contingent, and the two that cost you nothing today (sell-on, buy-back) are
+ * additionally capped as a share of the cash on the table, so no amount of
+ * paperwork buys a player without money behind it. An exchange player is real
+ * consideration and isn't capped — but his own cash value is still discounted,
+ * because a club that didn't ask for him is doing you the favour.
+ */
+export function effectiveBid(fee: number, marketValue: number, c: DealClauses = {}): number {
+  let credit = 0;
+  const sellOn = Math.max(0, Math.min(SELL_ON_MAX, c.sellOnPct ?? 0));
+  if (sellOn > 0 && marketValue > 0) {
+    // A share of a future sale, discounted for being years away and uncertain.
+    credit += Math.min(fee * 0.30, marketValue * sellOn * 0.55);
+  }
+  const buyBack = Math.max(0, c.buyBackFee ?? 0);
+  if (buyBack > 0 && marketValue > 0) {
+    // A call option on their own player. The cheaper you let them buy him
+    // back for, the more the option is worth to them; at 2.2× his value it
+    // is worth nothing, because they could just pay the market rate.
+    const generosity = Math.max(0, Math.min(1, 1 - buyBack / (marketValue * 2.2)));
+    credit += Math.min(fee * 0.20, marketValue * 0.22 * generosity);
+  }
+  if ((c.exchangeValue ?? 0) > 0) credit += (c.exchangeValue ?? 0) * 0.80;
+  // Keeping him for the run-in is worth a little goodwill, no more.
+  if (c.endOfSeason) credit += fee * 0.05;
+  return Math.round(fee + credit);
+}
+
+/** The buy-back fee a seller would consider worth having, for the UI default. */
+export function suggestBuyBack(marketValue: number): number {
+  return Math.max(10_000, roundFee(marketValue * 1.5));
+}
+
+/** Plain-language summary of a clause set, for the log and the inbox. */
+export function clauseText(c: DealClauses, money: (v: number) => string): string {
+  const parts: string[] = [];
+  if ((c.sellOnPct ?? 0) > 0) parts.push(`${Math.round((c.sellOnPct ?? 0) * 100)}% sell-on`);
+  if ((c.buyBackFee ?? 0) > 0) parts.push(`${money(c.buyBackFee ?? 0)} buy-back`);
+  if ((c.exchangeValue ?? 0) > 0) parts.push('a player in exchange');
+  if (c.endOfSeason) parts.push('joining at the end of the season');
+  return parts.join(', ');
+}
+
 export type FeeDecision =
   | { decision: 'accept' }
   | { decision: 'counter'; counter: number; holdOut?: boolean }
@@ -375,14 +444,22 @@ export type FeeDecision =
 /**
  * Accept / counter / reject a fee. Walks after 3 rounds. The one-time hold-out
  * rebuffs a bid that DOES clear the minimum, then raises the price 12%.
+ *
+ * `clauses` is what the buyer attached to the bid; the club weighs the whole
+ * package via `effectiveBid`, so a sell-on or a swap can carry a deal the cash
+ * alone wouldn't. The counter it names is still a straight cash number —
+ * clubs quote a price, not a package.
  */
 export function evaluateFeeOffer(
   neg: NegotiationTerms,
   offer: number,
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
+  clauses: DealClauses = {},
+  marketValue = 0
 ): FeeDecision {
   neg.feeRound++;
-  if (offer >= neg.minFee) {
+  const bid = effectiveBid(offer, marketValue, clauses);
+  if (bid >= neg.minFee) {
     if (neg.holdOut && rng() < neg.holdOut) {
       neg.holdOut = 0;
       neg.minFee = roundFee(neg.minFee * 1.12);
@@ -394,8 +471,8 @@ export function evaluateFeeOffer(
   if (neg.feeRound >= 3) return { decision: 'walk' };
   // Only a bid already in touching distance gets a counter, and the counter
   // barely moves off the asking price — no meeting in the middle.
-  if (offer >= neg.minFee * 0.90) {
-    const counter = Math.max(neg.minFee, roundFee(offer * 0.20 + neg.asking * 0.80));
+  if (bid >= neg.minFee * 0.90) {
+    const counter = Math.max(neg.minFee, roundFee(bid * 0.20 + neg.asking * 0.80));
     neg.asking = counter;
     return { decision: 'counter', counter };
   }

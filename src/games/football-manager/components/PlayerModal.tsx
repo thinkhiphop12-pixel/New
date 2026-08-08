@@ -11,7 +11,7 @@ import { traitNames } from '@/engine/traits';
 import { formatMoney } from '@/engine/utils';
 import { CONVERTIBLE_ROLES, estimateConversionWeeks, setDevPlan } from '@/engine/development';
 import type { DevPlan } from '@/engine/types';
-import { attrBand } from './visuals';
+import { attrBand, initials, ratingRingColor } from './visuals';
 import { SpiderChart } from './SpiderChart';
 import { PlayerFace } from './PlayerFace';
 
@@ -44,18 +44,6 @@ function textOn(hex: string): string {
   return luminance(hex) > 0.45 ? '#111' : '#fff';
 }
 
-/** Same 5-band ramp `attrBand` uses for attribute chips, as a raw colour
- *  rather than a class name — feeds the `.fm-ring` header treatment's
- *  `--ring-color`, so the ring reads on the same scale as the attribute
- *  bars underneath it. */
-function ratingRingColor(v: number): string {
-  if (v >= 85) return 'var(--chip-vhigh)';
-  if (v >= 72) return 'var(--chip-high)';
-  if (v >= 58) return 'var(--chip-mid)';
-  if (v >= 45) return 'var(--chip-low)';
-  return 'var(--chip-bad)';
-}
-
 function moraleColor(v: number): string {
   if (v >= 70) return 'var(--green)';
   if (v >= 45) return 'var(--gold)';
@@ -70,13 +58,6 @@ const STAT_FOCUS_OPTIONS: { key: NonNullable<DevPlan['statFocus']>; label: strin
   { key: 'def', label: 'Defending' },
   { key: 'phy', label: 'Physical' },
 ];
-
-function initials(name: string): string {
-  const parts = name.split(' ').filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
 
 function avgRating(p: Player): number | null {
   if (!p.seasonRatingCount) return null;
