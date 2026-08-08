@@ -14,6 +14,7 @@ Allow: /free-football-manager.html
 Allow: /what-is-a-gaffer-in-football.html
 Allow: /football-terms.html
 Allow: /what-is-a-false-9.html
+Allow: /what-is-a-low-block-in-football.html
 Allow: /best-football-manager-games-pc.html
 Allow: /best-football-manager-games-android.html
 Allow: /best-football-manager-games-iphone.html
