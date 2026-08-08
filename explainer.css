@@ -43,7 +43,7 @@
 /* ── DATA TABLES ──
    .tbl-wrap keeps wide tables scrolling inside their own container so the
    page body never scrolls horizontally on narrow screens. */
-.tbl-wrap{overflow-x:auto;margin:18px 0;-webkit-overflow-scrolling:touch}
+.tbl-wrap{overflow-x:auto;margin:18px 0}
 table.data{width:100%;border-collapse:collapse;min-width:540px;font-size:14px}
 table.data th,table.data td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
 table.data th{background:var(--surface);color:var(--lime);font-weight:700;font-size:12.5px;letter-spacing:.03em}
