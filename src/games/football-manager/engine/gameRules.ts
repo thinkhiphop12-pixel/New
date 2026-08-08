@@ -647,7 +647,6 @@ export const STAFF_WEEKLY_WAGE = 10_000; // per level, per role
 export const STAFF_MAX_LEVEL = 3;
 
 /** Stadium expansion: gate income multiplier is 1 + 0.25 × (level − 1). */
-export const STADIUM_UPGRADE_COST: Record<number, number> = { 2: 8_000_000, 3: 20_000_000 };
 
 /** In-match substitutions allowed at half time. */
 export const MAX_SUBS = 3;

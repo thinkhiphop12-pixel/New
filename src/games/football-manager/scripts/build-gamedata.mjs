@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC = join(__dirname, 'fc26-source.json');
+const BUDGETS = join(__dirname, 'club-budgets.json');
 const OUT = join(__dirname, '..', 'public', 'data', 'gamedata.json');
 
 /* Deterministic PRNG (mulberry32) — regenerating the dataset must produce the
@@ -201,6 +202,120 @@ for (const [i, c] of raw.clubs.entries()) {
 }
 for (const p of raw.freeAgents) addPlayer(p, 0, 0);
 
+/* --- Club budgets ---------------------------------------------------------
+ * Two numbers per club, in the FIFA-style split the engine spends against:
+ * a `budgetMultiplier` that scales the division's transfer budget, and a
+ * weekly `wageBudget` for contracts.
+ *
+ * ── Why a multiplier and not the real budget ──────────────────────────────
+ * Real FC 26 career-mode budgets are published for 267 of these 490 clubs
+ * (scripts/club-budgets.json — every side in the top eleven divisions, plus
+ * most of MLS, the Süper Lig and the Saudi Pro League; the missing leagues are
+ * ones the source does not cover at all, not clubs it happens to omit).
+ *
+ * They cannot be used as absolutes. This dataset prices players with
+ * `marketValue` above, which is deliberately flatter than real football: the
+ * best player here is worth ~£9m, not £150m, and a whole Premier League squad
+ * runs to ~£86m. Dropping Arsenal's real £153m budget in unchanged would let
+ * one club buy every player in its division twice over — the same "real
+ * numbers into a compressed economy" failure documented at the top of
+ * engine/finances.ts, which that module solves with `economyScale`.
+ *
+ * So only the *shape* of the real data is kept, and the level stays this
+ * game's own. `budgetMultiplier` is a club's real budget over its division's
+ * median real budget — a league-relative number centred on 1.0 — and the
+ * engine multiplies its existing calibrated `startingBudget(leagueId)` by it.
+ * The division's overall spending power is therefore completely unchanged;
+ * all that changes is how it is split between clubs, which today is a hash of
+ * club id and correlates with squad strength at r = -0.06.
+ *
+ * Clubs with no published budget get the same multiplier derived from squad
+ * value instead, using an exponent that is measured rather than chosen:
+ * regressing log(budget) on log(squad value) within each covered division
+ * gives a median slope of 1.506 (r = +0.82..+0.96 in eleven of thirteen
+ * divisions; MLS and League Two come out flatter, as their real budgets
+ * genuinely are). Both paths produce the same kind of number, so the engine
+ * has one mechanism to apply.
+ *
+ * `wageBudget` is derived everywhere, since the published data carries no wage
+ * figure: the squad's current weekly bill plus WAGE_HEADROOM. It is already in
+ * this game's wage scale, so it is a true absolute. A club therefore starts
+ * able to strengthen a little but not to re-sign its whole squad, which is the
+ * constraint that makes a wage budget worth managing at all. */
+const clubBudgets = JSON.parse(readFileSync(BUDGETS, 'utf8'));
+/** Slope of log(transfer budget) on log(squad value), measured within division. */
+const SQUAD_VALUE_EXPONENT = 1.5;
+/** Wage-budget slack above the squad's existing weekly bill. Must stay equal
+ *  to `WAGE_BUDGET_HEADROOM` in engine/teamManagement.ts, which is what the
+ *  engine seeds a new career with — two different figures would make a club's
+ *  stored ceiling disagree with the one it is actually played under. */
+const WAGE_HEADROOM = 1.25;
+/* Multiplier bounds and tail compression.
+ *
+ * Raw ratios are well behaved in the English pyramid (the Premier League runs
+ * 0.55x-2.59x around its median) but wildly skewed in leagues with two or
+ * three dominant clubs — La Liga tops out at 16.6x, Ligue 1 at 17.0x, the
+ * Primeira Liga at 10.9x. That skew is real, but passing it through unchanged
+ * would let one club outspend its entire division.
+ *
+ * A hard clamp was the first attempt and was wrong: at 2.6x it bound on 13% of
+ * clubs, and those were exactly the interesting ones — Real Madrid, Barcelona,
+ * PSG and Bayern all came out on an identical budget. So anything above
+ * MULT_SOFT is compressed asymptotically toward MULT_MAX instead. That is
+ * strictly monotonic, so ordering is never lost; it leaves everything at or
+ * below the soft knee (which includes every club near the median, and almost
+ * all of the English leagues) completely untouched; and because the median
+ * club sits at 1.0, well under the knee, the division-median invariant that
+ * keeps the economy calibrated still holds exactly. */
+const MULT_MIN = 0.25;
+const MULT_SOFT = 2.0;
+const MULT_MAX = 3.6;
+/** How fast the tail saturates above the knee. */
+const MULT_FALLOFF = 3.0;
+
+function compressMultiplier(ratio) {
+  if (!Number.isFinite(ratio) || ratio <= 0) return MULT_MIN;
+  if (ratio <= MULT_SOFT) return Math.max(MULT_MIN, ratio);
+  const over = ratio - MULT_SOFT;
+  return MULT_SOFT + (MULT_MAX - MULT_SOFT) * (1 - Math.exp(-over / MULT_FALLOFF));
+}
+
+const median = (xs) => {
+  const s = [...xs].sort((a, b) => a - b);
+  return s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2;
+};
+const wageBillFor = (club) =>
+  club.playerIds.reduce((sum, id) => sum + players.find((p) => p.id === id).wage, 0);
+const squadValueFor = (club) =>
+  club.playerIds.reduce((sum, id) => sum + players.find((p) => p.id === id).value, 0);
+
+/* Per-division denominators: the median real budget among clubs that have one,
+ * and the median squad value across every club in the division. */
+const divisionMedianBudget = new Map();
+const divisionMedianValue = new Map();
+for (const division of new Set(clubs.map((c) => c.division))) {
+  const inDiv = clubs.filter((c) => c.division === division);
+  const real = inDiv.map((c) => clubBudgets[c.name]).filter((b) => b != null);
+  if (real.length) divisionMedianBudget.set(division, median(real));
+  divisionMedianValue.set(division, median(inDiv.map(squadValueFor)) || 1);
+}
+
+let budgetsFromData = 0;
+for (const club of clubs) {
+  const real = clubBudgets[club.name];
+  const medBudget = divisionMedianBudget.get(club.division);
+  let mult;
+  if (real != null && medBudget) {
+    mult = real / medBudget;
+    budgetsFromData++;
+  } else {
+    mult = Math.pow(squadValueFor(club) / divisionMedianValue.get(club.division), SQUAD_VALUE_EXPONENT);
+  }
+  club.budgetMultiplier = Math.round(compressMultiplier(mult) * 1000) / 1000;
+  club.budgetSource = real != null && medBudget ? 'fc26' : 'derived';
+  club.wageBudget = Math.round((wageBillFor(club) * WAGE_HEADROOM) / 100) * 100;
+}
+
 // --- League strength ratings -------------------------------------------
 // Derived (not fetched) from the FC 26 ratings already in this dataset:
 // each club's strength is the average rating of its best 11 players, and
@@ -275,6 +390,7 @@ const out = {
       'Player and club data: FC 26 player database (EA Sports FC 26 ratings). Real squads across 27 leagues — the English pyramid (Premier League, Championship, League One, League Two), La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie, Primeira Liga, Pro League, MLS, Superliga, Liga Profesional, Süper Lig, Saudi Pro League, Chinese Super League, K League 1, Ekstraklasa, Superliga (Romania), Eliteserien, Allsvenskan, Swiss Super League, Austrian Bundesliga, Scottish Premiership, A-League Men, Indian Super League and the League of Ireland Premier Division. League ratings are derived from squad ratings, not an external feed.',
     clubCount: clubs.length,
     playerCount: players.length,
+    budgetsFromData,
   },
   leagues,
   clubs,

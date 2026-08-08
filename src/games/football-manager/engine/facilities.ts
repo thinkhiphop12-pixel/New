@@ -1,6 +1,6 @@
 import type {
   Club, Coach, FacilitiesState, FacilityProject, GameState, OpponentReport, ProjectKind,
-  ScoutAssignment, ScoutAssignmentKind, ScoutingState, Stand, StandId,
+  ScoutAssignment, ScoutAssignmentKind, ScoutingState,
 } from './types';
 import { getLeague } from './gameRules';
 
@@ -11,51 +11,31 @@ import { getLeague } from './gameRules';
  * upgrade in this module is a timed project: 2-10 weeks scaled by spend, a
  * live progress readout, and the effect only applies once the project
  * completes — replacing the old instant-purchase upgrades in
- * seasonProgression.ts (upgradeStadium / upgradeAcademy / upgradeStaff),
+ * seasonProgression.ts (upgradeAcademy / upgradeStaff),
  * which stay untouched and still work for whoever calls them directly. The
  * two systems are additive, not exclusive: a save with no facilities block
  * behaves exactly as before.
  */
 
-export const STAND_IDS: StandId[] = ['north', 'south', 'east', 'west', 'ne', 'nw', 'se', 'sw'];
-
-const SIDE_STANDS = new Set<StandId>(['north', 'south']);
-const END_STANDS = new Set<StandId>(['east', 'west']);
-
-/** Capacity a stand holds at each tier. Corners are smaller than the four
- *  named stands; sides are the biggest (longest touchline). */
-function tierCapacity(id: StandId, tier: 0 | 1 | 2 | 3): number {
-  if (tier === 0) return 0;
-  const base = SIDE_STANDS.has(id) ? [6000, 9000, 13000] : END_STANDS.has(id) ? [5000, 8000, 11000] : [1500, 2500, 4000];
-  return base[tier - 1];
-}
-
-/** Real per-club ground capacities were not seeded in the Phase 1 dataset —
- *  see the DIVERGENCE note on `FacilitiesState.groundCapacityCap`. Derived
- *  from the league's `gateBase` (already a per-club stature figure used for
- *  matchday income), clamped to a sane stadium-sized range. */
-export function groundCapacityCap(state: GameState, clubId: number): number {
+/**
+ * The club's ground capacity. Fixed for the career: stand-by-stand expansion
+ * was removed, so a club plays in the ground it has.
+ *
+ * Real per-club capacities were not seeded in the Phase 1 dataset — see the
+ * DIVERGENCE note on `FacilitiesState.groundCapacity`. Derived instead from the
+ * league's `gateBase` (already a per-club stature figure used for matchday
+ * income), clamped to a sane stadium-sized range.
+ */
+export function groundCapacity(state: GameState, clubId: number): number {
   const club = state.clubs.find((c) => c.id === clubId);
   const league = getLeague(club?.leagueId ?? 'eng-1');
   return Math.max(9000, Math.min(90_000, Math.round((league.gateBase / 10) / 100) * 100));
 }
 
-function emptyStand(id: StandId): Stand {
-  return { id, tier: 0, type: 'seating', capacity: 0 };
-}
-
-/** Fresh facilities state for a new/migrating save. Seeds every club's own
- *  stands at a modest starting tier so gate income (owned by finances.ts)
- *  has a real capacity to read from day one. */
+/** Fresh facilities state for a new/migrating save. */
 export function newFacilities(state: GameState): FacilitiesState {
-  const stands: Record<StandId, Stand> = {} as Record<StandId, Stand>;
-  for (const id of STAND_IDS) {
-    const tier: 0 | 1 | 2 | 3 = SIDE_STANDS.has(id) || END_STANDS.has(id) ? 1 : 0;
-    stands[id] = { id, tier, type: 'seating', capacity: tierCapacity(id, tier) };
-  }
   return {
-    stands,
-    groundCapacityCap: groundCapacityCap(state, state.userClubId),
+    groundCapacity: groundCapacity(state, state.userClubId),
     trainingLevel: 1,
     medicalLevel: 1,
     academyReputation: 20,
@@ -68,17 +48,6 @@ export function newFacilities(state: GameState): FacilitiesState {
 
 export function newScouting(): ScoutingState {
   return { assignments: [], shortlist: [], reports: [], nextAssignmentId: 1, nextReportId: 1 };
-}
-
-/** Total ground capacity right now, summed across all eight stands. */
-export function totalCapacity(fs: FacilitiesState): number {
-  return STAND_IDS.reduce((sum, id) => sum + fs.stands[id].capacity, 0);
-}
-
-/** Cost to build/upgrade one stand by one tier. Rises with tier and stand size. */
-export function standUpgradeCost(id: StandId, fromTier: 0 | 1 | 2 | 3): number {
-  const capGain = tierCapacity(id, (fromTier + 1) as 1 | 2 | 3) - tierCapacity(id, fromTier);
-  return Math.round(capGain * 900);
 }
 
 export const TRAINING_UPGRADE_COST = [0, 0, 1_500_000, 3_500_000, 7_000_000, 14_000_000];
@@ -97,40 +66,6 @@ function durationForSpend(kind: ProjectKind, spend: number): number {
 
 function demandCanAfford(state: GameState, cost: number): boolean {
   return cost > 0 && cost <= state.budget;
-}
-
-/** Start a stand upgrade project. Blocked if the ground is already at its
- *  capacity cap, the stand is maxed, or the club can't afford it. */
-export function startStandProject(state: GameState, standId: StandId): GameState {
-  const fs = state.facilities ?? newFacilities(state);
-  const stand = fs.stands[standId];
-  if (stand.tier >= 3) return state;
-  if (fs.projects.some((p) => p.kind === 'stand' && p.standId === standId && !p.complete)) return state;
-  const cap = fs.groundCapacityCap;
-  const gain = tierCapacity(standId, (stand.tier + 1) as 1 | 2 | 3) - stand.capacity;
-  if (totalCapacity(fs) + gain > cap) return state;
-  const cost = standUpgradeCost(standId, stand.tier);
-  if (!demandCanAfford(state, cost)) return state;
-
-  const project: FacilityProject = {
-    id: fs.nextProjectId,
-    kind: 'stand',
-    standId,
-    label: `${standId.toUpperCase()} stand → tier ${stand.tier + 1}`,
-    startWeek: state.week,
-    startYear: state.seasonYear,
-    durationWeeks: durationForSpend('stand', cost),
-    weeksElapsed: 0,
-    spend: cost,
-    complete: false,
-  };
-  const nextFs: FacilitiesState = { ...fs, projects: [...fs.projects, project], nextProjectId: fs.nextProjectId + 1 };
-  return {
-    ...state,
-    budget: state.budget - cost,
-    facilities: nextFs,
-    ledger: [{ week: state.week, desc: `Stadium project started: ${project.label}`, amount: -cost }, ...state.ledger],
-  };
 }
 
 /** Start a training ground / medical centre / academy reputation project. */
@@ -182,7 +117,6 @@ export function tickFacilityProjects(state: GameState): GameState {
   const fs = state.facilities;
   if (!fs || fs.projects.every((p) => p.complete)) return state;
 
-  let stands = fs.stands;
   let trainingLevel = fs.trainingLevel;
   let medicalLevel = fs.medicalLevel;
   let academyReputation = fs.academyReputation;
@@ -194,12 +128,7 @@ export function tickFacilityProjects(state: GameState): GameState {
     if (weeksElapsed < p.durationWeeks) return { ...p, weeksElapsed };
 
     // Completes this tick — apply the effect.
-    if (p.kind === 'stand' && p.standId) {
-      const s = stands[p.standId];
-      const newTier = (s.tier + 1) as 1 | 2 | 3;
-      stands = { ...stands, [p.standId]: { ...s, tier: newTier, capacity: tierCapacity(p.standId, newTier) } };
-      news.unshift(`${p.label} complete — capacity ${tierCapacity(p.standId, newTier).toLocaleString()}.`);
-    } else if (p.kind === 'training') {
+    if (p.kind === 'training') {
       trainingLevel += 1;
       news.unshift(`Training ground upgrade complete — now level ${trainingLevel}.`);
     } else if (p.kind === 'medical') {
@@ -214,7 +143,7 @@ export function tickFacilityProjects(state: GameState): GameState {
 
   return {
     ...state,
-    facilities: { ...fs, stands, trainingLevel, medicalLevel, academyReputation, projects },
+    facilities: { ...fs, trainingLevel, medicalLevel, academyReputation, projects },
     news: news.length ? [...news, ...state.news] : state.news,
   };
 }

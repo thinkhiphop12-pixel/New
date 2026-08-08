@@ -121,7 +121,7 @@ export default function HubScreen({
       case 'facilities': return <FacilitiesScreen state={state} onChange={onChange} />;
       case 'staff': return <StaffHubScreen state={state} onChange={onChange} />;
       case 'academy': return <YouthAcademyScreen state={state} onChange={onChange} />;
-      case 'finances': return <FinancesScreen state={state} onChange={onChange} />;
+      case 'finances': return <FinancesScreen state={state} />;
       case 'board': return <BoardObjectivesScreen state={state} />;
       case 'jobs': return <JobMarketScreen state={state} onChange={onChange} />;
       default: return null;

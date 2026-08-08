@@ -1,13 +1,13 @@
 'use client';
 
 import type { GameState, Staff } from '@/engine/types';
-import { ACADEMY_UPGRADE_COST, STADIUM_UPGRADE_COST, STAFF_MAX_LEVEL, STAFF_UPGRADE_COST, leagueName } from '@/engine/gameRules';
+import { ACADEMY_UPGRADE_COST, STAFF_MAX_LEVEL, STAFF_UPGRADE_COST, leagueName } from '@/engine/gameRules';
 import {
-  gateIncome, getStaff, getStadiumLevel, setCaptain, staffWageBill, upgradeAcademy, upgradeStadium,
+  getStaff, setCaptain, staffWageBill, upgradeAcademy,
   upgradeStaff, weeklyWageBill, computeTable, userLeague, userLeagueId,
 } from '@/engine/seasonProgression';
 import { getSquad } from '@/engine/teamManagement';
-import { totalCapacity } from '@/engine/facilities';
+import { groundCapacity } from '@/engine/facilities';
 import { traitNames } from '@/engine/traits';
 import { formatMoney } from '@/engine/utils';
 import { StatTile, ReputationStars, ordinalSuffix, Bar, clubForm, FormChip } from './visuals';
@@ -30,11 +30,8 @@ export default function ClubScreen({
   const m = state.manager;
   const wages = weeklyWageBill(state);
   const staffWages = staffWageBill(state);
-  const gate = gateIncome(state);
   const upgradeCost = ACADEMY_UPGRADE_COST[state.academyLevel + 1];
   const staff = getStaff(state);
-  const stadiumLevel = getStadiumLevel(state);
-  const stadiumCost = STADIUM_UPGRADE_COST[stadiumLevel + 1];
   const squad = getSquad(state, state.userClubId).sort((a, b) => b.rating - a.rating);
   const captain = state.captainId != null ? state.players[state.captainId] : null;
   const legends = Object.values(state.legacy)
@@ -51,9 +48,7 @@ export default function ClubScreen({
   const clubCount = lg.clubCount;
   const form = clubForm(state, state.userClubId);
 
-  const fs = state.facilities;
-  const capUsed = fs ? totalCapacity(fs) : 0;
-  const capMax = fs ? fs.groundCapacityCap : 0;
+  const capacity = groundCapacity(state, state.userClubId);
 
   return (
     <>
@@ -99,11 +94,8 @@ export default function ClubScreen({
         </div>
         <div className="fm-qstat" style={{ marginBottom: 8 }}>
           <span className="fm-qstat__icon"><Icon name="stadium" size={16} /></span>
-          <span className="fm-qstat__val">{gate > 0 ? formatMoney(gate) : '—'}/wk</span>
-          <span className="fm-qstat__lbl">gate income</span>
-          <span className="fm-qstat__lbl" style={{ marginLeft: 12 }}>
-            {capMax ? `${capUsed.toLocaleString()} / ${capMax.toLocaleString()} cap` : 'capacity N/A'}
-          </span>
+          <span className="fm-qstat__val">{capacity ? capacity.toLocaleString() : '—'}</span>
+          <span className="fm-qstat__lbl">ground capacity</span>
         </div>
         <div className="fm-qstat">
           <span className="fm-qstat__icon"><Icon name="finances" size={16} /></span>
@@ -117,25 +109,12 @@ export default function ClubScreen({
       <div className="fm-panel">
         <p className="fm-label" style={{ marginTop: 0 }}>Stadium & Facilities</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px 14px' }}>
-          <StatTile icon={<Icon name="stadium" size={14} />} value={stadiumLevel} label={`Stadium L${stadiumLevel}`} />
+          <StatTile icon={<Icon name="stadium" size={14} />} value={capacity.toLocaleString()} label="Capacity" />
           <StatTile icon={<Icon name="sprout" size={14} />} value={state.academyLevel} label={`Academy L${state.academyLevel}`} />
           {staff.coach ? <StatTile icon={<Icon name="staff" size={14} />} value={staff.coach} label="Coach" /> : <StatTile icon={<Icon name="staff" size={14} />} value="—" label="Coach" />}
           {staff.physio ? <StatTile icon={<Icon name="injury" size={14} />} value={staff.physio} label="Physio" /> : <StatTile icon={<Icon name="injury" size={14} />} value="—" label="Physio" />}
           {staff.scout ? <StatTile icon={<Icon name="binoculars" size={14} />} value={staff.scout} label="Scout" /> : <StatTile icon={<Icon name="binoculars" size={14} />} value="—" label="Scout" />}
         </div>
-        {capMax > 0 && (
-          <div style={{ marginTop: 10 }}>
-            <div className="fm-attendance__track">
-              <div
-                className="fm-attendance__fill"
-                style={{ width: `${Math.min(100, (capUsed / capMax) * 100)}%`, background: 'var(--green)' }}
-              />
-            </div>
-            <span className="fm-hint" style={{ marginTop: 4, display: 'block' }}>
-              Capacity {capUsed.toLocaleString()} / {capMax.toLocaleString()} ({Math.round((capUsed / capMax) * 100)}%)
-            </span>
-          </div>
-        )}
       </div>
 
       {/* ── Existing panels preserved ── */}
@@ -187,11 +166,12 @@ export default function ClubScreen({
           Finances
         </p>
         <p className="fm-club-line">
-          Weekly: {formatMoney(gate)} gate income − {formatMoney(wages)} player wages
-          {staffWages > 0 ? ` − ${formatMoney(staffWages)} staff wages` : ''} ={' '}
-          <strong style={{ color: gate - wages - staffWages >= 0 ? 'var(--green)' : 'var(--red)' }}>
-            {formatMoney(gate - wages - staffWages)}
+          Transfer budget{' '}
+          <strong style={{ color: state.budget >= 0 ? 'var(--green)' : 'var(--red)' }}>
+            {formatMoney(state.budget)}
           </strong>
+          {' '}· wage bill {formatMoney(wages)}/wk
+          {staffWages > 0 ? ` plus ${formatMoney(staffWages)}/wk of staff` : ''}
         </p>
         {state.ledger.length > 0 && (
           <ul className="fm-ledger">
@@ -272,24 +252,6 @@ export default function ClubScreen({
             </div>
           );
         })}
-      </div>
-
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>
-          Stadium — level {stadiumLevel}/3
-        </p>
-        <p className="fm-club-line">
-          {stadiumLevel >= 3 ? 'Fully expanded.' : 'Each level raises gate income 25%.'}
-        </p>
-        {stadiumCost && (
-          <button
-            className="fm-btn fm-btn--secondary fm-btn--small"
-            disabled={stadiumCost > state.budget}
-            onClick={() => onChange(upgradeStadium(state))}
-          >
-            Expand to level {stadiumLevel + 1} — {formatMoney(stadiumCost)}
-          </button>
-        )}
       </div>
 
       <div className="fm-panel">
