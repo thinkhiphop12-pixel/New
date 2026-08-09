@@ -1133,6 +1133,11 @@ export interface GameState {
   /** Dual-formation tactics (IP/OOP shapes). */
   dualFormation?: DualFormation;
   tactics: Tactics;
+  /** Set by the Lasso/Kent assistant when its advice nudges `tactics.tackling`
+   *  or `tactics.defLine` for the next match only (see LassoKentProvider's
+   *  `onEffects`). Holds what to restore once that match has been played;
+   *  absent when no nudge is outstanding. */
+  assistantTacticalRevert?: { tackling?: Tackling; defLine?: DefLine };
   training: TrainingFocus;
   chemistry: number; // 0–100 team chemistry
   /** Phase 5: the user club's named play-style identity. Optional so pre-v6

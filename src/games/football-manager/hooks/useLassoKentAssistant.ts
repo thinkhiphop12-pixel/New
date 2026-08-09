@@ -98,6 +98,9 @@ export interface AssistantApi {
   royOffline: boolean;
   /** ms remaining on Roy's sulk, for the countdown pill. */
   royOfflineMs: number;
+  /** Something happened while the window was closed (including an
+   *  auto-pilot resolution) that hasn't been looked at yet. */
+  unseen: boolean;
 
   // — the current question —
   scenario: Scenario | null;
@@ -157,6 +160,9 @@ interface State {
   autoPilot: AutoPilot;
   /** Set once a gamble choice is locked in and awaiting a result. */
   pendingGamble: ChoiceId | null;
+  /** Something was said while the window was closed and hasn't been opened
+   *  since — e.g. an auto-pilot resolution nobody watched happen. */
+  unseen: boolean;
   seq: number;
 }
 
@@ -187,7 +193,7 @@ function rollPersona(mode: AssistantMode, memory: Memory): Persona {
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'setOpen':
-      return { ...state, open: action.open };
+      return { ...state, open: action.open, unseen: action.open ? false : state.unseen };
 
     case 'setMode': {
       if (action.mode === state.mode) return state;
@@ -207,7 +213,10 @@ function reducer(state: State, action: Action): State {
       };
       // Keep the transcript bounded — this is a chat toy, not an archive.
       const messages = [...state.messages, msg].slice(-40);
-      return { ...state, messages, seq: state.seq + 1 };
+      // Anything said while the window is closed — including an auto-pilot
+      // resolution that never needed a click — leaves the icon pulsing until
+      // the player actually looks.
+      return { ...state, messages, seq: state.seq + 1, unseen: state.unseen || !state.open };
     }
 
     case 'trigger':
@@ -259,6 +268,7 @@ const INITIAL: State = {
   memory: EMPTY_MEMORY,
   autoPilot: 'off',
   pendingGamble: null,
+  unseen: false,
   seq: 0,
 };
 
@@ -573,6 +583,7 @@ export function useLassoKentMachine({ snapshot, onEffects }: UseLassoKentOptions
     messages: state.messages,
     royOffline,
     royOfflineMs: Math.max(0, state.memory.royPubUntil - Date.now()),
+    unseen: state.unseen,
     scenario: state.scenario,
     data: { ...state.data, ...(snapshot ? { matchMinute: snapshot.matchMinute ?? null } : {}) },
     choices,
