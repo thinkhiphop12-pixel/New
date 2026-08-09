@@ -25,10 +25,11 @@ type AttentionRow = { icon: IconName; text: string; warn?: boolean; onClick: () 
 /**
  * The single command centre. Replaces the old two-front-door setup — a
  * GroupHub landing (four menu cards) that duplicated PortalHub's club
- * header, week badge and next-fixture info almost line for line. There is
- * now exactly one Home, reachable both as the Hub's landing (`route ===
- * null`) and as Matchday → Overview, both rendering this same component so
- * the two entry points can no longer disagree with each other.
+ * header, week badge and next-fixture info almost line for line. This is
+ * the Hub rail button's landing (`route === null`) and only that — it used
+ * to also render as Season (nee "Matchday") → Overview, which meant two of
+ * the rail's five destinations showed identical content. Season now has its
+ * own summary, SeasonHubScreen.
  *
  * Answers, at a glance, the questions a home screen has to answer: when's
  * the next match, who's injured, who's unhappy, what needs me, how's

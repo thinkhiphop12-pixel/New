@@ -20,16 +20,19 @@ import type { IconName } from './Icon';
  */
 
 export type ScreenId =
-  | 'overview' | 'calendar' | 'fixtures' | 'table' | 'cups' | 'european'
+  | 'season-hub' | 'calendar' | 'fixtures' | 'table' | 'cups' | 'european'
   | 'team-hub' | 'squad' | 'tactics' | 'training' | 'schedule'
   | 'market-hub' | 'transfers' | 'scouting' | 'jobs'
   | 'club-hub' | 'inbox' | 'club' | 'facilities' | 'staff' | 'academy' | 'finances' | 'board';
 
 /** The four landing screens, one per group — the first tab of each. Every
- *  group now opens on a glance screen instead of dropping you into its
- *  heaviest table, which is what Matchday → Overview always did and the
- *  other three never did. */
-export const HUB_SCREENS = ['overview', 'team-hub', 'market-hub', 'club-hub'] as const;
+ *  group opens on its own glance screen instead of dropping you into its
+ *  heaviest table. `season-hub` used to be a screen literally named
+ *  `overview` that rendered the exact same `Dashboard` component as the
+ *  Hub rail button — two of five rail destinations showing identical
+ *  content. It now has its own summary (SeasonHubScreen), same as the
+ *  other three groups. */
+export const HUB_SCREENS = ['season-hub', 'team-hub', 'market-hub', 'club-hub'] as const;
 
 export function isHubScreen(id: ScreenId): boolean {
   return (HUB_SCREENS as readonly string[]).includes(id);
@@ -49,10 +52,13 @@ export type GroupDef = {
 export const GROUPS: GroupDef[] = [
   {
     id: 'matchday',
-    label: 'Matchday',
-    icon: 'stadium',
+    // Kept as "Matchday" nowhere near the actual match-play screen — this
+    // group is results, calendar and competitions, not a way to play a
+    // match, so it's labelled and iconed for what it actually contains.
+    label: 'Season',
+    icon: 'trophy',
     screens: [
-      { id: 'overview', label: 'Overview', icon: 'home' },
+      { id: 'season-hub', label: 'Overview', icon: 'home' },
       { id: 'calendar', label: 'Calendar', icon: 'calendar' },
       { id: 'fixtures', label: 'Fixtures', icon: 'fixtures' },
       { id: 'table', label: 'Table', icon: 'table' },

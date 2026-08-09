@@ -286,9 +286,9 @@ export default function FootballManagerGame() {
       setView('seasonend');
     } else {
       apply(played);
-      // Land on the match dashboard, not the Hub menu — the result, the
-      // news and the next fixture are what you came back for.
-      setHubRoute('overview');
+      // Land on the Season overview, not the plain Hub — the result, the
+      // form guide and the next fixture are what you came back for.
+      setHubRoute('season-hub');
       setView('hub');
     }
   };

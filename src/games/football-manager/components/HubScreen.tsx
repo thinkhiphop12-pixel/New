@@ -25,6 +25,7 @@ import YouthAcademyScreen from './YouthAcademyScreen';
 import TeamHubScreen from './TeamHubScreen';
 import MarketHubScreen from './MarketHubScreen';
 import ClubHubScreen from './ClubHubScreen';
+import SeasonHubScreen from './SeasonHubScreen';
 import { Icon } from './Icon';
 import {
   GROUPS,
@@ -107,7 +108,7 @@ export default function HubScreen({
 
   const screen = () => {
     switch (route) {
-      case 'overview': return <Dashboard state={state} onChange={onChange} onAbandon={onAbandon} onOpenScreen={onRoute} />;
+      case 'season-hub': return <SeasonHubScreen state={state} onRoute={onRoute} />;
       case 'calendar': return <CalendarScreen state={state} onSimulate={onSimulate} simRunning={simRunning} />;
       case 'fixtures': return <FixturesScreen state={state} />;
       case 'table': return <TableScreen state={state} />;

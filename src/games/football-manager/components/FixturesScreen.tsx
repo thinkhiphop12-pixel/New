@@ -8,8 +8,7 @@ import { Crest } from './Crest';
  * Fixtures tab: next-match banner up top, results list below. The banner
  * here is informational only — venue and opposition, nothing actionable —
  * since the actionable version (press conference, lineup warning) lives on
- * the Dashboard (components/Dashboard.tsx), reachable both as the Hub
- * landing and as Matchday → Overview.
+ * the Dashboard (components/Dashboard.tsx), reachable as the Hub landing.
  */
 export default function FixturesScreen({ state }: { state: GameState }) {
   const leagueId = userLeagueId(state);
