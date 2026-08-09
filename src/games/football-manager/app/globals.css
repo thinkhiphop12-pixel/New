@@ -2484,3 +2484,14 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 @media (min-width: 620px) { .fm-pick-head__fields { grid-template-columns: 1fr 1fr; } }
 .fm-pick-head .fm-search { min-width: 0; }
+
+/* Adjust Budget: the two pools side by side, then the shift controls. */
+.fm-split-row {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; margin-bottom: 8px;
+}
+.fm-split-figure {
+  margin: 2px 0 0; font-size: 18px; font-weight: 900;
+  font-variant-numeric: tabular-nums; color: var(--text-1);
+}
+.fm-split-unit { font-size: 12px; font-weight: 700; color: var(--muted); }

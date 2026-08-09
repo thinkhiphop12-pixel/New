@@ -47,6 +47,7 @@ import type {
   LeagueDef, SponsorClause, SponsorDeal, SponsorOffer, SponsorSlotId, TicketTier,
 } from './types';
 import { getLeague, SEASON_ROUNDS, leagueAbove } from './gameRules';
+import { clubWageBill } from './teamManagement';
 import { clamp, pickRandom, formatMoney, weeklyWage } from './utils';
 import { pushInbox } from './inbox';
 import { clubBudget } from './jobMarket';
@@ -464,6 +465,76 @@ export function calibrateWages(state: GameState): void {
  */
 export function affordableWageBill(state: GameState, club: Club): number {
   return (TARGET_WAGE_SHARE * clubFootballRevenue(state, club)) / YEAR_WEEKS;
+}
+
+/* =========================================================================
+   Transfer / wage budget split  (EA FC career-mode model)
+   ========================================================================= */
+
+/**
+ * The two budgets are separate pools, and the board lets you move money
+ * between them — the "adjust budget" control in EA FC's career mode.
+ *
+ * This is the piece that makes the two-pool model work rather than merely
+ * exist. A transfer kitty you cannot pay the wages on is not spendable, and a
+ * wage ceiling you cannot reach for want of a fee is equally stuck; letting
+ * the manager choose the split turns two rigid limits into one decision.
+ *
+ * A season's wages cost 52 times the weekly figure, so that is the rate: £52k
+ * of transfer money buys £1k/week of wage headroom, and back the other way.
+ */
+export const BUDGET_SPLIT_RATE = YEAR_WEEKS;
+
+/** Weekly wage headroom `amount` of transfer money converts into. */
+export function wagesFromTransferMoney(amount: number): number {
+  return Math.round(amount / BUDGET_SPLIT_RATE);
+}
+
+/** Transfer money `weekly` of wage ceiling converts into. */
+export function transferMoneyFromWages(weekly: number): number {
+  return Math.round(weekly * BUDGET_SPLIT_RATE);
+}
+
+/**
+ * Move `amount` of transfer budget into the weekly wage ceiling (positive),
+ * or convert wage ceiling back into transfer money (negative).
+ *
+ * Refuses rather than clamps, so the UI can say why: you cannot spend money
+ * you do not have, and you cannot cut the ceiling below what the squad is
+ * already contracted to earn — those wages are owed whatever the board wants.
+ */
+export function shiftBudgetToWages(
+  state: GameState,
+  amount: number,
+): { state: GameState; ok: boolean; error?: string } {
+  if (!Number.isFinite(amount) || Math.round(amount) === 0) {
+    return { state, ok: false, error: 'Nothing to move.' };
+  }
+  const s: GameState = structuredClone(state);
+  const club = s.clubs.find((c) => c.id === s.userClubId);
+  if (!club) return { state, ok: false, error: 'No club.' };
+  const ceiling = s.wageBudget ?? Math.round(clubWageBill(s, s.userClubId) * 1.25);
+
+  if (amount > 0) {
+    if (amount > s.budget) {
+      return { state, ok: false, error: `You only have ${formatMoney(s.budget)} in the transfer budget.` };
+    }
+    s.budget -= amount;
+    s.wageBudget = ceiling + wagesFromTransferMoney(amount);
+  } else {
+    const weekly = wagesFromTransferMoney(-amount);
+    const bill = clubWageBill(s, s.userClubId);
+    if (ceiling - weekly < bill) {
+      return {
+        state,
+        ok: false,
+        error: `The squad already earns ${formatMoney(bill)}/wk — the ceiling cannot go below that.`,
+      };
+    }
+    s.wageBudget = ceiling - weekly;
+    s.budget += transferMoneyFromWages(weekly);
+  }
+  return { state: s, ok: true };
 }
 
 /* =========================================================================

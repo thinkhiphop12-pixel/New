@@ -11,8 +11,13 @@ import { Icon } from './Icon';
 import {
   SPONSOR_SLOTS, TICKET_TIERS, acceptKitOffer, acceptSponsorOffer, canRequestBoardFunds,
   ffpStatus, financesView, genKitOffers, genSponsorOffers, requestBoardFunds, scrStatus,
-  setTicketPricing, terminateSponsorDeal, terminationFee,
+  setTicketPricing, shiftBudgetToWages, terminateSponsorDeal, terminationFee,
+  wagesFromTransferMoney,
 } from '@/engine/finances';
+import { wageCeiling } from '@/engine/teamManagement';
+
+/** Chunks the board will shift between the two budgets in one go. */
+const SPLIT_STEPS = [500_000, 2_000_000];
 
 export default function FinancesScreen({
   state,
@@ -22,6 +27,7 @@ export default function FinancesScreen({
   onChange: (next: GameState) => void;
 }) {
   const [openSlot, setOpenSlot] = useState<SponsorSlotId | 'kit' | null>(null);
+  const [splitError, setSplitError] = useState<string | null>(null);
 
   const fin = financesView(state);
   const gate = gateIncome(state);
@@ -149,6 +155,55 @@ export default function FinancesScreen({
           ))}
         </div>
         <p className="fm-hint">{TICKET_TIERS[fin.ticketPricing].desc}</p>
+      </div>
+
+      {/* --- Transfer / wage split -------------------------------------------- */}
+      <div className="fm-panel">
+        <p className="fm-label" style={{ marginTop: 0 }}>Adjust Budget</p>
+        <div className="fm-split-row">
+          <div>
+            <span className="fm-label">Transfer Budget</span>
+            <p className="fm-split-figure">{formatMoney(state.budget)}</p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <span className="fm-label">Wage Budget</span>
+            <p className="fm-split-figure">{formatMoney(wageCeiling(state))}<span className="fm-split-unit">/wk</span></p>
+          </div>
+        </div>
+        <p className="fm-hint" style={{ marginTop: 0 }}>
+          The board will move money between the two. A season costs 52 weeks of wages, so
+          {' '}{formatMoney(SPLIT_STEPS[0])} of transfer money is worth{' '}
+          {formatMoney(wagesFromTransferMoney(SPLIT_STEPS[0]))}/wk on the wage bill.
+        </p>
+        <div className="fm-pills">
+          {SPLIT_STEPS.map((step) => (
+            <button
+              key={`to-wages-${step}`}
+              className="fm-pill"
+              onClick={() => {
+                const r = shiftBudgetToWages(state, step);
+                setSplitError(r.ok ? null : r.error ?? null);
+                if (r.ok) onChange(r.state);
+              }}
+            >
+              {formatMoney(step)} &rarr; wages
+            </button>
+          ))}
+          {SPLIT_STEPS.map((step) => (
+            <button
+              key={`to-transfer-${step}`}
+              className="fm-pill"
+              onClick={() => {
+                const r = shiftBudgetToWages(state, -step);
+                setSplitError(r.ok ? null : r.error ?? null);
+                if (r.ok) onChange(r.state);
+              }}
+            >
+              wages &rarr; {formatMoney(step)}
+            </button>
+          ))}
+        </div>
+        {splitError && <p className="fm-hint" style={{ color: 'var(--red)' }}>{splitError}</p>}
       </div>
 
       {/* --- Weekly summary --------------------------------------------------- */}
