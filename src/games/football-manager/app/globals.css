@@ -486,9 +486,10 @@ body {
     background: rgba(5,5,5,0.92); backdrop-filter: saturate(160%) blur(14px);
   }
   .fm-rail__item { flex: 1 1 0; }
-  /* The dock sits fixed at the bottom, so reserve room for it under the
-     content instead of letting it cover the last card. */
-  .fm-hub-shell__main { padding-bottom: 62px; }
+  /* The rail and the action dock both sit fixed at the bottom, so reserve
+     room for both stacked (dock height + its offset above the rail) —
+     otherwise the last card's content sits behind them uncovered. */
+  .fm-hub-shell__main { padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* Desktop (≥1200px): the 72px icon rail widens into a labeled sidebar —
@@ -666,7 +667,11 @@ body {
    this is status, not chrome. */
 .fm-actiondock__cta--warn { background: var(--gold-gradient); color: #1a0f00; }
 @media (max-width: 899px) {
-  .fm-actiondock { position: fixed; left: 8px; right: 8px; bottom: 58px; z-index: 44; margin: 0; }
+  /* Gap 3 (Userbrain): bottom: 58px alone doesn't grow with the thumb dock's
+     own safe-area padding (.fm-rail, above), so on devices with a tall home
+     indicator the dock and the action bar collided and the CTA read as
+     "cut off". Add the same inset so the two always clear each other. */
+  .fm-actiondock { position: fixed; left: 8px; right: 8px; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); z-index: 44; margin: 0; }
 }
 /* A small pill in the dock when a day's stops have been seen but not yet
    dismissed via Continue — lets the player step away to Inbox/Transfers and

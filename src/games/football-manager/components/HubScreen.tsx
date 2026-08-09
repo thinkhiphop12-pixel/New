@@ -107,7 +107,7 @@ export default function HubScreen({
 
   const screen = () => {
     switch (route) {
-      case 'overview': return <Dashboard state={state} onChange={onChange} onAbandon={onAbandon} onOpenScreen={onRoute} />;
+      case 'overview': return <Dashboard state={state} onChange={onChange} onAbandon={onAbandon} onOpenScreen={onRoute} onSimulate={onSimulate} simRunning={simRunning} />;
       case 'calendar': return <CalendarScreen state={state} onSimulate={onSimulate} simRunning={simRunning} />;
       case 'fixtures': return <FixturesScreen state={state} />;
       case 'table': return <TableScreen state={state} />;
@@ -229,7 +229,7 @@ export default function HubScreen({
             </div>
           </>
         ) : (
-          <Dashboard state={state} onChange={onChange} onAbandon={onAbandon} onOpenScreen={onRoute} />
+          <Dashboard state={state} onChange={onChange} onAbandon={onAbandon} onOpenScreen={onRoute} onSimulate={onSimulate} simRunning={simRunning} />
         )}
       </div>
     </div>
