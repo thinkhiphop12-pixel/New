@@ -86,6 +86,7 @@ export default function ClubSelectScreen({
   const scenarioFiltered = shownUnfiltered.filter((x) =>
     scenarioAllowsClub(scenarioId, x.club.division, rankedInDivision.findIndex((r) => r.club.id === x.club.id) + 1, rankedInDivision.length)
   );
+  const rankById = new Map(rankedInDivision.map((x, i) => [x.club.id, i + 1]));
   const query = clubQuery.trim().toLowerCase();
   const shown = query
     ? scenarioFiltered.filter((x) => x.club.name.toLowerCase().includes(query))
@@ -119,18 +120,28 @@ export default function ClubSelectScreen({
             maxLength={24}
             onChange={(e) => setManagerName(e.target.value)}
           />
-          <input
-            className="fm-search"
-            placeholder="Search clubs…"
-            aria-label="Search clubs"
-            value={clubQuery}
-            onChange={(e) => setClubQuery(e.target.value)}
-          />
         </div>
       </div>
 
-      {query && shown.length === 0 && (
-        <p className="fm-hint" style={{ textAlign: 'center' }}>No clubs match &quot;{clubQuery}&quot; in this division.</p>
+      <div className="fm-club-filter">
+        <span className="fm-club-filter__icon" aria-hidden>🔍</span>
+        <input
+          className="fm-club-filter__input"
+          placeholder="Filter clubs by name…"
+          aria-label="Filter clubs by name"
+          value={clubQuery}
+          onChange={(e) => setClubQuery(e.target.value)}
+        />
+      </div>
+
+      {scenarioFiltered.length === 0 ? (
+        <p className="fm-hint" style={{ textAlign: 'center' }}>
+          This scenario doesn&apos;t start in {division !== null ? leagueName(division) : 'this division'} — pick another division above.
+        </p>
+      ) : (
+        query && shown.length === 0 && (
+          <p className="fm-hint" style={{ textAlign: 'center' }}>No clubs match &quot;{clubQuery}&quot; in this division.</p>
+        )
       )}
       <div className="fm-club-grid">
         {shown.map(({ club, avg, star }) => (
@@ -144,6 +155,9 @@ export default function ClubSelectScreen({
               <Crest name={club.name} code={club.code} color={club.color} size={52} />
             </span>
             <span className="fm-club-card__name">{club.name}</span>
+            <span className="fm-club-card__rank">
+              {rankById.get(club.id)} of {rankedInDivision.length} in {division !== null ? leagueName(division) : 'division'}
+            </span>
             <span className="fm-club-card__foot">
               <span className="fm-club-card__rating" title={`Squad rating ${avg}`}>{avg}</span>
               <span className="fm-club-card__star">{star ? `★ ${star.name}` : '—'}</span>

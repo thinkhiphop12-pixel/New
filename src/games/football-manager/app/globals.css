@@ -486,9 +486,10 @@ body {
     background: rgba(5,5,5,0.92); backdrop-filter: saturate(160%) blur(14px);
   }
   .fm-rail__item { flex: 1 1 0; }
-  /* The dock sits fixed at the bottom, so reserve room for it under the
-     content instead of letting it cover the last card. */
-  .fm-hub-shell__main { padding-bottom: 62px; }
+  /* The rail and the action dock both sit fixed at the bottom, so reserve
+     room for both stacked (dock height + its offset above the rail) —
+     otherwise the last card's content sits behind them uncovered. */
+  .fm-hub-shell__main { padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* Desktop (≥1200px): the 72px icon rail widens into a labeled sidebar —
@@ -666,7 +667,11 @@ body {
    this is status, not chrome. */
 .fm-actiondock__cta--warn { background: var(--gold-gradient); color: #1a0f00; }
 @media (max-width: 899px) {
-  .fm-actiondock { position: fixed; left: 8px; right: 8px; bottom: 58px; z-index: 44; margin: 0; }
+  /* Gap 3 (Userbrain): bottom: 58px alone doesn't grow with the thumb dock's
+     own safe-area padding (.fm-rail, above), so on devices with a tall home
+     indicator the dock and the action bar collided and the CTA read as
+     "cut off". Add the same inset so the two always clear each other. */
+  .fm-actiondock { position: fixed; left: 8px; right: 8px; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); z-index: 44; margin: 0; }
 }
 /* A small pill in the dock when a day's stops have been seen but not yet
    dismissed via Continue — lets the player step away to Inbox/Transfers and
@@ -1470,6 +1475,14 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-badge--alert { background: var(--red); color: #fff; }
 .fm-badge--new { background: var(--green); color: #02100a; }
+/* Gap 10 (Userbrain): a soft realism signal on market entries far outside
+   the club's current budget — text, not a dot, so it reads as "unlikely",
+   not "urgent" like the alert/new badges above. */
+.fm-badge--gap {
+  border-radius: 6px; min-width: 0; height: auto; padding: 2px 6px;
+  background: var(--panel-3); color: var(--muted); font-size: 9.5px;
+  white-space: nowrap; margin-left: 6px;
+}
 
 /* Cards grid */
 .fm-portal__cards { display: grid; grid-template-columns: 1fr; gap: 8px; }
@@ -1686,7 +1699,11 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   height: 100dvh;
   display: flex; flex-direction: column;
   background: var(--panel);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* Gap 11 (Userbrain): only the bottom inset was reserved, so once a phone
+     is actually rotated to landscape (what RotatePrompt asks for) the
+     notch/home-indicator sits on the left or right edge instead and clipped
+     the fmbar/ticker there — add those insets too. */
+  padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
 .fm-matchx__stage { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; }
 .fm-matchx__canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -1704,6 +1721,9 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   background: #2c0a3f; border: none; cursor: pointer;
 }
 .fm-fmbar__menu span { width: 20px; height: 3px; background: #fff; border-radius: 2px; }
+/* Gap 4/6 (Userbrain): the 3-dot glyph alone read as decorative chrome, not
+   a tappable "more options" control — a visible label removes the guess. */
+.fm-fmbar__menu-label { font-size: 8px; font-weight: 800; letter-spacing: 0.4px; color: rgba(255,255,255,0.8); text-transform: uppercase; }
 .fm-fmbar__seg {
   display: flex; align-items: center; justify-content: center; gap: 7px;
   padding: 0 18px; font-weight: 900; font-size: 15px; white-space: nowrap;
@@ -1726,6 +1746,14 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   background: transparent; border: none; color: #fff; font-size: 20px; cursor: pointer;
 }
 .fm-fmbar__icon:disabled { opacity: 0.35; cursor: not-allowed; }
+/* Gap 4 (Userbrain): a one-tap speed cycle promoted out of the hidden
+   "Match menu" into the always-visible bar, next to play/pause. */
+.fm-fmbar__speed {
+  flex: 0 0 40px; display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.08); border: none; border-radius: 4px; margin: 0 2px;
+  color: #fff; font-size: 13px; font-weight: 900; cursor: pointer;
+}
+.fm-fmbar__speed:disabled { opacity: 0.35; cursor: not-allowed; }
 .fm-fmbar__play {
   flex: 0 0 96px; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(180deg, #9ed63a 0%, #7cb928 100%);
@@ -1733,6 +1761,9 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%);
 }
 .fm-fmbar__play:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Gap 6 (Userbrain): "Kick off" needs room for a label, not just the icon
+   the pause/play state uses once the match is running. */
+.fm-fmbar__play--cta { flex: 0 0 116px; font-size: 13px; gap: 5px; }
 
 /* Commentary ticker */
 .fm-fmticker {
@@ -1964,7 +1995,9 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   .fm-fmbar__seg { padding: 0 10px; font-size: 13px; }
   .fm-fmbar__team { max-width: 56px; }
   .fm-fmbar__play { flex: 0 0 64px; }
+  .fm-fmbar__play--cta { flex: 0 0 96px; font-size: 11px; }
   .fm-fmbar__icon { flex: 0 0 36px; }
+  .fm-fmbar__speed { flex: 0 0 32px; font-size: 11px; }
   .fm-fmbar__dots { display: none; }
   .fm-fmticker__text { font-size: 13px; }
   .fm-mstats__grid { grid-template-columns: 1fr; }
@@ -2713,6 +2746,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
    rather than carrying a separate modifier. */
 .fm-club-card { align-items: center; text-align: center; }
 .fm-club-card__name { line-height: 1.25; }
+.fm-club-card__rank { font-size: 11px; color: var(--muted-dim); }
 .fm-club-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; margin-top: auto; }
 .fm-club-card__rating {
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
@@ -2744,6 +2778,24 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 @media (min-width: 620px) { .fm-pick-head__fields { grid-template-columns: 1fr 1fr; } }
 .fm-pick-head .fm-search { min-width: 0; }
+
+/* Gap 81 follow-up: the club filter reads as a grid-scoping control, not a
+   third generic text field, so it gets its own row and stronger styling
+   directly above the grid it filters. */
+.fm-club-filter {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; max-width: 460px; margin: 8px auto 12px;
+  padding: var(--s-2) var(--s-4);
+  background: var(--panel-2); border: 1px solid var(--border-bright);
+  border-radius: var(--radius-md, 10px);
+}
+.fm-club-filter__icon { font-size: 14px; opacity: 0.7; }
+.fm-club-filter__input {
+  flex: 1; min-width: 0; background: transparent; border: none; color: var(--text);
+  font-size: var(--fs-md, 14px); outline: none;
+}
+.fm-club-filter__input::placeholder { color: var(--muted-dim); }
+.fm-club-filter:focus-within { border-color: var(--green-600); }
 
 /* =====================================================================
    SECTION HUBS — the landing screen each group opens on

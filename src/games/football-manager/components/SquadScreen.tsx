@@ -9,6 +9,7 @@ import { getRole } from '@/lib/playerRoles';
 import { PitchMarkings, PlayerToken } from './visuals';
 import { PlayerFace } from './PlayerFace';
 import PlayerModal from './PlayerModal';
+import type { ScreenId } from './hubNav';
 
 function lastName(name: string): string {
   const parts = name.split(' ').filter((w) => !/^jr\.?$/i.test(w));
@@ -33,9 +34,11 @@ function formTag(p: Player): React.ReactNode {
 export default function SquadScreen({
   state,
   onChange,
+  onRoute,
 }: {
   state: GameState;
   onChange: (next: GameState) => void;
+  onRoute: (id: ScreenId) => void;
 }) {
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [detailId, setDetailId] = useState<number | null>(null);
@@ -254,7 +257,14 @@ export default function SquadScreen({
             setSelectedSlot(null);
           }}
         >
-          Auto-pick best XI
+          {/* Gap 2 (Userbrain): "I think I added somebody, I have no idea" —
+              this reshuffles the *existing* squad into the strongest XI, it
+              never adds a player. Say so, and put the real acquisition path
+              (Transfers) right next to it. */}
+          Auto-pick best XI from current squad
+        </button>
+        <button className="fm-btn fm-btn--primary fm-btn--small" onClick={() => onRoute('transfers')}>
+          Sign a player
         </button>
       </div>
 

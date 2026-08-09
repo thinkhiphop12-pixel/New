@@ -42,11 +42,15 @@ export default function Dashboard({
   onChange,
   onAbandon,
   onOpenScreen,
+  onSimulate,
+  simRunning,
 }: {
   state: GameState;
   onChange: (next: GameState) => void;
   onAbandon: () => void;
   onOpenScreen: (id: ScreenId) => void;
+  onSimulate: (untilDay?: number) => void;
+  simRunning: boolean;
 }) {
   const [showPress, setShowPress] = useState(false);
 
@@ -155,17 +159,38 @@ export default function Dashboard({
                 <Icon name="warning" size={13} /> Lineup needs 11 fit players — fix it in Squad or Tactics.
               </button>
             )}
-            {opponent && (
-              <div className="fm-actions" style={{ marginBottom: 0, justifyContent: 'flex-start' }}>
+            <div className="fm-actions" style={{ marginBottom: 0, justifyContent: 'flex-start', gap: 8 }}>
+              {/* Gap 1/5 (Userbrain): the "what do I do?" complaint — the
+                  progression control already exists as the persistent action
+                  dock, but it's easy to miss below the fold. Mirror it here,
+                  next to the thing it actually advances. */}
+              <button
+                type="button"
+                className="fm-btn fm-btn--primary fm-btn--small"
+                onClick={() => onSimulate()}
+              >
+                <Icon name={simRunning ? 'pause' : 'play'} size={14} /> {simRunning ? 'Stop' : 'Next event'}
+              </button>
+              {/* Gap 5 (Userbrain): a tester mistook Press Conference for team
+                  setup because nothing on this screen pointed at Tactics
+                  before matchday — put a direct link right next to it. */}
+              <button
+                type="button"
+                className="fm-btn fm-btn--ghost fm-btn--small"
+                onClick={() => onOpenScreen('tactics')}
+              >
+                <Icon name="tactics" size={14} /> Tactics
+              </button>
+              {opponent && (
                 <button
-                  className="fm-btn fm-btn--secondary fm-btn--small"
+                  className="fm-btn fm-btn--ghost fm-btn--small"
                   onClick={() => setShowPress(true)}
                   disabled={state.pressWeek === state.week}
                 >
                   <Icon name="mic" size={14} /> {state.pressWeek === state.week ? 'Press done' : 'Press Conference'}
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 

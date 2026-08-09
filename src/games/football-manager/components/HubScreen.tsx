@@ -107,7 +107,7 @@ export default function HubScreen({
 
   const screen = () => {
     switch (route) {
-      case 'overview': return <Dashboard state={state} onChange={onChange} onAbandon={onAbandon} onOpenScreen={onRoute} />;
+      case 'overview': return <Dashboard state={state} onChange={onChange} onAbandon={onAbandon} onOpenScreen={onRoute} onSimulate={onSimulate} simRunning={simRunning} />;
       case 'calendar': return <CalendarScreen state={state} onSimulate={onSimulate} simRunning={simRunning} />;
       case 'fixtures': return <FixturesScreen state={state} />;
       case 'table': return <TableScreen state={state} />;
@@ -116,7 +116,7 @@ export default function HubScreen({
       case 'team-hub': return <TeamHubScreen state={state} onRoute={onRoute} />;
       case 'market-hub': return <MarketHubScreen state={state} onRoute={onRoute} />;
       case 'club-hub': return <ClubHubScreen state={state} onRoute={onRoute} />;
-      case 'squad': return <SquadScreen state={state} onChange={onChange} />;
+      case 'squad': return <SquadScreen state={state} onChange={onChange} onRoute={onRoute} />;
       case 'tactics': return <TacticsScreen state={state} onChange={onChange} />;
       case 'training': return <TrainingScreen state={state} onChange={onChange} />;
       case 'schedule': return <WeeklyScheduleScreen state={state} onChange={onChange} />;
@@ -229,7 +229,7 @@ export default function HubScreen({
             </div>
           </>
         ) : (
-          <Dashboard state={state} onChange={onChange} onAbandon={onAbandon} onOpenScreen={onRoute} />
+          <Dashboard state={state} onChange={onChange} onAbandon={onAbandon} onOpenScreen={onRoute} onSimulate={onSimulate} simRunning={simRunning} />
         )}
       </div>
     </div>

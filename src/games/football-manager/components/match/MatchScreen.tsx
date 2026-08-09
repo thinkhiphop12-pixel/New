@@ -253,6 +253,11 @@ export default function MatchScreen({
     });
   };
 
+  // Gap 4 (Userbrain): speed was only reachable via the unlabeled 3-dot
+  // "Match menu" — testers didn't find it during a slow 0-0 first half.
+  // Promote a one-tap cycle into the always-visible bar itself.
+  const cycleSpeed = () => setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]);
+
   const makeSub = (inId: number) => {
     if (subOut === null || subsUsed >= MAX_SUBS) return;
     const outId = subOut;
@@ -329,8 +334,9 @@ export default function MatchScreen({
       <RotatePrompt />
       {/* FM-style angled scoreboard bar */}
       <div className="fm-fmbar">
-        <button className="fm-fmbar__menu" onClick={() => setShowMenu(true)} aria-label="Match menu">
+        <button className="fm-fmbar__menu" onClick={() => setShowMenu(true)} aria-label="Match menu" title="More match options">
           <span /><span /><span />
+          <span className="fm-fmbar__menu-label">More</span>
         </button>
         <div className="fm-fmbar__seg fm-fmbar__seg--home">
           {userIsHome && state.managerProfile && (
@@ -384,15 +390,34 @@ export default function MatchScreen({
           <Icon name="settings" size={16} />
         </button>
         <button
-          className="fm-fmbar__play"
+          className="fm-fmbar__speed"
+          onClick={cycleSpeed}
+          disabled={finished}
+          aria-label={`Match speed ${speed}x, tap to change`}
+          title="Match speed — tap to cycle"
+        >
+          {speed}x
+        </button>
+        <button
+          className={`fm-fmbar__play${!kickedOff ? ' fm-fmbar__play--cta' : ''}`}
           onClick={() => {
             if (!kickedOff) setKickedOff(true);
             else setPaused((p) => !p);
           }}
           disabled={finished}
-          aria-label={!kickedOff || paused ? 'Play' : 'Pause'}
+          aria-label={!kickedOff ? 'Kick off' : paused ? 'Play' : 'Pause'}
         >
-          {!kickedOff || paused ? <Icon name="play" size={15} /> : <Icon name="pause" size={15} />}
+          {/* Gap 6 (Userbrain): a bare icon on a 0-0 scoreline read as
+              decorative, not a control — testers repeatedly asked "what am I
+              waiting for?" A text label removes the guess at the one moment
+              it matters most: before kickoff. */}
+          {!kickedOff ? (
+            <>Kick off <Icon name="play" size={14} /></>
+          ) : paused ? (
+            <Icon name="play" size={15} />
+          ) : (
+            <Icon name="pause" size={15} />
+          )}
         </button>
       </div>
 

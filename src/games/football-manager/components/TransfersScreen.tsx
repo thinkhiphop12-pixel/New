@@ -81,9 +81,25 @@ export default function TransfersScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [state, search, posFilter, availFilter],
   );
+  // Gap 10 (Userbrain): the market used to sort purely by rating, so a
+  // lower-division club with a small budget saw Salah/Mbappé-tier names at
+  // the very top of every search — unrealistic, and it buried the loan
+  // market (the actual route to a squad upgrade) below them. Nothing is
+  // hidden — a huge reach signing should still be findable — but realistic
+  // targets now sort first, and anything wildly out of budget carries a
+  // "reputation gap" badge instead of reading as a normal, biddable option.
+  const REACH_MULTIPLIER = 4;
+  const marketCost = (p: MarketEntry) => (p.clubId === 0 ? askingPrice(p) : p.askingGuide);
+  const isReach = (p: MarketEntry) => marketCost(p) > Math.max(state.budget, 1) * REACH_MULTIPLIER;
   const market = useMemo(
-    () => marketRaw.filter((p) => p.age <= maxAge && (!natFilter || p.nat === natFilter)).slice(0, 80),
-    [marketRaw, maxAge, natFilter],
+    () => {
+      const filtered = marketRaw.filter((p) => p.age <= maxAge && (!natFilter || p.nat === natFilter));
+      const realistic = filtered.filter((p) => !isReach(p));
+      const reach = filtered.filter((p) => isReach(p));
+      return [...realistic, ...reach].slice(0, 80);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [marketRaw, maxAge, natFilter, state.budget],
   );
   const nations = useMemo(
     () => Array.from(new Set(marketRaw.map((p) => p.nat))).sort().slice(0, 60),
@@ -232,6 +248,11 @@ export default function TransfersScreen({
                       {p.releaseClauseFee != null && ` · Clause ${formatMoney(p.releaseClauseFee)}`}
                     </span>
                   </span>
+                  {isReach(p) && (
+                    <span className="fm-badge fm-badge--gap" title="Well beyond your current budget — unlikely to move for you">
+                      Reputation gap
+                    </span>
+                  )}
                   <button
                     className={`fm-btn fm-btn--small${shortlist.includes(p.id) ? ' fm-btn--secondary' : ' fm-btn--ghost'}`}
                     onClick={(e) => { e.stopPropagation(); toggleScout(p.id); }}
@@ -285,7 +306,10 @@ export default function TransfersScreen({
             {market.length === 0 && <p className="fm-hint">No players match those filters.</p>}
           </div>
 
-          <p className="fm-label" style={{ marginTop: 18 }}>Loan market</p>
+          <p className="fm-hint" style={{ margin: '12px 0 0', textAlign: 'left' }}>
+            Can&apos;t compete for a big fee yet? Try the loan market below ↓
+          </p>
+          <p className="fm-label" style={{ marginTop: 8 }}>Loan market</p>
           <div className="fm-player-list">
             {loanMarket.map((p) => (
               <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
