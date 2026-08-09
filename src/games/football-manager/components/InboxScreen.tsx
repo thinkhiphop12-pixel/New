@@ -5,8 +5,10 @@ import type { GameState, InboxCategory, InboxItem, Player } from '@/engine/types
 import { markAllInboxRead, markInboxRead } from '@/engine/seasonProgression';
 import { respondToComplaint, renewContract } from '@/engine/transferMarket';
 import { formatMoney } from '@/engine/utils';
-import { tint } from './visuals';
+import { initials, ratingRingColor, readableTextOn, tint } from './visuals';
 import { Icon, type IconName } from './Icon';
+import Flag, { hasFlag } from './Flag';
+import { Crest } from './Crest';
 import PlayerModal from './PlayerModal';
 import type { ScreenId } from './hubNav';
 
@@ -66,28 +68,54 @@ function articleDate(item: InboxItem): string {
   return `${day}${ord(day)} ${month} ${item.seasonYear}`;
 }
 
-/** Gold FM-style player card: portrait silhouette, nation, club crest and
- *  the usual DOB/age/value/wage/contract rows plus a star rating strip. */
-function PlayerCard({ p, club, seasonYear }: { p: Player; club: { name: string; color: string } | undefined; seasonYear: number }) {
+/** Player card: rating ring around a club-coloured monogram, position and
+ *  nation badges, the usual DOB/age/value/wage/contract rows and a season
+ *  stat strip.
+ *
+ *  Built from the same pieces as the rest of the game rather than its own
+ *  look — `.fm-ring` + a club-coloured avatar exactly as PlayerModal's header
+ *  draws it, `<Crest>` for the club, `<Flag>` for the nation, and the
+ *  `fm-pos-*` position colours the squad lists use. Exported: TransfersScreen's
+ *  negotiation panel reuses this card rather than building a second one,
+ *  adding its own rows (traits, squad status, interest) underneath. */
+export function PlayerCard({ p, club, seasonYear }: { p: Player; club: { name: string; code?: string; color: string } | undefined; seasonYear: number }) {
   const dobYear = seasonYear - p.age;
   const contractExpiry = p.clubId === 0 ? 'Free agent' : `30/6/${seasonYear + Math.max(0, p.contractYears)}`;
+  const clubColor = club?.color ?? 'var(--panel-3)';
   return (
-    <div className="fm-newscard">
+    <div className={`fm-newscard fm-pos-${p.pos}`}>
       <div className="fm-newscard__top">
-        <span className="fm-newscard__pos">{p.pos}</span>
-        <span className="fm-newscard__nat">{p.nat}</span>
-      </div>
-      <div className="fm-newscard__portrait">
-        <Icon name="person" size={32} className="fm-newscard__silhouette" />
-      </div>
-      <div className="fm-newscard__crests">
-        <span className="fm-newscard__crest" style={{ background: club?.color ?? '#555' }}>
-          {club ? club.name.slice(0, 3).toUpperCase() : p.clubId === 0 ? 'FA' : '—'}
+        <span className="fm-player-row__badge">{p.pos}</span>
+        <span className="fm-newscard__nat">
+          {hasFlag(p.nat) && <Flag country={p.nat} size={18} />}
+          {p.nat}
         </span>
       </div>
-      <div className="fm-newscard__name">{p.name}</div>
+      <div
+        className="fm-ring fm-ring--lg fm-newscard__ring"
+        style={{ ['--ring-pct' as string]: p.rating, ['--ring-color' as string]: ratingRingColor(p.rating) }}
+      >
+        <div
+          className="fm-newscard__avatar"
+          style={{ background: clubColor, color: readableTextOn(club?.color ?? '#000000') }}
+        >
+          {p.clubId === 0 ? 'FA' : initials(p.name)}
+        </div>
+      </div>
+      <div className="fm-newscard__crests">
+        {club ? (
+          <Crest name={club.name} code={club.code ?? club.name.slice(0, 3).toUpperCase()} color={club.color} size={26} />
+        ) : (
+          <span className="fm-newscard__freeagent">{p.clubId === 0 ? 'Free agent' : 'No club'}</span>
+        )}
+      </div>
+      <div className="fm-newscard__name">
+        {p.squadNumber !== undefined && <span className="fm-newscard__num">{p.squadNumber}</span>}
+        {p.name}
+      </div>
       <div className="fm-newscard__role">
-        {p.age <= 21 ? 'Promising' : p.age >= 32 ? 'Experienced' : 'Established'} {p.role}
+        <span>{p.age <= 21 ? 'Promising' : p.age >= 32 ? 'Experienced' : 'Established'} {p.role}</span>
+        <span className="ovr-badge">{p.rating}</span>
       </div>
       <div className="fm-newscard__rows">
         <div className="fm-newscard__row"><span>Date of Birth</span><strong>1 Jan {dobYear}</strong></div>
@@ -97,7 +125,7 @@ function PlayerCard({ p, club, seasonYear }: { p: Player; club: { name: string; 
         <div className="fm-newscard__row"><span>Contract Expiry</span><strong>{contractExpiry}</strong></div>
       </div>
       <div className="fm-newscard__foot">
-        <span className="fm-newscard__star"><Icon name="star" size={13} /> {(p.rating / 10).toFixed(2)}</span>
+        <span className="fm-newscard__stat"><Icon name="star" size={13} /> {(p.rating / 10).toFixed(2)}</span>
         <span className="fm-newscard__stat"><Icon name="net" size={13} /> {p.goals}</span>
         <span className="fm-newscard__stat"><Icon name="boot" size={13} /> {p.apps}</span>
       </div>

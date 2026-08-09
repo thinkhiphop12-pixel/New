@@ -1,6 +1,5 @@
 'use client';
 
-import { CSSProperties } from 'react';
 import type { GameState, Staff } from '@/engine/types';
 import { ACADEMY_UPGRADE_COST, STADIUM_UPGRADE_COST, STAFF_MAX_LEVEL, STAFF_UPGRADE_COST, leagueName } from '@/engine/gameRules';
 import {
@@ -50,10 +49,6 @@ export default function ClubScreen({
   const posIndex = table.findIndex((r) => r.clubId === state.userClubId);
   const position = posIndex >= 0 ? posIndex + 1 : 0;
   const clubCount = lg.clubCount;
-  // Ring fill: further up the table = fuller ring. Position 1/20 → 100%.
-  const positionPct = position > 0 && clubCount > 0
-    ? Math.max(0, Math.min(100, ((clubCount - position) / Math.max(1, clubCount - 1)) * 100))
-    : 0;
   const form = clubForm(state, state.userClubId);
 
   const fs = state.facilities;
@@ -62,41 +57,29 @@ export default function ClubScreen({
 
   return (
     <>
-      {/* ── Hero: position ring + reputation + recent form ── */}
+      {/* ── Hero: reputation + recent form + table position ── */}
       <div className="fm-panel">
-        <div className="fm-hero-rings">
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            <div
-              className="fm-ring fm-ring--lg"
-              style={
-                {
-                  '--ring-pct': positionPct,
-                  '--ring-color': position <= Math.ceil(clubCount / 3) ? 'var(--green)' : position <= Math.ceil(clubCount * 2 / 3) ? 'var(--gold)' : 'var(--red)',
-                } as CSSProperties
-              }
-            >
-              <span className="fm-ring__value">{position}</span>
-            </div>
-            <span className="fm-hero-rings__pos-num">{position}{ordinalSuffix(position)}</span>
-            <span className="fm-hero-rings__pos-sub">of {clubCount} · {leagueName(leagueId)}</span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 8 }}>
+          <div>
+            <p className="fm-label" style={{ margin: '0 0 6px' }}>Position</p>
+            <p style={{ fontSize: 24, fontWeight: 900, color: position <= Math.ceil(clubCount / 3) ? 'var(--green)' : position <= Math.ceil(clubCount * 2 / 3) ? 'var(--gold)' : 'var(--red)', margin: 0 }}>
+              {position}{ordinalSuffix(position)}
+            </p>
+            <p className="fm-hint" style={{ margin: '2px 0 0' }}>of {clubCount}</p>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div>
+            <p className="fm-label" style={{ margin: '0 0 6px' }}>Reputation</p>
             <ReputationStars value={club.reputation ?? 1} title={`Reputation ${club.reputation ?? 1}/5`} />
-            <span className="fm-hero-rings__pos-sub">Club reputation</span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginLeft: 'auto' }}>
-            <span className="fm-hero-rings__pos-sub">Recent form (last {form.length})</span>
-            <span className="fm-form-strip">
-              {form.length > 0 ? (
-                form.map((r, i) => <FormChip key={i} result={r} />)
-              ) : (
-                <span className="fm-hint" style={{ margin: 0 }}>No results yet this season.</span>
-              )}
-            </span>
           </div>
         </div>
+        {form.length > 0 && (
+          <div>
+            <p className="fm-label" style={{ margin: '0 0 6px' }}>Recent form</p>
+            <span className="fm-form-strip">
+              {form.map((r, i) => <FormChip key={i} result={r} />)}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* ── Budget overview + quick stats ── */}

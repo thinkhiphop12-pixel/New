@@ -185,6 +185,15 @@ export interface Player {
   /** Weeks since the squad-status promise was made, and how long it's been broken. */
   promiseWeeks?: number;
   promiseBreachWeeks?: number;
+
+  /* --- Clauses a completed transfer left attached to the registration. All
+     optional; absent means the deal carried no clause of that kind. --- */
+  /** Share of the profit on any future sale owed back to `sellOnClubId`. */
+  sellOnPct?: number;
+  sellOnClubId?: number;
+  /** Fee at which `buyBackClubId` may re-sign him. 0/absent = no buy-back. */
+  buyBackFee?: number;
+  buyBackClubId?: number;
   /** Consecutive weeks he has gone without an appearance. */
   benchWeeks?: number;
 
@@ -286,7 +295,7 @@ export interface NegotiationTerms {
   wageHoldOut: number;
 }
 
-export type NegotiationStage = 'fee' | 'terms' | 'outbid';
+export type NegotiationStage = 'fee' | 'terms' | 'loan_terms' | 'outbid';
 export type NegotiationTone = 'info' | 'good' | 'bad' | 'you';
 
 export interface NegotiationMsg {
@@ -339,10 +348,44 @@ export interface Negotiation {
   marketValue?: number;
   loanWageShare?: number;
   loanPlayingTime?: 'regular' | 'occasional' | null;
+  /** Which deal shape this negotiation is: a permanent transfer (the
+   *  default, absent on any negotiation from before this field existed —
+   *  they were all transfers), a loan, or a loan with a negotiated option
+   *  to make it permanent. Drives which fields `NegotiationPanel` shows and
+   *  which engine path (`openNegotiation` vs `openLoanNegotiation`)
+   *  resolves the stage machine. */
+  offerType?: 'transfer' | 'loan' | 'loan_to_buy';
+  /** The lending club's minimum terms for an outgoing loan negotiation
+   *  (`offerType` loan/loan_to_buy) — set once when talks open, mutated by
+   *  `evaluateLoanTermsOffer` as rounds pass, same role `neg`
+   *  (`NegotiationTerms`) plays for a permanent transfer's fee/wage haggle. */
+  loanTerms?: { minWageShare: number; requiresPlayingTime: boolean; minBuyOption: number; round: number };
+  /** The user's current offered buy-option fee, `loan_to_buy` only — becomes
+   *  the loan's `PlayerLoanState.optionToBuy` once terms are agreed. */
+  buyOptionFee?: number;
+
+  /* --- Clauses attached to the current fee offer. Every one is optional and
+     absent means "pure cash bid", which is how every negotiation from before
+     these existed deserializes. --- */
+  /** Share of a future sale profit promised back to the selling club, 0–0.5. */
+  sellOnPct?: number;
+  /** Fee at which the seller could buy him back. 0/absent = none offered. */
+  buyBackFee?: number;
+  /** One of your players offered as part-exchange. */
+  exchangePlayerId?: number | null;
+  /** Signed now, joins when the season ends, instead of moving immediately. */
+  endOfSeason?: boolean;
   log: NegotiationMsg[];
 }
 
-/** A deal agreed for a player who joins for free when his contract lapses. */
+/**
+ * A deal agreed now that completes at a later season rollover.
+ *
+ * Two shapes share this record because they activate identically: a genuine
+ * pre-contract (a player whose deal lapses, joining for nothing) and an
+ * end-of-season transfer (a fee agreed today for a player who stays with his
+ * club for the run-in). `fee` is what separates them — absent or 0 is a free.
+ */
 export interface PreContract {
   id: string;
   playerId: number;
@@ -352,6 +395,12 @@ export interface PreContract {
   agreedYears: number;
   /** Season year the player actually arrives. */
   activatesSeason: number;
+  /** Fee agreed for an end-of-season transfer, already paid on agreement.
+   *  Absent/0 on a true pre-contract, which is what pre-v8 saves hold. */
+  fee?: number;
+  /** Clauses that attach to the registration when he finally arrives. */
+  sellOnPct?: number;
+  buyBackFee?: number;
 }
 
 export interface Club {
@@ -1165,6 +1214,15 @@ export interface GameState {
   /** Phase 10: scout assignments, opponent reports and the persisted
    *  shortlist. */
   scouting?: ScoutingState;
+  /** Temporary trialist pool from September youth intake awaiting accept/reject. */
+  trialistPool?: Array<{
+    playerId: number;
+    trialistId: string;
+    starRating: number;
+    pos: Position;
+    ca: number;
+    pa: number;
+  }>;
   /** Career mode weekly planner: one entry per day, Monday first. Optional —
    *  absent means "the default split" (see engine/schedule.ts DEFAULT_SCHEDULE).
    *  Drives per-day sharpness/fitness/injury-risk in the weekly tick. */
@@ -1234,6 +1292,13 @@ export interface GameSettings {
    *  `defaultContinueStops()`; a settings blob from before this system
    *  existed behaves exactly as those defaults. */
   continueStops?: Partial<Record<InboxCategory, boolean>>;
+  /** Assistant Manager delegation (engine/dailyTick.ts's `advanceDay`):
+   *  which categories the assistant handles automatically — applying the
+   *  same default a human would (Reassure, Offer new deal, or the
+   *  assistant's own schedule suggestion) — instead of stopping the sim.
+   *  All off by default; delegating is an opt-in, not a hidden behavior
+   *  change for existing saves. */
+  assistantDelegation?: Partial<Record<'complaints' | 'contracts' | 'schedule', boolean>>;
 }
 
 export interface AvatarConfig {

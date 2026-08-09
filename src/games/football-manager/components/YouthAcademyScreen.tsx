@@ -35,15 +35,17 @@ export default function YouthAcademyScreen({
   const squadFull = firstTeamSize >= MAX_SQUAD_SIZE;
 
   const academyRep = state.facilities?.academyReputation ?? 20;
+  const nextIntakeCount = state.academyLevel >= 3 ? 2 : 1;
 
   return (
     <>
-      {/* Four numbers instead of the paragraph that used to carry them. */}
+      {/* Five numbers instead of the paragraph that used to carry them. */}
       <Pulse
         items={[
           { icon: 'sprout', label: 'Prospects', value: String(youth.length), tone: youth.length ? 'green' : 'plain' },
           { icon: 'star', label: 'Reputation', value: `${academyRep}/100`, tone: toneFor(academyRep, 25, 60), meter: academyRep / 100 },
           { icon: 'training', label: 'Intake level', value: `${state.academyLevel}/3`, tone: toneFor(state.academyLevel, 2, 3), meter: state.academyLevel / 3 },
+          { icon: 'document', label: 'Next intake', value: `${nextIntakeCount} prospect${nextIntakeCount > 1 ? 's' : ''}` },
           {
             icon: 'squad',
             label: 'First team',
