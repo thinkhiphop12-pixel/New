@@ -3,7 +3,7 @@
 import { useState, type CSSProperties } from 'react';
 import { Icon } from './Icon';
 import type { Club, GameState, Player } from '@/engine/types';
-import { canLoanOut, exerciseLoanOption, loanOut, renewContract } from '@/engine/transferMarket';
+import { canLoanOut, exerciseLoanOption, loanOut, openRenewalNegotiation, renewContract } from '@/engine/transferMarket';
 import { isOnLoan } from '@/engine/teamManagement';
 import { getRolesByPosition } from '@/lib/playerRoles';
 import { setPlayerRole } from '@/engine/teamManagement';
@@ -421,7 +421,7 @@ export default function PlayerModal({
             <button
               className="fm-btn fm-btn--primary fm-btn--small"
               disabled={p.wage * 10 > state.budget}
-              onClick={() => setShowContract(true)}
+              onClick={() => { const result = openRenewalNegotiation(state, p.id); onChange(result.state); if (result.ok) setShowContract(true); }}
             >
               Renew contract ({formatMoney(p.wage * 10)} bonus)
             </button>
@@ -459,7 +459,7 @@ export default function PlayerModal({
           </span>
         )}
       </div>
-      {showContract && <ContractOfferPanel state={state} player={p} onChange={onChange} onClose={() => setShowContract(false)} />}
+      {showContract && <ContractOfferPanel state={state} player={p} negotiationId={state.negotiations?.find((n) => n.playerId === p.id && n.stage === 'terms')?.id ?? ''} onChange={onChange} onClose={() => setShowContract(false)} />}
     </div>
   );
 }

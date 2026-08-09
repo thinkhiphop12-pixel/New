@@ -1,5 +1,5 @@
 import type {
-  Club, GameState, MarketStatus, MoveAssessment, Negotiation, Player, Position,
+  Club, GameState, MarketStatus, MoveAssessment, Negotiation, NegotiationTerms, Player, Position,
   PreContract, SquadStatusKey, TransferOffer,
 } from './types';
 import { MAX_SQUAD_SIZE, MIN_SQUAD_SIZE, isDeadlineWeek, transferWindow, windowShutReason } from './gameRules';
@@ -138,6 +138,28 @@ export function sellPlayer(state: GameState, playerId: number, offer?: TransferO
  *  it has already folded into `manager.trophies`. */
 function wonTrophyThisSeason(s: GameState): boolean {
   return s.cup.winnerId === s.userClubId || s.continental.winnerId === s.userClubId;
+}
+
+/** Open a real personal-terms negotiation for one of our players. */
+export function openRenewalNegotiation(state: GameState, playerId: number): TransferResult {
+  const s: GameState = structuredClone(state);
+  ensureArrays(s);
+  const p = s.players[playerId];
+  const club = clubOf(s, s.userClubId);
+  if (!p || !club || p.clubId !== s.userClubId) return fail(state, 'This player is not at your club.');
+  const existing = s.negotiations!.find((n) => n.type === 'outgoing' && n.playerId === playerId && n.stage === 'terms');
+  if (existing) return { state: s, ok: true, message: 'Contract talks are already open.' };
+  const demand = roundWage(Math.max(p.wage * (1 + clamp(p.rating - 60, 0, 30) / 15), p.wage * 1.15));
+  const terms: NegotiationTerms = { asking: 0, minFee: 0, wageDemand: demand, minWage: roundWage(demand * 0.96), feeRound: 0, wageRound: 5000, holdOut: 0, wageHoldOut: 0 };
+  s.negotiations!.push({
+    id: newId('renewal'), type: 'outgoing', playerId, clubId: club.id, clubName: club.name,
+    playerName: p.name, playerPos: p.pos, playerRating: p.rating, stage: 'terms', awaiting: 'user', responseWeek: null,
+    lastTouchWeek: s.week, neg: terms, lastFee: 0, lastWage: null, agreedFee: 0, agreedWage: null,
+    contractYears: 3, promisedStatus: (p.promisedStatus as SquadStatusKey | null) ?? null, signingBonus: 0, releaseClause: p.releaseClause ?? 0,
+    stance: 'keen', stanceScore: 0, demands: [], projectedStatus: (p.promisedStatus as SquadStatusKey | null) ?? 'rotation', rival: null, preContract: false,
+    marketValue: p.value, log: [{ text: `${p.name} is ready to discuss a new contract.`, tone: 'info' }],
+  });
+  return { state: s, ok: true, message: `Contract talks opened with ${p.name}.` };
 }
 
 /**

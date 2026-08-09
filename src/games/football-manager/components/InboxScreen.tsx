@@ -3,7 +3,7 @@
 import { useState, type CSSProperties } from 'react';
 import type { GameState, InboxCategory, InboxItem, Player } from '@/engine/types';
 import { markAllInboxRead, markInboxRead } from '@/engine/seasonProgression';
-import { respondToComplaint } from '@/engine/transferMarket';
+import { openRenewalNegotiation, respondToComplaint } from '@/engine/transferMarket';
 import { formatMoney } from '@/engine/utils';
 import { initials, ratingRingColor, readableTextOn, tint } from './visuals';
 import { Icon, type IconName } from './Icon';
@@ -362,7 +362,7 @@ export default function InboxScreen({
         {current.kind === 'contractExpiring' && player && (
           <button
             className="fm-btn fm-btn--secondary fm-btn--small"
-            onClick={() => setContractPlayerId(player.id)}
+            onClick={() => { const result = openRenewalNegotiation(state, player.id); onChange(result.state); if (result.ok) setContractPlayerId(player.id); }}
           >
             Open contract negotiation
           </button>
@@ -402,6 +402,7 @@ export default function InboxScreen({
         <ContractOfferPanel
           state={state}
           player={state.players[contractPlayerId]}
+          negotiationId={state.negotiations?.find((n) => n.playerId === contractPlayerId && n.stage === 'terms')?.id ?? ''}
           onChange={onChange}
           onClose={() => setContractPlayerId(null)}
         />
