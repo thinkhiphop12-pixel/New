@@ -68,10 +68,19 @@ interface SideState {
   shotScale: number;
 }
 
+/**
+ * How much more likely an injury is for a player the manager was warned about
+ * and started regardless. The pre-match warning promises a raised risk; this
+ * is that promise, so the modal is telling the truth about the sim.
+ */
+export const RISKED_INJURY_MULT = 1.2;
+
 interface Sim {
   state: GameState;
   home: SideState;
   away: SideState;
+  /** See `TickSimOptions.riskedPlayerIds`. Empty for every AI match. */
+  risked: Set<number>;
   minute: number;
   possession: TeamSide;
   ballZone: 0 | 1 | 2 | 3 | 4;
@@ -248,9 +257,13 @@ function checkInjury(s: Sim, side: SideState): void {
   if (!players.length) return;
   // Live fitness = the fitness he started on, less what this match has taken.
   const liveFit = (p: Player) => (p.fitness ?? 80) * sharpnessAt(p, s.minute, side.stamRate);
-  const avgMult = players.reduce((a, p) => a + fatigueInjuryMult(liveFit(p)), 0) / players.length;
+  // A man the manager was warned about and picked anyway is carrying a knock
+  // into the match — both likelier to be the one who breaks down, and enough
+  // of a drag to lift the side's overall risk.
+  const riskMult = (p: Player) => fatigueInjuryMult(liveFit(p)) * (s.risked.has(p.id) ? RISKED_INJURY_MULT : 1);
+  const avgMult = players.reduce((a, p) => a + riskMult(p), 0) / players.length;
   if (Math.random() >= 0.00085 * avgMult) return;
-  const victim = pickWeighted(players, (p) => fatigueInjuryMult(liveFit(p)));
+  const victim = pickWeighted(players, riskMult);
   if (!victim) return;
   // A knock in open play is usually a knock; the serious ones are rarer and
   // skew toward whoever is running on empty.
@@ -290,7 +303,7 @@ function checkFoul(s: Sim, defending: SideState, attacking: SideState): void {
     if (had >= 2) {
       bump(defending.counts, offender.id, 'redCard');
       defending.sentOff.push(offender.id);
-      push(s, { minute: s.minute, type: 'card', clubId: defending.clubId, side: defending.side, playerId: offender.id, card: 'red', text: says.secondYellowText(offender.name) });
+      push(s, { minute: s.minute, type: 'card', clubId: defending.clubId, side: defending.side, playerId: offender.id, card: 'red', secondYellow: true, text: says.secondYellowText(offender.name) });
       removePlayer(s, defending, offender.id);
     } else {
       bump(defending.counts, offender.id, 'yellowCard');
@@ -761,6 +774,7 @@ export function simulateTickMatch(state: GameState, homeId: number, awayId: numb
     state,
     home: makeSide(state, 'home', homeId, awayId, opts),
     away: makeSide(state, 'away', awayId, homeId, opts),
+    risked: new Set(opts.riskedPlayerIds ?? []),
     minute: opts.startMinute ?? 1,
     possession: Math.random() < 0.5 ? 'home' : 'away',
     ballZone: 2,
@@ -928,8 +942,11 @@ export function simulateTickMatch(state: GameState, homeId: number, awayId: numb
       matchEnd: s.matchEnd,
       wentToExtraTime: s.wentToExtraTime,
       shootout,
-      events: s.events.map(({ minute, type, clubId, text, playerId, assistId, gx, gy, xg, archetype, contact, injuryType, injuryDays, potDrop }) =>
-        ({ minute, type, clubId, text, playerId, assistId, gx, gy, xg, archetype, contact, injuryType, injuryDays, potDrop })),
+      // `card`/`secondYellow` ride along so the season loop can accumulate
+      // bookings into suspensions (engine/discipline.ts) — they used to be
+      // dropped here, which is why cards could never add up to a ban.
+      events: s.events.map(({ minute, type, clubId, text, playerId, assistId, gx, gy, xg, archetype, contact, card, secondYellow, injuryType, injuryDays, potDrop }) =>
+        ({ minute, type, clubId, text, playerId, assistId, gx, gy, xg, archetype, contact, card, secondYellow, injuryType, injuryDays, potDrop })),
       homeLineup: [...s.home.appeared],
       awayLineup: [...s.away.appeared],
       ratings,

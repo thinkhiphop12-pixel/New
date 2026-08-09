@@ -11,6 +11,7 @@ import {
   prizeMoney, roundToWeek, startingBudget,
 } from './gameRules';
 import { matchRatings, simulateMatch } from './matchSimulation';
+import { applyDiscipline, serveSuspensions } from './discipline';
 import {
   WAGE_BUDGET_HEADROOM, autoPickLineup, clubWageBill, ensureSquadNumbers, getSquad,
   isLineupValid, isOnLoan, squadAvgRating,
@@ -678,6 +679,25 @@ function applyReportStats(s: GameState, report: MatchReport): void {
       }
     }
   }
+  // Discipline: bank this match's bookings and turn the season totals into
+  // bans (engine/discipline.ts). Runs before `serveSuspensions` so a man sent
+  // off today starts serving from the *next* match, not this one.
+  const bans = applyDiscipline(s, report);
+  serveSuspensions(s, [report.homeId, report.awayId], new Set(bans.map((b) => b.playerId)));
+  for (const ban of bans) {
+    const p = s.players[ban.playerId];
+    if (!p || p.clubId !== s.userClubId) continue;
+    const why =
+      ban.reason === 'yellows' ? `${p.yellowCards} bookings this season`
+      : ban.reason === 'second-yellow' ? 'a second bookable offence'
+      : 'a straight red card';
+    pushInbox(s, {
+      category: 'club',
+      title: `${p.name} suspended`,
+      body: `${p.name} misses the next ${ban.matches} match${ban.matches === 1 ? '' : 'es'} after ${why}. He cannot be selected until the ban is served.`,
+    });
+  }
+
   // Per-match condition (gap 26): minutes played drain fitness, resting tops it
   // up, and match sharpness only comes from actually playing.
   applyMatchCondition(s, report);
@@ -1746,6 +1766,10 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     p.lgGoals = 0;
     p.seasonRatingSum = 0;
     p.seasonRatingCount = 0;
+    // Bookings and bans are a season's record — they do not carry over.
+    p.yellowCards = 0;
+    p.redCards = 0;
+    p.suspendedMatches = 0;
   }
 
   // Loans end: players return, youngsters come back sharper.

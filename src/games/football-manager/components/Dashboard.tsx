@@ -7,7 +7,7 @@ import { computeTable, nextUserFixture, userLeagueId } from '@/engine/seasonProg
 import { getSquad, isLineupValid } from '@/engine/teamManagement';
 import { isClubAlive, knockoutRoundDue } from '@/engine/cups';
 import { continentalRoundDue, isContinentalClubAlive } from '@/engine/europeanCup';
-import { daysUntilMatchDay, relativeDays } from '@/engine/calendar';
+import { daysUntilMatchDay, isMatchDay, relativeDays } from '@/engine/calendar';
 import { formatMoney } from '@/engine/utils';
 import { ReputationStars, tint } from './visuals';
 import { Crest } from './Crest';
@@ -159,12 +159,22 @@ export default function Dashboard({
                   progression control already exists as the persistent action
                   dock, but it's easy to miss below the fold. Mirror it here,
                   next to the thing it actually advances. */}
+              {/* On matchday the daily loop has already stopped here — there is
+                  nowhere else "Next event" could be taking you — so say what
+                  it actually does: hands off to the pre-match checks
+                  (engine/preMatch.ts) and kickoff, same as the dock's CTA. */}
               <button
                 type="button"
                 className="fm-btn fm-btn--primary fm-btn--small"
                 onClick={() => onSimulate()}
               >
-                <Icon name={simRunning ? 'pause' : 'play'} size={14} /> {simRunning ? 'Stop' : 'Next event'}
+                {isMatchDay(state) ? (
+                  <>▶ PROCEED TO MATCH</>
+                ) : (
+                  <>
+                    <Icon name={simRunning ? 'pause' : 'play'} size={14} /> {simRunning ? 'Stop' : 'Next event'}
+                  </>
+                )}
               </button>
               {/* Gap 5 (Userbrain): a tester mistook Press Conference for team
                   setup because nothing on this screen pointed at Tactics

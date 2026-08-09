@@ -11,6 +11,7 @@ import { simulateMatch } from '@/engine/matchSimulation';
 import { applyScenario, scenarioNeedsPreseasonFastForward } from '@/engine/scenarios';
 import { simulateTickMatch } from '@/engine/tickEngine/sim';
 import { normalizeMentality } from '@/engine/tickEngine/tacticsData';
+import { runPreMatchChecks, hasPreMatchWarnings, type PreMatchCheck } from '@/engine/preMatch';
 import { loadGameData } from '@/lib/gamedata';
 import {
   clearSave, emergencySave, listSaves, loadGame, migrateLegacySaves, saveGame,
@@ -35,6 +36,7 @@ import type { ScreenId } from './hubNav';
 import OnboardingOverlay, { hasSeenOnboarding } from './OnboardingOverlay';
 import LassoKentProvider from './assistant/LassoKentProvider';
 import type { AssistantEffects } from '../data/lassoKentDialogues';
+import PreMatchWarningsModal from './PreMatchWarningsModal';
 
 type View = 'menu' | 'managerpick' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'daysummary' | 'match' | 'seasonend' | 'character';
 
@@ -74,6 +76,12 @@ export default function FootballManagerGame() {
   // synchronous engine job is being run in yielded chunks; see `handlePickClub`.
   const [busy, setBusy] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  // The FM21-style kickoff gate: non-null while the pre-match check has
+  // something worth showing the manager before the match actually starts.
+  const [preMatchCheck, setPreMatchCheck] = useState<PreMatchCheck | null>(null);
+  // Unfit players the manager was warned about and started anyway — read by
+  // MatchScreen so the sim can carry their raised injury risk for real.
+  const [riskedPlayerIds, setRiskedPlayerIds] = useState<number[]>([]);
 
   // The daily loop (SIM NEXT DAY). `dayStops` are what the last stopped day
   // is waiting on — kept around after the player navigates off to Inbox or
@@ -268,16 +276,22 @@ export default function FootballManagerGame() {
     setView('hub');
   };
 
-  const handleMatchDone = (report: MatchReport) => {
-    if (!gs) return;
-    const userIsHome = report.homeId === gs.userClubId;
+  // Takes the base state explicitly rather than always reading the `gs`
+  // closure: the auto-sim kickoff path (below) applies a lineup/formation fix
+  // and simulates the match in the same synchronous call, before React has
+  // re-rendered with the fix — `gs` in that closure would still be the
+  // pre-fix state. The interactive path (MatchScreen's `onDone`) still just
+  // works off the default, since many renders have happened by full time.
+  const handleMatchDone = (report: MatchReport, baseState: GameState | null = gs) => {
+    if (!baseState) return;
+    const userIsHome = report.homeId === baseState.userClubId;
     const userGoals = userIsHome ? report.homeGoals : report.awayGoals;
     const oppGoals = userIsHome ? report.awayGoals : report.homeGoals;
-    const oppName = gs.clubs.find((c) => c.id === (userIsHome ? report.awayId : report.homeId))?.name ?? 'opponent';
+    const oppName = baseState.clubs.find((c) => c.id === (userIsHome ? report.awayId : report.homeId))?.name ?? 'opponent';
     const outcome = userGoals > oppGoals ? 'success' : userGoals < oppGoals ? 'error' : 'info';
     pushToast(`Full time: ${userGoals}-${oppGoals} vs ${oppName}`, outcome);
 
-    let played = playRound(gs, report);
+    let played = playRound(baseState, report);
     // The match this nudge was granted for has just been played — put the
     // tactics knob back the way the player had it (see applyAssistantEffects).
     if (played.assistantTacticalRevert) {
@@ -400,15 +414,12 @@ export default function FootballManagerGame() {
     setView('hub');
   };
 
-  const handlePrepareFromSummary = () => {
-    if (!gs) return;
-    if (!isLineupValid(gs, gs.userClubId, gs.lineup)) {
-      setHubRoute('tactics');
-      setView('hub');
-      return;
-    }
-    handlePlayMatch();
-  };
+  // The Day Summary's matchday stop used to gate on `isLineupValid` alone —
+  // fine when the only thing that could be wrong was an empty slot, but the
+  // pre-match check (engine/preMatch.ts) now covers strictly more ground
+  // (tactics, suspensions, fatigue) and fixes what it can rather than just
+  // bouncing the manager to Tactics. `handleProceedToMatch` is the superset.
+  const handlePrepareFromSummary = () => handleProceedToMatch();
 
   const handleContinueFromSummary = () => {
     // A matchday stop must never be dismissable without actually playing the
@@ -445,20 +456,53 @@ export default function FootballManagerGame() {
     clearSave(slot).then(backToMenu);
   };
 
-  const handlePlayMatch = () => {
-    if (settings?.autoSimMatches && gs) {
-      const fixture = nextUserFixture(gs);
+  /** Takes the base state explicitly for the same reason `handleMatchDone`
+   *  does — `kickOff` below calls this in the same tick as the `apply()` that
+   *  fixed the lineup, before that fix has landed in the `gs` closure. */
+  const handlePlayMatch = (baseState: GameState | null = gs, riskyIds: number[] = []) => {
+    if (!baseState) return;
+    if (settings?.autoSimMatches) {
+      const fixture = nextUserFixture(baseState);
       if (!fixture) return;
-      const { report } = simulateTickMatch(gs, fixture.homeId, fixture.awayId, {
+      const { report } = simulateTickMatch(baseState, fixture.homeId, fixture.awayId, {
         headless: true,
-        userLineup: gs.lineup,
-        userMentality: normalizeMentality(gs.tactics.mentality),
+        userLineup: baseState.lineup,
+        userMentality: normalizeMentality(baseState.tactics.mentality),
         difficulty: settings.difficulty,
+        riskedPlayerIds: riskyIds,
       });
-      handleMatchDone(report);
+      handleMatchDone(report, baseState);
     } else {
+      setRiskedPlayerIds(riskyIds);
       setView('match');
     }
+  };
+
+  /**
+   * "▶ PROCEED TO MATCH" — the FM21-style gate between the dock/day-summary
+   * and kick-off. Runs the mandatory checks (engine/preMatch.ts): a broken
+   * lineup, a suspended or injured starter, a fatigued one. Anything with a
+   * warning stops here for the manager to see; a clean XI skips straight to
+   * `kickOff` since there is nothing to show.
+   */
+  const handleProceedToMatch = () => {
+    if (!gs) return;
+    const check = runPreMatchChecks(gs);
+    if (hasPreMatchWarnings(check)) {
+      setPreMatchCheck(check);
+    } else {
+      kickOff(check.lineup, check.formationId, check.riskyIds);
+    }
+  };
+
+  /** Apply whatever the check (or the manager, via the modal) settled on, and
+   *  actually start the match. */
+  const kickOff = (lineup: (number | null)[], formationId: string, riskyIds: number[]) => {
+    if (!gs) return;
+    const next: GameState = { ...gs, lineup, formationId };
+    apply(next);
+    setPreMatchCheck(null);
+    handlePlayMatch(next, riskyIds);
   };
 
   // Where the customizer returns to when it closes. It used to hard-code the
@@ -678,7 +722,7 @@ export default function FootballManagerGame() {
         ) : view === 'clubselect' ? (
           <ClubSelectScreen data={data} divisions={selectedDivisions} scenarioId={selectedScenarioId} onPick={handlePickClub} onBack={() => setView('nationselect')} />
         ) : view === 'match' && gs && settings ? (
-          <MatchScreen state={gs} settings={settings} onDone={handleMatchDone} />
+          <MatchScreen state={gs} settings={settings} onDone={handleMatchDone} riskedPlayerIds={riskedPlayerIds} />
         ) : view === 'seasonend' && gs && summary ? (
           <SeasonEndScreen
             state={gs}
@@ -738,6 +782,18 @@ export default function FootballManagerGame() {
       {view === 'hub' && gs && (() => {
         const lineupOk = isLineupValid(gs, gs.userClubId, gs.lineup);
         const pending = dayStops.length > 0;
+        // Today's stop is the match itself — the dock's primary action
+        // becomes "proceed to it" rather than "open the summary and find
+        // out". Kept as its own case rather than folding into `pending` so
+        // a transfer offer or an inbox item pending on a non-matchday still
+        // reads as "Continue", not a false promise of a match that isn't on.
+        const matchdayPending = dayStops.some((s) => s.category === 'matchday');
+        // A transfer bid or inbox item can land on the same day as the match.
+        // "PROCEED TO MATCH" bypasses the Day Summary on purpose (that's the
+        // whole point of it), so anything *else* waiting still needs its own
+        // way to be seen — counted separately from the match itself so it
+        // isn't just silently skipped past.
+        const otherPending = dayStops.filter((s) => s.category !== 'matchday').length;
         return (
           <div className="fm-actiondock">
             <div className="fm-actiondock__date">
@@ -755,19 +811,25 @@ export default function FootballManagerGame() {
               </button>
             )}
             <span className="fm-actiondock__spacer" />
-            {pending && (
+            {(matchdayPending ? otherPending > 0 : pending) && (
               <button type="button" className="fm-actiondock__pending" onClick={() => setView('daysummary')}>
-                <Icon name="warning" size={13} /> {dayStops.length} waiting
+                <Icon name="warning" size={13} /> {matchdayPending ? otherPending : dayStops.length} waiting
               </button>
             )}
             <button
               type="button"
               className="fm-actiondock__cta"
-              onClick={() => handleSimulate()}
+              onClick={() => (matchdayPending ? handleProceedToMatch() : handleSimulate())}
             >
-              <Icon name={holding ? 'pause' : 'play'} size={15} />
-              {' '}
-              {pending ? 'Continue' : holding ? 'Stop — running…' : 'Next Event'}
+              {matchdayPending ? (
+                <>▶ PROCEED TO MATCH</>
+              ) : (
+                <>
+                  <Icon name={holding ? 'pause' : 'play'} size={15} />
+                  {' '}
+                  {pending ? 'Continue' : holding ? 'Stop — running…' : 'Next Event'}
+                </>
+              )}
             </button>
           </div>
         );
@@ -775,6 +837,20 @@ export default function FootballManagerGame() {
 
       {showOnboarding && (
         <OnboardingOverlay slot={slot} onClose={() => setShowOnboarding(false)} />
+      )}
+
+      {preMatchCheck && gs && (
+        <PreMatchWarningsModal
+          state={gs}
+          check={preMatchCheck}
+          onConfirm={(lineup, formationId, riskyIds) => kickOff(lineup, formationId, riskyIds)}
+          onOpenLineup={() => {
+            setPreMatchCheck(null);
+            setHubRoute('tactics');
+            setView('hub');
+          }}
+          onCancel={() => setPreMatchCheck(null)}
+        />
       )}
 
       {showMore && (
