@@ -204,6 +204,14 @@ body {
   display: flex; align-items: center; justify-content: center; gap: 5px;
 }
 .fm-header__settings:hover { border-color: var(--border-bright); color: var(--text); }
+.fm-header__help {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--muted); border-radius: 50%;
+  width: var(--tap-min); height: var(--tap-min); cursor: pointer;
+  transition: all 0.15s; display: flex; align-items: center; justify-content: center;
+  margin-right: 6px;
+}
+.fm-header__help:hover { border-color: var(--border-bright); color: var(--text); }
 
 .fm-main { flex: 1; display: flex; justify-content: center; padding: 16px 12px 80px; }
 .fm-screen { width: 100%; max-width: var(--w-screen); display: flex; flex-direction: column; gap: 12px; }
@@ -2335,6 +2343,15 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-icon-tile--sm { width: 32px; height: 32px; border-radius: var(--r-sm); }
 .fm-icon-tile--lg { width: 52px; height: 52px; border-radius: var(--r-lg); }
+
+/* Interactive "How to play" step-through (OnboardingOverlay). */
+.fm-onboard-dots { display: flex; justify-content: center; gap: 6px; margin: 4px 0 16px; }
+.fm-onboard-dot {
+  width: 8px; height: 8px; border-radius: 50%; padding: 0; border: none; cursor: pointer;
+  background: var(--border-bright);
+}
+.fm-onboard-dot.active { background: var(--green); width: 20px; border-radius: 4px; }
+.fm-onboard-step { display: flex; gap: 12px; align-items: flex-start; min-height: 74px; margin-bottom: 16px; }
 
 /* ── Rating ring: conic-gradient circular badge ──
    Player Profile header, Club Overview reputation, budget-used ring. Value

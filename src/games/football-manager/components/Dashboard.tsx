@@ -80,10 +80,6 @@ export default function Dashboard({
   const pendingBids = (state.negotiations ?? []).filter((n) => n.type === 'incoming' && n.awaiting === 'user').length;
   const offerCount = state.incomingOffers.length + pendingBids;
   const latestNews = [...state.inbox].sort((a, b) => b.id - a.id)[0] ?? null;
-  const scoutReports = state.scouting?.playerReports?.length ?? 0;
-
-  const moraleTone = state.morale >= 60 ? 'var(--green)' : state.morale >= 40 ? 'var(--gold)' : 'var(--red)';
-  const onTrack = position > 0 && position <= state.board.minPosition;
 
   // "What needs my attention" — every row routes somewhere real. This is the
   // clickable replacement for the old Tasks module's unclickable strings.
@@ -253,71 +249,14 @@ export default function Dashboard({
           )}
         </div>
 
-        {/* Objectives: board target + progress, plus the starting scenario if any. */}
-        <div className="fm-mod">
-          <div className="fm-mod__head"><h2 className="fm-mod__title">Objectives</h2></div>
-          <button
-            type="button"
-            className="fm-msg-row"
-            onClick={() => onOpenScreen('board')}
-            style={{ marginBottom: state.scenario && state.scenario.status === 'active' ? 8 : 0 }}
-          >
-            <span className="fm-msg-row__main">
-              <span className="fm-msg-row__title">{state.board.objective}</span>
-              <span className="fm-msg-row__meta" style={{ color: onTrack ? 'var(--green)' : 'var(--red)' }}>
-                {position > 0 ? (onTrack ? 'On track' : 'Needs improvement') : 'Not yet ranked'} · Board confidence {state.board.confidence}
-              </span>
-            </span>
-            <Icon name="chevron" size={14} />
-          </button>
-          {state.scenario && state.scenario.status === 'active' && (
-            <p className="fm-hint" style={{ margin: 0, textAlign: 'left' }}>{state.scenario.objective}</p>
-          )}
-        </div>
-
-        {/* Transfers & scouting: budget, offers, recent leads. */}
-        <div className="fm-mod">
-          <div className="fm-mod__head"><h2 className="fm-mod__title">Transfers & scouting</h2></div>
-          {/* Board confidence and Fan confidence live on the Club hub's own
-              Overview (Pulse tiles) — repeating them here added nothing
-              actionable from this module, just the same two numbers twice.
-              Budget and Morale stay: both are what this module's own
-              Transfers/Scouting buttons act on. */}
-          <div className="fm-stats-strip">
-            <div className="fm-stat">
-              <span className="fm-stat__label">Budget</span>
-              <span className="fm-stat__value" style={{ color: state.budget < 0 ? 'var(--red)' : undefined }}>{formatMoney(state.budget)}</span>
-            </div>
-            <div className="fm-stat">
-              <span className="fm-stat__label">Morale</span>
-              <span className="fm-stat__value" style={{ color: moraleTone }}>{state.morale}</span>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-            <button type="button" className="fm-pill" onClick={() => onOpenScreen('transfers')}>
-              {offerCount > 0 ? `${offerCount} offer${offerCount === 1 ? '' : 's'}` : 'Transfers'}
-            </button>
-            <button type="button" className="fm-pill" onClick={() => onOpenScreen('scouting')}>
-              {scoutReports > 0 ? `${scoutReports} scout report${scoutReports === 1 ? '' : 's'}` : 'Scouting'}
-            </button>
-          </div>
-        </div>
-
-        {/* League news: the plain-text press ticker (title races, breakout
-            youngsters, transfer rumours, wonderkid buzz, pundit chatter —
-            engine/news.ts) — a wider "what's happening out there" feed,
-            distinct from the inbox headline below which is specifically
-            about you and your club. */}
-        {state.news.length > 0 && (
-          <div className="fm-mod">
-            <div className="fm-mod__head"><h2 className="fm-mod__title">League news</h2></div>
-            <ul className="fm-card__news">
-              {state.news.slice(0, 4).map((n, i) => (
-                <li key={i} className="fm-card__news-item">{n}</li>
-              ))}
-            </ul>
-          </div>
-        )}
+        {/* Objectives, Transfers & Scouting, and League news all pulled from
+            here — this screen is both the Hub landing and Matchday →
+            Overview, and it was carrying the whole game's status at once.
+            Objectives lives on Club → Board, Transfers/Scouting on the
+            Market group, and League news was a plain ticker duplicating the
+            inbox headline right below. What's left is the one thing this
+            screen is actually for: is there something that needs me right
+            now, and what's my next match. */}
 
         {/* Latest news + league table window. */}
         <div className="fm-mod">

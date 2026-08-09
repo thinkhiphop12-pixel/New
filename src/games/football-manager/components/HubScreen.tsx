@@ -31,6 +31,7 @@ import {
   firstScreenOf,
   groupOf,
   groupBadge,
+  isScreenVisible,
   screenBadge,
   type GroupId,
   type ScreenId,
@@ -69,6 +70,21 @@ export default function HubScreen({
   simRunning: boolean;
 }) {
   const group = route === null ? null : groupOf(route);
+  // Cups/Europe only show once the club is actually in them (engine/cups.ts,
+  // engine/europeanCup.ts) — a tab that always says "nothing here" reads as
+  // broken. Filtered here rather than in GROUPS itself, since GROUPS is a
+  // static, module-level structure with no access to per-save state.
+  const visibleScreens = group?.screens.filter((s) => isScreenVisible(state, s.id)) ?? [];
+
+  // If the tab currently open just became hidden (cup elimination, failure
+  // to qualify for Europe), fall back to the group's landing screen rather
+  // than stranding the player on a tab that no longer renders in the strip.
+  useEffect(() => {
+    if (route && group && !isScreenVisible(state, route)) {
+      onRoute(firstScreenOf(group.id));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route, state.cup, state.continental]);
 
   // Same in-place-swap scroll issue as the top-level view switch: reset to
   // the top of the (new, usually shorter) screen whenever the destination
@@ -93,7 +109,7 @@ export default function HubScreen({
   // instantly with no loading step.
   const onTabKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (!group) return;
-    const ids = group.screens.map((s) => s.id);
+    const ids = visibleScreens.map((s) => s.id);
     const i = ids.indexOf(route as ScreenId);
     let next: ScreenId | undefined;
     if (e.key === 'ArrowRight') next = ids[(i + 1) % ids.length];
@@ -188,7 +204,7 @@ export default function HubScreen({
                 aria-label={`${group.label} screens`}
                 onKeyDown={onTabKeyDown}
               >
-                {group.screens.map((s) => {
+                {visibleScreens.map((s) => {
                   const on = s.id === route;
                   const count = screenBadge(state, s.id);
                   return (
