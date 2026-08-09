@@ -53,10 +53,14 @@ export default function MatchScreen({
   state,
   settings,
   onDone,
+  riskedPlayerIds,
 }: {
   state: GameState;
   settings: GameSettings;
   onDone: (report: MatchReport) => void;
+  /** Unfit men the manager was warned about before kick-off and started
+   *  anyway (engine/preMatch.ts). They carry a raised injury risk all match. */
+  riskedPlayerIds?: number[];
 }) {
   const fixture = nextUserFixture(state);
   const [timeline, setTimeline] = useState<MatchTimeline | null>(null);
@@ -86,6 +90,7 @@ export default function MatchScreen({
       userMentality: normalizeMentality(state.tactics.mentality),
       userTactics: state.tactics,
       difficulty: settings.difficulty,
+      riskedPlayerIds,
     });
     setTimeline(tl);
     if (settings.matchSpeed === 'instant') {
@@ -217,6 +222,7 @@ export default function MatchScreen({
       startMinute: snap.minute + 1,
       initial: ctx,
       difficulty: settings.difficulty,
+      riskedPlayerIds,
     });
     const headSnaps = timeline.snapshots.filter((sn) => sn.minute <= snap.minute);
     const headEvents = timeline.events.filter((e) => e.minute <= snap.minute);
@@ -288,6 +294,7 @@ export default function MatchScreen({
       userMentality: normalizeMentality(state.tactics.mentality),
       userTactics: state.tactics,
       difficulty: settings.difficulty,
+      riskedPlayerIds,
       initialMomentum: delta,
     });
     setTimeline(tl);

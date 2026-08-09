@@ -16,9 +16,14 @@ import type { IconName } from './Icon';
  *
  * This replaces the old flat 14-entry rail (plus its "More" overflow sheet
  * on phones), which showed every destination at once and made the phone dock
- * need progressive disclosure. Five top-level destinations — Hub plus the
- * four groups — fit a thumb dock without an overflow menu, so both layouts
- * now render the same single `.fm-rail`.
+ * need progressive disclosure. Four top-level destinations fit a thumb dock
+ * without an overflow menu, so both layouts render the same single `.fm-rail`.
+ *
+ * There used to be five, because "Hub" and "Matchday" were separate rail
+ * entries whose landing screens were the *same component* — Matchday →
+ * Overview and the Hub landing both rendered `Dashboard`. Two icons, one
+ * screen. They are now a single group: Hub is the group, its Overview is the
+ * Dashboard, and Calendar/Fixtures/Table/Cups/Europe are its siblings.
  */
 
 export type ScreenId =
@@ -37,7 +42,7 @@ export function isHubScreen(id: ScreenId): boolean {
   return (HUB_SCREENS as readonly string[]).includes(id);
 }
 
-export type GroupId = 'matchday' | 'team' | 'market' | 'club';
+export type GroupId = 'hub' | 'team' | 'market' | 'club';
 
 export type ScreenDef = { id: ScreenId; label: string; icon: IconName };
 export type GroupDef = {
@@ -50,9 +55,9 @@ export type GroupDef = {
 
 export const GROUPS: GroupDef[] = [
   {
-    id: 'matchday',
-    label: 'Matchday',
-    icon: 'stadium',
+    id: 'hub',
+    label: 'Hub',
+    icon: 'home',
     screens: [
       { id: 'overview', label: 'Overview', icon: 'home' },
       { id: 'calendar', label: 'Calendar', icon: 'calendar' },
