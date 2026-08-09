@@ -32,6 +32,7 @@ import { readableTextOn } from './visuals';
 import { ToastHost, pushToast } from './ToastQueue';
 import { Icon, IconSprite } from './Icon';
 import type { ScreenId } from './hubNav';
+import OnboardingOverlay, { hasSeenOnboarding } from './OnboardingOverlay';
 
 type View = 'menu' | 'managerpick' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'daysummary' | 'match' | 'seasonend' | 'character';
 
@@ -70,6 +71,7 @@ export default function FootballManagerGame() {
   // Progress label for the scenario fast-forward below. Non-null means a long
   // synchronous engine job is being run in yielded chunks; see `handlePickClub`.
   const [busy, setBusy] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // The daily loop (SIM NEXT DAY). `dayStops` are what the last stopped day
   // is waiting on — kept around after the player navigates off to Inbox or
@@ -300,6 +302,16 @@ export default function FootballManagerGame() {
   useEffect(() => { gsRef.current = gs; }, [gs]);
   const settingsRef = useRef<GameSettings | null>(null);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
+
+  // Gap 20 (Userbrain): first entry into a fresh career's Hub gets a one-time
+  // orientation checklist, gated per save slot via localStorage (mirrors
+  // RotatePrompt's sessionStorage-dismiss pattern) so it never reappears once
+  // seen for that career.
+  useEffect(() => {
+    if (view === 'hub' && gs && !hasSeenOnboarding(slot)) {
+      setShowOnboarding(true);
+    }
+  }, [view, gs, slot]);
 
   /** One tick of the daily loop. Runs the day, applies the result, and — if
    *  it produced a stop — opens the Day Summary and reports back `true` so a
@@ -648,6 +660,10 @@ export default function FootballManagerGame() {
           </div>
         );
       })()}
+
+      {showOnboarding && (
+        <OnboardingOverlay slot={slot} onClose={() => setShowOnboarding(false)} />
+      )}
 
       {showMore && (
         <MoreMenu
