@@ -1475,6 +1475,14 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-badge--alert { background: var(--red); color: #fff; }
 .fm-badge--new { background: var(--green); color: #02100a; }
+/* Gap 10 (Userbrain): a soft realism signal on market entries far outside
+   the club's current budget — text, not a dot, so it reads as "unlikely",
+   not "urgent" like the alert/new badges above. */
+.fm-badge--gap {
+  border-radius: 6px; min-width: 0; height: auto; padding: 2px 6px;
+  background: var(--panel-3); color: var(--muted); font-size: 9.5px;
+  white-space: nowrap; margin-left: 6px;
+}
 
 /* Cards grid */
 .fm-portal__cards { display: grid; grid-template-columns: 1fr; gap: 8px; }
