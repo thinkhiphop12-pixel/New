@@ -104,6 +104,11 @@ function marketValue(rating, age) {
   return Math.max(100_000, Math.round(v / step) * step);
 }
 
+// NOTE ON SCALE: this script writes the dataset on the *base* economy, which
+// engine/seasonProgression.ts newGame() lifts by MONEY_SCALE at load (player
+// value and releaseClause) and then recalibrates wages from. Do not apply
+// MONEY_SCALE here as well or every figure lands twelve times too high.
+//
 // The base wage scale, matching engine/utils.ts weeklyWage() with scale = 1.
 // This is the game's *baseline* economy, roughly English fourth tier; the
 // engine lifts each club off it at newGame via calibrateWages(), pricing a

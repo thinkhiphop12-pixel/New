@@ -6,7 +6,7 @@ import { MAX_SQUAD_SIZE, MIN_SQUAD_SIZE, transferWindow, windowShutReason } from
 import {
   availableSquad, clubWageBill, ensureSquadNumbers, getSquad, isOnLoan, squadAvgRating, wageCeiling,
 } from './teamManagement';
-import { clamp, contractEndFor, weeklyWage } from './utils';
+import { clamp, contractEndFor, weeklyWage, MONEY_SCALE } from './utils';
 import { pushInbox } from './inbox';
 import { recordScenarioSale } from './scenarios';
 import {
@@ -187,7 +187,7 @@ export function generateWeeklyOffers(state: GameState): TransferOffer[] {
       offers.push({
         playerId: p.id,
         fromClubId: bidder.id,
-        amount: Math.round((p.value * (0.95 + Math.random() * 0.45)) / 50_000) * 50_000,
+        amount: Math.round((p.value * (0.95 + Math.random() * 0.45)) / (50_000 * MONEY_SCALE)) * 50_000 * MONEY_SCALE,
       });
     }
     if (offers.length >= 3) break;
@@ -1336,7 +1336,7 @@ function checkIncomingOffers(s: GameState, headlines: string[]): void {
     // Listed players draw fair bids (75-100% of value); an unlisted-but-expiring
     // player draws a cheeky lowball since the club hasn't been put up for sale.
     const frac = isListed ? 0.75 + Math.random() * 0.25 : 0.45 + Math.random() * 0.25;
-    const fee = Math.max(10_000, roundFee(Math.max(p.value * frac, (contestFloor ?? 0) * (1.03 + Math.random() * 0.12))));
+    const fee = Math.max(10_000 * MONEY_SCALE, roundFee(Math.max(p.value * frac, (contestFloor ?? 0) * (1.03 + Math.random() * 0.12))));
     const alreadyBidding = new Set(
       s.negotiations!.filter((n) => n.type === 'incoming' && n.playerId === p.id).map((n) => n.clubId)
     );
@@ -1384,7 +1384,7 @@ function checkIncomingOffers(s: GameState, headlines: string[]): void {
     });
     if (!suitors.length) continue;
     const borrower = suitors[Math.floor(Math.random() * suitors.length)];
-    const fee = Math.max(20_000, roundFee(p.value * (0.03 + Math.random() * 0.04)));
+    const fee = Math.max(20_000 * MONEY_SCALE, roundFee(p.value * (0.03 + Math.random() * 0.04)));
     // Most suitors want him as a starter and cover everything; some only offer
     // squad minutes but ask the parent to chip in on wages.
     const wantsStarter = Math.random() < 0.7;

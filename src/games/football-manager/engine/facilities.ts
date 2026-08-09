@@ -1,3 +1,4 @@
+import { MONEY_SCALE } from './utils';
 import type {
   Club, Coach, FacilitiesState, FacilityProject, GameState, OpponentReport, ProjectKind,
   ScoutAssignment, ScoutAssignmentKind, ScoutingState, Stand, StandId,
@@ -37,7 +38,10 @@ function tierCapacity(id: StandId, tier: 0 | 1 | 2 | 3): number {
 export function groundCapacityCap(state: GameState, clubId: number): number {
   const club = state.clubs.find((c) => c.id === clubId);
   const league = getLeague(club?.leagueId ?? 'eng-1');
-  return Math.max(9000, Math.min(90_000, Math.round((league.gateBase / 10) / 100) * 100));
+  // gateBase is a money field and carries MONEY_SCALE; capacity is seats, so
+  // divide it back out or every ground becomes twelve times too big.
+  const seatsBase = league.gateBase / MONEY_SCALE;
+  return Math.max(9000, Math.min(90_000, Math.round((seatsBase / 10) / 100) * 100));
 }
 
 function emptyStand(id: StandId): Stand {
@@ -78,18 +82,18 @@ export function totalCapacity(fs: FacilitiesState): number {
 /** Cost to build/upgrade one stand by one tier. Rises with tier and stand size. */
 export function standUpgradeCost(id: StandId, fromTier: 0 | 1 | 2 | 3): number {
   const capGain = tierCapacity(id, (fromTier + 1) as 1 | 2 | 3) - tierCapacity(id, fromTier);
-  return Math.round(capGain * 900);
+  return Math.round(capGain * 900 * MONEY_SCALE);
 }
 
-export const TRAINING_UPGRADE_COST = [0, 0, 1_500_000, 3_500_000, 7_000_000, 14_000_000];
-export const MEDICAL_UPGRADE_COST = [0, 0, 1_200_000, 2_800_000, 5_500_000, 11_000_000];
-export const ACADEMY_PROJECT_COST = 4_000_000; // per +15 reputation project, funding-capped
+export const TRAINING_UPGRADE_COST = [0, 0, 1_500_000, 3_500_000, 7_000_000, 14_000_000].map((v) => v * MONEY_SCALE);
+export const MEDICAL_UPGRADE_COST = [0, 0, 1_200_000, 2_800_000, 5_500_000, 11_000_000].map((v) => v * MONEY_SCALE);
+export const ACADEMY_PROJECT_COST = 4_000_000 * MONEY_SCALE; // per +15 reputation project, funding-capped
 export const ACADEMY_REPUTATION_CAP = 100;
 
 /** Project duration in weeks: bigger spend buys a faster build, within the
  *  2-10 week band the plan specifies. */
 function durationForSpend(kind: ProjectKind, spend: number): number {
-  const ref = kind === 'academy' ? ACADEMY_PROJECT_COST : 3_000_000;
+  const ref = kind === 'academy' ? ACADEMY_PROJECT_COST : 3_000_000 * MONEY_SCALE;
   const ratio = spend / ref;
   const weeks = Math.round(10 - 8 * Math.min(1, ratio));
   return Math.max(2, Math.min(10, weeks));
@@ -237,7 +241,7 @@ function levelFromQuality(quality: number): 0 | 1 | 2 | 3 {
 
 export function hireCoach(state: GameState, role: Coach['role'], quality: number): GameState {
   const fs = state.facilities ?? newFacilities(state);
-  const wage = Math.round(400 + quality * 45);
+  const wage = Math.round((400 + quality * 45) * MONEY_SCALE);
   const name = COACH_NAMES[fs.nextCoachId % COACH_NAMES.length];
   const coach: Coach = { id: fs.nextCoachId, name, role, quality, wage };
   const coaches = [...fs.coaches.filter((c) => c.role !== role), coach];

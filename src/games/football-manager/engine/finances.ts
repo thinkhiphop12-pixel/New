@@ -46,9 +46,9 @@ import type {
   Amortization, BalancePoint, Club, FinanceState, Fixture, GameState, KitDeal, KitOffer,
   LeagueDef, SponsorClause, SponsorDeal, SponsorOffer, SponsorSlotId, TicketTier,
 } from './types';
-import { getLeague, SEASON_ROUNDS, leagueAbove } from './gameRules';
+import { getLeague, SEASON_ROUNDS, STAFF_WEEKLY_WAGE, leagueAbove } from './gameRules';
 import { clubWageBill } from './teamManagement';
-import { clamp, pickRandom, formatMoney, weeklyWage } from './utils';
+import { clamp, pickRandom, formatMoney, weeklyWage, MONEY_SCALE } from './utils';
 import { pushInbox } from './inbox';
 import { clubBudget } from './jobMarket';
 
@@ -930,7 +930,7 @@ function weeklyWages(state: GameState): number {
 
 function weeklyStaffWages(state: GameState): number {
   const st = state.staff;
-  const legacy = st ? (st.coach + st.physio + st.scout) * 10_000 : 0;
+  const legacy = st ? (st.coach + st.physio + st.scout) * STAFF_WEEKLY_WAGE : 0;
   // Named coaches (Staff Hub) and named scouts (Scouting Network) carry their
   // own wage, on top of the legacy per-level figure — kept in sync with
   // seasonProgression.ts's staffWageBill(), which is what actually debits the
@@ -1267,7 +1267,8 @@ export function boardGrantAmount(state: GameState, fin = financesView(state)): n
   const balMult = state.budget > base * 1.5 ? 1.15 : state.budget < 0 ? 0.62 : 1.0;
   // An embargoed club is not getting more money to spend.
   const embargoMult = fin.transferEmbargo ? 0 : 1;
-  return Math.round(base * confMult * posMult * balMult * embargoMult / 100_000) * 100_000;
+  const step = 100_000 * MONEY_SCALE;
+  return Math.round(base * confMult * posMult * balMult * embargoMult / step) * step;
 }
 
 export function canRequestBoardFunds(state: GameState): boolean {

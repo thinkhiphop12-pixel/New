@@ -15,7 +15,7 @@ import {
   WAGE_BUDGET_HEADROOM, autoPickLineup, clubWageBill, ensureSquadNumbers, getSquad,
   isLineupValid, isOnLoan, squadAvgRating,
 } from './teamManagement';
-import { clamp, contractEndFor, marketValue, pickRandom, rollRetireAge, weeklyWage } from './utils';
+import { clamp, contractEndFor, marketValue, pickRandom, rollRetireAge, weeklyWage, MONEY_SCALE } from './utils';
 import { tickTacticalFamiliarity } from './familiarity';
 import { generateWeeklyNews } from './news';
 import { seedClubIdentities } from './clubIdentity';
@@ -416,6 +416,11 @@ export function newGame(
     const years = 1 + (p.id % 4);
     players[p.id] = {
       ...p,
+      // The shipped dataset is authored on the base economy (build-gamedata.mjs
+      // deliberately stays there), so its baked money is lifted here. Wages are
+      // not: calibrateWages recomputes them from these values further down.
+      value: Math.round(p.value * MONEY_SCALE),
+      releaseClause: p.releaseClause == null ? p.releaseClause : Math.round(p.releaseClause * MONEY_SCALE),
       wage: p.wage ?? weeklyWage(p.value, p.rating),
       form: 1,
       injuryWeeks: 0,
@@ -1229,7 +1234,7 @@ export function switchJob(state: GameState, clubId: number, offer?: JobOffer): G
   const club = s.clubs.find((c) => c.id === clubId);
   if (!club) return state;
   s.userClubId = clubId;
-  s.budget = (offer?.budget ?? clubBudget(s, clubId)) + s.manager.reputation * 100_000;
+  s.budget = (offer?.budget ?? clubBudget(s, clubId)) + s.manager.reputation * 100_000 * MONEY_SCALE;
   // Your old club's wage ceiling is not this club's. Take the greater of what
   // the new squad already earns and what its revenue sanctions, so inheriting
   // an over-waged squad never forces an immediate fire-sale.

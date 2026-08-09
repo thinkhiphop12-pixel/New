@@ -15,21 +15,22 @@ import type {
   Player, SquadStatusKey, MarketStatus,
 } from './types';
 import { getLeague } from './gameRules';
+import { MONEY_SCALE } from './utils';
 
 /* ------------------------------------------------------------------ money */
 
 /** Round a fee the way a real deal is announced. Their ladder, in pounds. */
 export function roundFee(v: number): number {
   if (v <= 0) return 0;
-  if (v >= 50_000_000) return Math.round(v / 1_000_000) * 1_000_000;
-  if (v >= 10_000_000) return Math.round(v / 250_000) * 250_000;
-  if (v >= 1_000_000) return Math.round(v / 50_000) * 50_000;
+  if (v >= 50_000_000 * MONEY_SCALE) return Math.round(v / (1_000_000 * MONEY_SCALE)) * 1_000_000 * MONEY_SCALE;
+  if (v >= 10_000_000 * MONEY_SCALE) return Math.round(v / (250_000 * MONEY_SCALE)) * 250_000 * MONEY_SCALE;
+  if (v >= 1_000_000 * MONEY_SCALE) return Math.round(v / (50_000 * MONEY_SCALE)) * 50_000 * MONEY_SCALE;
   return Math.round(v / 10_000) * 10_000;
 }
 
 /** Round a weekly wage to the nearest £100. */
 export function roundWage(v: number): number {
-  return Math.max(500, Math.round(v / 100) * 100);
+  return Math.max(500 * MONEY_SCALE, Math.round(v / 100) * 100);
 }
 
 function rand(lo: number, hi: number, rng: () => number = Math.random): number {

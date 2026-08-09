@@ -1,3 +1,4 @@
+import { MONEY_SCALE } from './utils';
 import type { GameState, Scout, ScoutReport } from './types';
 import { newScouting } from './facilities';
 
@@ -31,7 +32,7 @@ export function getPlayerReports(state: GameState): ScoutReport[] {
  *  wage curve in engine/facilities.ts, scaled down — scouts are cheaper than
  *  coaching staff. */
 export function scoutWage(stars: number): number {
-  return Math.round(300 + stars * 300);
+  return Math.round((300 + stars * 300) * MONEY_SCALE);
 }
 
 export function hireScout(state: GameState, stars: number, region: string): GameState {

@@ -1,4 +1,5 @@
 import type { Division, FormationDef, LeagueDef, Position } from './types';
+import { MONEY_SCALE } from './utils';
 
 /** Calendar weeks in a season. League fixtures occupy 46 of them; the two
  *  WINTER_BREAK weeks carry no domestic league football (gap item 41). */
@@ -593,6 +594,19 @@ export const DIVISION_TO_LEAGUE: Record<Division, string> = {
   29: 'league_of_ireland_premier',
 };
 
+/* Every money field in LEAGUES is authored on the base economy; MONEY_SCALE
+   lifts them to the scale the game quotes. Done as a pass over the table so a
+   new league added above cannot forget it. `tvEqualShare` is deliberately not
+   scaled: it feeds the reference revenue model that `economyScale` divides by,
+   so scaling `gateBase` already carries TV money up with everything else, and
+   scaling both would compound. */
+for (const lg of LEAGUES) {
+  lg.startingBudget *= MONEY_SCALE;
+  lg.gateBase *= MONEY_SCALE;
+  lg.prizeTop *= MONEY_SCALE;
+  lg.prizeStep *= MONEY_SCALE;
+}
+
 export function leagueIdForDivision(division: number): string {
   return DIVISION_TO_LEAGUE[division as Division] ?? 'premier_league';
 }
@@ -652,8 +666,12 @@ export const BUDGET_SCALE = 0.26;
  *  scaled by where its squad ranks inside that league. */
 export function clubStartingBudget(leagueId: string, rank: number, of: number): number {
   const raw = getLeague(leagueId).startingBudget * statureBudgetMultiplier(rank, of) * BUDGET_SCALE;
-  // Round to something a board would actually quote.
-  const step = raw >= 20_000_000 ? 1_000_000 : raw >= 2_000_000 ? 100_000 : 10_000;
+  // Round to something a board would actually quote. The thresholds and steps
+  // are money, so they ride MONEY_SCALE too — otherwise the granularity of a
+  // quote would change with the scale.
+  const step = raw >= 20_000_000 * MONEY_SCALE ? 1_000_000 * MONEY_SCALE
+    : raw >= 2_000_000 * MONEY_SCALE ? 100_000 * MONEY_SCALE
+    : 10_000 * MONEY_SCALE;
   return Math.max(step, Math.round(raw / step) * step);
 }
 
@@ -681,7 +699,7 @@ export function gateBase(leagueId: string): number {
  *  original week/prize unchanged. */
 export const CUP_WEEKS = [2, 4, 9, 14, 19, 25, 31];
 /** Prize for winning a tie in each cup round (last = winning the final). */
-export const CUP_PRIZES = [75_000, 150_000, 300_000, 600_000, 1_200_000, 2_500_000, 6_000_000];
+export const CUP_PRIZES = [75_000, 150_000, 300_000, 600_000, 1_200_000, 2_500_000, 6_000_000].map((v) => v * MONEY_SCALE);
 
 /** Continental Champions Cup: 24 clubs (top 8 seeds bye to the Round of 16,
  *  the rest fight through a two-legged playoff round), then two-legged R16 /
@@ -689,20 +707,20 @@ export const CUP_PRIZES = [75_000, 150_000, 300_000, 600_000, 1_200_000, 2_500_0
  *  round's first leg (or the final) is played; a two-legged round's second
  *  leg follows one week later. */
 export const CONTINENTAL_WEEKS = [6, 12, 20, 33, 44];
-export const CONTINENTAL_PRIZES = [1_500_000, 3_000_000, 6_000_000, 12_000_000, 25_000_000];
+export const CONTINENTAL_PRIZES = [1_500_000, 3_000_000, 6_000_000, 12_000_000, 25_000_000].map((v) => v * MONEY_SCALE);
 export const CONTINENTAL_SPOTS = 24;
 
 
 /** Cost to upgrade the youth academy to level 2 / level 3. */
-export const ACADEMY_UPGRADE_COST: Record<number, number> = { 2: 5_000_000, 3: 12_000_000 };
+export const ACADEMY_UPGRADE_COST: Record<number, number> = { 2: 5_000_000 * MONEY_SCALE, 3: 12_000_000 * MONEY_SCALE };
 
 /** Backroom staff: cost to reach each level (index = new level) and weekly wage per level. */
-export const STAFF_UPGRADE_COST = [0, 500_000, 1_500_000, 4_000_000];
-export const STAFF_WEEKLY_WAGE = 10_000; // per level, per role
+export const STAFF_UPGRADE_COST = [0, 500_000, 1_500_000, 4_000_000].map((v) => v * MONEY_SCALE);
+export const STAFF_WEEKLY_WAGE = 10_000 * MONEY_SCALE; // per level, per role
 export const STAFF_MAX_LEVEL = 3;
 
 /** Stadium expansion: gate income multiplier is 1 + 0.25 × (level − 1). */
-export const STADIUM_UPGRADE_COST: Record<number, number> = { 2: 8_000_000, 3: 20_000_000 };
+export const STADIUM_UPGRADE_COST: Record<number, number> = { 2: 8_000_000 * MONEY_SCALE, 3: 20_000_000 * MONEY_SCALE };
 
 /** In-match substitutions allowed at half time. */
 export const MAX_SUBS = 3;
