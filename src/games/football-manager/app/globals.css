@@ -1761,6 +1761,9 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%);
 }
 .fm-fmbar__play:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Gap 6 (Userbrain): "Kick off" needs room for a label, not just the icon
+   the pause/play state uses once the match is running. */
+.fm-fmbar__play--cta { flex: 0 0 116px; font-size: 13px; gap: 5px; }
 
 /* Commentary ticker */
 .fm-fmticker {
@@ -1992,6 +1995,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   .fm-fmbar__seg { padding: 0 10px; font-size: 13px; }
   .fm-fmbar__team { max-width: 56px; }
   .fm-fmbar__play { flex: 0 0 64px; }
+  .fm-fmbar__play--cta { flex: 0 0 96px; font-size: 11px; }
   .fm-fmbar__icon { flex: 0 0 36px; }
   .fm-fmbar__speed { flex: 0 0 32px; font-size: 11px; }
   .fm-fmbar__dots { display: none; }

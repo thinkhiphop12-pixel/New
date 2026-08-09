@@ -399,15 +399,25 @@ export default function MatchScreen({
           {speed}x
         </button>
         <button
-          className="fm-fmbar__play"
+          className={`fm-fmbar__play${!kickedOff ? ' fm-fmbar__play--cta' : ''}`}
           onClick={() => {
             if (!kickedOff) setKickedOff(true);
             else setPaused((p) => !p);
           }}
           disabled={finished}
-          aria-label={!kickedOff || paused ? 'Play' : 'Pause'}
+          aria-label={!kickedOff ? 'Kick off' : paused ? 'Play' : 'Pause'}
         >
-          {!kickedOff || paused ? <Icon name="play" size={15} /> : <Icon name="pause" size={15} />}
+          {/* Gap 6 (Userbrain): a bare icon on a 0-0 scoreline read as
+              decorative, not a control — testers repeatedly asked "what am I
+              waiting for?" A text label removes the guess at the one moment
+              it matters most: before kickoff. */}
+          {!kickedOff ? (
+            <>Kick off <Icon name="play" size={14} /></>
+          ) : paused ? (
+            <Icon name="play" size={15} />
+          ) : (
+            <Icon name="pause" size={15} />
+          )}
         </button>
       </div>
 

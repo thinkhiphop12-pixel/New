@@ -171,6 +171,16 @@ export default function Dashboard({
               >
                 <Icon name={simRunning ? 'pause' : 'play'} size={14} /> {simRunning ? 'Stop' : 'Next event'}
               </button>
+              {/* Gap 5 (Userbrain): a tester mistook Press Conference for team
+                  setup because nothing on this screen pointed at Tactics
+                  before matchday — put a direct link right next to it. */}
+              <button
+                type="button"
+                className="fm-btn fm-btn--ghost fm-btn--small"
+                onClick={() => onOpenScreen('tactics')}
+              >
+                <Icon name="tactics" size={14} /> Tactics
+              </button>
               {opponent && (
                 <button
                   className="fm-btn fm-btn--ghost fm-btn--small"

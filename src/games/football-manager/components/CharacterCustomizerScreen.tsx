@@ -818,11 +818,20 @@ export default function CharacterCustomizerScreen({
           gap: 0.75rem;
         }
 
+        /* Gap 18 (Userbrain): "Oh, what did I just do?" — a value here
+           changes the instant it's tapped, with no confirm step, so an
+           accidental brush against a neighbour while scrolling past a busy
+           row (Prior Background, Coaching Badges) reads as a silent,
+           unexplained change. No scroll-to-value binding exists in this
+           file — investigated and ruled out — so the fix is a bigger,
+           better-separated tap target rather than a scroll-lock. */
         .fm-btn.fm-btn--small {
           display: inline-flex;
           align-items: center;
           justify-content: center;
           gap: 0.4rem;
+          min-height: 40px;
+          padding: 0.5rem 0.9rem;
         }
 
         .fm-btn.fm-btn--small:disabled { opacity: 0.4; cursor: not-allowed; }
