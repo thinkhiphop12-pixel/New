@@ -3,13 +3,14 @@
 import { useState, type CSSProperties } from 'react';
 import type { GameState, InboxCategory, InboxItem, Player } from '@/engine/types';
 import { markAllInboxRead, markInboxRead } from '@/engine/seasonProgression';
-import { respondToComplaint, renewContract } from '@/engine/transferMarket';
+import { respondToComplaint } from '@/engine/transferMarket';
 import { formatMoney } from '@/engine/utils';
 import { initials, ratingRingColor, readableTextOn, tint } from './visuals';
 import { Icon, type IconName } from './Icon';
 import Flag, { hasFlag } from './Flag';
 import { Crest } from './Crest';
 import PlayerModal from './PlayerModal';
+import ContractOfferPanel from './ContractOfferPanel';
 import type { ScreenId } from './hubNav';
 
 const CATEGORY_ICON: Record<InboxCategory, IconName> = {
@@ -149,6 +150,7 @@ export default function InboxScreen({
   const [openId, setOpenId] = useState<number | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
   const [viewPlayerId, setViewPlayerId] = useState<number | null>(null);
+  const [contractPlayerId, setContractPlayerId] = useState<number | null>(null);
   const items = state.inbox;
   const unread = items.filter((i) => !i.read).length;
 
@@ -301,8 +303,6 @@ export default function InboxScreen({
     onChange(next);
   };
 
-  const renewCost = player ? player.wage * 10 : 0;
-
   return (
     <div className="fm-inbox">
       <div className="fm-inbox__article-head">
@@ -362,11 +362,9 @@ export default function InboxScreen({
         {current.kind === 'contractExpiring' && player && (
           <button
             className="fm-btn fm-btn--secondary fm-btn--small"
-            disabled={renewCost > state.budget}
-            title={renewCost > state.budget ? "Can't afford the signing bonus right now" : undefined}
-            onClick={() => onChange(renewContract(state, player.id))}
+            onClick={() => setContractPlayerId(player.id)}
           >
-            Offer new deal — {formatMoney(renewCost)} bonus
+            Open contract negotiation
           </button>
         )}
         {current.kind === 'scoutLead' && onOpenScreen && (
@@ -398,6 +396,14 @@ export default function InboxScreen({
           club={state.clubs.find((c) => c.id === state.players[viewPlayerId].clubId)}
           onChange={onChange}
           onClose={() => setViewPlayerId(null)}
+        />
+      )}
+      {contractPlayerId !== null && state.players[contractPlayerId] && (
+        <ContractOfferPanel
+          state={state}
+          player={state.players[contractPlayerId]}
+          onChange={onChange}
+          onClose={() => setContractPlayerId(null)}
         />
       )}
     </div>

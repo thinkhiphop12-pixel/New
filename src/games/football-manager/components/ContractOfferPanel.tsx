@@ -7,13 +7,13 @@ import { renewContract } from '@/engine/transferMarket';
 
 export default function ContractOfferPanel({ state, player, onChange, onClose }: { state: GameState; player: Player; onChange: (state: GameState) => void; onClose: () => void }) {
   const [length, setLength] = useState(3);
-  const [salary, setSalary] = useState(Math.max(player.wage, 50000));
-  const [signing, setSigning] = useState(player.wage * 10);
+  const [salary, setSalary] = useState(player.wage);
+  const [signing, setSigning] = useState(2500000);
   const [appearance, setAppearance] = useState(15000);
   const [loyalty, setLoyalty] = useState(1000000);
   const [clause, setClause] = useState(80000000);
   const [error, setError] = useState('');
-  const remaining = state.budget - signing;
+  const remaining = state.budget - salary - (signing + appearance + loyalty) / 52;
   const advice = salary < player.wage ? 'Offer is below player expectations.' : salary >= player.wage * 1.25 && signing >= 3000000 ? 'Excellent offer — likely to be accepted.' : 'Player expects a higher base salary. Consider improving the offer.';
   const field = (label: string, value: number, set: (v: number) => void, step: number, suffix: string) => <label className="fm-contract-field"><span>{label}</span><span className="fm-contract-control"><button type="button" onClick={() => set(Math.max(0, value - step))}>−</button><input aria-label={label} value={value} onChange={(e) => set(Math.max(0, Number(e.target.value.replace(/\D/g, ''))))} /><button type="button" onClick={() => set(value + step)}>+</button><em>{suffix}</em></span></label>;
   const accept = () => { if (salary < 0 || signing < 0 || appearance < 0 || loyalty < 0 || clause < 0 || length < 1) return setError('All values must be valid and non-negative.'); if (signing > state.budget) return setError('Signing bonus exceeds the available budget.'); onChange(renewContract(state, player.id)); onClose(); };
