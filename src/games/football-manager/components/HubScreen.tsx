@@ -38,8 +38,13 @@ import {
 } from './hubNav';
 
 /**
- * The in-game shell: a five-entry rail (Hub + the four groups) beside the
- * current screen, with the group's sibling screens as a sub-tab strip.
+ * The in-game shell: a four-entry rail beside the current screen, with the
+ * active group's sibling screens as a sub-tab strip.
+ *
+ * The rail used to carry a fifth, hard-coded "Hub" button next to a
+ * "Matchday" group whose landing screen was the very same `Dashboard` this
+ * one rendered — two destinations for one screen. Hub is now itself a group
+ * (see hubNav.ts), so `route === null` simply means its Overview.
  *
  * `route` is owned by FootballManagerGame, not by this component. HubScreen
  * is remounted on every top-level view change (the `key={view}` fade
@@ -69,18 +74,20 @@ export default function HubScreen({
    *  cancel it instead of starting a second one. */
   simRunning: boolean;
 }) {
-  const group = route === null ? null : groupOf(route);
+  // `null` is the Hub landing, which is now just Hub → Overview.
+  const activeRoute: ScreenId = route ?? 'overview';
+  const group = groupOf(activeRoute);
   // Cups/Europe only show once the club is actually in them (engine/cups.ts,
   // engine/europeanCup.ts) — a tab that always says "nothing here" reads as
   // broken. Filtered here rather than in GROUPS itself, since GROUPS is a
   // static, module-level structure with no access to per-save state.
-  const visibleScreens = group?.screens.filter((s) => isScreenVisible(state, s.id)) ?? [];
+  const visibleScreens = group.screens.filter((s) => isScreenVisible(state, s.id));
 
   // If the tab currently open just became hidden (cup elimination, failure
   // to qualify for Europe), fall back to the group's landing screen rather
   // than stranding the player on a tab that no longer renders in the strip.
   useEffect(() => {
-    if (route && group && !isScreenVisible(state, route)) {
+    if (route && !isScreenVisible(state, route)) {
       onRoute(firstScreenOf(group.id));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,19 +105,19 @@ export default function HubScreen({
   // a real group *change* so nothing steals focus on mount or when switching
   // screens within a group.
   const activeTabRef = useRef<HTMLButtonElement>(null);
-  const prevGroup = useRef<GroupId | null>(null);
+  // Seeded with the group we mount on: `group.id` is never null now, so a
+  // ref starting at `null` would read as a change and steal focus on mount.
+  const prevGroup = useRef<GroupId>(group.id);
   useEffect(() => {
-    const id = group?.id ?? null;
-    if (id && id !== prevGroup.current) activeTabRef.current?.focus();
-    prevGroup.current = id;
-  }, [group?.id]);
+    if (group.id !== prevGroup.current) activeTabRef.current?.focus();
+    prevGroup.current = group.id;
+  }, [group.id]);
 
   // Automatic activation, which is the right ARIA pattern for tabs that swap
   // instantly with no loading step.
   const onTabKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (!group) return;
     const ids = visibleScreens.map((s) => s.id);
-    const i = ids.indexOf(route as ScreenId);
+    const i = ids.indexOf(activeRoute);
     let next: ScreenId | undefined;
     if (e.key === 'ArrowRight') next = ids[(i + 1) % ids.length];
     else if (e.key === 'ArrowLeft') next = ids[(i - 1 + ids.length) % ids.length];
@@ -122,7 +129,7 @@ export default function HubScreen({
   };
 
   const screen = () => {
-    switch (route) {
+    switch (activeRoute) {
       case 'overview': return <Dashboard state={state} onChange={onChange} onAbandon={onAbandon} onOpenScreen={onRoute} onSimulate={onSimulate} simRunning={simRunning} />;
       case 'calendar': return <CalendarScreen state={state} onSimulate={onSimulate} simRunning={simRunning} />;
       case 'fixtures': return <FixturesScreen state={state} />;
@@ -153,22 +160,12 @@ export default function HubScreen({
   return (
     <div className="fm-hub-shell">
       {/* One rail for both layouts: a sticky icon column at ≥900px, a fixed
-          thumb dock below it. Five destinations fit a phone directly, which
+          thumb dock below it. Four destinations fit a phone directly, which
           is why the old "More" overflow sheet is gone. */}
       <nav className="fm-rail" aria-label="Game sections">
-        <button
-          type="button"
-          className={`fm-rail__item${route === null ? ' active' : ''}`}
-          onClick={() => onRoute(null)}
-          aria-current={route === null ? 'page' : undefined}
-          title="Hub"
-        >
-          <Icon name="home" size={19} className="fm-rail__icon" />
-          <span className="fm-rail__label">Hub</span>
-        </button>
         {GROUPS.map((g) => {
           const count = groupBadge(state, g.id);
-          const on = group?.id === g.id;
+          const on = group.id === g.id;
           return (
             <button
               key={g.id}
@@ -192,61 +189,55 @@ export default function HubScreen({
       </nav>
 
       <div className="fm-hub-shell__main">
-        {group ? (
-          <>
-            <div className="fm-subnav">
-              <span className="fm-subnav__group">
-                <Icon name={group.icon} size={13} /> {group.label}
-              </span>
-              <div
-                className="fm-subnav__tabs"
-                role="tablist"
-                aria-label={`${group.label} screens`}
-                onKeyDown={onTabKeyDown}
-              >
-                {visibleScreens.map((s) => {
-                  const on = s.id === route;
-                  const count = screenBadge(state, s.id);
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      id={`fm-subtab-${s.id}`}
-                      role="tab"
-                      aria-selected={on}
-                      aria-controls="fm-screen-panel"
-                      tabIndex={on ? 0 : -1}
-                      ref={on ? activeTabRef : undefined}
-                      className={`fm-subtab${on ? ' active' : ''}`}
-                      onClick={() => onRoute(s.id)}
-                    >
-                      <Icon name={s.icon} size={14} className="fm-subtab__icon" />
-                      <span className="fm-subtab__label">{s.label}</span>
-                      {count > 0 && (
-                        <span className="fm-subtab__badge">
-                          {count}
-                          <span className="fm-u-sr"> needing attention</span>
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+        <div className="fm-subnav">
+          <span className="fm-subnav__group">
+            <Icon name={group.icon} size={13} /> {group.label}
+          </span>
+          <div
+            className="fm-subnav__tabs"
+            role="tablist"
+            aria-label={`${group.label} screens`}
+            onKeyDown={onTabKeyDown}
+          >
+            {visibleScreens.map((s) => {
+              const on = s.id === activeRoute;
+              const count = screenBadge(state, s.id);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  id={`fm-subtab-${s.id}`}
+                  role="tab"
+                  aria-selected={on}
+                  aria-controls="fm-screen-panel"
+                  tabIndex={on ? 0 : -1}
+                  ref={on ? activeTabRef : undefined}
+                  className={`fm-subtab${on ? ' active' : ''}`}
+                  onClick={() => onRoute(s.id)}
+                >
+                  <Icon name={s.icon} size={14} className="fm-subtab__icon" />
+                  <span className="fm-subtab__label">{s.label}</span>
+                  {count > 0 && (
+                    <span className="fm-subtab__badge">
+                      {count}
+                      <span className="fm-u-sr"> needing attention</span>
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-            <div
-              className="fm-hub-panel"
-              id="fm-screen-panel"
-              role="tabpanel"
-              aria-labelledby={`fm-subtab-${route}`}
-              tabIndex={-1}
-            >
-              {screen()}
-            </div>
-          </>
-        ) : (
-          <Dashboard state={state} onChange={onChange} onAbandon={onAbandon} onOpenScreen={onRoute} onSimulate={onSimulate} simRunning={simRunning} />
-        )}
+        <div
+          className="fm-hub-panel"
+          id="fm-screen-panel"
+          role="tabpanel"
+          aria-labelledby={`fm-subtab-${activeRoute}`}
+          tabIndex={-1}
+        >
+          {screen()}
+        </div>
       </div>
     </div>
   );
