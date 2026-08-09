@@ -30,7 +30,7 @@ import {
   MID_SEASON_RESIGN_REP_COST, boardObjectiveFor, clubBudget, interviewOdds, makeVacancy, tickJobMarket,
 } from './jobMarket';
 import { pushInbox } from './inbox';
-import { calibrateClubWages, calibrateWages, clubWageScale, tickFinances, weeklyMatchdayIncome } from './finances';
+import { affordableWageBill, calibrateClubWages, calibrateWages, clubWageScale, tickFinances, weeklyMatchdayIncome } from './finances';
 import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
 import { tickFacilitiesWeek } from './facilities';
 import { applyWeeklySchedule } from './schedule';
@@ -1230,6 +1230,12 @@ export function switchJob(state: GameState, clubId: number, offer?: JobOffer): G
   if (!club) return state;
   s.userClubId = clubId;
   s.budget = (offer?.budget ?? clubBudget(s, clubId)) + s.manager.reputation * 100_000;
+  // Your old club's wage ceiling is not this club's. Take the greater of what
+  // the new squad already earns and what its revenue sanctions, so inheriting
+  // an over-waged squad never forces an immediate fire-sale.
+  s.wageBudget = Math.round(
+    Math.max(clubWageBill(s, clubId), affordableWageBill(s, club)) * WAGE_BUDGET_HEADROOM
+  );
   s.chemistry = 45;
   s.morale = MORALE_START;
   s.fanConfidence = 60;
@@ -1856,6 +1862,16 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     const reinvested = Math.round((s.budget - warChest) * 0.75);
     s.budget -= reinvested;
     reinvestNote = `The board reinvests ${money(reinvested)} of the season's surplus into wages and facilities.`;
+  }
+
+  // The board re-sets the wage ceiling for the tier the club is now in — a
+  // promoted side can pay top-flight wages, and nobody is forced to sell just
+  // because they went down.
+  const nextClub = s.clubs.find((c) => c.id === s.userClubId);
+  if (nextClub) {
+    s.wageBudget = Math.round(
+      Math.max(clubWageBill(s, s.userClubId), affordableWageBill(s, nextClub)) * WAGE_BUDGET_HEADROOM
+    );
   }
 
   // New season setup.

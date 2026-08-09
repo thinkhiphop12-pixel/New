@@ -452,6 +452,20 @@ export function calibrateWages(state: GameState): void {
   for (const club of state.clubs) calibrateClubWages(state, club);
 }
 
+/**
+ * The weekly wage bill this club's revenue can carry — what a board would
+ * sanction, before the headroom the caller adds on top.
+ *
+ * Seeding the ceiling from the inherited squad alone (the original approach)
+ * quietly assumed the squad you inherit is the squad the club can afford.
+ * That holds on day one and nowhere else: win promotion and your ceiling
+ * stays at the tier you left, so the board refuses top-flight wages in a
+ * top-flight league.
+ */
+export function affordableWageBill(state: GameState, club: Club): number {
+  return (TARGET_WAGE_SHARE * clubFootballRevenue(state, club)) / YEAR_WEEKS;
+}
+
 /* =========================================================================
    Matchday income — replaces the flat GATE_BASE lookup
    ========================================================================= */
