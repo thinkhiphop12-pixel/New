@@ -479,7 +479,7 @@ export default function TransfersScreen({
               across, and the panel's own "All negotiations" / "Close" actions
               only mean anything if there is something to go back to. */}
           {activeNeg ? (
-            <NegotiationPanel state={state} neg={activeNeg} onApply={apply} onBack={() => setActiveNegId(null)} />
+            <ContractNegotiationPanel state={state} neg={activeNeg} onApply={apply} onBack={() => setActiveNegId(null)} />
           ) : (
             <div className="fm-panel">
               <p className="fm-label" style={{ marginTop: 0 }}>Sent</p>
@@ -883,6 +883,53 @@ function OfferField({
 /** Read-only dropdown-alike, for a select whose value the stage has fixed. */
 function LockedValue({ children }: { children: React.ReactNode }) {
   return <div className="fm-stepper fm-stepper--locked"><span className="fm-stepper__value">{children}</span></div>;
+}
+
+function ContractNegotiationPanel({
+  state, neg, onApply, onBack,
+}: {
+  state: GameState;
+  neg: Negotiation;
+  onApply: (r: { state: GameState; ok: boolean; message: string }) => void;
+  onBack: () => void;
+}) {
+  const player = state.players[neg.playerId];
+  const [years, setYears] = useState(neg.contractYears || 3);
+  const [baseSalary, setBaseSalary] = useState(neg.lastWage ?? neg.neg.wageDemand ?? player?.wage ?? 260000);
+  const [signingBonus, setSigningBonus] = useState(neg.signingBonus || 2500000);
+  const [appearanceBonus, setAppearanceBonus] = useState(15000);
+  const [loyaltyBonus, setLoyaltyBonus] = useState(1000000);
+  const [releaseClause, setReleaseClause] = useState(neg.releaseClause || 80000000);
+  const [error, setError] = useState<string | null>(null);
+  if (!player) return null;
+
+  const wageRoom = wageCeiling(state) - weeklyWageBill(state);
+  const totalWeeklyCost = baseSalary + (signingBonus + loyaltyBonus + appearanceBonus) / 52;
+  const remaining = wageRoom - totalWeeklyCost;
+  const previous = neg.lastWage ? { baseSalary: neg.lastWage, contractLength: neg.contractYears, signingBonus: neg.signingBonus, releaseClause: neg.releaseClause } : null;
+  const mood = !previous ? 'NEUTRAL' : baseSalary >= previous.baseSalary && signingBonus >= previous.signingBonus ? 'HAPPY' : baseSalary < previous.baseSalary || signingBonus < previous.signingBonus ? 'ANGRY' : 'NEUTRAL';
+  const advice = baseSalary < 240000 ? 'Offer is below player expectations.' : baseSalary >= 280000 && signingBonus >= 3000000 ? 'Excellent offer — likely to be accepted.' : `Player expects a higher base salary. Consider increasing to ${formatMoney(280000)} p/w to match squad leaders.`;
+  const change = previous ? `${baseSalary - previous.baseSalary >= 0 ? '+' : ''}${formatMoney(baseSalary - previous.baseSalary)} p/w` : 'No previous offer recorded';
+  const adjust = (setter: (n: number) => void, value: number, step: number) => (delta: number) => setter(Math.max(0, value + delta * step));
+  const submit = () => {
+    if (years < 1 || baseSalary < 0 || signingBonus < 0 || appearanceBonus < 0 || loyaltyBonus < 0 || releaseClause < 0) return setError('Values cannot be negative and contract length must be at least one year.');
+    if (baseSalary > wageRoom) return setError('Base salary exceeds the remaining wage budget.');
+    setError(null);
+    onApply(submitTermsOffer(state, neg.id, baseSalary, { contractYears: years, signingBonus, releaseClause }));
+  };
+  const Field = ({ label, value, setValue, step, suffix }: { label: string; value: number; setValue: (n: number) => void; step: number; suffix?: string }) => (
+    <label className="fm-contract-field"><span>{label}</span><span className="fm-contract-control"><button type="button" aria-label={`Decrease ${label}`} onClick={() => adjust(setValue, value, step)(-1)}>-</button><input aria-label={label} inputMode="numeric" value={value} onChange={(e) => setValue(Number(e.target.value.replace(/\\D/g, '')) || 0)} /><button type="button" aria-label={`Increase ${label}`} onClick={() => adjust(setValue, value, step)(1)}>+</button>{suffix && <em>{suffix}</em>}</span></label>
+  );
+
+  return <div className="fm-contract-panel">
+    <header className="fm-contract-header"><div className="fm-contract-avatar" aria-hidden>{player.name.slice(0, 1)}</div><div><h2>{player.name}</h2><p>{player.pos} · {player.age} years old · Date of birth: 1 Jan {state.seasonYear - player.age}</p></div><div className="fm-contract-header__rating"><strong>{player.rating}</strong><span>★ {((player.rating / 10) - 0.0).toFixed(2)}</span></div></header>
+    <div className="fm-contract-grid">
+      <section className="fm-contract-card"><h3>PLAYER STATUS</h3>{[['VALUE', formatMoney(player.value)], ['WAGE', `${formatMoney(player.wage)} p/w`], ['CONTRACT ENDS', player.contractEnd], ['SQUAD STATUS', 'Key Player'], ['INTEREST', `${neg.rival ? '2' : '0'} teams`]].map(([label, value]) => <div className="fm-contract-stat" key={label}><span>{label}</span><strong>{value}</strong></div>)}</section>
+      <section className="fm-contract-card"><h3>CURRENT OFFER</h3><div className="fm-contract-badge">Contract Extension</div><Field label="CONTRACT LENGTH" value={years} setValue={setYears} step={1} suffix="years" /><Field label="BASE SALARY" value={baseSalary} setValue={setBaseSalary} step={5000} suffix="p/w" /><Field label="SIGNING BONUS" value={signingBonus} setValue={setSigningBonus} step={500000} suffix="£" /><Field label="APPEARANCE BONUS" value={appearanceBonus} setValue={setAppearanceBonus} step={5000} suffix="per app" /><Field label="LOYALTY BONUS" value={loyaltyBonus} setValue={setLoyaltyBonus} step={500000} suffix="annual" /><Field label="RELEASE CLAUSE" value={releaseClause} setValue={setReleaseClause} step={5000000} suffix="£" /><div className={`fm-contract-budget${remaining < 0 ? ' is-negative' : ''}`}><span>WAGE BUDGET REMAINING</span><strong>{formatMoney(remaining)} p/w</strong></div><div className="fm-contract-advice"><span>ASSISTANT ADVICE</span><p>{advice}</p></div></section>
+      <section className="fm-contract-card"><h3>PREVIOUS OFFER</h3>{previous ? <><Field label="CONTRACT LENGTH" value={previous.contractLength} setValue={() => undefined} step={1} suffix="years" /><div className="fm-contract-readonly">BASE SALARY <strong>{formatMoney(previous.baseSalary)} p/w</strong></div><div className="fm-contract-readonly">SIGNING BONUS <strong>{formatMoney(previous.signingBonus)}</strong></div><div className="fm-contract-readonly">RELEASE CLAUSE <strong>{formatMoney(previous.releaseClause)}</strong></div></> : <p className="fm-contract-empty">No previous offer recorded</p>}<div className={`fm-contract-mood mood-${mood.toLowerCase()}`}><span>MOOD</span><strong>{mood === 'HAPPY' ? 'Happy' : mood === 'ANGRY' ? 'Angry' : 'Neutral'}</strong><small>{change}</small></div></section>
+    </div>
+    {error && <p className="fm-contract-error">{error}</p>}<footer className="fm-contract-footer"><button className="fm-btn fm-btn--ghost" onClick={onBack}>Close</button><button className="fm-btn fm-btn--danger" onClick={() => { onApply(walkAwayNegotiation(state, neg.id)); onBack(); }}>Reject Offer</button><button className="fm-btn fm-btn--primary" disabled={remaining < 0 || neg.awaiting === 'club'} title={remaining < 0 ? 'Insufficient wage budget' : undefined} onClick={submit}>Accept Offer</button></footer>
+  </div>;
 }
 
 type NegTab = 'current' | 'previous' | 'interest';
