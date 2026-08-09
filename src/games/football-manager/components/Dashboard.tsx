@@ -83,7 +83,6 @@ export default function Dashboard({
   const scoutReports = state.scouting?.playerReports?.length ?? 0;
 
   const moraleTone = state.morale >= 60 ? 'var(--green)' : state.morale >= 40 ? 'var(--gold)' : 'var(--red)';
-  const boardTone = state.board.confidence >= 60 ? 'var(--green)' : state.board.confidence >= 30 ? 'var(--gold)' : 'var(--red)';
   const onTrack = position > 0 && position <= state.board.minPosition;
 
   // "What needs my attention" — every row routes somewhere real. This is the
@@ -279,6 +278,11 @@ export default function Dashboard({
         {/* Transfers & scouting: budget, offers, recent leads. */}
         <div className="fm-mod">
           <div className="fm-mod__head"><h2 className="fm-mod__title">Transfers & scouting</h2></div>
+          {/* Board confidence and Fan confidence live on the Club hub's own
+              Overview (Pulse tiles) — repeating them here added nothing
+              actionable from this module, just the same two numbers twice.
+              Budget and Morale stay: both are what this module's own
+              Transfers/Scouting buttons act on. */}
           <div className="fm-stats-strip">
             <div className="fm-stat">
               <span className="fm-stat__label">Budget</span>
@@ -287,14 +291,6 @@ export default function Dashboard({
             <div className="fm-stat">
               <span className="fm-stat__label">Morale</span>
               <span className="fm-stat__value" style={{ color: moraleTone }}>{state.morale}</span>
-            </div>
-            <div className="fm-stat">
-              <span className="fm-stat__label">Board</span>
-              <span className="fm-stat__value" style={{ color: boardTone }}>{state.board.confidence}</span>
-            </div>
-            <div className="fm-stat">
-              <span className="fm-stat__label">Fans</span>
-              <span className="fm-stat__value" style={{ color: state.fanConfidence >= 50 ? 'var(--green)' : 'var(--red)' }}>{state.fanConfidence}</span>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>

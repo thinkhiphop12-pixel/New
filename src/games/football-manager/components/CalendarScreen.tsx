@@ -89,17 +89,15 @@ export default function CalendarScreen({
   return (
     <>
       <div className="fm-panel">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <div>
-            <p className="fm-label" style={{ margin: 0 }}>Calendar</p>
-            <p className="fm-hint" style={{ textAlign: 'left', margin: '2px 0 0' }}>
-              Next four weeks. Simulate straight to a day — the sim still stops early for anything that needs you.
-            </p>
-          </div>
-          <button type="button" className="fm-btn fm-btn--primary fm-btn--small" onClick={() => onSimulate()}>
-            <Icon name={simRunning ? 'pause' : 'play'} size={14} /> {simRunning ? 'Stop' : 'Next event'}
-          </button>
-        </div>
+        {/* No header "Next event" button here — the persistent action dock
+            at the bottom of every Hub tab already has one, always visible
+            on this screen too. Repeating it here was the same control
+            twice on screen at once. This screen's own contribution is
+            picking a *target* day via "Simulate to here" below. */}
+        <p className="fm-label" style={{ margin: 0 }}>Calendar</p>
+        <p className="fm-hint" style={{ textAlign: 'left', margin: '2px 0 0' }}>
+          Next four weeks. Simulate straight to a day — the sim still stops early for anything that needs you.
+        </p>
       </div>
 
       <div className="fm-panel">
