@@ -20,6 +20,7 @@ import {
 import { getRole } from '@/lib/playerRoles';
 import { PitchMarkings, PlayerToken } from './visuals';
 import { Icon, type IconName } from './Icon';
+import { pushToast } from './ToastQueue';
 
 const ROUTINE_LABEL: Record<CornerRoutine, string> = {
   'near-post': 'Near Post',
@@ -137,6 +138,7 @@ export default function TacticsScreen({
       lineup: newLineup,
       formationId: id, // legacy
     });
+    pushToast(`In-possession formation set to ${getFormation(id).name}`, 'success');
   };
 
   const setOOPFormation = (id: string) => {
@@ -146,6 +148,7 @@ export default function TacticsScreen({
         outOfPossessionId: id,
       },
     });
+    pushToast(`Out-of-possession formation set to ${getFormation(id).name}`, 'success');
   };
 
   /* --- Team identity ---------------------------------------------------- */
@@ -187,14 +190,17 @@ export default function TacticsScreen({
     const club = clubs.find((c) => c.id === state.userClubId)!;
     seedFamiliarityForSwitch(club, style);
     update({ playStyle: style, clubs });
+    pushToast(`Team identity set to ${IDENTITY_LABEL[style]}`, 'success');
   };
 
   const setMentality = (mentality: MentalityId) => {
     update({ tactics: { ...state.tactics, mentality } });
+    pushToast(`Mentality set to ${MENTALITIES[mentality].label}`, 'success');
   };
 
   const setStyle = (style: TacticStyle) => {
     update({ tactics: { ...state.tactics, style } });
+    pushToast(`Tactic style set to ${style[0].toUpperCase()}${style.slice(1)}`, 'success');
   };
 
   const setPressing = (pressing: Pressing) => {
@@ -267,6 +273,17 @@ export default function TacticsScreen({
       {subTab === 'formation' && (
         <div role="tabpanel">
           <>
+            {/* Gap 12 (Userbrain): "I picked Ultra Attacking but it still
+                showed Balanced" — Ultra Attacking is a Mentality (below), and
+                Balanced is the separate team Identity (Style tab). Both are
+                real, both apply, but only one was visible from here. Show
+                both together so a mentality change is never mistaken for a
+                no-op on the identity label. */}
+            <div className="fm-hint" style={{ textAlign: 'left', margin: '0 0 8px' }}>
+              Identity: <b style={{ color: 'var(--text)' }}>{IDENTITY_LABEL[currentStyle]}</b>
+              {' · '}
+              Mentality: <b style={{ color: 'var(--text)' }}>{MENTALITIES[normalizeMentality(state.tactics.mentality)].label}</b>
+            </div>
             <div className="fm-pills" style={{ marginBottom: 8 }}>
             <button className={`fm-pill${previewShape === 'ip' ? ' active' : ''}`} onClick={() => setPreviewShape('ip')}>
               In possession
