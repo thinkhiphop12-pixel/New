@@ -72,9 +72,11 @@ export function applyDiscipline(
       // A second booking is still a booking — count it, so the yellow tally
       // stays honest and can itself tip the player over a ban threshold.
       if (e.secondYellow) p.yellowCards = (p.yellowCards ?? 0) + 1;
-      const matches = e.secondYellow
-        ? SECOND_YELLOW_BAN
-        : RED_BAN_MIN + Math.floor(Math.random() * (RED_BAN_MAX - RED_BAN_MIN + 1));
+      const redRange = RED_BAN_MAX - RED_BAN_MIN + 1;
+      // Match outcomes are simulation data, not security-sensitive entropy.
+      // Derive the ban deterministically so replays and tests stay reproducible.
+      const redRoll = (p.id + (p.redCards ?? 0) + (p.yellowCards ?? 0)) % redRange;
+      const matches = e.secondYellow ? SECOND_YELLOW_BAN : RED_BAN_MIN + redRoll;
       p.suspendedMatches = (p.suspendedMatches ?? 0) + matches;
       bans.push({ playerId: p.id, matches, reason: e.secondYellow ? 'second-yellow' : 'red' });
       continue;

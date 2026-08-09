@@ -47,9 +47,9 @@ export default function PreMatchWarningsModal({
   const benchRisky = (playerId: number) => {
     const out = state.players[playerId];
     const taken = new Set(lineup.filter((id): id is number => id !== null));
-    const bench = state.clubs
-      .find((c) => c.id === state.userClubId)!
-      .playerIds
+    const userClub = state.clubs.find((c) => c.id === state.userClubId);
+    if (!userClub) return;
+    const bench = userClub.playerIds
       .map((id) => state.players[id])
       .filter((p): p is NonNullable<typeof p> => !!p && !taken.has(p.id) && p.injuryWeeks === 0 && !(p.suspendedMatches ?? 0))
       .sort((a, b) => b.rating * b.form - a.rating * a.form);
@@ -108,7 +108,9 @@ export default function PreMatchWarningsModal({
                   <button
                     type="button"
                     className="fm-btn fm-btn--ghost fm-btn--small"
-                    onClick={() => benchRisky(w.playerId!)}
+                    onClick={() => {
+                      if (w.playerId !== undefined) benchRisky(w.playerId);
+                    }}
                   >
                     Substitute
                   </button>
