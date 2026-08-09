@@ -59,9 +59,11 @@ export function LassoKentProvider({
       {showFloatingIcon && (
         <LassoKentFloatingIcon
           onClick={() => api.setOpen(!api.open)}
-          // Pulse when there's an unanswered question sitting behind a
-          // closed window — otherwise the icon just bobs quietly.
-          attention={!api.open && api.state === 'QUESTION'}
+          // Pulses whenever something happened behind a closed window — an
+          // unanswered question, or an auto-pilot resolution nobody watched
+          // (see `unseen` on the machine) — so "do it for me" mode never
+          // resolves in total silence.
+          attention={!api.open && (api.state === 'QUESTION' || api.unseen)}
           offline={api.royOffline}
         />
       )}
