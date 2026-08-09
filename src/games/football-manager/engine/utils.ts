@@ -38,18 +38,52 @@ export function formatMoney(v: number): string {
   return `£${v}`;
 }
 
-/** Weekly wage for a player — must stay in sync with scripts/build-gamedata.mjs. */
-export function weeklyWage(value: number, rating: number): number {
-  return Math.max(500, Math.round((value * 0.0005 + rating * 15) / 100) * 100);
+/**
+ * Every monetary figure in the game is quoted on this multiple of the base
+ * economy the formulas were originally written against.
+ *
+ * The base economy is internally consistent but reads about a twelfth of real
+ * football: a 91-rated forward valued at £10m and paid £35k/week, a title
+ * favourite handed a £17m transfer budget. Multiplying every money quantity by
+ * the same constant leaves every ratio — squad cost against revenue, budget
+ * against asking price, wage against wage — exactly where it was, and only
+ * changes what the numbers read like. At 12 that forward is worth £120m on
+ * £420k/week and the budget is £203m, which is the scale players expect.
+ *
+ * It is a presentation scale, not a balance lever. Changing it must not change
+ * how the game plays; if it does, something is reading a money constant that
+ * has not been scaled with the rest. Non-money quantities derived from money
+ * fields are the trap — stadium capacity comes off `gateBase` and must divide
+ * this back out (see engine/facilities.ts).
+ */
+export const MONEY_SCALE = 12;
+
+/** Lowest weekly wage anyone is on. Only binds where `scale` is well below 1 —
+ *  the semi-professional end of the smallest leagues, where a £500 floor
+ *  across a 25-man squad cost more than the club's entire modelled revenue and
+ *  put it in permanent breach of the squad-cost limit from kick-off. */
+export const WAGE_FLOOR = 200 * MONEY_SCALE;
+
+/** Weekly wage for a player — must stay in sync with scripts/build-gamedata.mjs.
+ *
+ *  The formula is calibrated against the game's *base* economy, which is
+ *  roughly the fourth tier of English football. Richer divisions pay a
+ *  multiple of it: pass `scale` from `clubWageScale` (engine/finances.ts),
+ *  which derives that multiple from the club's own revenue rather than from
+ *  its league's level — "level 1" spans both the Premier League and the
+ *  Scottish Premiership, whose revenues differ by an order of magnitude. */
+export function weeklyWage(value: number, rating: number, scale = 1): number {
+  const base = value * 0.0005 + rating * 15;
+  return Math.max(WAGE_FLOOR, Math.round((base * scale) / 100) * 100);
 }
 
 /** Market value formula — must stay in sync with scripts/build-gamedata.mjs. */
 export function marketValue(rating: number, age: number): number {
   const base = 50_000 * Math.pow(1.135, rating - 50);
   const ageMult = age <= 23 ? 1.35 : age <= 28 ? 1.1 : age <= 31 ? 0.8 : 0.5;
-  const v = base * ageMult;
-  const step = v > 20e6 ? 1e6 : v > 2e6 ? 250e3 : 50e3;
-  return Math.max(100_000, Math.round(v / step) * step);
+  const v = base * ageMult * MONEY_SCALE;
+  const step = v > 20e6 * MONEY_SCALE ? 1e6 * MONEY_SCALE : v > 2e6 * MONEY_SCALE ? 250e3 * MONEY_SCALE : 50e3 * MONEY_SCALE;
+  return Math.max(100_000 * MONEY_SCALE, Math.round(v / step) * step);
 }
 
 /* --- Contract windows -----------------------------------------------------

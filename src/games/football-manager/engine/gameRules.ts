@@ -1,4 +1,5 @@
 import type { Division, FormationDef, LeagueDef, Position } from './types';
+import { MONEY_SCALE } from './utils';
 
 /** Calendar weeks in a season. League fixtures occupy 46 of them; the two
  *  WINTER_BREAK weeks carry no domestic league football (gap item 41). */
@@ -607,13 +608,85 @@ export const DIVISION_TO_LEAGUE: Record<Division, string> = {
   29: 'league_of_ireland_premier',
 };
 
+/* Every money field in LEAGUES is authored on the base economy; MONEY_SCALE
+   lifts them to the scale the game quotes. Done as a pass over the table so a
+   new league added above cannot forget it. `tvEqualShare` is deliberately not
+   scaled: it feeds the reference revenue model that `economyScale` divides by,
+   so scaling `gateBase` already carries TV money up with everything else, and
+   scaling both would compound. */
+for (const lg of LEAGUES) {
+  lg.startingBudget *= MONEY_SCALE;
+  lg.gateBase *= MONEY_SCALE;
+  lg.prizeTop *= MONEY_SCALE;
+  lg.prizeStep *= MONEY_SCALE;
+}
+
 export function leagueIdForDivision(division: number): string {
   return DIVISION_TO_LEAGUE[division as Division] ?? 'premier_league';
 }
 
-/** Starting transfer budget for a club in this league. */
+/** Baseline starting transfer budget for this league — the money a *median*
+ *  club in the division has. Individual clubs scale off this; see
+ *  `clubStartingBudget`. */
 export function startingBudget(leagueId: string): number {
   return getLeague(leagueId).startingBudget;
+}
+
+/**
+ * How far a club's kitty sits from its league's baseline, from its standing
+ * within its own division (1 = strongest squad, `of` = weakest).
+ *
+ * A flat per-league budget made every side in a division equally rich, which
+ * is the one thing nobody believes: Arsenal and Burnley are in the same
+ * competition but not in the same market. The curve is exponential rather
+ * than linear because football money is — the gap between 1st and 4th is far
+ * bigger than the gap between 14th and 17th.
+ *
+ * Weakest club ≈ 0.25×, median ≈ 0.64×, strongest ≈ 1.63× the league baseline.
+ * At the Premier League's £40m baseline that runs roughly £10m to £65m.
+ *
+ * The ceiling is deliberately tighter than real-world spending because this
+ * game's market is cheap: an 85-rated player asks around £6.6m, so a £120m
+ * kitty buys most of an XI in a single window and the market stops meaning
+ * anything. The ratio between top and bottom is what sells the hierarchy —
+ * about 6.5:1 here — not the absolute ceiling.
+ */
+export function statureBudgetMultiplier(rank: number, of: number): number {
+  const n = Math.max(1, of);
+  // 0 for the weakest squad in the division, 1 for the strongest.
+  const standing = n > 1 ? 1 - (Math.min(Math.max(rank, 1), n) - 1) / (n - 1) : 0.5;
+  return 0.25 * Math.exp(1.87 * standing);
+}
+
+/**
+ * Transfer budgets sit on the same scale as the rest of the economy.
+ *
+ * The league baselines predate the wage model, and were set when wages cost a
+ * club ~8% of its revenue and nothing else competed for the money. Measured
+ * against everything else this game prices — an elite player asks £6.6m, a
+ * top club earns £39m a season and pays £22m of it in wages — the old
+ * baselines ran roughly four times too rich: they handed a title favourite
+ * 167% of its annual revenue to spend, where a real one gets about 25%.
+ *
+ * The consequence was concrete rather than cosmetic. Spending a full budget
+ * amortized straight through the 70% squad-cost limit, so the board's own
+ * money triggered a transfer embargo. Scaling the whole curve down keeps the
+ * hierarchy exactly as it was — the ratio between clubs is untouched — while
+ * making the money spendable and the market meaningful again.
+ */
+export const BUDGET_SCALE = 0.26;
+
+/** Starting transfer budget for one specific club: its league's baseline
+ *  scaled by where its squad ranks inside that league. */
+export function clubStartingBudget(leagueId: string, rank: number, of: number): number {
+  const raw = getLeague(leagueId).startingBudget * statureBudgetMultiplier(rank, of) * BUDGET_SCALE;
+  // Round to something a board would actually quote. The thresholds and steps
+  // are money, so they ride MONEY_SCALE too — otherwise the granularity of a
+  // quote would change with the scale.
+  const step = raw >= 20_000_000 * MONEY_SCALE ? 1_000_000 * MONEY_SCALE
+    : raw >= 2_000_000 * MONEY_SCALE ? 100_000 * MONEY_SCALE
+    : 10_000 * MONEY_SCALE;
+  return Math.max(step, Math.round(raw / step) * step);
 }
 
 /** One-line pitch for a league on the club-select screen. */
@@ -640,7 +713,7 @@ export function gateBase(leagueId: string): number {
  *  original week/prize unchanged. */
 export const CUP_WEEKS = [2, 4, 9, 14, 19, 25, 31];
 /** Prize for winning a tie in each cup round (last = winning the final). */
-export const CUP_PRIZES = [75_000, 150_000, 300_000, 600_000, 1_200_000, 2_500_000, 6_000_000];
+export const CUP_PRIZES = [75_000, 150_000, 300_000, 600_000, 1_200_000, 2_500_000, 6_000_000].map((v) => v * MONEY_SCALE);
 
 /** Continental Champions Cup: 24 clubs (top 8 seeds bye to the Round of 16,
  *  the rest fight through a two-legged playoff round), then two-legged R16 /
@@ -648,20 +721,20 @@ export const CUP_PRIZES = [75_000, 150_000, 300_000, 600_000, 1_200_000, 2_500_0
  *  round's first leg (or the final) is played; a two-legged round's second
  *  leg follows one week later. */
 export const CONTINENTAL_WEEKS = [6, 12, 20, 33, 44];
-export const CONTINENTAL_PRIZES = [1_500_000, 3_000_000, 6_000_000, 12_000_000, 25_000_000];
+export const CONTINENTAL_PRIZES = [1_500_000, 3_000_000, 6_000_000, 12_000_000, 25_000_000].map((v) => v * MONEY_SCALE);
 export const CONTINENTAL_SPOTS = 24;
 
 
 /** Cost to upgrade the youth academy to level 2 / level 3. */
-export const ACADEMY_UPGRADE_COST: Record<number, number> = { 2: 5_000_000, 3: 12_000_000 };
+export const ACADEMY_UPGRADE_COST: Record<number, number> = { 2: 5_000_000 * MONEY_SCALE, 3: 12_000_000 * MONEY_SCALE };
 
 /** Backroom staff: cost to reach each level (index = new level) and weekly wage per level. */
-export const STAFF_UPGRADE_COST = [0, 500_000, 1_500_000, 4_000_000];
-export const STAFF_WEEKLY_WAGE = 10_000; // per level, per role
+export const STAFF_UPGRADE_COST = [0, 500_000, 1_500_000, 4_000_000].map((v) => v * MONEY_SCALE);
+export const STAFF_WEEKLY_WAGE = 10_000 * MONEY_SCALE; // per level, per role
 export const STAFF_MAX_LEVEL = 3;
 
 /** Stadium expansion: gate income multiplier is 1 + 0.25 × (level − 1). */
-export const STADIUM_UPGRADE_COST: Record<number, number> = { 2: 8_000_000, 3: 20_000_000 };
+export const STADIUM_UPGRADE_COST: Record<number, number> = { 2: 8_000_000 * MONEY_SCALE, 3: 20_000_000 * MONEY_SCALE };
 
 /** In-match substitutions allowed at half time. */
 export const MAX_SUBS = 3;

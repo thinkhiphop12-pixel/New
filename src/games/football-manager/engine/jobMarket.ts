@@ -1,5 +1,5 @@
 import type { Board, ChairmanType, Club, GameState, JobOffer, TableRow } from './types';
-import { getLeague, leagueName, startingBudget } from './gameRules';
+import { clubStartingBudget, getLeague, leagueName } from './gameRules';
 import { squadAvgRating } from './teamManagement';
 import { clamp } from './utils';
 
@@ -84,7 +84,7 @@ function clubsIn(state: Pick<GameState, 'clubs'>, leagueId: string): Club[] {
 }
 
 /** Where a club's squad ranks in its own league, 1 = strongest. */
-function squadRank(state: GameState, clubId: number, leagueId: string): { rank: number; of: number } {
+export function squadRank(state: GameState, clubId: number, leagueId: string): { rank: number; of: number } {
   const peers = clubsIn(state, leagueId)
     .map((c) => ({ id: c.id, avg: squadAvgRating(state, c.id) }))
     .sort((a, b) => b.avg - a.avg);
@@ -154,11 +154,28 @@ export function repRequiredFor(state: GameState, clubId: number): number {
   return Math.round(clamp(base + standing * 26, 3, 92));
 }
 
+/**
+ * The transfer kitty this club runs on, before any chairman's temperament.
+ *
+ * A league baseline scaled by the club's standing in its own division, so the
+ * money reads like the club: a title favourite is handed a fortune, a newly
+ * promoted side is handed a fraction of it. This is the single source of
+ * truth for "what is this club worth" — new careers, job offers, board
+ * grants and season-end reinvestment all go through it, so the same club is
+ * never rich in one screen and poor in another.
+ */
+export function clubBudget(state: GameState, clubId: number): number {
+  const club = state.clubs.find((c) => c.id === clubId);
+  if (!club) return 0;
+  const { rank, of } = squadRank(state, clubId, club.leagueId);
+  return clubStartingBudget(club.leagueId, rank, of);
+}
+
 /** Transfer budget the board would hand over, before any of your own money. */
 export function jobBudget(state: GameState, clubId: number, chairman: ChairmanType): number {
   const club = state.clubs.find((c) => c.id === clubId);
   if (!club) return 0;
-  return Math.round(startingBudget(club.leagueId) * CHAIRMAN_BUDGET[chairman]);
+  return Math.round(clubBudget(state, clubId) * CHAIRMAN_BUDGET[chairman]);
 }
 
 /** Build a listing for a club as it stands right now. */

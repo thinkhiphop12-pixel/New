@@ -104,10 +104,18 @@ function marketValue(rating, age) {
   return Math.max(100_000, Math.round(v / step) * step);
 }
 
-// Wages are scaled to the game's economy (gate receipts + prize money),
-// not real-world figures — real wages would bankrupt lower-division clubs.
+// NOTE ON SCALE: this script writes the dataset on the *base* economy, which
+// engine/seasonProgression.ts newGame() lifts by MONEY_SCALE at load (player
+// value and releaseClause) and then recalibrates wages from. Do not apply
+// MONEY_SCALE here as well or every figure lands twelve times too high.
+//
+// The base wage scale, matching engine/utils.ts weeklyWage() with scale = 1.
+// This is the game's *baseline* economy, roughly English fourth tier; the
+// engine lifts each club off it at newGame via calibrateWages(), pricing a
+// squad against that club's own revenue. Keep the formula and the floor in
+// sync with engine/utils.ts.
 function weeklyWage(value, rating) {
-  return Math.max(500, Math.round((value * 0.0005 + rating * 15) / 100) * 100);
+  return Math.max(200, Math.round((value * 0.0005 + rating * 15) / 100) * 100);
 }
 
 /** Kit colours for well-known clubs; everyone else cycles a palette. */

@@ -46,9 +46,11 @@ import type {
   Amortization, BalancePoint, Club, FinanceState, Fixture, GameState, KitDeal, KitOffer,
   LeagueDef, SponsorClause, SponsorDeal, SponsorOffer, SponsorSlotId, TicketTier,
 } from './types';
-import { getLeague, SEASON_ROUNDS, leagueAbove } from './gameRules';
-import { clamp, pickRandom, formatMoney } from './utils';
+import { getLeague, SEASON_ROUNDS, STAFF_WEEKLY_WAGE, leagueAbove } from './gameRules';
+import { clubWageBill } from './teamManagement';
+import { clamp, pickRandom, formatMoney, weeklyWage, MONEY_SCALE } from './utils';
 import { pushInbox } from './inbox';
+import { clubBudget } from './jobMarket';
 
 /* =========================================================================
    Reference constants (£m unless noted). Kept at the reference's own values.
@@ -303,6 +305,27 @@ export function economyScale(state: GameState, leagueId: string): number {
 }
 
 /* =========================================================================
+   Wage calibration
+   ========================================================================= */
+
+/** Share of a club's football revenue its player wages should cost.
+ *
+ *  Real clubs run 60-70%, and the squad-cost ratio that triggers an embargo
+ *  is 70% — but SCR counts wages *plus* transfer amortization, so wages alone
+ *  have to leave room for a normal amount of transfer spending underneath the
+ *  limit. 0.52 puts a well-run club comfortably clear while a heavy spender
+ *  still breaches, which is the behaviour the SCR ladder exists to produce. */
+export const TARGET_WAGE_SHARE = 0.52;
+
+/** Years a transfer fee is written down over. Real accounting spreads it
+ *  across the signed contract, and UEFA caps that write-down at five years —
+ *  which is also what a big signing is typically tied to. Three years charged
+ *  a fee 67% faster than the rules require and, with wages now a realistic
+ *  share of revenue, left almost no room under the squad-cost limit to
+ *  actually spend a transfer budget. */
+export const AMORT_YEARS = 5;
+
+/* =========================================================================
    Revenue streams (all in £/season unless the name says otherwise)
    ========================================================================= */
 
@@ -365,6 +388,153 @@ export function annualFootballRevenue(state: GameState, fin = financesView(state
   const lg = getLeague(club.leagueId);
   const md = matchdayBase(state, club) * ticketMult(fin.ticketPricing, lg.level);
   return tvIncomeAnnual(state, club) + md + md * MERCH_RATIO + weeklyCommercial(fin) * YEAR_WEEKS;
+}
+
+/**
+ * The same revenue base for *any* club, at market rates.
+ *
+ * `annualFootballRevenue` reads the user's negotiated sponsorship and ticket
+ * pricing, neither of which exists for an AI club (or for anyone on the very
+ * first week of a save). This values the commercial line at what the club
+ * would command instead, so wage calibration can price all 542 clubs on the
+ * same basis the SCR will later judge them by.
+ */
+export function clubFootballRevenue(state: GameState, club: Club): number {
+  const md = matchdayBase(state, club);
+  const commercialSlots = SPONSOR_SLOTS.shirt.share + SPONSOR_SLOTS.sleeve.share + SPONSOR_SLOTS.stadium.share;
+  const commercial = sponsorMarketAnnual(state, club) * commercialSlots + kitMarketAnnual(state, club);
+  return tvIncomeAnnual(state, club) + md + md * MERCH_RATIO + commercial;
+}
+
+/**
+ * Rescale every club's wage bill to a realistic share of its own revenue.
+ *
+ * Run once at `newGame`, after squads, reputations and stature exist. Working
+ * club by club rather than league by league matters: a league-wide multiple
+ * leaves the poorest side in each division at 150%+ of revenue and therefore
+ * embargoed within eight weeks of kick-off, through no decision of the
+ * player's. Priced individually, every club starts on a sound footing and any
+ * later breach is something the manager actually did.
+ *
+ * The target is jittered deterministically by club id so a division isn't a
+ * row of identical ratios — real clubs run anywhere from prudent to reckless.
+ *
+ * It scales down as well as up. A handful of clubs in the smallest leagues
+ * ship with wage bills above their whole revenue (Cork City at 150%), which
+ * predates this calibration but would embargo anyone who took the job inside
+ * two months. Pricing them to the same target fixes that without a per-club
+ * exception list.
+ */
+export function clubWageScale(state: GameState, club: Club): number {
+  const squad = club.playerIds.map((id) => state.players[id]).filter(Boolean);
+  if (!squad.length) return 1;
+  // Measured against the *unscaled* formula, not the squad's current pay, so
+  // the answer is the same however many times this has already been applied.
+  const baseBill = squad.reduce((t, p) => t + weeklyWage(p.value, p.rating), 0) * YEAR_WEEKS;
+  const revenue = clubFootballRevenue(state, club);
+  if (baseBill <= 0 || revenue <= 0) return 1;
+  // ±0.06 around the target, stable for a given club.
+  const jitter = ((club.id * 2654435761) % 1000) / 1000 * 0.12 - 0.06;
+  return clamp(((TARGET_WAGE_SHARE + jitter) * revenue) / baseBill, 0.25, 15);
+}
+
+/** Price one club's squad against its own revenue. Idempotent — `clubWageScale`
+ *  reads the unscaled formula, so re-running never compounds. Call it after
+ *  handing a club a newly generated squad. */
+export function calibrateClubWages(state: GameState, club: Club): void {
+  const scale = clubWageScale(state, club);
+  for (const id of club.playerIds) {
+    const p = state.players[id];
+    if (p) p.wage = weeklyWage(p.value, p.rating, scale);
+  }
+}
+
+export function calibrateWages(state: GameState): void {
+  for (const club of state.clubs) calibrateClubWages(state, club);
+}
+
+/**
+ * The weekly wage bill this club's revenue can carry — what a board would
+ * sanction, before the headroom the caller adds on top.
+ *
+ * Seeding the ceiling from the inherited squad alone (the original approach)
+ * quietly assumed the squad you inherit is the squad the club can afford.
+ * That holds on day one and nowhere else: win promotion and your ceiling
+ * stays at the tier you left, so the board refuses top-flight wages in a
+ * top-flight league.
+ */
+export function affordableWageBill(state: GameState, club: Club): number {
+  return (TARGET_WAGE_SHARE * clubFootballRevenue(state, club)) / YEAR_WEEKS;
+}
+
+/* =========================================================================
+   Transfer / wage budget split  (EA FC career-mode model)
+   ========================================================================= */
+
+/**
+ * The two budgets are separate pools, and the board lets you move money
+ * between them — the "adjust budget" control in EA FC's career mode.
+ *
+ * This is the piece that makes the two-pool model work rather than merely
+ * exist. A transfer kitty you cannot pay the wages on is not spendable, and a
+ * wage ceiling you cannot reach for want of a fee is equally stuck; letting
+ * the manager choose the split turns two rigid limits into one decision.
+ *
+ * A season's wages cost 52 times the weekly figure, so that is the rate: £52k
+ * of transfer money buys £1k/week of wage headroom, and back the other way.
+ */
+export const BUDGET_SPLIT_RATE = YEAR_WEEKS;
+
+/** Weekly wage headroom `amount` of transfer money converts into. */
+export function wagesFromTransferMoney(amount: number): number {
+  return Math.round(amount / BUDGET_SPLIT_RATE);
+}
+
+/** Transfer money `weekly` of wage ceiling converts into. */
+export function transferMoneyFromWages(weekly: number): number {
+  return Math.round(weekly * BUDGET_SPLIT_RATE);
+}
+
+/**
+ * Move `amount` of transfer budget into the weekly wage ceiling (positive),
+ * or convert wage ceiling back into transfer money (negative).
+ *
+ * Refuses rather than clamps, so the UI can say why: you cannot spend money
+ * you do not have, and you cannot cut the ceiling below what the squad is
+ * already contracted to earn — those wages are owed whatever the board wants.
+ */
+export function shiftBudgetToWages(
+  state: GameState,
+  amount: number,
+): { state: GameState; ok: boolean; error?: string } {
+  if (!Number.isFinite(amount) || Math.round(amount) === 0) {
+    return { state, ok: false, error: 'Nothing to move.' };
+  }
+  const s: GameState = structuredClone(state);
+  const club = s.clubs.find((c) => c.id === s.userClubId);
+  if (!club) return { state, ok: false, error: 'No club.' };
+  const ceiling = s.wageBudget ?? Math.round(clubWageBill(s, s.userClubId) * 1.25);
+
+  if (amount > 0) {
+    if (amount > s.budget) {
+      return { state, ok: false, error: `You only have ${formatMoney(s.budget)} in the transfer budget.` };
+    }
+    s.budget -= amount;
+    s.wageBudget = ceiling + wagesFromTransferMoney(amount);
+  } else {
+    const weekly = wagesFromTransferMoney(-amount);
+    const bill = clubWageBill(s, s.userClubId);
+    if (ceiling - weekly < bill) {
+      return {
+        state,
+        ok: false,
+        error: `The squad already earns ${formatMoney(bill)}/wk — the ceiling cannot go below that.`,
+      };
+    }
+    s.wageBudget = ceiling - weekly;
+    s.budget += transferMoneyFromWages(weekly);
+  }
+  return { state: s, ok: true };
 }
 
 /* =========================================================================
@@ -662,7 +832,7 @@ export function terminateSponsorDeal(state: GameState, slot: SponsorSlotId): Gam
  * Only the 5% agent fee touches the balance here; the fee itself has already
  * left `budget` at the point of signing.
  */
-export function recordTransferExpense(state: GameState, fee: number, contractYears = 3): void {
+export function recordTransferExpense(state: GameState, fee: number, contractYears = AMORT_YEARS): void {
   const fin = ensureFinances(state);
   const agentFee = Math.round(fee * 0.05);
   state.budget -= agentFee;
@@ -693,7 +863,7 @@ function absorbLedgerTransfers(state: GameState, fin: FinanceState): void {
     const key = `${state.seasonYear}|${e.week}|${e.desc}|${e.amount}`;
     if (fin.seenLedger.includes(key)) continue;
     fin.seenLedger.push(key);
-    if (isBuy) recordTransferExpense(state, -e.amount, 3);
+    if (isBuy) recordTransferExpense(state, -e.amount, AMORT_YEARS);
     else recordTransferIncome(state, e.amount);
   }
   // The ledger itself is capped at 24 entries; keep the dedupe set bounded too.
@@ -760,7 +930,7 @@ function weeklyWages(state: GameState): number {
 
 function weeklyStaffWages(state: GameState): number {
   const st = state.staff;
-  const legacy = st ? (st.coach + st.physio + st.scout) * 10_000 : 0;
+  const legacy = st ? (st.coach + st.physio + st.scout) * STAFF_WEEKLY_WAGE : 0;
   // Named coaches (Staff Hub) and named scouts (Scouting Network) carry their
   // own wage, on top of the legacy per-level figure — kept in sync with
   // seasonProgression.ts's staffWageBill(), which is what actually debits the
@@ -1087,7 +1257,9 @@ function autoRenewStaleDeals(state: GameState, fin: FinanceState): void {
 export function boardGrantAmount(state: GameState, fin = financesView(state)): number {
   const club = userClub(state);
   const lg = getLeague(club.leagueId);
-  const base = lg.startingBudget * 0.20;
+  // Scaled to the club, not just the division — a board grant at a giant
+  // is worth many times one at a newly promoted side.
+  const base = clubBudget(state, club.id) * 0.20;
   const h = fin.boardConfidence;
   const confMult = h >= 90 ? 1.95 : h >= 85 ? 1.65 : h >= 70 ? 1.30 : h >= 55 ? 1.05 : h >= 35 ? 0.78 : h >= 20 ? 0.52 : 0.28;
   const pos = userPositionSafe(state) / Math.max(1, lg.clubCount);
@@ -1095,7 +1267,8 @@ export function boardGrantAmount(state: GameState, fin = financesView(state)): n
   const balMult = state.budget > base * 1.5 ? 1.15 : state.budget < 0 ? 0.62 : 1.0;
   // An embargoed club is not getting more money to spend.
   const embargoMult = fin.transferEmbargo ? 0 : 1;
-  return Math.round(base * confMult * posMult * balMult * embargoMult / 100_000) * 100_000;
+  const step = 100_000 * MONEY_SCALE;
+  return Math.round(base * confMult * posMult * balMult * embargoMult / step) * step;
 }
 
 export function canRequestBoardFunds(state: GameState): boolean {

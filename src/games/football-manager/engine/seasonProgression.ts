@@ -15,7 +15,7 @@ import {
   WAGE_BUDGET_HEADROOM, autoPickLineup, clubWageBill, ensureSquadNumbers, getSquad,
   isLineupValid, isOnLoan, squadAvgRating,
 } from './teamManagement';
-import { clamp, contractEndFor, marketValue, pickRandom, rollRetireAge, weeklyWage } from './utils';
+import { clamp, contractEndFor, marketValue, pickRandom, rollRetireAge, weeklyWage, MONEY_SCALE } from './utils';
 import { tickTacticalFamiliarity } from './familiarity';
 import { generateDailyPressStories, generateWeeklyNews } from './news';
 import { seedClubIdentities } from './clubIdentity';
@@ -27,10 +27,10 @@ import {
 } from './europeanCup';
 import { evalScenarioAtSeasonEnd } from './scenarios';
 import {
-  MID_SEASON_RESIGN_REP_COST, boardObjectiveFor, interviewOdds, makeVacancy, tickJobMarket,
+  MID_SEASON_RESIGN_REP_COST, boardObjectiveFor, clubBudget, interviewOdds, makeVacancy, tickJobMarket,
 } from './jobMarket';
 import { pushInbox } from './inbox';
-import { tickFinances, weeklyMatchdayIncome } from './finances';
+import { affordableWageBill, calibrateClubWages, calibrateWages, clubWageScale, tickFinances, weeklyMatchdayIncome } from './finances';
 import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
 import { tickFacilitiesWeek } from './facilities';
 import { applyScheduleDay, applyWeeklySchedule, getSchedule } from './schedule';
@@ -208,7 +208,7 @@ const YOUTH_FIRST = ['Alfie', 'Ben', 'Callum', 'Dan', 'Eli', 'Finn', 'George', '
 const YOUTH_LAST = ['Abbott', 'Barnes', 'Clarke', 'Dawson', 'Ellis', 'Foster', 'Grant', 'Hayes', 'Ingram', 'Jennings', 'Kerr', 'Lowe', 'Mercer', 'Nolan', 'Osborne', 'Price', 'Quinn', 'Reid', 'Shaw', 'Turner'];
 const YOUTH_ROLES: [Position, string][] = [['GK', 'GK'], ['DEF', 'CB'], ['DEF', 'RB'], ['MID', 'CM'], ['MID', 'CAM'], ['FWD', 'ST'], ['FWD', 'LW']];
 
-export function makeYouthPlayer(id: number, clubId: number, academyLevel: number, seasonYear = 2026): Player {
+export function makeYouthPlayer(id: number, clubId: number, academyLevel: number, seasonYear = 2026, wageScale = 1): Player {
   const [pos, role] = pickRandom(YOUTH_ROLES);
   const base = 52 + academyLevel * 4;
   const rating = base + Math.floor(Math.random() * 9);
@@ -233,7 +233,7 @@ export function makeYouthPlayer(id: number, clubId: number, academyLevel: number
     altPos: [],
     age,
     value,
-    wage: weeklyWage(value, rating),
+    wage: weeklyWage(value, rating, wageScale),
     clubId,
     form: 1,
     injuryWeeks: 0,
@@ -277,7 +277,7 @@ const FILLER_ROLES: [Position, string][] = [
   ['FWD', 'LW'], ['FWD', 'RW'], ['FWD', 'ST'], ['FWD', 'ST'], ['FWD', 'ST'],
 ];
 
-function makeFillerPlayer(id: number, clubId: number, target: number, seasonYear: number, slot: number): Player {
+function makeFillerPlayer(id: number, clubId: number, target: number, seasonYear: number, slot: number, wageScale = 1): Player {
   const [pos, role] = FILLER_ROLES[slot % FILLER_ROLES.length];
   const rating = clamp(target + Math.floor(Math.random() * 9) - 4, 40, 90);
   const age = 18 + Math.floor(Math.random() * 15);
@@ -296,7 +296,7 @@ function makeFillerPlayer(id: number, clubId: number, target: number, seasonYear
     height: pos === 'GK' ? 185 + Math.floor(Math.random() * 15) : 168 + Math.floor(Math.random() * 24),
     altPos: [],
     age, value,
-    wage: weeklyWage(value, rating),
+    wage: weeklyWage(value, rating, wageScale),
     clubId,
     form: 1,
     injuryWeeks: 0,
@@ -379,6 +379,8 @@ function wakePoolClub(s: GameState, club: Club, targetLeagueId: string, seasonYe
     s.players[p.id] = p;
     club.playerIds.push(p.id);
   }
+  // The squad has to exist before it can be priced against the club's revenue.
+  calibrateClubWages(s, club);
 }
 
 /** Starting-reputation bonus from the Credentials step of the Manager
@@ -415,6 +417,11 @@ export function newGame(
     const years = 1 + (p.id % 4);
     players[p.id] = {
       ...p,
+      // The shipped dataset is authored on the base economy (build-gamedata.mjs
+      // deliberately stays there), so its baked money is lifted here. Wages are
+      // not: calibrateWages recomputes them from these values further down.
+      value: Math.round(p.value * MONEY_SCALE),
+      releaseClause: p.releaseClause == null ? p.releaseClause : Math.round(p.releaseClause * MONEY_SCALE),
       wage: p.wage ?? weeklyWage(p.value, p.rating),
       form: 1,
       injuryWeeks: 0,
@@ -448,6 +455,8 @@ export function newGame(
     seasonYear,
     week: 1,
     dayOfSeason: 0,
+    // Placeholder: replaced below with the club-specific figure, once the
+    // squads exist to rank this club against its division.
     budget: startingBudget(userClub.leagueId),
     morale: MORALE_START,
     formationId: '4-3-3',
@@ -493,6 +502,10 @@ export function newGame(
     pressWeek: 0,
   };
   refillPhantomPools(state);
+  // Now that the squads exist, price the club: the kitty is its league's
+  // baseline scaled by how strong this particular side is within it, not a
+  // flat figure every club in the division shares.
+  state.budget = clubBudget(state, userClubId);
   state.fixtures = makeSeasonFixtures(state);
   state.board = makeBoardObjective(state);
   state.cup = makeDomesticCup(state);
@@ -501,6 +514,9 @@ export function newGame(
   // Give every club a play-style identity and reputation band before the first
   // drilling tick, so familiarity has something to work from.
   seedClubIdentities(state);
+  // Wages must be priced before the board's wage ceiling is derived from them.
+  // Needs club reputation, so it runs after seedClubIdentities.
+  calibrateWages(state);
   ensureSquadNumbers(state);
   // Sanctioned wage bill: what the inherited squad costs, plus headroom.
   state.wageBudget = Math.round(weeklyWageBill(state) * WAGE_BUDGET_HEADROOM);
@@ -1320,7 +1336,13 @@ export function switchJob(state: GameState, clubId: number, offer?: JobOffer): G
   const club = s.clubs.find((c) => c.id === clubId);
   if (!club) return state;
   s.userClubId = clubId;
-  s.budget = (offer?.budget ?? startingBudget(club.leagueId)) + s.manager.reputation * 100_000;
+  s.budget = (offer?.budget ?? clubBudget(s, clubId)) + s.manager.reputation * 100_000 * MONEY_SCALE;
+  // Your old club's wage ceiling is not this club's. Take the greater of what
+  // the new squad already earns and what its revenue sanctions, so inheriting
+  // an over-waged squad never forces an immediate fire-sale.
+  s.wageBudget = Math.round(
+    Math.max(clubWageBill(s, clubId), affordableWageBill(s, club)) * WAGE_BUDGET_HEADROOM
+  );
   s.chemistry = 45;
   s.morale = MORALE_START;
   s.fanConfidence = 60;
@@ -1796,7 +1818,7 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
   const intakeCount = s.academyLevel >= 3 ? 2 : 1;
   if (!userClub.youthPlayerIds) userClub.youthPlayerIds = [];
   for (let i = 0; i < intakeCount; i++) {
-    const kid = makeYouthPlayer(s.nextPlayerId++, s.userClubId, s.academyLevel, s.seasonYear);
+    const kid = makeYouthPlayer(s.nextPlayerId++, s.userClubId, s.academyLevel, s.seasonYear, clubWageScale(s, userClub));
     s.players[kid.id] = kid;
     userClub.youthPlayerIds.push(kid.id);
     s.news.unshift(`Academy intake: ${kid.name} (${kid.role}, ${kid.rating} OVR, ${kid.potential} PA) joins the youth squad.`);
@@ -1915,6 +1937,7 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
       club.playerIds.push(p.id);
       signed.push(p);
     }
+    calibrateClubWages(s, club);
     if (club.id === s.userClubId) {
       s.news.unshift(`With retirements leaving the squad short, the board signs ${signed.length} emergency free agents.`);
       pushInbox(s, {
@@ -1953,12 +1976,22 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
   // sensible war chest is spent on wages, facilities and debt over the break, so
   // the transfer kitty stays believable instead of snowballing season on season
   // (which quietly broke the market by the second season).
-  const warChest = startingBudget(userClub.leagueId) * 1.5;
+  const warChest = clubBudget(s, userClub.id) * 1.5;
   let reinvestNote: string | null = null;
   if (s.budget > warChest) {
     const reinvested = Math.round((s.budget - warChest) * 0.75);
     s.budget -= reinvested;
     reinvestNote = `The board reinvests ${money(reinvested)} of the season's surplus into wages and facilities.`;
+  }
+
+  // The board re-sets the wage ceiling for the tier the club is now in — a
+  // promoted side can pay top-flight wages, and nobody is forced to sell just
+  // because they went down.
+  const nextClub = s.clubs.find((c) => c.id === s.userClubId);
+  if (nextClub) {
+    s.wageBudget = Math.round(
+      Math.max(clubWageBill(s, s.userClubId), affordableWageBill(s, nextClub)) * WAGE_BUDGET_HEADROOM
+    );
   }
 
   // New season setup.

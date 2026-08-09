@@ -11,6 +11,7 @@
  */
 import type { Club, GameState, Player, ScenarioId, ScenarioState, SeasonSummary } from './types';
 import { getLeague } from './gameRules';
+import { MONEY_SCALE } from './utils';
 import { squadAvgRating } from './teamManagement';
 import { pushInbox } from './inbox';
 import { ensureFinances } from './finances';
@@ -117,13 +118,18 @@ const POINTS_DEDUCTION_AMOUNT = 24;
 /** Board-confidence-scaled injection: a smaller/lower-reputation club gets a
  *  proportionally bigger relative splash from the same absolute sum. */
 function injectionByLevel(level: number, base: Record<number, number>, club: Club): number {
-  const amount = base[level] ?? Object.values(base)[Object.values(base).length - 1] ?? 6_000_000;
+  const amount = base[level] ?? Object.values(base)[Object.values(base).length - 1] ?? 6_000_000 * MONEY_SCALE;
   const repBoost = 1 + (3 - Math.min(3, club.reputation ?? 1)) * 0.15;
   return Math.round(amount * repBoost);
 }
 
-const HOLLYWOOD_INJECTION_BY_LEVEL: Record<number, number> = { 2: 20_000_000, 3: 12_000_000, 4: 7_000_000, 5: 4_000_000 };
-const TAKEOVER_INJECTION_BY_LEVEL: Record<number, number> = { 2: 40_000_000, 3: 25_000_000, 4: 15_000_000, 5: 8_000_000 };
+/* These are stated on the same scale as `clubStartingBudget`, so a takeover
+   war chest reads as a multiple of what the club would otherwise have had.
+   Left absolute, they were sized against budgets four times richer than the
+   ones the economy now runs on — a second-tier takeover handed over eight
+   times the whole division's biggest budget, which no market can absorb. */
+const HOLLYWOOD_INJECTION_BY_LEVEL: Record<number, number> = { 2: 5_000_000 * MONEY_SCALE, 3: 3_000_000 * MONEY_SCALE, 4: 1_800_000 * MONEY_SCALE, 5: 1_000_000 * MONEY_SCALE };
+const TAKEOVER_INJECTION_BY_LEVEL: Record<number, number> = { 2: 10_000_000 * MONEY_SCALE, 3: 6_500_000 * MONEY_SCALE, 4: 4_000_000 * MONEY_SCALE, 5: 2_000_000 * MONEY_SCALE };
 
 /** Relegation Battle needs the caller to fast-forward roughly half the season
  *  (via seasonProgression's playRound/seasonOver, from the component layer)
@@ -182,7 +188,7 @@ export function applyScenario(state: GameState, scenarioId: ScenarioId): GameSta
       break;
     }
     case 'broke': {
-      const debt = -Math.round(Math.max(1_000_000, s.budget * 0.9));
+      const debt = -Math.round(Math.max(1_000_000 * MONEY_SCALE, s.budget * 0.9));
       s.budget = debt;
       s.board.confidence = 35;
       pushInbox(s, {
