@@ -1630,6 +1630,11 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   .fm-sub-grid { grid-template-columns: 1fr; }
 }
 
+/* Contract editor overlay */
+.fm-contract-overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: rgb(0 0 0 / 78%); overflow: auto; }
+.fm-contract-overlay .fm-contract-panel { width: min(1120px, 100%); max-height: calc(100vh - 32px); overflow: auto; box-shadow: 0 24px 80px rgb(0 0 0 / 45%); }
+@media (max-width: 1023px) { .fm-contract-overlay { align-items: start; } }
+
 /* ── Live 2D pitch ── */
 .fm-pitch--live { margin-bottom: 2px; }
 .fm-slot--live { pointer-events: none; cursor: default; }

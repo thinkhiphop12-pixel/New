@@ -1,0 +1,21 @@
+'use client';
+
+import { useState } from 'react';
+import type { GameState, Player } from '@/engine/types';
+import { formatMoney } from '@/engine/utils';
+import { renewContract } from '@/engine/transferMarket';
+
+export default function ContractOfferPanel({ state, player, onChange, onClose }: { state: GameState; player: Player; onChange: (state: GameState) => void; onClose: () => void }) {
+  const [length, setLength] = useState(3);
+  const [salary, setSalary] = useState(Math.max(player.wage, 50000));
+  const [signing, setSigning] = useState(player.wage * 10);
+  const [appearance, setAppearance] = useState(15000);
+  const [loyalty, setLoyalty] = useState(1000000);
+  const [clause, setClause] = useState(80000000);
+  const [error, setError] = useState('');
+  const remaining = state.budget - signing;
+  const advice = salary < player.wage ? 'Offer is below player expectations.' : salary >= player.wage * 1.25 && signing >= 3000000 ? 'Excellent offer — likely to be accepted.' : 'Player expects a higher base salary. Consider improving the offer.';
+  const field = (label: string, value: number, set: (v: number) => void, step: number, suffix: string) => <label className="fm-contract-field"><span>{label}</span><span className="fm-contract-control"><button type="button" onClick={() => set(Math.max(0, value - step))}>−</button><input aria-label={label} value={value} onChange={(e) => set(Math.max(0, Number(e.target.value.replace(/\D/g, ''))))} /><button type="button" onClick={() => set(value + step)}>+</button><em>{suffix}</em></span></label>;
+  const accept = () => { if (salary < 0 || signing < 0 || appearance < 0 || loyalty < 0 || clause < 0 || length < 1) return setError('All values must be valid and non-negative.'); if (signing > state.budget) return setError('Signing bonus exceeds the available budget.'); onChange(renewContract(state, player.id)); onClose(); };
+  return <div className="fm-contract-overlay" role="dialog" aria-modal="true" aria-label="Contract negotiation"><div className="fm-contract-panel"><header className="fm-contract-header"><div className="fm-contract-avatar">{player.name.slice(0, 1)}</div><div><h2>{player.name}</h2><p>{player.pos} · {player.age} years old · Date of birth: 1 Jan {state.seasonYear - player.age}</p></div><div className="fm-contract-header__rating"><strong>{player.rating}</strong><span>★ {(player.rating / 10).toFixed(2)}</span></div></header><div className="fm-contract-grid"><section className="fm-contract-card"><h3>PLAYER STATUS</h3>{[['VALUE', formatMoney(player.value)], ['WAGE', `${formatMoney(player.wage)} p/w`], ['CONTRACT ENDS', player.contractEnd], ['SQUAD STATUS', player.role || 'Key Player'], ['INTEREST', '0 teams']].map(([l, v]) => <div className="fm-contract-stat" key={l}><span>{l}</span><strong>{v}</strong></div>)}</section><section className="fm-contract-card"><h3>CURRENT OFFER</h3><div className="fm-contract-badge">Contract Extension</div>{field('CONTRACT LENGTH', length, setLength, 1, 'years')}{field('BASE SALARY', salary, setSalary, 5000, 'p/w')}{field('SIGNING BONUS', signing, setSigning, 500000, '£')}{field('APPEARANCE BONUS', appearance, setAppearance, 5000, 'per app')}{field('LOYALTY BONUS', loyalty, setLoyalty, 500000, 'annual')}{field('RELEASE CLAUSE', clause, setClause, 5000000, '£')}<div className={`fm-contract-budget${remaining < 0 ? ' is-negative' : ''}`}><span>WAGE BUDGET REMAINING</span><strong>{formatMoney(remaining)}</strong></div><div className="fm-contract-advice"><span>ASSISTANT ADVICE</span><p>{advice}</p></div></section><section className="fm-contract-card"><h3>PREVIOUS OFFER</h3><p className="fm-contract-empty">No previous offer recorded</p><div className="fm-contract-mood mood-neutral"><span>MOOD</span><strong>Neutral</strong><small>Awaiting first proposal</small></div></section></div>{error && <p className="fm-contract-error">{error}</p>}<footer className="fm-contract-footer"><button className="fm-btn fm-btn--ghost" onClick={onClose}>Close</button><button className="fm-btn fm-btn--danger" onClick={onClose}>Reject Offer</button><button className="fm-btn fm-btn--primary" disabled={remaining < 0} onClick={accept}>Accept Offer</button></footer></div></div>;
+}

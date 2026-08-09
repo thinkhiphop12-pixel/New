@@ -14,6 +14,7 @@ import type { DevPlan } from '@/engine/types';
 import { attrBand, initials, ratingRingColor } from './visuals';
 import { SpiderChart } from './SpiderChart';
 import { PlayerFace } from './PlayerFace';
+import ContractOfferPanel from './ContractOfferPanel';
 
 /** Fields Phase 1 (concurrent) is adding to `Player` but that may not have
  *  landed yet. Kept as an optional local extension so this modal works
@@ -99,6 +100,7 @@ export default function PlayerModal({
   onClose: () => void;
 }) {
   const [tab, setTab] = useState<'ratings' | 'stats'>('ratings');
+  const [showContract, setShowContract] = useState(false);
   const p = player as PlayerWithFuture;
 
   const isGK = p.pos === 'GK';
@@ -419,7 +421,7 @@ export default function PlayerModal({
             <button
               className="fm-btn fm-btn--primary fm-btn--small"
               disabled={p.wage * 10 > state.budget}
-              onClick={() => onChange(renewContract(state, p.id))}
+              onClick={() => setShowContract(true)}
             >
               Renew contract ({formatMoney(p.wage * 10)} bonus)
             </button>
@@ -457,6 +459,7 @@ export default function PlayerModal({
           </span>
         )}
       </div>
+      {showContract && <ContractOfferPanel state={state} player={p} onChange={onChange} onClose={() => setShowContract(false)} />}
     </div>
   );
 }
