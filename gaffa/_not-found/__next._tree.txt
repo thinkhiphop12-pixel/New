@@ -1,2 +1,2 @@
-:HL["/gaffa/_next/static/chunks/3tcxwyeztgb9t.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"MMKioQOon7uDphmuJqLz8"}
+:HL["/gaffa/_next/static/chunks/32-5duwgnjlyp.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"72Q0Yq6M_I9JscRYT2xot"}

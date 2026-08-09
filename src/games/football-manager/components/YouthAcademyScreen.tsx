@@ -7,6 +7,7 @@ import { MAX_SQUAD_SIZE } from '@/engine/gameRules';
 import { Icon } from './Icon';
 import { PlayerFace } from './PlayerFace';
 import PlayerModal from './PlayerModal';
+import { Pulse, toneFor } from './SectionHub';
 
 /**
  * Youth Academy hub: lists the youth squad built up by season-end intake
@@ -33,36 +34,31 @@ export default function YouthAcademyScreen({
   const firstTeamSize = club?.playerIds.length ?? 0;
   const squadFull = firstTeamSize >= MAX_SQUAD_SIZE;
 
+  const academyRep = state.facilities?.academyReputation ?? 20;
   const nextIntakeCount = state.academyLevel >= 3 ? 2 : 1;
 
   return (
     <>
-      <div className="fm-panel">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 12 }}>
-          <div>
-            <p className="fm-label" style={{ marginTop: 0, marginBottom: 4 }}>Reputation</p>
-            <div className="fm-bar">
-              <div className="fm-bar__fill good" style={{ width: `${((state.facilities?.academyReputation ?? 20) / 100) * 100}%` }} />
-            </div>
-            <p className="fm-hint" style={{ margin: '4px 0 0' }}>{state.facilities?.academyReputation ?? 20}/100</p>
-          </div>
-          <div>
-            <p className="fm-label" style={{ marginTop: 0, marginBottom: 4 }}>Level</p>
-            <div className="fm-bar">
-              <div className="fm-bar__fill good" style={{ width: `${(state.academyLevel / 3) * 100}%` }} />
-            </div>
-            <p className="fm-hint" style={{ margin: '4px 0 0' }}>{state.academyLevel}/3</p>
-          </div>
-          <div>
-            <p className="fm-label" style={{ marginTop: 0, marginBottom: 4 }}>Next intake</p>
-            <p style={{ fontSize: 18, fontWeight: 900, margin: 0 }}>{nextIntakeCount}</p>
-            <p className="fm-hint" style={{ margin: '4px 0 0' }}>prospect{nextIntakeCount > 1 ? 's' : ''}</p>
-          </div>
-        </div>
-        {squadFull && (
-          <p className="fm-hint" style={{ marginBottom: 0, color: 'var(--red)' }}>Squad full — promote to free space</p>
-        )}
-      </div>
+      {/* Five numbers instead of the paragraph that used to carry them. */}
+      <Pulse
+        items={[
+          { icon: 'sprout', label: 'Prospects', value: String(youth.length), tone: youth.length ? 'green' : 'plain' },
+          { icon: 'star', label: 'Reputation', value: `${academyRep}/100`, tone: toneFor(academyRep, 25, 60), meter: academyRep / 100 },
+          { icon: 'training', label: 'Intake level', value: `${state.academyLevel}/3`, tone: toneFor(state.academyLevel, 2, 3), meter: state.academyLevel / 3 },
+          { icon: 'document', label: 'Next intake', value: `${nextIntakeCount} prospect${nextIntakeCount > 1 ? 's' : ''}` },
+          {
+            icon: 'squad',
+            label: 'First team',
+            value: `${firstTeamSize}/${MAX_SQUAD_SIZE}`,
+            tone: squadFull ? 'red' : 'plain',
+          },
+        ]}
+      />
+      {squadFull && (
+        <p className="fm-hint" style={{ marginTop: 0 }}>
+          <Icon name="warning" size={12} /> Squad full — free up a slot before promoting.
+        </p>
+      )}
 
       <div className="fm-mod">
         <div className="fm-mod__head"><h2 className="fm-mod__title">Youth Squad</h2></div>

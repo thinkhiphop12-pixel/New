@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { GameState, Position } from '@/engine/types';
 import { newScouting } from '@/engine/facilities';
 import { getPlayerReports, getScouts, hireScout, fireScout, reassignScout, SCOUT_REGIONS, scoutWage } from '@/engine/scouting';
 import { getSquad } from '@/engine/teamManagement';
 import { formatMoney } from '@/engine/utils';
+import { Pulse } from './SectionHub';
 
 const POSITIONS: Position[] = ['GK', 'DEF', 'MID', 'FWD'];
 
@@ -44,7 +45,13 @@ export default function ScoutingScreen({
 }) {
   const [hireStars, setHireStars] = useState(3);
   const [hireRegion, setHireRegion] = useState<string>(SCOUT_REGIONS[0]);
-  if (!state.scouting) onChange({ ...state, scouting: newScouting() });
+  // Lazy-init on the trailing edge of render, not during it — calling
+  // onChange synchronously here (the original code) triggered React's
+  // "Cannot update a component while rendering a different component"
+  // warning on this screen every time a save predates scouting.
+  useEffect(() => {
+    if (!state.scouting) onChange({ ...state, scouting: newScouting() });
+  }, [state, onChange]);
 
   const scouts = getScouts(state);
   const reports = getPlayerReports(state);
@@ -66,16 +73,23 @@ export default function ScoutingScreen({
 
   return (
     <>
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>Scouting Network</p>
-        <p className="fm-club-line">
-          Hire scouts and assign each a region. Higher star ratings file leads faster and find better
-          players. Leads land on your shortlist and in your inbox, ready to pursue from Transfers.
-        </p>
-      </div>
+      {/* Was a three-line paragraph explaining the feature. The same facts
+          are legible as numbers, and the one thing prose was needed for
+          (where leads end up) is one short line under them. */}
+      <Pulse
+        items={[
+          { icon: 'binoculars', label: 'Scouts', value: String(scouts.length), tone: scouts.length ? 'green' : 'gold' },
+          { icon: 'document', label: 'Leads filed', value: String(reports.length) },
+          { icon: 'flag', label: 'Regions', value: `${new Set(scouts.map((s) => s.region)).size}/${SCOUT_REGIONS.length}` },
+          { icon: 'money-out', label: 'Weekly cost', value: formatMoney(scouts.reduce((n, s) => n + s.wage, 0)) },
+        ]}
+      />
 
       <div className="fm-panel">
         <p className="fm-label" style={{ marginTop: 0 }}>Hire a Scout</p>
+        <p className="fm-hint" style={{ marginTop: 0 }}>
+          More stars, faster and better leads. Leads land on your shortlist, ready to pursue from Transfers.
+        </p>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <label className="fm-hint">
             Stars{' '}

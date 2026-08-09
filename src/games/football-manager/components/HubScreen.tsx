@@ -22,6 +22,9 @@ import WeeklyScheduleScreen from './WeeklyScheduleScreen';
 import StaffHubScreen from './StaffHubScreen';
 import ScoutingScreen from './ScoutingScreen';
 import YouthAcademyScreen from './YouthAcademyScreen';
+import TeamHubScreen from './TeamHubScreen';
+import MarketHubScreen from './MarketHubScreen';
+import ClubHubScreen from './ClubHubScreen';
 import { Icon } from './Icon';
 import {
   GROUPS,
@@ -52,7 +55,7 @@ export default function HubScreen({
   simRunning,
 }: {
   state: GameState;
-  /** `null` is the Hub landing — the four group cards and nothing else. */
+  /** `null` is the Hub landing — the club at a glance and nothing else. */
   route: ScreenId | null;
   onRoute: (next: ScreenId | null) => void;
   onChange: (next: GameState) => void;
@@ -110,6 +113,9 @@ export default function HubScreen({
       case 'table': return <TableScreen state={state} />;
       case 'cups': return <CupScreen state={state} />;
       case 'european': return <EuropeanScreen state={state} />;
+      case 'team-hub': return <TeamHubScreen state={state} onRoute={onRoute} />;
+      case 'market-hub': return <MarketHubScreen state={state} onRoute={onRoute} />;
+      case 'club-hub': return <ClubHubScreen state={state} onRoute={onRoute} />;
       case 'squad': return <SquadScreen state={state} onChange={onChange} />;
       case 'tactics': return <TacticsScreen state={state} onChange={onChange} />;
       case 'training': return <TrainingScreen state={state} onChange={onChange} />;

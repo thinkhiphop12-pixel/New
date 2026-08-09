@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Coach, GameState } from '@/engine/types';
 import { fireCoach, hireCoach, newFacilities } from '@/engine/facilities';
 import { staffWageBill } from '@/engine/seasonProgression';
 import { formatMoney } from '@/engine/utils';
 import { Icon } from './Icon';
 import StaffProfileModal from './StaffProfileModal';
+import { Pulse, toneFor } from './SectionHub';
 
 const ROLES: { id: Coach['role']; label: string; blurb: string }[] = [
   { id: 'assistant', label: 'Assistant Manager', blurb: 'Gives you a recommendation on the Weekly Schedule screen — apply his suggestion or ignore it.' },
@@ -37,19 +38,28 @@ export default function StaffHubScreen({
 }) {
   const [profileCoachId, setProfileCoachId] = useState<number | null>(null);
   const fs = state.facilities ?? newFacilities(state);
-  if (!state.facilities) onChange({ ...state, facilities: fs });
+  // Same lazy-init-after-render fix as ScoutingScreen — the previous
+  // onChange-during-render call triggered a React setState warning on
+  // this screen for any save predating facilities.
+  useEffect(() => {
+    if (!state.facilities) onChange({ ...state, facilities: fs });
+  }, [state, fs, onChange]);
 
   const wageBill = staffWageBill(state);
+  const hired = ROLES.map((r) => fs.coaches.find((c) => c.role === r.id)).filter(Boolean) as Coach[];
+  const filled = hired.length;
+  const avgQuality = filled ? Math.round(hired.reduce((n, c) => n + c.quality, 0) / filled) : 0;
 
   return (
     <>
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>Staff Hub</p>
-        <p className="fm-club-line">
-          Every named coach here draws a weekly wage from the club's finances. Current backroom wage bill:{' '}
-          <strong>{formatMoney(wageBill)}/wk</strong>.
-        </p>
-      </div>
+      <Pulse
+        items={[
+          { icon: 'staff', label: 'Roles filled', value: `${filled}/${ROLES.length}`, tone: toneFor(filled, 2, ROLES.length - 1), meter: filled / ROLES.length },
+          { icon: 'money-out', label: 'Wage bill', value: `${formatMoney(wageBill)}/wk` },
+          { icon: 'star', label: 'Avg quality', value: filled ? String(avgQuality) : '—', tone: filled ? toneFor(avgQuality, 45, 70) : 'plain' },
+          { icon: 'target', label: 'Open roles', value: String(ROLES.length - filled), tone: filled === ROLES.length ? 'green' : 'gold' },
+        ]}
+      />
 
       <div className="fm-panel">
         {ROLES.map((role) => {
