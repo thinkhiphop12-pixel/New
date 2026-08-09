@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
-import type { GameData, GameState, MatchReport, ScenarioId, SeasonSummary, GameSettings, ManagerProfile } from '@/engine/types';
+import type { GameData, GameState, MatchReport, ScenarioId, SeasonSummary, GameSettings, ManagerProfile, Tackling, DefLine } from '@/engine/types';
 import { endSeason, newGame, playRound, seasonOver, switchJob, nextUserFixture } from '@/engine/seasonProgression';
 import { advanceDay, type DayStop } from '@/engine/dailyTick';
 import { dayOfSeason, formatGameDate } from '@/engine/calendar';
@@ -33,6 +33,8 @@ import { ToastHost, pushToast } from './ToastQueue';
 import { Icon, IconSprite } from './Icon';
 import type { ScreenId } from './hubNav';
 import OnboardingOverlay, { hasSeenOnboarding } from './OnboardingOverlay';
+import LassoKentProvider from './assistant/LassoKentProvider';
+import type { AssistantEffects } from '../data/lassoKentDialogues';
 
 type View = 'menu' | 'managerpick' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'daysummary' | 'match' | 'seasonend' | 'character';
 
@@ -275,7 +277,21 @@ export default function FootballManagerGame() {
     const outcome = userGoals > oppGoals ? 'success' : userGoals < oppGoals ? 'error' : 'info';
     pushToast(`Full time: ${userGoals}-${oppGoals} vs ${oppName}`, outcome);
 
-    const played = playRound(gs, report);
+    let played = playRound(gs, report);
+    // The match this nudge was granted for has just been played — put the
+    // tactics knob back the way the player had it (see applyAssistantEffects).
+    if (played.assistantTacticalRevert) {
+      const { tackling, defLine } = played.assistantTacticalRevert;
+      played = {
+        ...played,
+        tactics: {
+          ...played.tactics,
+          ...(tackling !== undefined ? { tackling } : {}),
+          ...(defLine !== undefined ? { defLine } : {}),
+        },
+        assistantTacticalRevert: undefined,
+      };
+    }
     // The match was today's stop — it's resolved now, and playRound has
     // rolled the calendar into next week, so anything still sitting in
     // `dayStops`/`dayDigest` is from a week that's now over.
@@ -508,7 +524,82 @@ export default function FootballManagerGame() {
     ? ({ '--brand': themedClub.color, '--brand-text': readableTextOn(themedClub.color) } as CSSProperties)
     : undefined;
 
+  // ── Lasso/Kent assistant wiring ───────────────────────────────────────
+  // The whole integration surface: a read-only snapshot for them to react
+  // to, and one place where their advice actually moves the game state.
+  const userSquad = gs
+    ? Object.values(gs.players).filter((p) => p.clubId === gs.userClubId)
+    : [];
+  const avgOf = (nums: number[]) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0);
+  const assistantSnapshot = {
+    morale: gs?.morale ?? 60,
+    fitness: avgOf(userSquad.map((p) => p.fitness)),
+    rating: avgOf(userSquad.map((p) => p.rating)),
+    matchMinute: null,
+  };
+
+  const applyAssistantEffects = (fx: AssistantEffects) => {
+    setGs((cur) => {
+      if (!cur) return cur;
+      const moraleDelta = (fx.morale ?? 0) + (fx.moralePct ? cur.morale * fx.moralePct : 0);
+
+      // Aggression/defensive discipline land on the two categorical tactics
+      // knobs the tick engine's xG model actually reads (TACKLE_BOOST off
+      // `tackling`, the press/line trade off `defLine` — see
+      // engine/tickEngine/xgModel.ts). One nudge = one notch for the next
+      // match only; `assistantTacticalRevert` remembers what to put back,
+      // and `handleMatchDone` below restores it once that match is over.
+      const TACKLING_STEPS: Tackling[] = ['cautious', 'normal', 'aggressive'];
+      const DEF_LINE_STEPS: DefLine[] = ['high', 'normal', 'deep'];
+      const step = <T,>(steps: T[], current: T, delta: number): T => {
+        const i = steps.indexOf(current);
+        return steps[Math.max(0, Math.min(steps.length - 1, i + Math.sign(delta)))];
+      };
+
+      let tactics = cur.tactics;
+      let revert = cur.assistantTacticalRevert;
+      if (fx.aggression) {
+        const before = tactics.tackling ?? 'normal';
+        const nextTackling = step(TACKLING_STEPS, before, fx.aggression);
+        if (nextTackling !== before) {
+          tactics = { ...tactics, tackling: nextTackling };
+          revert = { ...revert, tackling: revert?.tackling ?? before };
+        }
+      }
+      if (fx.defensiveDiscipline) {
+        const before = tactics.defLine ?? 'normal';
+        // Positive discipline holds a deeper, more cautious line; negative
+        // pushes it higher and riskier — same direction the engine already
+        // treats "high line" as the aggressive/exposed setting.
+        const nextDefLine = step(DEF_LINE_STEPS, before, fx.defensiveDiscipline);
+        if (nextDefLine !== before) {
+          tactics = { ...tactics, defLine: nextDefLine };
+          revert = { ...revert, defLine: revert?.defLine ?? before };
+        }
+      }
+
+      if (!moraleDelta && !fx.cash && tactics === cur.tactics) return cur;
+      return {
+        ...cur,
+        // Same 30–95 band the rest of the engine keeps morale inside.
+        morale: Math.max(30, Math.min(95, Math.round(cur.morale + moraleDelta))),
+        budget: Math.max(0, cur.budget + (fx.cash ?? 0)),
+        tactics,
+        assistantTacticalRevert: revert,
+      };
+    });
+
+    // `rejectionRisk` doesn't have a real gameplay hook yet — the transfer
+    // flow's actual accept/reject roll isn't the (currently unused)
+    // `refuseChance()` helper, and wiring it there would be cosmetic. Surface
+    // it as a toast until that roll site is traced properly.
+    if (fx.rejectionRisk) {
+      pushToast(`Rejection risk +${Math.round(fx.rejectionRisk * 100)}% on this approach`, 'info');
+    }
+  };
+
   return (
+    <LassoKentProvider snapshot={assistantSnapshot} onEffects={applyAssistantEffects}>
     <div className="fm-app" style={brandStyle}>
       <IconSprite />
       <ToastHost />
@@ -709,5 +800,6 @@ export default function FootballManagerGame() {
         />
       )}
     </div>
+    </LassoKentProvider>
   );
 }
