@@ -116,7 +116,7 @@ export default function HubScreen({
       case 'team-hub': return <TeamHubScreen state={state} onRoute={onRoute} />;
       case 'market-hub': return <MarketHubScreen state={state} onRoute={onRoute} />;
       case 'club-hub': return <ClubHubScreen state={state} onRoute={onRoute} />;
-      case 'squad': return <SquadScreen state={state} onChange={onChange} />;
+      case 'squad': return <SquadScreen state={state} onChange={onChange} onRoute={onRoute} />;
       case 'tactics': return <TacticsScreen state={state} onChange={onChange} />;
       case 'training': return <TrainingScreen state={state} onChange={onChange} />;
       case 'schedule': return <WeeklyScheduleScreen state={state} onChange={onChange} />;
