@@ -188,6 +188,31 @@ export default function CharacterCustomizerScreen({
   const [error, setError] = useState<string | null>(null);
   const nameRef = useRef<HTMLInputElement | null>(null);
 
+  // Gap 18 (Userbrain): "Oh, what did I just do?" — Prior Background and
+  // Coaching Badges are instant-commit toggle buttons packed into a tight
+  // grid, and a tester found a value had changed after scrolling past that
+  // row. No scroll-to-value binding exists in this file (confirmed by
+  // search), so the likely cause is a touch that ends on a button after
+  // moving — most browsers already suppress a click once a touch has
+  // scrolled, but this is a second, explicit guard: track where the pointer
+  // went down, and swallow the click if it travelled further than a tap
+  // should before landing on a button.
+  const dragOriginRef = useRef<{ x: number; y: number } | null>(null);
+  const TAP_DRAG_THRESHOLD = 10;
+  const handleOptionPointerDownCapture = (e: React.PointerEvent) => {
+    dragOriginRef.current = { x: e.clientX, y: e.clientY };
+  };
+  const handleOptionClickCapture = (e: React.MouseEvent) => {
+    const origin = dragOriginRef.current;
+    if (!origin) return;
+    const dx = Math.abs(e.clientX - origin.x);
+    const dy = Math.abs(e.clientY - origin.y);
+    if (dx > TAP_DRAG_THRESHOLD || dy > TAP_DRAG_THRESHOLD) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  };
+
   const category = useMemo(
     () => CATEGORIES.find((c) => c.id === categoryId) ?? CATEGORIES[0],
     [categoryId]
@@ -423,7 +448,14 @@ export default function CharacterCustomizerScreen({
       )}
 
       {tab === 'credentials' && (
-        <div className="fm-creator__panel" id="fm-panel-credentials" role="tabpanel" aria-labelledby="fm-tab-credentials">
+        <div
+          className="fm-creator__panel"
+          id="fm-panel-credentials"
+          role="tabpanel"
+          aria-labelledby="fm-tab-credentials"
+          onPointerDownCapture={handleOptionPointerDownCapture}
+          onClickCapture={handleOptionClickCapture}
+        >
           <div className="form-group">
             <label className="fm-label-small">Playing Career</label>
             <p className="fm-category-desc">Your pedigree as a player — the biggest factor in your starting reputation.</p>
@@ -485,7 +517,14 @@ export default function CharacterCustomizerScreen({
       )}
 
       {tab === 'style' && (
-        <div className="fm-creator__panel" id="fm-panel-style" role="tabpanel" aria-labelledby="fm-tab-style">
+        <div
+          className="fm-creator__panel"
+          id="fm-panel-style"
+          role="tabpanel"
+          aria-labelledby="fm-tab-style"
+          onPointerDownCapture={handleOptionPointerDownCapture}
+          onClickCapture={handleOptionClickCapture}
+        >
           <div className="form-group">
             <label className="fm-label-small">Coaching Style ({coachingStyles.length}/{MAX_STYLES})</label>
             <p className="fm-category-desc">Pick up to {MAX_STYLES} tags that describe your approach on the training ground and touchline.</p>

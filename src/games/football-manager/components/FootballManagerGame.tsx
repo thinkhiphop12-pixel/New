@@ -475,6 +475,14 @@ export default function FootballManagerGame() {
     if (gs) apply({ ...gs, managerProfile: profile });
     setCareerManagerFlow(false);
     setView(characterReturn);
+    // Gap 17 (Userbrain): saving from the standalone "Customize Manager"
+    // entry (no career yet) lands back on the menu — correct, since that
+    // entry point only edits the profile, it doesn't start a career — but
+    // with no confirmation it read as "returned to the homepage" rather
+    // than "saved, now pick a slot". Say so explicitly.
+    if (characterReturn === 'menu') {
+      pushToast('Manager saved — pick a slot to start your career', 'success');
+    }
   };
 
   const handleCharacterBack = () => {
