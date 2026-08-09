@@ -316,6 +316,14 @@ export function economyScale(state: GameState, leagueId: string): number {
  *  still breaches, which is the behaviour the SCR ladder exists to produce. */
 export const TARGET_WAGE_SHARE = 0.52;
 
+/** Years a transfer fee is written down over. Real accounting spreads it
+ *  across the signed contract, and UEFA caps that write-down at five years —
+ *  which is also what a big signing is typically tied to. Three years charged
+ *  a fee 67% faster than the rules require and, with wages now a realistic
+ *  share of revenue, left almost no room under the squad-cost limit to
+ *  actually spend a transfer budget. */
+export const AMORT_YEARS = 5;
+
 /* =========================================================================
    Revenue streams (all in £/season unless the name says otherwise)
    ========================================================================= */
@@ -739,7 +747,7 @@ export function terminateSponsorDeal(state: GameState, slot: SponsorSlotId): Gam
  * Only the 5% agent fee touches the balance here; the fee itself has already
  * left `budget` at the point of signing.
  */
-export function recordTransferExpense(state: GameState, fee: number, contractYears = 3): void {
+export function recordTransferExpense(state: GameState, fee: number, contractYears = AMORT_YEARS): void {
   const fin = ensureFinances(state);
   const agentFee = Math.round(fee * 0.05);
   state.budget -= agentFee;
@@ -770,7 +778,7 @@ function absorbLedgerTransfers(state: GameState, fin: FinanceState): void {
     const key = `${state.seasonYear}|${e.week}|${e.desc}|${e.amount}`;
     if (fin.seenLedger.includes(key)) continue;
     fin.seenLedger.push(key);
-    if (isBuy) recordTransferExpense(state, -e.amount, 3);
+    if (isBuy) recordTransferExpense(state, -e.amount, AMORT_YEARS);
     else recordTransferIncome(state, e.amount);
   }
   // The ledger itself is capped at 24 entries; keep the dedupe set bounded too.

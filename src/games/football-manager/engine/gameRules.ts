@@ -630,10 +630,28 @@ export function statureBudgetMultiplier(rank: number, of: number): number {
   return 0.25 * Math.exp(1.87 * standing);
 }
 
+/**
+ * Transfer budgets sit on the same scale as the rest of the economy.
+ *
+ * The league baselines predate the wage model, and were set when wages cost a
+ * club ~8% of its revenue and nothing else competed for the money. Measured
+ * against everything else this game prices — an elite player asks £6.6m, a
+ * top club earns £39m a season and pays £22m of it in wages — the old
+ * baselines ran roughly four times too rich: they handed a title favourite
+ * 167% of its annual revenue to spend, where a real one gets about 25%.
+ *
+ * The consequence was concrete rather than cosmetic. Spending a full budget
+ * amortized straight through the 70% squad-cost limit, so the board's own
+ * money triggered a transfer embargo. Scaling the whole curve down keeps the
+ * hierarchy exactly as it was — the ratio between clubs is untouched — while
+ * making the money spendable and the market meaningful again.
+ */
+export const BUDGET_SCALE = 0.26;
+
 /** Starting transfer budget for one specific club: its league's baseline
  *  scaled by where its squad ranks inside that league. */
 export function clubStartingBudget(leagueId: string, rank: number, of: number): number {
-  const raw = getLeague(leagueId).startingBudget * statureBudgetMultiplier(rank, of);
+  const raw = getLeague(leagueId).startingBudget * statureBudgetMultiplier(rank, of) * BUDGET_SCALE;
   // Round to something a board would actually quote.
   const step = raw >= 20_000_000 ? 1_000_000 : raw >= 2_000_000 ? 100_000 : 10_000;
   return Math.max(step, Math.round(raw / step) * step);
