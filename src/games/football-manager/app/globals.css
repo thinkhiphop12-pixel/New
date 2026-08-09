@@ -2713,6 +2713,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
    rather than carrying a separate modifier. */
 .fm-club-card { align-items: center; text-align: center; }
 .fm-club-card__name { line-height: 1.25; }
+.fm-club-card__rank { font-size: 11px; color: var(--muted-dim); }
 .fm-club-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; margin-top: auto; }
 .fm-club-card__rating {
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
@@ -2744,6 +2745,24 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 @media (min-width: 620px) { .fm-pick-head__fields { grid-template-columns: 1fr 1fr; } }
 .fm-pick-head .fm-search { min-width: 0; }
+
+/* Gap 81 follow-up: the club filter reads as a grid-scoping control, not a
+   third generic text field, so it gets its own row and stronger styling
+   directly above the grid it filters. */
+.fm-club-filter {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; max-width: 460px; margin: 8px auto 12px;
+  padding: var(--s-2) var(--s-4);
+  background: var(--panel-2); border: 1px solid var(--border-bright);
+  border-radius: var(--radius-md, 10px);
+}
+.fm-club-filter__icon { font-size: 14px; opacity: 0.7; }
+.fm-club-filter__input {
+  flex: 1; min-width: 0; background: transparent; border: none; color: var(--text);
+  font-size: var(--fs-md, 14px); outline: none;
+}
+.fm-club-filter__input::placeholder { color: var(--muted-dim); }
+.fm-club-filter:focus-within { border-color: var(--green-600); }
 
 /* =====================================================================
    SECTION HUBS — the landing screen each group opens on

@@ -57,12 +57,6 @@ export default function MainMenuScreen({
         through the kids — and survive the board. League, cup and continental glory await.
       </p>
 
-      <div className="fm-menu-actions">
-        <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={onCharacterCustomizer}>
-          <Icon name="palette" size={15} /> Customize Manager
-        </button>
-      </div>
-
       <div className="fm-slots">
         {saves.map((meta, slot) => (
           <div key={slot} className="fm-slot-card">
@@ -92,7 +86,7 @@ export default function MainMenuScreen({
               <>
                 <span className="fm-slot-card__meta">Empty slot</span>
                 <div className="fm-slot-card__actions">
-                  <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={() => onNewGame(slot)}>
+                  <button className="fm-btn fm-btn--primary fm-btn--small" onClick={() => onNewGame(slot)}>
                     Start new career
                   </button>
                 </div>
@@ -100,6 +94,12 @@ export default function MainMenuScreen({
             )}
           </div>
         ))}
+      </div>
+
+      <div className="fm-menu-actions">
+        <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={onCharacterCustomizer}>
+          <Icon name="palette" size={15} /> Customize Manager
+        </button>
       </div>
 
       <ol className="fm-howto">
