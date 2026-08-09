@@ -186,6 +186,17 @@ export function promoteYouthPlayer(state: GameState, playerId: number): GameStat
 
   const player = s.players[playerId];
   if (player) {
+    // Bug prevention (spec module "Youth Academy Flag"): a kid's contract was
+    // struck the day he joined the academy, seasons before this promotion —
+    // left alone it can already be down to its final year (or, on a slow
+    // academy career, technically expired) the moment he steps up, which
+    // would either vanish him as a free agent at the next rollover or make
+    // him invisible to the renewal-window check that assumes a first-team
+    // deal. Promotion always writes a fresh, fully active contract so he is
+    // immediately renewable like any other first-teamer.
+    player.contractYears = 3;
+    player.contractEnd = contractEndFor(s.seasonYear, 3);
+    player.contractWarned = false;
     s.news.unshift(`${player.name} is promoted from the youth academy to the first team.`);
   }
   return s;

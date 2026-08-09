@@ -204,6 +204,11 @@ export interface Player {
   /** Season week a "not playing enough"-style complaint last fired for this
    *  player, so the inbox doesn't spam him every week. */
   lastComplaintWeek?: number;
+  /** Season week a renewal-conversation nudge (contract window / low morale /
+   *  hot form) last fired for this player, so the inbox doesn't spam him
+   *  every week. Independent of `contractWarned`, which only covers the
+   *  once-a-season "final year" nudge. */
+  renewalNudgeWeek?: number;
 }
 
 /** A per-player development focus set from `PlayerModal`. `stat` mode
@@ -1190,6 +1195,15 @@ export interface GameState {
   preContracts?: PreContract[];
   /** playerId → season year he refused to talk to us. Cleared each season. */
   transferBans?: Record<number, number>;
+  /** playerId → absolute tick (`seasonYear*100+week`) a rejected renewal's
+   *  "Silent Period" runs until — a new renewal offer is blocked before then.
+   *  Separate from `transferBans` because it gates `renewContract`, not
+   *  `openNegotiation`, and its window is weeks, not a whole season. */
+  renewalCooldowns?: Record<number, number>;
+  /** playerId → absolute tick a free agent's short re-offer window runs
+   *  until, after he turned an offer down. Free agents don't get the
+   *  season-long `transferBans` treatment — see spec module C. */
+  freeAgentCooldowns?: Record<number, number>;
   /** Headlines about transfer business elsewhere in the league. */
   transferNews?: string[];
 

@@ -15,6 +15,7 @@ import type {
   Player, SquadStatusKey, MarketStatus,
 } from './types';
 import { getLeague } from './gameRules';
+import { weeklyWage } from './utils';
 
 /* ------------------------------------------------------------------ money */
 
@@ -63,6 +64,34 @@ export function leagueStanding(leagueId: string): number {
 
 export function leagueCountry(leagueId: string): string | null {
   return getLeague(leagueId)?.country ?? null;
+}
+
+/**
+ * How much a league's standing inflates personal-terms demands — a Premier
+ * League move commands a premium a National League one never will. Centred
+ * on 1.0 at `leagueStanding` 70 (mid-table Championship), the target design
+ * spec's `LeaguePrestigeMultiplier` expressed off the scale we already have,
+ * clamped so a move up or down the pyramid nudges wages rather than
+ * multiplying them out of proportion.
+ */
+export function leaguePrestigeMultiplier(leagueId: string | null | undefined): number {
+  if (!leagueId) return 1;
+  return Math.max(0.6, Math.min(1.6, leagueStanding(leagueId) / 70));
+}
+
+/**
+ * What a player would want on personal terms as a FRESH signing — spec
+ * module B's `Demand = (Overall*0.8 + Potential*0.2) * LeaguePrestigeMultiplier`,
+ * run through the same value/rating→wage scale the dataset itself is seeded
+ * from (`weeklyWage`) so the number lands in this game's wage economy rather
+ * than a bare, unscaled points total. Deliberately lower than
+ * `renewalWageDemand` for the same player — a fresh approach has no leverage.
+ * `leaguePrestigeMult` is 1 for a free agent (spec: "no league prestige
+ * boost, they are desperate") and for a like-for-like renewal quote.
+ */
+export function newSigningWageDemand(p: Player, leaguePrestigeMult = 1): number {
+  const blended = p.rating * 0.8 + (p.potential ?? p.rating) * 0.2;
+  return roundWage(weeklyWage(p.value, blended) * leaguePrestigeMult);
 }
 
 /**
@@ -340,7 +369,10 @@ export function startNegotiation(
   player: Player,
   sellerRating: number,
   st: MarketStatus,
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
+  /** Buying club's league, for spec module B's `LeaguePrestigeMultiplier`.
+   *  Undefined/null (a free agent, or no buyer context) means no boost. */
+  buyingLeagueId?: string | null
 ): NegotiationTerms {
   const youngBoost = player.age <= 23 ? 0.06 : 0;
   const potBoost = (player.potential ?? player.rating) - player.rating >= 8 ? 0.04 : 0;
@@ -351,7 +383,13 @@ export function startNegotiation(
   const minFee = Math.max(10_000, roundFee(player.value * minMult));
   // Player wants 20-40% more than his current wage — one desperate to leave asks less.
   const wageMult = (1.25 + rand(3, 20, rng) / 100) * (st.unsettled ? 0.92 : 1);
-  const wageDemand = roundWage(player.wage * wageMult);
+  // Never less than what he'd want as a fresh signing elsewhere (spec module
+  // B's formula) — a floor, not the whole story, so the existing
+  // current-wage-driven haggle range still does the day-to-day work.
+  const wageDemand = Math.max(
+    roundWage(player.wage * wageMult),
+    newSigningWageDemand(player, buyingLeagueId ? leaguePrestigeMultiplier(buyingLeagueId) : 1)
+  );
   return {
     asking,
     minFee,
@@ -455,11 +493,16 @@ export function evaluateFeeOffer(
   offer: number,
   rng: () => number = Math.random,
   clauses: DealClauses = {},
-  marketValue = 0
+  marketValue = 0,
+  /** Deadline day: selling-club friction eases 20% (spec module: "Deadline
+   *  Day Override" — a panicked seller takes less rather than risk keeping
+   *  a player who wants out with no market left to sell him in). */
+  deadlineDay = false
 ): FeeDecision {
   neg.feeRound++;
   const bid = effectiveBid(offer, marketValue, clauses);
-  if (bid >= neg.minFee) {
+  const minFee = deadlineDay ? Math.round(neg.minFee * 0.8) : neg.minFee;
+  if (bid >= minFee) {
     if (neg.holdOut && rng() < neg.holdOut) {
       neg.holdOut = 0;
       neg.minFee = roundFee(neg.minFee * 1.12);
@@ -471,8 +514,8 @@ export function evaluateFeeOffer(
   if (neg.feeRound >= 3) return { decision: 'walk' };
   // Only a bid already in touching distance gets a counter, and the counter
   // barely moves off the asking price — no meeting in the middle.
-  if (bid >= neg.minFee * 0.90) {
-    const counter = Math.max(neg.minFee, roundFee(bid * 0.20 + neg.asking * 0.80));
+  if (bid >= minFee * 0.90) {
+    const counter = Math.max(minFee, roundFee(bid * 0.20 + neg.asking * 0.80));
     neg.asking = counter;
     return { decision: 'counter', counter };
   }
@@ -509,6 +552,14 @@ export interface TermsPackage {
   signingBonus?: number;
   releaseClause?: number;
   contractYears?: number;
+  /** Player's age, for the two squad-role rules below. Optional so every
+   *  pre-existing call site (which never checked age here) still compiles
+   *  and simply skips them. */
+  age?: number;
+  /** How many players the buying club already carries at `promisedStatus`
+   *  in this player's position — squad-depth detection for the "Crucial"
+   *  rule below. 0/undefined = not checked. */
+  samePositionAtPromisedStatus?: number;
 }
 
 /**
@@ -525,11 +576,16 @@ export function evaluateTermsOffer(
   terms: TermsPackage = {},
   rng: () => number = Math.random
 ): FeeDecision & { persuadedBy?: boolean } {
+  const promised = terms.promisedStatus ? SQUAD_STATUS[terms.promisedStatus] : null;
+  // "Future Star" (our 'star') promised to a player past his prime — he knows
+  // better and walks immediately, no amount of money changes his mind.
+  if (promised?.rank === 4 && (terms.age ?? 0) > 26) {
+    return { decision: 'walk' };
+  }
   const base = evaluateWageOffer(neg, offer, rng);
   if (base.decision === 'accept') return base;
   const shortfall = Math.max(0, (neg.minWage - offer) / Math.max(1, neg.minWage));
   let credit = 0;
-  const promised = terms.promisedStatus ? SQUAD_STATUS[terms.promisedStatus] : null;
   const expected = SQUAD_STATUS[terms.projectedStatus ?? 'first_team'];
   if (promised) {
     const step = promised.rank - (expected?.rank ?? 2);
@@ -540,6 +596,12 @@ export function evaluateTermsOffer(
   }
   if ((terms.releaseClause ?? 0) > 0) credit += 0.05;
   if ((terms.contractYears ?? 3) >= 4) credit += 0.015;
+  // Squad-depth detection: promising "Crucial" (key/star) minutes into a
+  // position that already has 3+ players carrying that promise reads as an
+  // empty word — the agent discounts the role credit by a quarter.
+  if (promised && promised.rank >= 3 && (terms.samePositionAtPromisedStatus ?? 0) >= 3) {
+    credit *= 0.75;
+  }
   if (credit > 0 && shortfall <= credit) return { decision: 'accept', persuadedBy: true };
   return base;
 }
@@ -572,6 +634,17 @@ export function loanFee(p: Player): number {
 }
 
 /**
+ * Hard ceiling on a loan's buy-option / future fee — spec's "Loan Exploit
+ * Flag": an option priced far above value can otherwise force a nonsense
+ * accept out of the evaluation math. No future fee, offered or demanded, is
+ * ever allowed above 2x market value, whatever either side proposes.
+ */
+export function capFutureFee(value: number, fee: number): number {
+  if (value <= 0) return fee;
+  return Math.min(fee, roundFee(value * 2));
+}
+
+/**
  * The lending club's opening position for a negotiated outgoing loan
  * (`openLoanNegotiation` in transferMarket.ts) — the loan counterpart to
  * `startNegotiation`. There is no fee to haggle (`loanFee` is a fixed
@@ -599,7 +672,9 @@ export function startLoanNegotiation(
   const minWageShare = Math.min(1, (devLoan ? 0.5 : 0.75) + rand(0, 20, rng) / 100);
   // Same "above his current value" logic `requestLoanIn`'s auto-set option
   // uses, just as a negotiated minimum instead of a fixed number.
-  const minBuyOption = offerType === 'loan_to_buy' ? roundFee(p.value * (devLoan ? 1.15 : 1.35)) : 0;
+  const minBuyOption = offerType === 'loan_to_buy'
+    ? capFutureFee(p.value, roundFee(p.value * (devLoan ? 1.15 : 1.35)))
+    : 0;
   return { minWageShare, requiresPlayingTime: devLoan, minBuyOption, round: 0 };
 }
 

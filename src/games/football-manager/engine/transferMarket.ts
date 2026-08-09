@@ -2,7 +2,7 @@ import type {
   Club, GameState, MarketStatus, MoveAssessment, Negotiation, Player, Position,
   PreContract, SquadStatusKey, TransferOffer,
 } from './types';
-import { MAX_SQUAD_SIZE, MIN_SQUAD_SIZE, transferWindow, windowShutReason } from './gameRules';
+import { MAX_SQUAD_SIZE, MIN_SQUAD_SIZE, isDeadlineWeek, transferWindow, windowShutReason } from './gameRules';
 import {
   availableSquad, clubWageBill, ensureSquadNumbers, getSquad, isOnLoan, squadAvgRating, wageCeiling,
 } from './teamManagement';
@@ -11,9 +11,10 @@ import { pushInbox } from './inbox';
 import { recordScenarioSale } from './scenarios';
 import type { DealClauses } from './negotiation';
 import {
-  LOAN_PLAYTIME, SELL_ON_MAX, SQUAD_STATUS, askingGuide, askingMultiplier, clauseText,
+  LOAN_PLAYTIME, SELL_ON_MAX, SQUAD_STATUS, askingGuide, askingMultiplier, capFutureFee, clauseText,
   contractMonthsLeft, evaluateFeeOffer, evaluateLoanTermsOffer, evaluateMove, evaluateTermsOffer,
-  isLoanAvailable, loanClauseText, loanFee, marketStatus, playerAmbition, prestigeRejectChance,
+  isLoanAvailable, loanClauseText, loanFee, marketStatus, newSigningWageDemand,
+  playerAmbition, prestigeRejectChance,
   roundFee, roundWage, stanceLine, startLoanNegotiation, startNegotiation, statusLabel,
 } from './negotiation';
 
@@ -45,7 +46,10 @@ export function canBuy(state: GameState, playerId: number): BuyResult {
   }
   if (askingPrice(p) > state.budget) return { ok: false, error: 'Not enough budget.' };
   const ceiling = wageCeiling(state);
-  if (clubWageBill(state, state.userClubId) + p.wage > ceiling) {
+  // A free agent's wage is re-priced on signing (spec module C) — check
+  // against what he'll actually cost, not whatever stale figure he carries.
+  const projectedWage = p.clubId === 0 ? newSigningWageDemand(p, 1) : p.wage;
+  if (clubWageBill(state, state.userClubId) + projectedWage > ceiling) {
     return { ok: false, error: `Over the wage budget — ${money(ceiling)}/wk is the board's ceiling.` };
   }
   if (getSquad(state, state.userClubId).length >= MAX_SQUAD_SIZE)
@@ -65,6 +69,11 @@ export function buyPlayer(state: GameState, playerId: number): GameState {
   mine.playerIds.push(playerId);
   p.clubId = s.userClubId;
   ensureSquadNumbers(s);
+  // Free Agents (spec module C): personal terms use the new-signing wage
+  // formula with no league-prestige boost — "they are desperate" — instead
+  // of carrying over whatever he last earned (which could be stale by
+  // years, or simply absent for a player who never had a wage on record).
+  if (from == null) p.wage = newSigningWageDemand(p, 1);
   p.contractYears = 3;
   p.contractEnd = contractEndFor(s.seasonYear, 3);
   delete p.onLoanUntil;
@@ -122,17 +131,96 @@ export function sellPlayer(state: GameState, playerId: number, offer?: TransferO
   return s;
 }
 
-/** Extend a player's contract: +3 years at a 20% raise, plus a signing bonus. */
-export function renewContract(state: GameState, playerId: number): GameState {
+/** Has the club lifted a trophy already this season? The domestic cup and
+ *  the continental competition both resolve mid-season and reset every
+ *  rollover, so their live `winnerId` is exactly "this season's" silverware
+ *  — the league title itself is only known at season's end, by which point
+ *  it has already folded into `manager.trophies`. */
+function wonTrophyThisSeason(s: GameState): boolean {
+  return s.cup.winnerId === s.userClubId || s.continental.winnerId === s.userClubId;
+}
+
+/**
+ * Extend a player's contract — spec module A's renewal wage formula, squad-
+ * role logic and "Silent Period" cooldown.
+ *
+ * `offeredStatus` is the role being put to him this time; omit it to leave
+ * whatever he's currently promised untouched (every existing call site —
+ * the Squad screen's quick "Offer new deal" button and the inbox nudge —
+ * does exactly that, so none of them regress). Passing a status ranked
+ * below his current one is the "lower role" case the spec penalises.
+ */
+export function renewContract(
+  state: GameState,
+  playerId: number,
+  offeredStatus?: SquadStatusKey | null,
+  rng: () => number = Math.random
+): GameState {
   const p = state.players[playerId];
   if (!p || p.clubId !== state.userClubId) return state;
-  const bonus = p.wage * 10;
+  // The Silent Period: a bypass-by-money isn't on offer, so this is checked
+  // before anything else, wage included.
+  if (isRenewalCoolingDown(state, playerId)) return state;
+
+  // Wage Demand Formula (Renewal):
+  // DemandedWage = CurrentWage * (1 + OverallIncrease/15) * (1 + TeamSuccessBonus)
+  // `OverallIncrease` isn't a tracked history (no per-contract baseline
+  // rating is kept), so it's read off how far above a replacement-level
+  // player (60 OVR) he already is — a decent proxy for "how much leverage
+  // his ability gives him" that grows the same way the real figure would.
+  const overallIncrease = clamp(p.rating - 60, 0, 30);
+  const teamSuccessBonus = wonTrophyThisSeason(state) ? 0.1 : 0;
+  let demand = p.wage * (1 + overallIncrease / 15) * (1 + teamSuccessBonus);
+  // Critical Rule: a renewal always costs 15-25% more than the same player
+  // would take as a fresh signing (`newSigningWageDemand`, no league-move
+  // prestige bump since he isn't moving leagues) — he already plays for you
+  // and knows it.
+  const leverageFloor = newSigningWageDemand(p, 1) * (1.15 + rng() * 0.10);
+  demand = Math.max(demand, leverageFloor);
+  const newWage = roundWage(demand);
+
+  // Squad Role Logic: offering a lower role than he currently holds tanks
+  // his willingness to sign; a player over 32 waves it through regardless,
+  // no wage argument attached.
+  const currentStatus = (p.promisedStatus as SquadStatusKey | null) ?? null;
+  const wantsStatus = offeredStatus !== undefined ? offeredStatus : currentStatus;
+  const isDowngrade =
+    currentStatus != null && wantsStatus != null &&
+    SQUAD_STATUS[wantsStatus].rank < SQUAD_STATUS[currentStatus].rank;
+  const veteranWaiver = p.age > 32;
+  let acceptChance = 0.94;
+  if (isDowngrade && !veteranWaiver) acceptChance -= 0.40;
+
+  if (!veteranWaiver && rng() >= acceptChance) {
+    const s: GameState = structuredClone(state);
+    markRenewalCooldown(s, playerId, rng);
+    s.news.unshift(`${p.name} turns down new terms at the club.`);
+    pushInbox(s, {
+      category: 'contract',
+      title: `${p.name} rejects new terms`,
+      body: isDowngrade
+        ? `${p.name} has rejected the contract offer — being asked to accept a reduced role on top of new terms was too much to take.\n\nHe won't discuss a new deal again for a few weeks.`
+        : `${p.name} has turned down the club's contract offer.\n\nHe won't discuss a new deal again for a few weeks.`,
+      playerId: p.id,
+    });
+    return s;
+  }
+
+  // Critical Implementation Rule 1 (Budget Enforcement): a renewal can't push
+  // the wage bill over the board's ceiling, same gate `canBuy` applies to a
+  // transfer — replacing his own old wage with the new one, not adding it on
+  // top twice.
+  const ceiling = wageCeiling(state);
+  const billAfter = clubWageBill(state, state.userClubId) - p.wage + newWage;
+  if (billAfter > ceiling) return state;
+  const bonus = newWage * 10;
   if (bonus > state.budget) return state;
   const s: GameState = structuredClone(state);
   const sp = s.players[playerId];
-  sp.wage = Math.round((sp.wage * 1.2) / 100) * 100;
+  sp.wage = newWage;
   sp.contractYears += 3;
   sp.contractEnd = contractEndFor(s.seasonYear, sp.contractYears);
+  if (offeredStatus !== undefined) sp.promisedStatus = offeredStatus;
   s.budget -= bonus;
   s.ledger.unshift({ week: s.week, desc: `${sp.name} contract bonus`, amount: -bonus });
   s.news.unshift(`${sp.name} signs a new deal (${sp.contractYears}y, ${money(sp.wage)}/w).`);
@@ -316,7 +404,16 @@ function ensureArrays(s: GameState): void {
   s.negotiations = s.negotiations ?? [];
   s.preContracts = s.preContracts ?? [];
   s.transferBans = s.transferBans ?? {};
+  s.renewalCooldowns = s.renewalCooldowns ?? {};
+  s.freeAgentCooldowns = s.freeAgentCooldowns ?? {};
   s.transferNews = s.transferNews ?? [];
+}
+
+/** `seasonYear*100+week` as a single ever-increasing tick — the unit every
+ *  weeks-not-a-whole-season cooldown below is stored in. `week` never
+ *  reaches 100 (`SEASON_ROUNDS` is 48), so seasons never collide. */
+function tick(s: GameState): number {
+  return s.seasonYear * 100 + s.week;
 }
 
 /** Games the club has played in its league this season (loan-clause sampling). */
@@ -332,12 +429,53 @@ function clubGamesPlayed(s: GameState, clubId: number): number {
 /* ------------------------------------------------------------ transfer bans */
 
 export function isTransferBanned(s: GameState, playerId: number): boolean {
+  if (s.players[playerId]?.clubId === 0) return isFreeAgentCoolingDown(s, playerId);
   return (s.transferBans ?? {})[playerId] === s.seasonYear;
 }
 
+/**
+ * Log a rejection against a player. Spec module C is explicit that a free
+ * agent doesn't carry the season-long `transferBans` ban a club-owned
+ * player does — "desperate" agents will hear you out again in about a week,
+ * so free agents get their own short cooldown dictionary instead.
+ */
 function markTransferBan(s: GameState, playerId: number): void {
   ensureArrays(s);
+  if (s.players[playerId]?.clubId === 0) {
+    markFreeAgentCooldown(s, playerId);
+    return;
+  }
   s.transferBans![playerId] = s.seasonYear;
+}
+
+/** Free agent's short (~1 week) re-offer window after he turns you down. */
+export function isFreeAgentCoolingDown(s: GameState, playerId: number): boolean {
+  const until = (s.freeAgentCooldowns ?? {})[playerId];
+  return until != null && tick(s) < until;
+}
+
+function markFreeAgentCooldown(s: GameState, playerId: number): void {
+  ensureArrays(s);
+  s.freeAgentCooldowns![playerId] = tick(s) + 1;
+}
+
+/**
+ * Renewal's "Silent Period" (spec module A): a rejected renewal blocks
+ * further renewal offers for a randomized 2-4 week window. Kept as its own
+ * dictionary rather than folded into `transferBans` — it gates
+ * `renewContract`, not `openNegotiation`, runs in weeks rather than a whole
+ * season, and a player can quite reasonably be transfer-banned and still
+ * open to a renewal conversation (or vice versa).
+ */
+export function isRenewalCoolingDown(s: GameState, playerId: number): boolean {
+  const until = (s.renewalCooldowns ?? {})[playerId];
+  return until != null && tick(s) < until;
+}
+
+function markRenewalCooldown(s: GameState, playerId: number, rng: () => number = Math.random): void {
+  ensureArrays(s);
+  const weeks = 2 + Math.floor(rng() * 3); // 2-4 weeks
+  s.renewalCooldowns![playerId] = tick(s) + weeks;
 }
 
 export function hasPreContract(s: GameState, playerId: number): boolean {
@@ -552,8 +690,17 @@ export function openNegotiation(state: GameState, playerId: number): TransferRes
           ? `${p.name} is into the last year of his deal — ${seller.name} would rather cash in than lose him for nothing.`
           : `${seller.name} are not looking to sell ${p.name}. It will take an offer well above his value to change their minds.`;
 
-  const terms = startNegotiation(p, squadAvgRating(s, seller.id), st);
-  if (preContract) { terms.asking = 0; terms.minFee = 0; }
+  const mine = clubOf(s, s.userClubId);
+  const terms = startNegotiation(p, squadAvgRating(s, seller.id), st, Math.random, mine?.leagueId);
+  if (preContract) {
+    terms.asking = 0;
+    terms.minFee = 0;
+    // Pre-Contract Logic (spec module C): no transfer fee to pay, so the
+    // agent leans harder on wages — a 1.3x premium on top of the normal
+    // demand.
+    terms.wageDemand = roundWage(terms.wageDemand * 1.3);
+    terms.minWage = roundWage(terms.wageDemand * 0.985);
+  }
   const N: Negotiation = {
     id: newId('neg'),
     type: 'outgoing',
@@ -676,7 +823,8 @@ export function triggerReleaseClause(state: GameState, playerId: number): Transf
   }
   s.negotiations = s.negotiations!.filter((n) => !(n.type === 'outgoing' && n.playerId === playerId));
   const st = marketStatus(p, s);
-  const terms = startNegotiation(p, squadAvgRating(s, seller.id), st);
+  const buyer = clubOf(s, s.userClubId);
+  const terms = startNegotiation(p, squadAvgRating(s, seller.id), st, Math.random, buyer?.leagueId);
   const N: Negotiation = {
     id: newId('neg'), type: 'outgoing',
     playerId, clubId: seller.id, clubName: seller.name,
@@ -799,8 +947,13 @@ export function submitTermsOffer(
   N.promisedStatus = pkg.promisedStatus ?? null;
   N.signingBonus = Math.max(0, Math.round(pkg.signingBonus ?? 0));
   N.releaseClause = Math.max(0, Math.round(pkg.releaseClause ?? 0));
-  if (N.signingBonus > s.budget) return fail(state, "You can't cover that signing-on fee.");
   N.lastWage = roundWage(weeklyWageOffer);
+  // Pre-Contract Logic (spec module C): a mandatory signing bonus of half a
+  // year's wage, paid upfront — no fee changed hands for the transfer, so
+  // this is where the agent gets his cut. The player set the floor; you
+  // can offer more, never less.
+  if (N.preContract) N.signingBonus = Math.max(N.signingBonus, Math.round(N.lastWage * 52 * 0.5));
+  if (N.signingBonus > s.budget) return fail(state, "You can't cover that signing-on fee.");
   N.awaiting = 'club';
   N.responseWeek = s.week + 1;
   N.lastTouchWeek = s.week;
@@ -823,7 +976,13 @@ export function submitLoanTermsOffer(
   if (!N || N.type !== 'outgoing' || N.stage !== 'loan_terms' || !N.loanTerms) {
     return fail(state, 'No loan terms to negotiate.');
   }
-  const buyOptionFee = Math.max(0, Math.round(offer.buyOptionFee ?? 0));
+  // Loan Exploit Flag (spec critical rule): no future/option fee, on either
+  // side of the table, is ever allowed above 2x the player's market value —
+  // otherwise a wildly inflated option can be used to force the AI's
+  // acceptance math into an accept it shouldn't give.
+  const rawBuyOptionFee = Math.max(0, Math.round(offer.buyOptionFee ?? 0));
+  const p = s.players[N.playerId];
+  const buyOptionFee = p ? capFutureFee(p.value, rawBuyOptionFee) : rawBuyOptionFee;
   if (N.offerType === 'loan_to_buy' && buyOptionFee > s.budget) {
     return fail(state, "You can't cover that buy-option fee.");
   }
@@ -1349,7 +1508,7 @@ export function requestLoanIn(state: GameState, playerId: number): TransferResul
     playingTime: devLoan ? 'regular' : 'occasional',
     // The parent sets the option above his current value so a good season
     // doesn't come cheap.
-    optionToBuy: roundFee(p.value * (devLoan ? 1.35 : 1.15)),
+    optionToBuy: capFutureFee(p.value, roundFee(p.value * (devLoan ? 1.35 : 1.15))),
     startApps: p.apps, startGoals: p.goals,
     startClubPlayed: clubGamesPlayed(s, s.userClubId),
     clauseBroken: false, warnedGames: null,
@@ -1429,6 +1588,7 @@ export function tickTransferWeek(s: GameState): string[] {
   tickLoanClauses(s, headlines);
   tickSquadPromises(s);
   generatePlayerEvents(s);
+  checkRenewalTriggers(s);
   s.transferNews = (s.transferNews ?? []).slice(0, 20);
   return headlines;
 }
@@ -1512,7 +1672,8 @@ function resolveOutgoingResponse(s: GameState, N: Negotiation, keep: Negotiation
   N.lastTouchWeek = s.week;
   if (N.stage === 'fee') {
     const r = evaluateFeeOffer(
-      N.neg, N.lastFee ?? 0, Math.random, negotiationClauses(s, N), N.marketValue ?? p.value
+      N.neg, N.lastFee ?? 0, Math.random, negotiationClauses(s, N), N.marketValue ?? p.value,
+      isDeadlineWeek(s.week)
     );
     if (r.decision === 'accept') {
       N.agreedFee = N.lastFee;
@@ -1561,13 +1722,22 @@ function resolveOutgoingResponse(s: GameState, N: Negotiation, keep: Negotiation
     }
     return;
   }
-  // Personal terms.
+  // Personal terms. Squad-depth detection (spec module B #6): how many
+  // players the user's club already carries at the promised status in this
+  // player's position — a "Crucial" promise into a crowded position reads
+  // as an empty word.
+  const mySquad = getSquad(s, s.userClubId);
+  const depthAtStatus = N.promisedStatus
+    ? mySquad.filter((sq) => sq.pos === p.pos && sq.promisedStatus === N.promisedStatus).length
+    : 0;
   const r = evaluateTermsOffer(N.neg, N.lastWage ?? 0, {
     promisedStatus: N.promisedStatus,
     projectedStatus: N.projectedStatus,
     signingBonus: N.signingBonus,
     releaseClause: N.releaseClause,
     contractYears: N.contractYears,
+    age: p.age,
+    samePositionAtPromisedStatus: depthAtStatus,
   });
   if (r.decision === 'accept') {
     if (r.persuadedBy) pushLog(N, `${p.name} takes less than he asked for — the package swung it.`, 'good');
@@ -1596,7 +1766,7 @@ function resolveIncomingResponse(s: GameState, N: Negotiation, keep: Negotiation
   if (N.playoffFloor != null) {
     const floor = N.playoffFloor;
     N.playoffFloor = null;
-    const maxW = N.maxWilling ?? (N.marketValue ?? 0) * 1.15;
+    const maxW = (N.maxWilling ?? (N.marketValue ?? 0) * 1.15) * (isDeadlineWeek(s.week) ? 0.85 : 1);
     if (maxW > floor) {
       N.fee = Math.max(N.fee ?? 0, roundFee(Math.min(maxW, floor * (1.04 + Math.random() * 0.10))));
       headlines.push(`${N.clubName} raised their bid for ${N.playerName} to ${money(N.fee)}.`);
@@ -1610,7 +1780,7 @@ function resolveIncomingResponse(s: GameState, N: Negotiation, keep: Negotiation
     return;
   }
   // The user sent a counter; the bidder decides whether to meet it.
-  const maxWilling = N.maxWilling ?? (N.marketValue ?? 0) * 1.15;
+  const maxWilling = (N.maxWilling ?? (N.marketValue ?? 0) * 1.15) * (isDeadlineWeek(s.week) ? 0.85 : 1);
   if ((N.lastCounter ?? Infinity) <= maxWilling) {
     N.fee = N.lastCounter ?? N.fee;
     headlines.push(completeIncomingSale(s, N));
@@ -1699,10 +1869,13 @@ function checkIncomingOffers(s: GameState, headlines: string[]): void {
     const bidder = candidates[Math.floor(Math.random() * candidates.length)];
     // The most they'll pay: value × 1.10-1.20 if listed; opportunistic bids
     // won't go much past value since they know you didn't ask to sell.
+    // Deadline Day Override: a buying club's threshold rises 15% — with no
+    // window left to shop elsewhere, they won't stretch as far for your man.
+    const deadlineTighten = isDeadlineWeek(s.week) ? 0.85 : 1;
     const maxWilling = roundFee(Math.max(
       fee * (1.02 + Math.random() * 0.10),
       p.value * (isListed ? 1.10 + Math.random() * 0.10 : 0.85 + Math.random() * 0.15)
-    ));
+    ) * deadlineTighten);
     s.negotiations!.push({
       id: newId('neg'), type: 'incoming', stage: 'fee', awaiting: 'user',
       responseWeek: null, lastTouchWeek: s.week,
@@ -1827,6 +2000,46 @@ function tickLoanClauses(s: GameState, headlines: string[]): void {
  * player told he'd be a key man and then left on the bench downs tools — which
  * is what makes the squad-status lever a real decision rather than free words.
  */
+/**
+ * Renewal Trigger Conditions (spec module A, checked weekly — the closest
+ * this game's week-tick has to the spec's "check daily"): a squad player
+ * flags for a renewal conversation when he's within a year of his deal
+ * expiring, his morale has cratered, or he's in career-best form. The
+ * within-a-year case duplicates (deliberately) the once-a-season
+ * `contractWarned` nudge in seasonProgression.ts — that one only fires the
+ * moment a player enters his final contract year; this one also catches
+ * morale/form and re-surfaces periodically rather than once.
+ */
+function checkRenewalTriggers(s: GameState): void {
+  const squad = getSquad(s, s.userClubId);
+  for (const p of squad) {
+    if (p.loan) continue;
+    if (isRenewalCoolingDown(s, p.id)) continue; // Silent Period — don't nag mid-cooldown
+    if (s.week - (p.renewalNudgeWeek ?? -99) < 8) continue; // once every ~2 months per player
+    const withinWindow = contractMonthsLeft(p, s) <= 12;
+    const lowMorale = p.morale < 30;
+    // `form` is a 0.85-1.15 multiplier that drifts weekly — the top of its
+    // range is this game's "over 8.5/10 across recent games".
+    const hotForm = p.form >= 1.10;
+    if (!withinWindow && !lowMorale && !hotForm) continue;
+    p.renewalNudgeWeek = s.week;
+    const reason = lowMorale
+      ? `${p.name} is unhappy and wants to discuss his future at the club.`
+      : hotForm
+        ? `${p.name}'s form has his agent pushing for an improved contract.`
+        : `${p.name} is entering the final year of his deal.`;
+    pushInbox(s, {
+      category: 'contract',
+      title: lowMorale ? `${p.name} wants talks over a new deal`
+        : hotForm ? `${p.name}'s agent wants a new deal`
+          : `${p.name}'s contract nears expiry`,
+      body: `${reason}\n\nOffer fresh terms now, or risk the situation souring — or losing him for nothing when his contract runs out.`,
+      playerId: p.id,
+      kind: 'contractExpiring',
+    });
+  }
+}
+
 function tickSquadPromises(s: GameState): void {
   const squad = getSquad(s, s.userClubId);
   if (!squad.length) return;

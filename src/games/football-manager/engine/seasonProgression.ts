@@ -1738,11 +1738,20 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     }
   }
 
+  // Youth-squad players (in a club's `youthPlayerIds`, not yet promoted into
+  // `playerIds`) — a contract-expiry bug prevention (spec: "Youth Academy
+  // Flag"). Their contract was struck the day they joined the academy and
+  // isn't a real first-team deal; ageing it down every rollover the same way
+  // as a first-teamer's would eventually run it to 0 and release him from
+  // the club he's never even played for. `promoteYouthPlayer` hands him a
+  // fresh, real contract the day he actually steps up instead.
+  const inAcademy = new Set(s.clubs.flatMap((c) => c.youthPlayerIds ?? []));
+
   // Contracts: everyone loses a year; expired user players leave, AI auto-renews.
   // `contractEnd` is the display-facing truth (a real 31 Jan / 30 Jun date), so
   // it is re-derived wherever `contractYears` moves.
   for (const p of Object.values(s.players)) {
-    if (p.clubId === 0) continue;
+    if (p.clubId === 0 || inAcademy.has(p.id)) continue;
     p.contractYears = Math.max(0, p.contractYears - 1);
     p.contractEnd = contractEndFor(s.seasonYear + 1, p.contractYears);
     // Re-arm the "contract expiring" nudge below for next season — a player

@@ -92,6 +92,20 @@ export function transferWindow(week: number): TransferWindowState {
   };
 }
 
+/**
+ * Deadline day: the final week of an open transfer window. Spec's "Deadline
+ * Day Override" — selling clubs get easier to talk down, AI bidders for the
+ * user's own players get harder to please. See `evaluateFeeOffer`'s
+ * `deadlineDay` param and `checkIncomingOffers`/`resolveIncomingResponse` in
+ * transferMarket.ts. Deliberately just this one-week easing/tightening, not
+ * the spec's separate 10-turns-of-1-hour deadline-day UI mechanic — that
+ * doesn't map onto this game's week-tick screens.
+ */
+export function isDeadlineWeek(week: number): boolean {
+  const w = transferWindow(week);
+  return w.open && w.weeksLeft === 0;
+}
+
 export const MIN_SQUAD_SIZE = 16;
 export const MAX_SQUAD_SIZE = 30;
 
