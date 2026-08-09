@@ -253,6 +253,11 @@ export default function MatchScreen({
     });
   };
 
+  // Gap 4 (Userbrain): speed was only reachable via the unlabeled 3-dot
+  // "Match menu" — testers didn't find it during a slow 0-0 first half.
+  // Promote a one-tap cycle into the always-visible bar itself.
+  const cycleSpeed = () => setSpeed(SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]);
+
   const makeSub = (inId: number) => {
     if (subOut === null || subsUsed >= MAX_SUBS) return;
     const outId = subOut;
@@ -329,8 +334,9 @@ export default function MatchScreen({
       <RotatePrompt />
       {/* FM-style angled scoreboard bar */}
       <div className="fm-fmbar">
-        <button className="fm-fmbar__menu" onClick={() => setShowMenu(true)} aria-label="Match menu">
+        <button className="fm-fmbar__menu" onClick={() => setShowMenu(true)} aria-label="Match menu" title="More match options">
           <span /><span /><span />
+          <span className="fm-fmbar__menu-label">More</span>
         </button>
         <div className="fm-fmbar__seg fm-fmbar__seg--home">
           {userIsHome && state.managerProfile && (
@@ -382,6 +388,15 @@ export default function MatchScreen({
         </button>
         <button className="fm-fmbar__icon" onClick={() => setShowTactics(true)} disabled={finished} aria-label="Tactics" title="Tactics">
           <Icon name="settings" size={16} />
+        </button>
+        <button
+          className="fm-fmbar__speed"
+          onClick={cycleSpeed}
+          disabled={finished}
+          aria-label={`Match speed ${speed}x, tap to change`}
+          title="Match speed — tap to cycle"
+        >
+          {speed}x
         </button>
         <button
           className="fm-fmbar__play"

@@ -1691,7 +1691,11 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   height: 100dvh;
   display: flex; flex-direction: column;
   background: var(--panel);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  /* Gap 11 (Userbrain): only the bottom inset was reserved, so once a phone
+     is actually rotated to landscape (what RotatePrompt asks for) the
+     notch/home-indicator sits on the left or right edge instead and clipped
+     the fmbar/ticker there — add those insets too. */
+  padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
 .fm-matchx__stage { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; }
 .fm-matchx__canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -1709,6 +1713,9 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   background: #2c0a3f; border: none; cursor: pointer;
 }
 .fm-fmbar__menu span { width: 20px; height: 3px; background: #fff; border-radius: 2px; }
+/* Gap 4/6 (Userbrain): the 3-dot glyph alone read as decorative chrome, not
+   a tappable "more options" control — a visible label removes the guess. */
+.fm-fmbar__menu-label { font-size: 8px; font-weight: 800; letter-spacing: 0.4px; color: rgba(255,255,255,0.8); text-transform: uppercase; }
 .fm-fmbar__seg {
   display: flex; align-items: center; justify-content: center; gap: 7px;
   padding: 0 18px; font-weight: 900; font-size: 15px; white-space: nowrap;
@@ -1731,6 +1738,14 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   background: transparent; border: none; color: #fff; font-size: 20px; cursor: pointer;
 }
 .fm-fmbar__icon:disabled { opacity: 0.35; cursor: not-allowed; }
+/* Gap 4 (Userbrain): a one-tap speed cycle promoted out of the hidden
+   "Match menu" into the always-visible bar, next to play/pause. */
+.fm-fmbar__speed {
+  flex: 0 0 40px; display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.08); border: none; border-radius: 4px; margin: 0 2px;
+  color: #fff; font-size: 13px; font-weight: 900; cursor: pointer;
+}
+.fm-fmbar__speed:disabled { opacity: 0.35; cursor: not-allowed; }
 .fm-fmbar__play {
   flex: 0 0 96px; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(180deg, #9ed63a 0%, #7cb928 100%);
@@ -1970,6 +1985,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   .fm-fmbar__team { max-width: 56px; }
   .fm-fmbar__play { flex: 0 0 64px; }
   .fm-fmbar__icon { flex: 0 0 36px; }
+  .fm-fmbar__speed { flex: 0 0 32px; font-size: 11px; }
   .fm-fmbar__dots { display: none; }
   .fm-fmticker__text { font-size: 13px; }
   .fm-mstats__grid { grid-template-columns: 1fr; }
