@@ -33,6 +33,8 @@ import { ToastHost, pushToast } from './ToastQueue';
 import { Icon, IconSprite } from './Icon';
 import type { ScreenId } from './hubNav';
 import OnboardingOverlay, { hasSeenOnboarding } from './OnboardingOverlay';
+import LassoKentProvider from './assistant/LassoKentProvider';
+import type { AssistantEffects } from '../data/lassoKentDialogues';
 
 type View = 'menu' | 'managerpick' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'daysummary' | 'match' | 'seasonend' | 'character';
 
@@ -508,7 +510,45 @@ export default function FootballManagerGame() {
     ? ({ '--brand': themedClub.color, '--brand-text': readableTextOn(themedClub.color) } as CSSProperties)
     : undefined;
 
+  // ── Lasso/Kent assistant wiring ───────────────────────────────────────
+  // The whole integration surface: a read-only snapshot for them to react
+  // to, and one place where their advice actually moves the game state.
+  const userSquad = gs
+    ? Object.values(gs.players).filter((p) => p.clubId === gs.userClubId)
+    : [];
+  const avgOf = (nums: number[]) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0);
+  const assistantSnapshot = {
+    morale: gs?.morale ?? 60,
+    fitness: avgOf(userSquad.map((p) => p.fitness)),
+    rating: avgOf(userSquad.map((p) => p.rating)),
+    matchMinute: null,
+  };
+
+  const applyAssistantEffects = (fx: AssistantEffects) => {
+    setGs((cur) => {
+      if (!cur) return cur;
+      const moraleDelta = (fx.morale ?? 0) + (fx.moralePct ? cur.morale * fx.moralePct : 0);
+      if (!moraleDelta && !fx.cash) return cur;
+      return {
+        ...cur,
+        // Same 30–95 band the rest of the engine keeps morale inside.
+        morale: Math.max(30, Math.min(95, Math.round(cur.morale + moraleDelta))),
+        budget: Math.max(0, cur.budget + (fx.cash ?? 0)),
+      };
+    });
+    // Aggression / defensive discipline / rejection risk have no single
+    // field to land in yet — surface them so the consequence is still
+    // visible, and map them onto tactics when you're ready.
+    const notes: string[] = [];
+    if (fx.aggression) notes.push(`Aggression ${fx.aggression > 0 ? '+' : ''}${fx.aggression}`);
+    if (fx.defensiveDiscipline)
+      notes.push(`Defensive discipline ${fx.defensiveDiscipline > 0 ? '+' : ''}${fx.defensiveDiscipline}`);
+    if (fx.rejectionRisk) notes.push(`Rejection risk +${Math.round(fx.rejectionRisk * 100)}%`);
+    if (notes.length) pushToast(notes.join(' · '), 'info');
+  };
+
   return (
+    <LassoKentProvider snapshot={assistantSnapshot} onEffects={applyAssistantEffects}>
     <div className="fm-app" style={brandStyle}>
       <IconSprite />
       <ToastHost />
@@ -709,5 +749,6 @@ export default function FootballManagerGame() {
         />
       )}
     </div>
+    </LassoKentProvider>
   );
 }
