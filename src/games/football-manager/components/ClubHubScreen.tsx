@@ -50,12 +50,15 @@ export default function ClubHubScreen({
 
   return (
     <>
+      {/* Unread count isn't a Pulse tile here — it's already the Inbox
+          JumpGrid tile's own badge below, and an actionable Todos entry
+          when it's something to act on. A fourth mention here was the same
+          number with nothing new to add. */}
       <Pulse
         items={[
           { icon: 'target', label: 'Board', value: `${confidence}`, tone: toneFor(confidence, 30, 60), meter: confidence / 100 },
           { icon: 'person', label: 'Fans', value: `${state.fanConfidence}`, tone: toneFor(state.fanConfidence, 35, 60), meter: state.fanConfidence / 100 },
           { icon: 'finances', label: 'Balance', value: formatMoney(state.budget), tone: state.budget < 0 ? 'red' : 'green' },
-          { icon: 'inbox', label: 'Unread', value: String(unread), tone: unread > 0 ? 'gold' : 'plain' },
         ]}
       />
 

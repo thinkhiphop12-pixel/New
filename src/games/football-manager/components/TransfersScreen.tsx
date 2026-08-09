@@ -14,7 +14,7 @@ import {
   LOAN_PLAYTIME, SELL_ON_MAX, effectiveBid, statusLabel, STATUS_ORDER, suggestBuyBack,
 } from '@/engine/negotiation';
 import { financesView } from '@/engine/finances';
-import { getSquad, isOnLoan, wageCeiling } from '@/engine/teamManagement';
+import { getSquad, isOnLoan, squadAvgRating, wageCeiling } from '@/engine/teamManagement';
 import { assignScout, newScouting, tickFacilitiesWeek, toggleShortlist } from '@/engine/facilities';
 import { MIN_SQUAD_SIZE, TRANSFER_WINDOWS, transferWindow } from '@/engine/gameRules';
 import { weeklyWageBill } from '@/engine/seasonProgression';
@@ -88,9 +88,21 @@ export default function TransfersScreen({
   // hidden — a huge reach signing should still be findable — but realistic
   // targets now sort first, and anything wildly out of budget carries a
   // "reputation gap" badge instead of reading as a normal, biddable option.
+  //
+  // A fee-vs-budget check alone isn't enough: a star player's askingGuide is
+  // his `value` times a fairly narrow multiplier, which can still land under
+  // even a small budget's reach multiplier — a live check against real data
+  // found Mbappé/Van Dijk/Rodri/Bellingham still sorting to the top of a
+  // Championship club's search on fee grounds alone. The rating gap against
+  // the manager's own squad is what actually reads as "unrealistic" to a
+  // player, so both signals count.
   const REACH_MULTIPLIER = 4;
+  const REACH_RATING_GAP = 10;
+  const mySquadAvgRating = squadAvgRating(state, state.userClubId);
   const marketCost = (p: MarketEntry) => (p.clubId === 0 ? askingPrice(p) : p.askingGuide);
-  const isReach = (p: MarketEntry) => marketCost(p) > Math.max(state.budget, 1) * REACH_MULTIPLIER;
+  const isReach = (p: MarketEntry) =>
+    marketCost(p) > Math.max(state.budget, 1) * REACH_MULTIPLIER ||
+    p.rating - mySquadAvgRating > REACH_RATING_GAP;
   const market = useMemo(
     () => {
       const filtered = marketRaw.filter((p) => p.age <= maxAge && (!natFilter || p.nat === natFilter));
@@ -99,7 +111,7 @@ export default function TransfersScreen({
       return [...realistic, ...reach].slice(0, 80);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [marketRaw, maxAge, natFilter, state.budget],
+    [marketRaw, maxAge, natFilter, state.budget, mySquadAvgRating],
   );
   const nations = useMemo(
     () => Array.from(new Set(marketRaw.map((p) => p.nat))).sort().slice(0, 60),
