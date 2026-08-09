@@ -1,20 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import type { GameState, StandId } from '@/engine/types';
-import {
-  gateIncome, getStadiumLevel, upgradeAcademy, upgradeStadium,
-} from '@/engine/seasonProgression';
-import {
-  ACADEMY_UPGRADE_COST, STADIUM_UPGRADE_COST,
-} from '@/engine/gameRules';
+import type { GameState } from '@/engine/types';
+import { upgradeAcademy } from '@/engine/seasonProgression';
+import { ACADEMY_UPGRADE_COST } from '@/engine/gameRules';
 import {
   ACADEMY_PROJECT_COST, ACADEMY_REPUTATION_CAP, MEDICAL_UPGRADE_COST, TRAINING_UPGRADE_COST,
-  newFacilities, startFacilityProject, startStandProject,
+  newFacilities, startFacilityProject,
 } from '@/engine/facilities';
 import { formatMoney } from '@/engine/utils';
 import { Icon } from './Icon';
-import StadiumBuilder from './StadiumBuilder';
 
 export default function FacilitiesScreen({
   state,
@@ -23,7 +17,6 @@ export default function FacilitiesScreen({
   state: GameState;
   onChange: (next: GameState) => void;
 }) {
-  const [selectedStand, setSelectedStand] = useState<StandId | null>(null);
   const fs = state.facilities ?? newFacilities(state);
 
   if (!state.facilities) {
@@ -38,8 +31,6 @@ export default function FacilitiesScreen({
       onChange={onChange}
       fs={fs}
       activeProjects={activeProjects}
-      selectedStand={selectedStand}
-      onSelectStand={setSelectedStand}
     />
   );
 }
@@ -49,17 +40,12 @@ function StadiumTab({
   onChange,
   fs,
   activeProjects,
-  selectedStand,
-  onSelectStand,
 }: {
   state: GameState;
   onChange: (next: GameState) => void;
   fs: NonNullable<GameState['facilities']>;
   activeProjects: NonNullable<GameState['facilities']>['projects'];
-  selectedStand: StandId | null;
-  onSelectStand: (id: StandId | null) => void;
 }) {
-  const gate = gateIncome(state);
 
   return (
     <>
@@ -82,12 +68,9 @@ function StadiumTab({
         </div>
       )}
 
-      <StadiumBuilder
-        state={state}
-        selected={selectedStand}
-        onSelect={onSelectStand}
-        onStartProject={(standId) => onChange(startStandProject({ ...state, facilities: fs }, standId))}
-      />
+      {/* Stadium expansion pulled from the UI for now — wiring back in
+          closer to launch. Gate income from the club's current stand
+          levels keeps accruing in the background either way. */}
 
       <div className="fm-panel">
         <p className="fm-label" style={{ marginTop: 0 }}>Training Ground</p>

@@ -1,5 +1,7 @@
 import type { GameState } from '@/engine/types';
 import { isLineupValid } from '@/engine/teamManagement';
+import { isClubAlive } from '@/engine/cups';
+import { isContinentalClubAlive } from '@/engine/europeanCup';
 import type { IconName } from './Icon';
 
 /**
@@ -69,7 +71,11 @@ export const GROUPS: GroupDef[] = [
       { id: 'squad', label: 'Squad', icon: 'squad' },
       { id: 'tactics', label: 'Tactics', icon: 'tactics' },
       { id: 'training', label: 'Training', icon: 'training' },
-      { id: 'schedule', label: 'Schedule', icon: 'fitness' },
+      // Schedule (rest-day planning) pulled from nav for now — folds into
+      // Training's own weekly plan later rather than living as its own tab.
+      // 'schedule' stays a valid ScreenId so WeeklyScheduleScreen keeps
+      // compiling; it's just unreachable from the tab strip until it's
+      // wired back in.
     ],
   },
   {
@@ -124,6 +130,20 @@ export function groupById(id: GroupId): GroupDef {
  *  read as a bug rather than a convenience. */
 export function firstScreenOf(id: GroupId): ScreenId {
   return groupById(id).screens[0].id;
+}
+
+/** Whether a tab should show at all for this save. Cups and Europe are
+ *  built-in tabs even for a club with nothing on there — most careers spend
+ *  most of a season alive in one but not the other, or neither, and an
+ *  always-visible tab that says "nothing here" every time you tap it reads
+ *  as a broken feature. Domestic cup entry is universal (every club plays
+ *  round one), so this only ever hides Cups after elimination; Europe hides
+ *  both for non-qualification and elimination, since `isContinentalClubAlive`
+ *  already means both at once (engine/europeanCup.ts). */
+export function isScreenVisible(state: GameState, id: ScreenId): boolean {
+  if (id === 'cups') return isClubAlive(state.cup, state.userClubId);
+  if (id === 'european') return isContinentalClubAlive(state.continental, state.userClubId);
+  return true;
 }
 
 /**

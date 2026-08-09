@@ -2,7 +2,6 @@
 
 import type { GameState } from '@/engine/types';
 import { newFacilities, totalCapacity } from '@/engine/facilities';
-import { financesView } from '@/engine/finances';
 import { getYouthSquad } from '@/engine/youthAcademy';
 import { staffWageBill } from '@/engine/seasonProgression';
 import { formatMoney } from '@/engine/utils';
@@ -28,7 +27,6 @@ export default function ClubHubScreen({
 }) {
   const club = state.clubs.find((c) => c.id === state.userClubId)!;
   const fs = state.facilities ?? newFacilities(state);
-  const fin = financesView(state);
 
   const unread = state.inbox.filter((i) => !i.read).length;
   const latest = [...state.inbox].sort((a, b) => b.id - a.id).slice(0, 4);
@@ -44,7 +42,9 @@ export default function ClubHubScreen({
   const todos: TodoItem[] = [];
   if (confidence < 30) todos.push({ icon: 'target', label: 'The board is losing patience', tone: 'red', cta: 'View', onGo: () => onRoute('board') });
   if (state.budget < 0) todos.push({ icon: 'finances', label: 'The club is in the red', tone: 'red', cta: 'Fix', onGo: () => onRoute('finances') });
-  if (fin.needsRenewal.length > 0) todos.push({ icon: 'money-in', label: `${fin.needsRenewal.length} sponsor deal${fin.needsRenewal.length > 1 ? 's' : ''} to re-sell`, tone: 'gold', cta: 'Sell', onGo: () => onRoute('finances') });
+  // Sponsorship management is pulled from the UI for now (see
+  // FinancesScreen), so this to-do would point at a "Sell" action that no
+  // longer exists there.
   if (unread > 0) todos.push({ icon: 'inbox', label: `${unread} unread message${unread > 1 ? 's' : ''}`, tone: 'gold', cta: 'Read', onGo: () => onRoute('inbox') });
   if (coachCount === 0) todos.push({ icon: 'staff', label: 'No coaches on the backroom staff', tone: 'gold', cta: 'Hire', onGo: () => onRoute('staff') });
 

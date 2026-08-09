@@ -52,6 +52,7 @@ export default function TransfersScreen({
   const [availFilter, setAvailFilter] = useState('all');
   const [natFilter, setNatFilter] = useState('');
   const [maxAge, setMaxAge] = useState(40);
+  const [minRating, setMinRating] = useState(0);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -75,11 +76,16 @@ export default function TransfersScreen({
   const incoming = negotiations.filter((n) => n.type === 'incoming');
   const activeNeg = activeNegId ? negotiations.find((n) => n.id === activeNegId) ?? null : null;
 
-  const filters: MarketFilters = { search, pos: posFilter, avail: availFilter };
+  const filters: MarketFilters = {
+    search, pos: posFilter, avail: availFilter,
+    // "Search by overall" — the engine side of this already existed
+    // (ratingMode/ratingVal), it just wasn't exposed in the filter row.
+    ...(minRating > 0 ? { ratingMode: 'over' as const, ratingVal: minRating } : {}),
+  };
   const marketRaw = useMemo(
     () => getTransferMarket(state, filters),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state, search, posFilter, availFilter],
+    [state, search, posFilter, availFilter, minRating],
   );
   // Gap 10 (Userbrain): the market used to sort purely by rating, so a
   // lower-division club with a small budget saw Salah/Mbappé-tier names at
@@ -233,6 +239,16 @@ export default function TransfersScreen({
                 <option value={21}>Under 21</option>
                 <option value={24}>Under 24</option>
                 <option value={28}>Under 28</option>
+              </select>
+            </FilterCard>
+            <FilterCard label="Overall" icon="stat">
+              <select className="fm-search" value={minRating} onChange={(e) => setMinRating(Number(e.target.value))}>
+                <option value={0}>Any</option>
+                <option value={60}>60+</option>
+                <option value={65}>65+</option>
+                <option value={70}>70+</option>
+                <option value={75}>75+</option>
+                <option value={80}>80+</option>
               </select>
             </FilterCard>
           </div>

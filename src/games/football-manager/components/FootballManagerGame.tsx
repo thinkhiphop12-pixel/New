@@ -528,6 +528,19 @@ export default function FootballManagerGame() {
         </div>
         <span className="fm-header__title">Gaffa</span>
         <span className="fm-header__spacer" />
+        {/* Interactive tutorial, reopenable any time — not just the one-shot
+            first-run checklist. Only shown once a career exists, since the
+            steps point at Hub screens that don't exist before then. */}
+        {gs && (
+          <button
+            className="fm-header__help"
+            onClick={() => setShowOnboarding(true)}
+            aria-label="How to play"
+            title="How to play"
+          >
+            <Icon name="info" size={14} />
+          </button>
+        )}
         <button className="fm-header__settings" onClick={() => setShowMore(true)} aria-label="More">
           <Icon name="more" size={14} /> More
         </button>

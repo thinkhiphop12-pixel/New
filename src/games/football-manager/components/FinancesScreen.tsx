@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { GameState, KitOffer, SponsorOffer, SponsorSlotId, TicketTier, FinanceState } from '@/engine/types';
+import type { GameState, TicketTier, FinanceState } from '@/engine/types';
 import { gateIncome, weeklyWageBill, staffWageBill, userLeagueId, userPosition, userLeague } from '@/engine/seasonProgression';
 import { SEASON_ROUNDS, leagueName } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
@@ -9,9 +9,9 @@ import { totalCapacity } from '@/engine/facilities';
 import { ReputationStars, Bar, ordinalSuffix } from './visuals';
 import { Icon } from './Icon';
 import {
-  SPONSOR_SLOTS, TICKET_TIERS, acceptKitOffer, acceptSponsorOffer, canRequestBoardFunds,
-  ffpStatus, financesView, genKitOffers, genSponsorOffers, requestBoardFunds, scrStatus,
-  setTicketPricing, shiftBudgetToWages, terminateSponsorDeal, terminationFee,
+  TICKET_TIERS, canRequestBoardFunds,
+  ffpStatus, financesView, requestBoardFunds, scrStatus,
+  setTicketPricing, shiftBudgetToWages,
   wagesFromTransferMoney,
 } from '@/engine/finances';
 import { wageCeiling } from '@/engine/teamManagement';
@@ -26,7 +26,6 @@ export default function FinancesScreen({
   state: GameState;
   onChange: (next: GameState) => void;
 }) {
-  const [openSlot, setOpenSlot] = useState<SponsorSlotId | 'kit' | null>(null);
   const [splitError, setSplitError] = useState<string | null>(null);
 
   const fin = financesView(state);
@@ -84,61 +83,10 @@ export default function FinancesScreen({
         </div>
       </div>
 
-      {/* --- Sponsorship ---------------------------------------------------- */}
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>Sponsorship</p>
-        <div className="fm-sponsor-grid">
-          {(Object.keys(SPONSOR_SLOTS) as SponsorSlotId[]).map((slot) => {
-            const deal = fin[slot];
-            const cfg = SPONSOR_SLOTS[slot];
-            return (
-              <div key={slot} className="fm-sponsor-card">
-                <span className="fm-sponsor-card__label">{cfg.label}</span>
-                {deal ? (
-                  <>
-                    <span className="fm-sponsor-card__name">{deal.name}</span>
-                    <span className="fm-sponsor-card__value">{formatMoney(deal.weeklyValue)}/wk</span>
-                    <span className="fm-hint">{deal.seasonsLeft} season{deal.seasonsLeft === 1 ? '' : 's'} left</span>
-                    <button
-                      className="fm-btn fm-btn--small fm-btn--ghost"
-                      onClick={() => onChange(terminateSponsorDeal(state, slot))}
-                    >
-                      Terminate ({formatMoney(terminationFee(deal))})
-                    </button>
-                  </>
-                ) : (
-                  <button className="fm-btn fm-btn--small fm-btn--primary" onClick={() => setOpenSlot(slot)}>
-                    Find a sponsor
-                  </button>
-                )}
-              </div>
-            );
-          })}
-          <div className="fm-sponsor-card">
-            <span className="fm-sponsor-card__label">Kit Deal</span>
-            {fin.kitDeal ? (
-              <>
-                <span className="fm-sponsor-card__name">{fin.kitDeal.name}</span>
-                <span className="fm-sponsor-card__value">{formatMoney(fin.kitDeal.annualValue)}/season</span>
-                <span className="fm-hint">{fin.kitDeal.seasonsLeft} season{fin.kitDeal.seasonsLeft === 1 ? '' : 's'} left</span>
-              </>
-            ) : (
-              <button className="fm-btn fm-btn--small fm-btn--primary" onClick={() => setOpenSlot('kit')}>
-                Find a kit maker
-              </button>
-            )}
-          </div>
-        </div>
-
-        {openSlot && (
-          <SponsorOfferPicker
-            state={state}
-            slot={openSlot}
-            onPick={(next) => { onChange(next); setOpenSlot(null); }}
-            onClose={() => setOpenSlot(null)}
-          />
-        )}
-      </div>
+      {/* Sponsorship management pulled from the UI for now — wiring back in
+          closer to launch. Sponsor/kit income the board already arranged
+          keeps flowing in the background either way (see "Gate &
+          Sponsorship" in the income breakdown below). */}
 
       {/* --- Ticket pricing -------------------------------------------------- */}
       <div className="fm-panel">
@@ -482,45 +430,7 @@ function BoardConfidence({ state }: { state: GameState }) {
   );
 }
 
-function SponsorOfferPicker({
-  state,
-  slot,
-  onPick,
-  onClose,
-}: {
-  state: GameState;
-  slot: SponsorSlotId | 'kit';
-  onPick: (next: GameState) => void;
-  onClose: () => void;
-}) {
-  const sponsorOffers = slot === 'kit' ? [] : genSponsorOffers(state, slot);
-  const kitOffers = slot === 'kit' ? genKitOffers(state) : [];
-  const label = slot === 'kit' ? 'Kit Deal' : SPONSOR_SLOTS[slot].label;
-  return (
-    <div className="fm-sponsor-offers">
-      <div className="fm-sponsor-offers__header">
-        <span className="fm-label">Offers for {label}</span>
-        <button className="fm-btn fm-btn--small fm-btn--ghost" onClick={onClose}>Close</button>
-      </div>
-      {slot === 'kit'
-        ? kitOffers.map((offer: KitOffer, i) => (
-            <div key={i} className="fm-sponsor-offers__row">
-              <span className="fm-sponsor-offers__name">{offer.name}</span>
-              <span className="fm-hint">{formatMoney(offer.annualValue)}/season · {offer.termSeasons}y</span>
-              <button className="fm-btn fm-btn--small fm-btn--primary" onClick={() => onPick(acceptKitOffer(state, offer))}>
-                Sign
-              </button>
-            </div>
-          ))
-        : sponsorOffers.map((offer: SponsorOffer, i) => (
-            <div key={i} className="fm-sponsor-offers__row">
-              <span className="fm-sponsor-offers__name">{offer.name}</span>
-              <span className="fm-hint">{formatMoney(offer.weeklyValue)}/wk · {offer.termSeasons}y</span>
-              <button className="fm-btn fm-btn--small fm-btn--primary" onClick={() => onPick(acceptSponsorOffer(state, slot as SponsorSlotId, offer))}>
-                Sign
-              </button>
-            </div>
-          ))}
-    </div>
-  );
-}
+// SponsorOfferPicker removed along with the Sponsorship panel above — the
+// engine side (engine/finances.ts: genSponsorOffers, genKitOffers,
+// acceptSponsorOffer, acceptKitOffer, terminateSponsorDeal) is untouched
+// and ready to wire this back in.

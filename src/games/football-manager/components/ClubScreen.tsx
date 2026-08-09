@@ -1,9 +1,9 @@
 'use client';
 
 import type { GameState, Staff } from '@/engine/types';
-import { ACADEMY_UPGRADE_COST, STADIUM_UPGRADE_COST, STAFF_MAX_LEVEL, STAFF_UPGRADE_COST, leagueName } from '@/engine/gameRules';
+import { ACADEMY_UPGRADE_COST, STAFF_MAX_LEVEL, STAFF_UPGRADE_COST, leagueName } from '@/engine/gameRules';
 import {
-  gateIncome, getStaff, getStadiumLevel, setCaptain, staffWageBill, upgradeAcademy, upgradeStadium,
+  gateIncome, getStaff, getStadiumLevel, setCaptain, staffWageBill, upgradeAcademy,
   upgradeStaff, weeklyWageBill, computeTable, userLeague, userLeagueId,
 } from '@/engine/seasonProgression';
 import { getSquad } from '@/engine/teamManagement';
@@ -34,7 +34,6 @@ export default function ClubScreen({
   const upgradeCost = ACADEMY_UPGRADE_COST[state.academyLevel + 1];
   const staff = getStaff(state);
   const stadiumLevel = getStadiumLevel(state);
-  const stadiumCost = STADIUM_UPGRADE_COST[stadiumLevel + 1];
   const squad = getSquad(state, state.userClubId).sort((a, b) => b.rating - a.rating);
   const captain = state.captainId != null ? state.players[state.captainId] : null;
   const legends = Object.values(state.legacy)
@@ -274,23 +273,9 @@ export default function ClubScreen({
         })}
       </div>
 
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>
-          Stadium — level {stadiumLevel}/3
-        </p>
-        <p className="fm-club-line">
-          {stadiumLevel >= 3 ? 'Fully expanded.' : 'Each level raises gate income 25%.'}
-        </p>
-        {stadiumCost && (
-          <button
-            className="fm-btn fm-btn--secondary fm-btn--small"
-            disabled={stadiumCost > state.budget}
-            onClick={() => onChange(upgradeStadium(state))}
-          >
-            Expand to level {stadiumLevel + 1} — {formatMoney(stadiumCost)}
-          </button>
-        )}
-      </div>
+      {/* Stadium expansion pulled from the UI for now — wiring back in
+          closer to launch. The level readout up in the quick-stats grid
+          stays; just the upgrade action is gone. */}
 
       <div className="fm-panel">
         <p className="fm-label" style={{ marginTop: 0 }}>

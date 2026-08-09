@@ -47,7 +47,7 @@ export default function TeamHubScreen({
   const todos: TodoItem[] = [];
   if (!lineupOk) todos.push({ icon: 'tactics', label: 'Your lineup is incomplete', tone: 'red', cta: 'Pick', onGo: () => onRoute('tactics') });
   if (injured.length > 0) todos.push({ icon: 'injury', label: `${injured.length} player${injured.length > 1 ? 's' : ''} injured`, tone: 'gold', cta: 'View', onGo: () => onRoute('squad') });
-  if (avgFitness < 70) todos.push({ icon: 'fitness', label: 'Squad is running on empty', tone: 'red', cta: 'Rest', onGo: () => onRoute('schedule') });
+  if (avgFitness < 70) todos.push({ icon: 'fitness', label: 'Squad is running on empty', tone: 'red', cta: 'Rest', onGo: () => onRoute('training') });
   else if (avgSharpness < 55) todos.push({ icon: 'training', label: 'Match sharpness is dropping', tone: 'gold', cta: 'Train', onGo: () => onRoute('training') });
   if (unhappy.length > 0) todos.push({ icon: 'person', label: `${unhappy.length} unhappy in the dressing room`, tone: 'gold', cta: 'View', onGo: () => onRoute('squad') });
   if (expiring.length > 0) todos.push({ icon: 'document', label: `${expiring.length} contract${expiring.length > 1 ? 's' : ''} running out`, tone: 'red', cta: 'View', onGo: () => onRoute('squad') });
@@ -73,7 +73,6 @@ export default function TeamHubScreen({
           { icon: 'squad', label: 'Squad', value: `${squad.length} players · avg ${avg}`, badge: injured.length, onGo: () => onRoute('squad') },
           { icon: 'tactics', label: 'Tactics', value: lineupOk ? 'XI selected' : 'XI incomplete', badge: lineupOk ? 0 : 1, onGo: () => onRoute('tactics') },
           { icon: 'training', label: 'Training', value: `Focus: ${state.training}`, onGo: () => onRoute('training') },
-          { icon: 'fitness', label: 'Schedule', value: `${(state.weeklySchedule ?? []).filter((d) => d === 'recovery').length || 2} rest days`, onGo: () => onRoute('schedule') },
         ]}
       />
 
