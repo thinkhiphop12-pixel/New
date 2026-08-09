@@ -17,7 +17,7 @@ import {
 } from './teamManagement';
 import { clamp, contractEndFor, marketValue, pickRandom, rollRetireAge, weeklyWage } from './utils';
 import { tickTacticalFamiliarity } from './familiarity';
-import { generateWeeklyNews } from './news';
+import { generateDailyPressStories, generateWeeklyNews } from './news';
 import { seedClubIdentities } from './clubIdentity';
 import { aiWeeklyTransfers, generateWeeklyOffers } from './transferMarket';
 import { clubRunName, createKnockout, isClubAlive, knockoutRoundDue, playKnockoutRound, roundName, tieWinner, userTieThisRound } from './cups';
@@ -33,9 +33,10 @@ import { pushInbox } from './inbox';
 import { tickFinances, weeklyMatchdayIncome } from './finances';
 import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
 import { tickFacilitiesWeek } from './facilities';
-import { applyWeeklySchedule } from './schedule';
+import { applyScheduleDay, applyWeeklySchedule, getSchedule } from './schedule';
 import { tickScoutNetwork } from './scouting';
 import { applyDevPlans } from './development';
+import { DAYS_PER_WEEK } from './calendar';
 
 export { markInboxRead, markAllInboxRead } from './inbox';
 
@@ -446,6 +447,7 @@ export function newGame(
     userClubId,
     seasonYear,
     week: 1,
+    dayOfSeason: 0,
     budget: startingBudget(userClub.leagueId),
     morale: MORALE_START,
     formationId: '4-3-3',
@@ -811,6 +813,180 @@ function runContinental(s: GameState, c: Continental, prizes: number[]): void {
  * the UI can play it back); every AI match is simulated here. Advances week,
  * updates morale/form/injuries/finances/cups and rolls fresh transfer offers.
  */
+/** `{ mode: 'week' }` reproduces the legacy once-a-round cadence exactly (used
+ *  by `playRound` so nothing calling it — scripts, scenario fast-forward,
+ *  season previews — changes behaviour). `{ mode: 'day', dayIdx }` is the new
+ *  single-day cadence the live daily loop (engine/dailyTick.ts) drives,
+ *  scaled so seven daily calls land close to one weekly call. */
+export type DailyTickMode = { mode: 'week' } | { mode: 'day'; dayIdx: number };
+
+/**
+ * The per-player systems that used to be inline in the middle of `playRound`:
+ * form drift, injury-day recovery, the generic weekly fitness rest-bump, the
+ * Weekly Schedule planner, squad happiness, development plans, and the
+ * generic training-focus roll. Extracted so the exact same logic can run
+ * either once a week (the legacy cadence, `playRound` below) or once a day
+ * (the new live loop, engine/dailyTick.ts `advanceDay`) — the two modes are
+ * calibrated to agree on a week's total effect; see the per-system comments.
+ *
+ * Deliberately excludes anything that only makes sense tied to a match
+ * actually being played this round — match-injury risk, finances, cup
+ * rounds, board confidence vs. league position, AI transfer waves — which
+ * all stay in `playRound`, run once per round on matchday.
+ */
+export function applyDailyPlayerSystems(state: GameState, tick: DailyTickMode): void {
+  const s = state;
+  const userClub = s.clubs.find((c) => c.id === s.userClubId);
+  if (!userClub) return;
+  const days = tick.mode === 'week' ? 7 : 1;
+  const scale = days / 7;
+
+  // Form drift + day-based injury recovery + the flat weekly fitness
+  // rest-bump, every player in the game (not just the user's squad) — AI
+  // clubs need their players kept in reasonable shape too, since the match
+  // sim reads fitness/injuries for every side, not just the user's.
+  for (const p of Object.values(s.players)) {
+    p.form = clamp(p.form + (Math.random() - 0.5) * 0.06 * scale, 0.85, 1.15);
+    if (p.injuryDays && p.injuryDays > 0) {
+      p.injuryDays = Math.max(0, p.injuryDays - days);
+      p.injuryWeeks = Math.ceil(p.injuryDays / 7);
+      if (p.injuryDays === 0) p.injuryType = null;
+    } else if (p.injuryWeeks > 0) {
+      // Pre-day-clock save: no `injuryDays` to count down, only the old
+      // whole-weeks field. Fall back to the legacy once-a-week decrement so
+      // an old save still heals; a single daily tick can't remove a whole
+      // week, so it waits for the weekly-cadence call.
+      if (tick.mode === 'week') p.injuryWeeks--;
+    } else {
+      p.injuryType = null;
+    }
+    p.fitness = clamp(p.fitness + 4 * scale, 15, 100);
+  }
+
+  // Career mode weekly planner (engine/schedule.ts): per-day training/recovery
+  // choice for the user's own squad layers on top of the flat rest-day bump
+  // above, so an unedited schedule (the default 5:2 split) doesn't change
+  // anything a save already relied on.
+  if (tick.mode === 'week') applyWeeklySchedule(s);
+  else applyScheduleDay(s, tick.dayIdx);
+
+  // Squad happiness: good players left out of the XI grow unhappy over time
+  // and start attracting transfer interest; starters settle back down.
+  for (const id of userClub.playerIds) {
+    const p = s.players[id];
+    if (!p || p.rating < 74 || p.injuryWeeks > 0 || isOnLoan(p)) continue;
+    const starting = s.lineup.includes(id);
+    if (!starting && !p.unhappy && Math.random() < 0.05 * scale) {
+      p.unhappy = true;
+      s.news.unshift(`${p.name} is unhappy with his lack of game time.`);
+      // Also a real inbox item (previously news-only) so it shows up as an
+      // action-required stop rather than scrolling past in the news feed.
+      pushInbox(s, {
+        category: 'club',
+        title: `${p.name} unhappy about his lack of playing time`,
+        body: `${p.name} has grown frustrated at being left out of the side. He wants more assurances about his role, or he may start looking elsewhere.`,
+        playerId: p.id,
+        kind: 'complaint',
+      });
+    } else if (starting && p.unhappy && Math.random() < 0.3 * scale) {
+      p.unhappy = false;
+    }
+  }
+
+  // Contract expiring: a squad player has entered his final contract year
+  // and hasn't been flagged yet this season. Previously the only contract
+  // inbox items were after-the-fact (auto-renewed, left on a free) — there
+  // was no proactive nudge to actually make the decision while there's
+  // still a choice to make. Fires once per player per season (`contractWarned`,
+  // reset every rollover in `endSeason`); the day it fires doesn't depend on
+  // `days`/`scale` since it isn't a rate, just a threshold crossing.
+  for (const id of userClub.playerIds) {
+    const p = s.players[id];
+    if (!p || p.contractYears !== 1 || p.contractWarned) continue;
+    p.contractWarned = true;
+    pushInbox(s, {
+      category: 'contract',
+      title: `${p.name}'s contract expires in the summer`,
+      body: `${p.name} has entered the final year of his deal. Offer fresh terms now, or risk losing him for nothing when it runs out.`,
+      playerId: p.id,
+      kind: 'contractExpiring',
+    });
+  }
+
+  // Backroom staff: a good coach sharpens training, a good physio speeds healing.
+  const staff = getStaff(s);
+  const coachMult = 1 + staff.coach * 0.35;
+  const physioHealChance = 0.5 + staff.physio * 0.15;
+
+  // Per-player development plans (engine/development.ts) resolve first —
+  // players with an active plan skip the generic squad-wide roll below.
+  applyDevPlans(s, days);
+
+  // Reset the manual-training-drill weekly cap on Monday (day mode) or every
+  // call (week mode, matching the old unconditional weekly reset).
+  if (tick.mode === 'week' || tick.dayIdx === 0) s.drillsUsedThisWeek = 0;
+
+  // Training: focused development for the user's younger players. In day
+  // mode this only rolls on days the Weekly Schedule marks as training —
+  // the two systems previously had no relationship to each other at all; now
+  // scheduling more training days means more development rolls across the
+  // week, which is the coupling the Weekly Schedule screen was missing.
+  const todaysType = tick.mode === 'day' ? getSchedule(s)[tick.dayIdx] : null;
+  const rollsToday = tick.mode === 'week' || todaysType === 'training';
+  if (s.training !== 'fitness') {
+    if (rollsToday) {
+      for (const id of userClub.playerIds) {
+        const p = s.players[id];
+        if (!p || p.age > 27 || p.rating >= 90 || isOnLoan(p) || p.devPlan) continue;
+        const matches =
+          s.training === 'attack' ? p.pos === 'MID' || p.pos === 'FWD'
+          : s.training === 'defense' ? p.pos === 'GK' || p.pos === 'DEF'
+          : true;
+        const posRole =
+          p.pos === 'FWD' ? 'attack' : p.pos === 'MID' ? 'midfield' : p.pos === 'DEF' ? 'defense' : null;
+        const posCoach = posRole ? s.facilities?.coaches.find((c) => c.role === posRole) : undefined;
+        const posMult = posCoach ? 1 + posCoach.quality / 200 : 1;
+        // Low morale saps focus in the gym; high morale gives a small lift.
+        const moraleMult = clamp(0.5 + p.morale / 100, 0.5, 1.15);
+        const chance = (s.training === 'balanced' ? 0.02 : matches ? 0.05 : 0) * coachMult * posMult * moraleMult * scale;
+        if (Math.random() < chance) {
+          p.rating++;
+          p.value = marketValue(p.rating, p.age);
+          if (p.rating >= 75) s.news.unshift(`${p.name} is improving in training (${p.rating} OVR).`);
+          // A real inbox item, not just a news ticker line — "a training
+          // result worth seeing" is one of the events the daily loop is
+          // meant to stop for, and only inbox items can trigger a stop
+          // (engine/dailyTick.ts diffs the inbox to find them).
+          pushInbox(s, {
+            category: 'club',
+            title: `${p.name} improves in training`,
+            body: `${p.name} has been working well on the training pitch and is now rated ${p.rating} overall.`,
+            playerId: p.id,
+            kind: 'trainingImprovement',
+          });
+        }
+      }
+    }
+  } else {
+    // Fitness focus: injured players heal faster, every day, regardless of
+    // the Weekly Schedule's own training/recovery split — the training focus
+    // is a standing choice, not a per-day one.
+    for (const id of userClub.playerIds) {
+      const p = s.players[id];
+      if (p && p.injuryWeeks > 0 && Math.random() < 0.5 * scale) p.injuryWeeks = Math.max(0, p.injuryWeeks - 1);
+    }
+  }
+  // A physio helps recovery regardless of training focus.
+  if (staff.physio > 0) {
+    for (const id of userClub.playerIds) {
+      const p = s.players[id];
+      if (p && p.injuryWeeks > 0 && Math.random() < physioHealChance * 0.5 * scale) {
+        p.injuryWeeks = Math.max(0, p.injuryWeeks - 1);
+      }
+    }
+  }
+}
+
 export function playRound(state: GameState, userReport: MatchReport): GameState {
   const s: GameState = structuredClone(state);
   const round = s.week;
@@ -871,104 +1047,25 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   // anything below mutates form/fitness for next week.
   {
     const newsLeagueId = userLeagueId(s);
-    generateWeeklyNews(s, newsLeagueId, computeTable(s, newsLeagueId), leagueClubs(s, newsLeagueId));
+    const newsClubs = leagueClubs(s, newsLeagueId);
+    generateWeeklyNews(s, newsLeagueId, computeTable(s, newsLeagueId), newsClubs);
+    // Phase 3: rumours/wonderkids/pundit chatter — days=7 matches this
+    // call's weekly cadence exactly; the live daily loop calls the same
+    // function with days=1 (engine/dailyTick.ts).
+    generateDailyPressStories(s, 7, newsClubs);
   }
 
-  // Weekly form drift + injury recovery for every player.
+  // Form drift, injury recovery, the Weekly Schedule, squad happiness,
+  // development plans and the generic training roll — everything that used
+  // to be inline here now lives in `applyDailyPlayerSystems` so the exact
+  // same logic can also run once a day from the live loop (see
+  // engine/dailyTick.ts). `{ mode: 'week' }` reproduces this call's old
+  // behaviour exactly (same total probabilities, same formulas).
   const fitnessFocus = s.training === 'fitness';
-  for (const p of Object.values(s.players)) {
-    p.form = clamp(p.form + (Math.random() - 0.5) * 0.06, 0.85, 1.15);
-    if (p.injuryWeeks > 0) p.injuryWeeks--;
-    // Day-based recovery is the real clock; injuryWeeks stays in sync as a
-    // rounded-up view of it for every screen that already reads weeks.
-    if (p.injuryDays && p.injuryDays > 0) {
-      p.injuryDays = Math.max(0, p.injuryDays - 7);
-      p.injuryWeeks = Math.ceil(p.injuryDays / 7);
-      if (p.injuryDays === 0) p.injuryType = null;
-    } else if (p.injuryWeeks === 0) {
-      p.injuryType = null;
-    }
-    // A rest day for anyone whose club had no fixture this round.
-    p.fitness = clamp(p.fitness + 4, 15, 100);
-  }
-
-  // Career mode weekly planner (engine/schedule.ts): per-day training/recovery
-  // choice for the user's own squad layers on top of the flat rest-day bump
-  // above, so an unedited schedule (the default 5:2 split) doesn't change
-  // anything a save already relied on.
-  applyWeeklySchedule(s);
-
-  // Squad happiness: good players left out of the XI week after week grow
-  // unhappy and start attracting transfer interest; starters settle back down.
-  for (const id of userClub.playerIds) {
-    const p = s.players[id];
-    if (!p || p.rating < 74 || p.injuryWeeks > 0 || isOnLoan(p)) continue;
-    const starting = s.lineup.includes(id);
-    if (!starting && !p.unhappy && Math.random() < 0.05) {
-      p.unhappy = true;
-      s.news.unshift(`${p.name} is unhappy with his lack of game time.`);
-    } else if (starting && p.unhappy && Math.random() < 0.3) {
-      p.unhappy = false;
-    }
-  }
-
-  // Backroom staff: a good coach sharpens training, a good physio speeds healing.
-  const staff = getStaff(s);
-  const coachMult = 1 + staff.coach * 0.35;
-  const physioHealChance = 0.5 + staff.physio * 0.15;
-
-  // Per-player development plans (engine/development.ts) resolve first —
-  // players with an active plan skip the generic squad-wide roll below.
-  applyDevPlans(s);
-
-  // Reset the manual-training-drill weekly cap.
-  s.drillsUsedThisWeek = 0;
-
-  // Training: focused development for the user's younger players.
-  if (s.training !== 'fitness') {
-    for (const id of userClub.playerIds) {
-      const p = s.players[id];
-      if (!p || p.age > 27 || p.rating >= 90 || isOnLoan(p) || p.devPlan) continue;
-      const matches =
-        s.training === 'attack' ? p.pos === 'MID' || p.pos === 'FWD'
-        : s.training === 'defense' ? p.pos === 'GK' || p.pos === 'DEF'
-        : true;
-      // Backroom Staff hub: a positional coach (attack/midfield/defense)
-      // speeds up development for players in his position group, on top of
-      // the legacy head-coach `coachMult`.
-      const posRole =
-        p.pos === 'FWD' ? 'attack' : p.pos === 'MID' ? 'midfield' : p.pos === 'DEF' ? 'defense' : null;
-      const posCoach = posRole ? s.facilities?.coaches.find((c) => c.role === posRole) : undefined;
-      const posMult = posCoach ? 1 + posCoach.quality / 200 : 1;
-      // Low morale saps focus in the gym; high morale gives a small lift.
-      // Player.morale is otherwise only written (transfer-promise breaches),
-      // never read — this is the one place it's wired into the sim.
-      const moraleMult = clamp(0.5 + p.morale / 100, 0.5, 1.15);
-      const chance = (s.training === 'balanced' ? 0.02 : matches ? 0.05 : 0) * coachMult * posMult * moraleMult;
-      if (Math.random() < chance) {
-        p.rating++;
-        p.value = marketValue(p.rating, p.age);
-        if (p.rating >= 75) s.news.unshift(`${p.name} is improving in training (${p.rating} OVR).`);
-      }
-    }
-  } else {
-    // Fitness focus: injured players heal faster.
-    for (const id of userClub.playerIds) {
-      const p = s.players[id];
-      if (p && p.injuryWeeks > 0 && Math.random() < 0.5) p.injuryWeeks = Math.max(0, p.injuryWeeks - 1);
-    }
-  }
-  // A physio helps recovery regardless of training focus.
-  if (staff.physio > 0) {
-    for (const id of userClub.playerIds) {
-      const p = s.players[id];
-      if (p && p.injuryWeeks > 0 && Math.random() < physioHealChance * 0.5) {
-        p.injuryWeeks = Math.max(0, p.injuryWeeks - 1);
-      }
-    }
-  }
+  applyDailyPlayerSystems(s, { mode: 'week' });
 
   // Injury risk for the user's starters (keeps the squad decision interesting).
+  const staff = getStaff(s);
   const injuryChance = (fitnessFocus ? 0.015 : 0.025) * (1 - staff.physio * 0.1);
   for (const id of s.lineup) {
     if (id === null) continue;
@@ -1048,6 +1145,11 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   else if (s.fanConfidence <= 25 && round % 5 === 0) s.news.unshift('Protests in the stands — the fans want change.');
 
   s.week = round + 1;
+  // Keep the day clock in step: after resolving round `round`, the new week
+  // is `round + 1`, whose Monday is day `round * 7` (0-based). Matters when
+  // `playRound` is called directly (scripts, scenario fast-forward) rather
+  // than through the live daily loop, which advances `dayOfSeason` itself.
+  s.dayOfSeason = round * DAYS_PER_WEEK;
   // A split league schedules its post-split round-robins once its pre-split
   // programme is complete and the halves are known.
   applySplits(s);
@@ -1643,6 +1745,10 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     if (p.clubId === 0) continue;
     p.contractYears = Math.max(0, p.contractYears - 1);
     p.contractEnd = contractEndFor(s.seasonYear + 1, p.contractYears);
+    // Re-arm the "contract expiring" nudge below for next season — a player
+    // who signs a short extension and lands back on his final year should
+    // be warned about it again, not just once ever.
+    p.contractWarned = false;
     if (p.contractYears === 0) {
       if (p.clubId === s.userClubId) {
         const club = s.clubs.find((c) => c.id === p.clubId)!;
@@ -1849,6 +1955,7 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
   // New season setup.
   s.seasonYear++;
   s.week = 1;
+  s.dayOfSeason = 0;
   // Cooldowns are absolute week numbers; week resets to 1 every season, so a
   // cooldown left over from late last season (e.g. week 45) would otherwise
   // block that story type until deep into the new season (week - last >= 4

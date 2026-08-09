@@ -41,7 +41,8 @@ export function setDevPlan(state: GameState, playerId: number, plan: DevPlan | n
     return s;
   }
   if (plan.mode === 'position' && plan.targetPos) {
-    p.devPlan = { ...plan, weeksRemaining: estimateConversionWeeks(p, plan.targetPos) };
+    const weeks = estimateConversionWeeks(p, plan.targetPos);
+    p.devPlan = { ...plan, weeksRemaining: weeks, totalDays: weeks * 7, daysRemaining: weeks * 7 };
   } else {
     p.devPlan = { ...plan };
   }
@@ -51,13 +52,28 @@ export function setDevPlan(state: GameState, playerId: number, plan: DevPlan | n
 const STAT_KEYS = ['pac', 'sho', 'pas', 'dri', 'def', 'phy'] as const;
 type StatKey = (typeof STAT_KEYS)[number];
 
+/** A stat plan's old weekly chance (0.06), expressed as deterministic
+ *  progress-per-day instead — see `applyDevPlans` below. */
+const STAT_PROGRESS_PER_DAY = 0.06 / 7;
+
 /**
- * Weekly resolution for every squad player with an active plan. Called from
- * `playRound` alongside the existing generic per-player training roll —
- * players without a plan are untouched here and keep rolling on the
- * existing balanced/attack/defense/fitness logic.
+ * Daily resolution for every squad player with an active plan, called once
+ * per day from the live loop (`days = 1`, engine/dailyTick.ts) and once per
+ * round from the legacy weekly path (`days = 7`, engine/seasonProgression.ts
+ * `playRound`) — the two must agree on a week's total effect, which is why
+ * both route through this single function rather than keeping a separate
+ * copy of the old weekly-chance version. Players without a plan are
+ * untouched here and keep rolling on the generic balanced/attack/defense/
+ * fitness training logic.
+ *
+ * Stat plans used to be a flat 6%-per-week coin flip with nothing to show
+ * for it between successes — a plan could run silently for a month on bad
+ * luck with zero player-visible feedback. `statProgress` replaces the coin
+ * flip with the same expected rate spent as visible, guaranteed-forward
+ * daily progress instead, which is both more legible and removes the
+ * "unlucky forever" failure mode entirely.
  */
-export function applyDevPlans(state: GameState): void {
+export function applyDevPlans(state: GameState, days = 7): void {
   const s = state;
   const userClub = s.clubs.find((c) => c.id === s.userClubId);
   if (!userClub) return;
@@ -67,7 +83,10 @@ export function applyDevPlans(state: GameState): void {
     const plan = p.devPlan;
 
     if (plan.mode === 'stat' && plan.statFocus) {
-      if (p.rating < 90 && Math.random() < 0.06) {
+      if (p.rating >= 90) continue;
+      plan.statProgress = (plan.statProgress ?? 0) + STAT_PROGRESS_PER_DAY * days;
+      if (plan.statProgress >= 1) {
+        plan.statProgress -= 1;
         const key = plan.statFocus as StatKey;
         p[key] = clamp(p[key] + 1, 1, 99);
         p.rating++;
@@ -77,8 +96,11 @@ export function applyDevPlans(state: GameState): void {
     }
 
     if (plan.mode === 'position' && plan.targetPos) {
-      plan.weeksRemaining = Math.max(0, (plan.weeksRemaining ?? 1) - 1);
-      if (plan.weeksRemaining === 0) {
+      const total = plan.totalDays ?? (plan.weeksRemaining ?? 1) * 7;
+      plan.totalDays = total;
+      plan.daysRemaining = Math.max(0, (plan.daysRemaining ?? total) - days);
+      plan.weeksRemaining = Math.ceil(plan.daysRemaining / 7);
+      if (plan.daysRemaining === 0) {
         if (!p.altPos.includes(plan.targetPos)) p.altPos = [...p.altPos, plan.targetPos];
         s.news.unshift(`${p.name} has completed his conversion to ${plan.targetPos}.`);
         pushInbox(s, {
@@ -86,6 +108,7 @@ export function applyDevPlans(state: GameState): void {
           title: `${p.name} adds a new position`,
           body: `${p.name}'s development plan has paid off — he can now also play ${plan.targetPos}.`,
           playerId: p.id,
+          kind: 'devMilestone',
         });
         delete p.devPlan;
       }

@@ -10,6 +10,7 @@ import StaffProfileModal from './StaffProfileModal';
 import { Pulse, toneFor } from './SectionHub';
 
 const ROLES: { id: Coach['role']; label: string; blurb: string }[] = [
+  { id: 'assistant', label: 'Assistant Manager', blurb: 'Gives you a recommendation on the Weekly Schedule screen — apply his suggestion or ignore it.' },
   { id: 'attack', label: 'Attack Coach', blurb: 'Speeds development for forwards and attacking midfielders.' },
   { id: 'midfield', label: 'Midfield Coach', blurb: 'Speeds development for central midfielders.' },
   { id: 'defense', label: 'Defense Coach', blurb: 'Speeds development for defenders.' },

@@ -2,11 +2,13 @@
 
 import { useState, type CSSProperties } from 'react';
 import type { GameState, InboxCategory, InboxItem, Player } from '@/engine/types';
-import { markAllInboxRead, markInboxRead, setCaptain } from '@/engine/seasonProgression';
-import { respondToComplaint } from '@/engine/transferMarket';
+import { markAllInboxRead, markInboxRead } from '@/engine/seasonProgression';
+import { respondToComplaint, renewContract } from '@/engine/transferMarket';
 import { formatMoney } from '@/engine/utils';
 import { tint } from './visuals';
 import { Icon, type IconName } from './Icon';
+import PlayerModal from './PlayerModal';
+import type { ScreenId } from './hubNav';
 
 const CATEGORY_ICON: Record<InboxCategory, IconName> = {
   club: 'stadium',
@@ -106,12 +108,19 @@ function PlayerCard({ p, club, seasonYear }: { p: Player; club: { name: string; 
 export default function InboxScreen({
   state,
   onChange,
+  onOpenScreen,
 }: {
   state: GameState;
   onChange: (next: GameState) => void;
+  /** Where a scout-lead item's "Open in Transfers" action should go. Optional
+   *  so the screen still renders (just without that one action) if a caller
+   *  doesn't have a router to hand it — every other action is a direct state
+   *  mutation and doesn't need this. */
+  onOpenScreen?: (id: ScreenId) => void;
 }) {
   const [openId, setOpenId] = useState<number | null>(null);
   const [filter, setFilter] = useState<Filter>('all');
+  const [viewPlayerId, setViewPlayerId] = useState<number | null>(null);
   const items = state.inbox;
   const unread = items.filter((i) => !i.read).length;
 
@@ -195,34 +204,58 @@ export default function InboxScreen({
                 <p className="fm-hint">
                   {filter === 'unread' ? 'Everything here is read.' : 'No messages in this category.'}
                 </p>
-              ) : (
-                <div className="fm-msg-list">
-                  {shown.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className={`fm-msg-row${item.read ? '' : ' unread'}`}
-                      onClick={() => openItem(item.id, shown.map((i) => i.id))}
+              ) : (() => {
+                // A real priority split, not a visual trick: these are the
+                // items with an actual decision attached (respond to a
+                // complaint, offer a contract) — everything else, including
+                // items with a "view player" or "open Transfers" action, is
+                // for-your-information and sits below.
+                const needsDecision = (i: InboxItem) =>
+                  (i.kind === 'complaint' && !i.responded) || i.kind === 'contractExpiring';
+                const actionItems = shown.filter(needsDecision);
+                const otherItems = shown.filter((i) => !needsDecision(i));
+
+                const row = (item: InboxItem) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`fm-msg-row${item.read ? '' : ' unread'}`}
+                    onClick={() => openItem(item.id, shown.map((i) => i.id))}
+                  >
+                    <span
+                      className="fm-icon-tile fm-icon-tile--sm"
+                      style={{ '--tile-tint': CATEGORY_TINT[item.category] } as CSSProperties}
                     >
-                      <span
-                        className="fm-icon-tile fm-icon-tile--sm"
-                        style={{ '--tile-tint': CATEGORY_TINT[item.category] } as CSSProperties}
-                      >
-                        <Icon name={CATEGORY_ICON[item.category]} size={15} />
+                      <Icon name={CATEGORY_ICON[item.category]} size={15} />
+                    </span>
+                    <span className="fm-msg-row__main">
+                      <span className="fm-msg-row__title">{item.title}</span>
+                      <span className="fm-msg-row__meta">{CATEGORY_LABEL[item.category]} · Week {item.week}</span>
+                    </span>
+                    {!item.read && (
+                      <span className="fm-msg-row__dot">
+                        <span className="fm-u-sr">Unread</span>
                       </span>
-                      <span className="fm-msg-row__main">
-                        <span className="fm-msg-row__title">{item.title}</span>
-                        <span className="fm-msg-row__meta">{CATEGORY_LABEL[item.category]} · Week {item.week}</span>
-                      </span>
-                      {!item.read && (
-                        <span className="fm-msg-row__dot">
-                          <span className="fm-u-sr">Unread</span>
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
+                    )}
+                  </button>
+                );
+
+                return (
+                  <>
+                    {actionItems.length > 0 && (
+                      <>
+                        <p className="fm-label" style={{ margin: '0 0 6px' }}>
+                          Needs a decision <span className="fm-badge fm-badge--alert">{actionItems.length}</span>
+                        </p>
+                        <div className="fm-msg-list" style={{ marginBottom: 14 }}>
+                          {actionItems.map(row)}
+                        </div>
+                      </>
+                    )}
+                    <div className="fm-msg-list">{otherItems.map(row)}</div>
+                  </>
+                );
+              })()}
             </div>
           </>
         )}
@@ -232,8 +265,6 @@ export default function InboxScreen({
 
   const player = current.playerId != null ? state.players[current.playerId] : null;
   const playerClub = player ? state.clubs.find((c) => c.id === player.clubId) : undefined;
-  const isCaptaincy = current.category === 'club' && /captain/i.test(current.title);
-  const isComplaint = current.category === 'club' && /playing time|complain/i.test(current.title);
 
   const respond = (response: 'reassure' | 'promise') => {
     if (!player) return;
@@ -241,6 +272,8 @@ export default function InboxScreen({
     next.inbox = next.inbox.map((i) => (i.id === current.id ? { ...i, responded: true } : i));
     onChange(next);
   };
+
+  const renewCost = player ? player.wage * 10 : 0;
 
   return (
     <div className="fm-inbox">
@@ -285,12 +318,7 @@ export default function InboxScreen({
       </div>
 
       <div className="fm-inbox__nav">
-        {isCaptaincy && player && state.captainId !== player.id && (
-          <button className="fm-btn fm-btn--secondary" onClick={() => onChange(setCaptain(state, player.id))}>
-            Confirm captaincy
-          </button>
-        )}
-        {isComplaint && player && !current.responded && (
+        {current.kind === 'complaint' && player && !current.responded && (
           <>
             <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => respond('reassure')} title="Small, always-available morale bump.">
               Reassure
@@ -300,8 +328,28 @@ export default function InboxScreen({
             </button>
           </>
         )}
-        {isComplaint && current.responded && (
+        {current.kind === 'complaint' && current.responded && (
           <span className="fm-hint" style={{ textAlign: 'left', margin: 0 }}>You've already responded to this.</span>
+        )}
+        {current.kind === 'contractExpiring' && player && (
+          <button
+            className="fm-btn fm-btn--secondary fm-btn--small"
+            disabled={renewCost > state.budget}
+            title={renewCost > state.budget ? "Can't afford the signing bonus right now" : undefined}
+            onClick={() => onChange(renewContract(state, player.id))}
+          >
+            Offer new deal — {formatMoney(renewCost)} bonus
+          </button>
+        )}
+        {current.kind === 'scoutLead' && onOpenScreen && (
+          <button className="fm-btn fm-btn--secondary fm-btn--small" onClick={() => onOpenScreen('transfers')}>
+            Open in Transfers
+          </button>
+        )}
+        {(current.kind === 'devMilestone' || current.kind === 'trainingImprovement') && player && (
+          <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setViewPlayerId(player.id)}>
+            View player
+          </button>
         )}
         <span className="fm-inbox__nav-spacer" />
         <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setOpenId(null)}>
@@ -314,6 +362,16 @@ export default function InboxScreen({
           Next <Icon name="chevron" size={13} />
         </button>
       </div>
+
+      {viewPlayerId !== null && state.players[viewPlayerId] && (
+        <PlayerModal
+          state={state}
+          player={state.players[viewPlayerId]}
+          club={state.clubs.find((c) => c.id === state.players[viewPlayerId].clubId)}
+          onChange={onChange}
+          onClose={() => setViewPlayerId(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,8 +1,23 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import type { GameSettings, MatchSpeed } from '@/engine/types';
+import type { GameSettings, InboxCategory, MatchSpeed } from '@/engine/types';
+import { defaultContinueStops, stopEnabled } from '@/engine/dailyTick';
 import { Icon, type IconName } from './Icon';
+
+/** Continue Rules rows — which inbox categories halt "Sim Next Day" for a
+ *  look. Matchday isn't listed: it's a hard stop (see engine/dailyTick.ts),
+ *  not a preference. */
+const STOP_ROWS: { id: InboxCategory; label: string; desc: string }[] = [
+  { id: 'injury', label: 'Injuries', desc: 'A player picks up a knock' },
+  { id: 'contract', label: 'Contracts', desc: 'A deal expires or needs renewing' },
+  { id: 'transfer', label: 'Transfers', desc: 'Bids, signings, scouting leads, loan issues' },
+  { id: 'board', label: 'Board', desc: 'Confidence warnings and objective updates' },
+  { id: 'club', label: 'Squad mood', desc: 'Unhappiness, captaincy, development milestones' },
+  { id: 'youth', label: 'Youth academy', desc: 'Academy intake and youth news' },
+  { id: 'match', label: 'Match news', desc: 'Results and milestones elsewhere in the league' },
+  { id: 'press', label: 'Press', desc: 'Media stories about you and your club' },
+];
 
 const SPEEDS: { id: MatchSpeed; label: string }[] = [
   { id: 'slow', label: 'Slow' },
@@ -36,6 +51,7 @@ const DEFAULTS: GameSettings = {
   show2DPitch: true,
   showTeamTalks: true,
   difficulty: 1,
+  continueStops: defaultContinueStops(),
 };
 
 const STORAGE_KEY = 'gaffer_settings';
@@ -176,6 +192,33 @@ export default function SettingsPanel({
                 aria-label="Toggle team talks"
               />
             </div>
+          </div>
+
+          <div className="fm-setgroup">
+            <p className="fm-setgroup__title">Continue Rules</p>
+            <p className="fm-hint" style={{ textAlign: 'left', margin: '0 0 10px' }}>
+              What halts "Sim Next Day" for a look, versus just logging to the day's summary and rolling on.
+              Matchday always stops — that one isn't a preference.
+            </p>
+            {STOP_ROWS.map((row) => {
+              const on = stopEnabled(settings, row.id);
+              return (
+                <div key={row.id} className="fm-settings-row">
+                  <div className="fm-settings-row__head">
+                    <div>
+                      <div className="fm-settings-label">{row.label}</div>
+                      <div className="fm-settings-desc">{row.desc}</div>
+                    </div>
+                  </div>
+                  <button
+                    className={`fm-toggle${on ? ' on' : ''}`}
+                    onClick={() => update({ continueStops: { ...settings.continueStops, [row.id]: !on } })}
+                    aria-pressed={on}
+                    aria-label={`Toggle stop on ${row.label}`}
+                  />
+                </div>
+              );
+            })}
           </div>
 
           <div className="fm-setgroup">
