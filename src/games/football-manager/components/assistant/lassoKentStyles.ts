@@ -85,6 +85,15 @@ export const LASSO_KENT_CSS = `
   animation: lk-ping 1.5s ease-out infinite;
 }
 
+/* ── contextual helper trigger ──────────────────────────────────────── */
+.fm-assistant-info {
+  display: inline-grid; place-items: center; width: 22px; height: 22px;
+  padding: 0; border: 1px solid rgba(245,185,66,0.65); border-radius: 50%;
+  background: rgba(245,185,66,0.14); color: #f5b942; font: 700 13px/1 Georgia, serif;
+  cursor: pointer; touch-action: manipulation;
+}
+.fm-assistant-info:hover, .fm-assistant-info:focus-visible { background: rgba(245,185,66,0.28); outline: 2px solid #f5b942; outline-offset: 2px; }
+
 /* ── chat window ────────────────────────────────────────────────────── */
 @keyframes lk-pop-in {
   0%   { transform: scale(0.7) translateY(24px); opacity: 0; }

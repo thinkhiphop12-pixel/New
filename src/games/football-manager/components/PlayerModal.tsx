@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type CSSProperties } from 'react';
+import { useAssistant } from '../hooks/useLassoKentAssistant';
 import { Icon } from './Icon';
 import type { Club, GameState, Player } from '@/engine/types';
 import { canLoanOut, exerciseLoanOption, loanOut, renewContract } from '@/engine/transferMarket';
@@ -14,6 +15,7 @@ import type { DevPlan } from '@/engine/types';
 import { attrBand, initials, ratingRingColor } from './visuals';
 import { SpiderChart } from './SpiderChart';
 import { PlayerFace } from './PlayerFace';
+import AssistantInfoButton from './assistant/AssistantInfoButton';
 
 /** Fields Phase 1 (concurrent) is adding to `Player` but that may not have
  *  landed yet. Kept as an optional local extension so this modal works
@@ -99,6 +101,8 @@ export default function PlayerModal({
   onClose: () => void;
 }) {
   const [tab, setTab] = useState<'ratings' | 'stats'>('ratings');
+  const [delegationStatus, setDelegationStatus] = useState<'idle' | 'working' | 'accepted' | 'rejected'>('idle');
+  const assistant = useAssistant();
   const p = player as PlayerWithFuture;
 
   const isGK = p.pos === 'GK';
@@ -414,16 +418,38 @@ export default function PlayerModal({
           </>
         )}
 
-        <div className="fm-actions" style={{ justifyContent: 'flex-start', marginTop: 10 }}>
-          {p.contractYears <= 1 && (
+<div className="fm-actions" style={{ justifyContent: 'flex-start', marginTop: 10 }}>
+  <AssistantInfoButton
+    page="transfer"
+    data={{ target: p.name, club: club?.name, contract: `${p.contractYears} year${p.contractYears === 1 ? '' : 's'} remaining` }}
+    label={`Ask the assistant about ${p.name}'s contract`}
+  />
+  {p.contractYears <= 1 && (
+            <>
             <button
               className="fm-btn fm-btn--primary fm-btn--small"
               disabled={p.wage * 10 > state.budget}
-              onClick={() => onChange(renewContract(state, p.id))}
-            >
-              Renew contract ({formatMoney(p.wage * 10)} bonus)
-            </button>
-          )}
+  onClick={() => onChange(renewContract(state, p.id))}
+  >
+  Renew contract ({formatMoney(p.wage * 10)} bonus)
+  </button>
+  <button
+    className="fm-btn fm-btn--secondary fm-btn--small"
+    disabled={delegationStatus === 'working' || p.wage * 10 > state.budget}
+    onClick={() => {
+      setDelegationStatus('working');
+      assistant.trigger('transfer', { target: p.name, club: club?.name, contract: 'renewal' });
+      window.setTimeout(() => {
+        const accepted = p.wage * 10 <= state.budget;
+        if (accepted) onChange(renewContract(state, p.id));
+        setDelegationStatus(accepted ? 'accepted' : 'rejected');
+      }, 450);
+    }}
+  >
+  {delegationStatus === 'working' ? 'Assistant negotiating…' : delegationStatus === 'accepted' ? 'Renewal agreed' : 'Assign to assistant manager'}
+  </button>
+            </>
+  )}
           {!isOnLoan(p) && (
             <button
               className="fm-btn fm-btn--secondary fm-btn--small"
