@@ -6,7 +6,7 @@ import {
   acceptIncomingOffer, askingPrice, buyPlayer, canBuy, counterIncomingOffer, delistPlayer,
   dismissNegotiation, getLoanMarket, getTransferMarket, isTransferBanned, listForSale,
   openLoanNegotiation, openNegotiation, rejectIncomingOffer, requestLoanIn, saleValue,
-  scoutRecommendations, submitFeeOffer, submitLoanTermsOffer, submitTermsOffer, toggleLoanList,
+  submitFeeOffer, submitLoanTermsOffer, submitTermsOffer, toggleLoanList,
   transferTargets, triggerReleaseClause, walkAwayNegotiation,
   type MarketEntry, type MarketFilters,
 } from '@/engine/transferMarket';
@@ -15,14 +15,16 @@ import {
 } from '@/engine/negotiation';
 import { financesView } from '@/engine/finances';
 import { getSquad, isOnLoan, squadAvgRating, wageCeiling } from '@/engine/teamManagement';
-import { assignScout, newScouting, tickFacilitiesWeek, toggleShortlist } from '@/engine/facilities';
-import { MIN_SQUAD_SIZE, TRANSFER_WINDOWS, transferWindow } from '@/engine/gameRules';
+import { newScouting, toggleShortlist } from '@/engine/facilities';
+import { MAX_SQUAD_SIZE, MIN_SQUAD_SIZE, transferWindow } from '@/engine/gameRules';
 import { weeklyWageBill } from '@/engine/seasonProgression';
 import { clamp, formatMoney } from '@/engine/utils';
 import { traitNames } from '@/engine/traits';
 import { Icon } from './Icon';
 import PlayerModal from './PlayerModal';
 import { PlayerCard } from './InboxScreen';
+import { Pulse, toneFor } from './SectionHub';
+import { pushToast } from './ToastQueue';
 
 type MarketTab = 'search' | 'shortlist' | 'sent' | 'received';
 const POSITIONS: (Position | 'ALL')[] = ['ALL', 'GK', 'DEF', 'MID', 'FWD'];
@@ -125,7 +127,11 @@ export default function TransfersScreen({
   );
   const loanMarket = useMemo(() => getLoanMarket(state).slice(0, 60), [state]);
   const mySquad = getSquad(state, state.userClubId).sort((a, b) => b.rating - a.rating);
-  const reports = useMemo(() => scoutRecommendations(state), [state]);
+  /** Players one of the permanent regional scouts has filed a report on. */
+  const scoutedIds = useMemo(
+    () => new Set((sc.playerReports ?? []).map((r) => r.playerId)),
+    [sc.playerReports],
+  );
 
   const shortlisted = useMemo(() => {
     const targets = transferTargets(state);
@@ -137,15 +143,29 @@ export default function TransfersScreen({
     return [...targets.filter((p) => shortlist.includes(p.id)), ...extra];
   }, [state, shortlist]);
 
+  /* Every market action funnels through here, and until now its only feedback
+   * was a line of text at the very top of a screen you are usually scrolled
+   * well down — so listing a player, sending a bid or triggering a clause all
+   * looked like nothing happened. The inline line stays (it's the record of
+   * the last thing you did on this screen); a toast goes with it so the
+   * confirmation is visible from wherever you actually clicked. */
   const apply = (result: { state: GameState; ok: boolean; message: string }) => {
-    if (!result.ok) { setError(result.message); setNotice(null); return; }
+    if (!result.ok) {
+      setError(result.message);
+      setNotice(null);
+      pushToast(result.message, 'error');
+      return;
+    }
     setError(null);
     setNotice(result.message);
+    pushToast(result.message, 'success');
     onChange(result.state);
   };
 
+  const refuse = (msg: string) => { setError(msg); setNotice(null); pushToast(msg, 'error'); };
+
   const openTalks = (p: MarketEntry | Player) => {
-    if (isTransferBanned(state, p.id)) { setError(`${p.name} won't talk to your club again this season.`); return; }
+    if (isTransferBanned(state, p.id)) { refuse(`${p.name} won't talk to your club again this season.`); return; }
     const result = openNegotiation(state, p.id);
     apply(result);
     if (result.ok) {
@@ -156,7 +176,7 @@ export default function TransfersScreen({
   };
 
   const openLoanTalks = (p: MarketEntry | Player, offerType: 'loan' | 'loan_to_buy') => {
-    if (isTransferBanned(state, p.id)) { setError(`${p.name} won't talk to your club again this season.`); return; }
+    if (isTransferBanned(state, p.id)) { refuse(`${p.name} won't talk to your club again this season.`); return; }
     const result = openLoanNegotiation(state, p.id, offerType);
     apply(result);
     if (result.ok) {
@@ -168,28 +188,44 @@ export default function TransfersScreen({
 
   const doSign = (playerId: number) => {
     const check = canBuy(state, playerId);
-    if (!check.ok) { setError(check.error ?? 'Cannot sign.'); return; }
+    if (!check.ok) { refuse(check.error ?? 'Cannot sign.'); return; }
     setError(null);
     // Clear him off the shortlist once he's signed — but only if he was on it.
     // This runs from Search too, where an unconditional toggle would *add* a
     // player you just bought to your list of targets.
     const bought = buyPlayer(state, playerId);
+    const name = state.players[playerId]?.name ?? 'The player';
     onChange(shortlist.includes(playerId) ? toggleShortlist(bought, playerId) : bought);
+    // A completed signing is the single biggest thing that can happen on this
+    // screen and it used to happen in total silence — the row simply vanished.
+    setNotice(`${name} signed. He is in your squad from today — set him in the XI from Squad → Tactics.`);
+    pushToast(`Signed: ${name}`, 'success');
   };
 
-  const toggleScout = (playerId: number) => onChange(toggleShortlist(state, playerId));
+  const toggleScout = (playerId: number) => {
+    const on = !shortlist.includes(playerId);
+    const name = state.players[playerId]?.name ?? 'Player';
+    onChange(toggleShortlist(state, playerId));
+    pushToast(on ? `${name} added to your shortlist` : `${name} removed from your shortlist`, 'info');
+  };
 
   // The window gates every paid deal, so the screens where deals are started
   // have to say so up front — otherwise the buttons just fail on click.
   const win = transferWindow(state.week);
 
   const clubName = (id: number) => (id === 0 ? 'Free agent' : state.clubs.find((c) => c.id === id)?.name ?? '—');
-  const opponentClubs = state.clubs.filter((c) => c.id !== state.userClubId && !c.dormant).slice(0, 30);
-  const activeAssignments = sc.assignments.filter((a) => !a.complete);
 
   return (
     <>
-      <div className="fm-subnav__tabs" role="tablist" aria-label="Transfer market sections">
+      {/* What you can actually spend, and how long you have to spend it.
+          These four numbers used to live on a fifth "Hub" tab that was
+          deleted — so the screen where you sign players stopped saying what
+          your budget was, and the deadline only appeared as a warning line
+          in the last fortnight of a window. They belong here, above the
+          tabs, visible whichever one you are on. */}
+      <MarketPulse state={state} win={win} squadSize={mySquad.length} />
+
+      <div className="fm-subnav__tabs" role="tablist" aria-label="Transfer market sections" data-tour="transfers-tabs">
         {TABS.map((t) => {
           const count =
             t.id === 'sent' ? outgoing.length :
@@ -216,7 +252,7 @@ export default function TransfersScreen({
       {tab === 'search' && (
         <div role="tabpanel">
           <WindowNotice win={win} />
-          <div className="fm-filtercards">
+          <div className="fm-filtercards" data-tour="transfers-filters">
             <FilterCard label="Position" icon="squad">
               <select className="fm-search" value={posFilter} onChange={(e) => setPosFilter(e.target.value as Position | 'ALL')}>
                 {POSITIONS.map((p) => <option key={p} value={p}>{p === 'ALL' ? 'Any' : p}</option>)}
@@ -337,7 +373,7 @@ export default function TransfersScreen({
           <p className="fm-hint" style={{ margin: '12px 0 0', textAlign: 'left' }}>
             Can&apos;t compete for a big fee yet? Try the loan market below ↓
           </p>
-          <p className="fm-label" style={{ marginTop: 8 }}>Loan market</p>
+          <p className="fm-label" style={{ marginTop: 8 }} data-tour="transfers-loans">Loan market</p>
           <div className="fm-player-list">
             {loanMarket.map((p) => (
               <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
@@ -387,7 +423,7 @@ export default function TransfersScreen({
             {loanMarket.length === 0 && <p className="fm-hint">Nobody suitable is available on loan right now.</p>}
           </div>
 
-          <p className="fm-label" style={{ marginTop: 18 }}>My squad</p>
+          <p className="fm-label" style={{ marginTop: 18 }} data-tour="transfers-sell">My squad</p>
           <div className="fm-player-list">
             {mySquad.map((p) => (
               <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
@@ -428,11 +464,21 @@ export default function TransfersScreen({
         <div role="tabpanel">
           <WindowNotice win={win} />
           <div className="fm-player-list">
-          <p className="fm-hint">Full shortlist, with a scouting-status dot per player — full colour once your scouts have a complete read on him, dim while a report is still pending.</p>
+          <p className="fm-hint">
+            Full shortlist, with a scouting-status dot per player — full colour once one of your scouts
+            has filed on him, dim while he is still just a name you liked the look of. Send a scout after
+            him from Market → Scouting.
+          </p>
           {shortlisted.length === 0 && <p className="fm-hint">Nobody shortlisted yet. Tap “Shortlist” on a player from Search.</p>}
           {shortlisted.map((p) => {
+            // "Scouted" means somebody has actually filed on him, by either
+            // route: a completed one-off player search, or a lead from one of
+            // the permanent regional scouts. It previously only counted the
+            // first, and the only screen that could start one had been
+            // deleted — so every shortlisted player read "report pending"
+            // forever, whatever the scouting department did.
             const assignment = sc.assignments.find((a) => a.kind === 'player-search' && a.foundPlayerIds?.includes(p.id));
-            const known = assignment?.complete ?? false;
+            const known = (assignment?.complete ?? false) || scoutedIds.has(p.id);
             return (
               <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
                 <span
@@ -479,7 +525,7 @@ export default function TransfersScreen({
               across, and the panel's own "All negotiations" / "Close" actions
               only mean anything if there is something to go back to. */}
           {activeNeg ? (
-            <ContractNegotiationPanel state={state} neg={activeNeg} onApply={apply} onBack={() => setActiveNegId(null)} />
+            <NegotiationPanel state={state} neg={activeNeg} onApply={apply} onBack={() => setActiveNegId(null)} />
           ) : (
             <div className="fm-panel">
               <p className="fm-label" style={{ marginTop: 0 }}>Sent</p>
@@ -576,181 +622,62 @@ export default function TransfersScreen({
   );
 }
 
-/** Hub tab: budget ring + season-window countdown + scouting assignments,
- *  with quick links into the other four tabs. The mock's ring tracks a
- *  transfer-deadline day-count this engine doesn't model (there's no
- *  separate transfer-window field — see engine/types.ts's GameState); the
- *  ring here instead tracks the real, honest analogue: how much of the
- *  48-round season is behind you. */
-function TransferHub({
+/**
+ * The four numbers that govern every decision on this screen: what you can
+ * pay in fees, what you have left in weekly wages, how long the window is
+ * open, and whether the squad has room for another body (or is too thin to
+ * sell from).
+ *
+ * The wage figure is the one most often missed — a signing can clear the
+ * transfer budget and still be refused on wages, and before this the screen
+ * never said so until the offer sheet bounced it back.
+ */
+function MarketPulse({
   state,
-  sc,
-  activeAssignments,
-  clubName,
-  opponentClubs,
-  onChange,
-  onGo,
+  win,
+  squadSize,
 }: {
   state: GameState;
-  sc: NonNullable<GameState['scouting']>;
-  activeAssignments: NonNullable<GameState['scouting']>['assignments'];
-  clubName: (id: number) => string;
-  opponentClubs: GameState['clubs'];
-  onChange: (next: GameState) => void;
-  onGo: (t: MarketTab) => void;
+  win: ReturnType<typeof transferWindow>;
+  squadSize: number;
 }) {
-  const wageBill = weeklyWageBill(state);
   const ceiling = wageCeiling(state);
-  const wagePct = ceiling > 0 ? Math.min(100, Math.round((wageBill / ceiling) * 100)) : 0;
-
-  // Real deadline, not season progress: when the window is open the ring
-  // counts down to deadline day; when it is shut it counts down to the next
-  // window opening, and turns gold to say the market is closed.
-  const win = transferWindow(state.week);
-  const span = win.open
-    ? (TRANSFER_WINDOWS.find((w) => w.name === win.name)?.closes ?? 0) -
-      (TRANSFER_WINDOWS.find((w) => w.name === win.name)?.opens ?? 0) + 1
-    : 0;
-  const windowPct = win.open && span > 0 ? Math.round(((span - win.weeksLeft) / span) * 100) : 100;
+  const bill = weeklyWageBill(state);
+  const room = Math.max(0, ceiling - bill);
+  const usedPct = ceiling > 0 ? clamp(bill / ceiling, 0, 1) : 1;
 
   return (
-    <>
-      <div className="fm-split" style={{ ['--split-ratio' as string]: '1fr 1.3fr' }}>
-        <div className="fm-panel">
-          <p className="fm-label" style={{ marginTop: 0 }}>Budgets</p>
-          <div className="fm-attr-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: 12 }}>
-            <div>
-              <p className="fm-hint" style={{ margin: 0 }}>TRANSFER</p>
-              <p style={{ fontSize: 20, fontWeight: 900, margin: 0 }}>{formatMoney(state.budget)}</p>
-            </div>
-            <div>
-              <p className="fm-hint" style={{ margin: 0 }}>WAGES</p>
-              <p style={{ fontSize: 20, fontWeight: 900, margin: 0 }}>{formatMoney(wageBill)} pw</p>
-              <p className="fm-hint" style={{ margin: 0 }}>of {formatMoney(ceiling)} ceiling</p>
-            </div>
-          </div>
-          <div className="fm-meter-row" style={{ marginBottom: 14 }}>
-            <div className="fm-meter-row__head">
-              <span>Wage budget used</span>
-              <span className="fm-meter-row__value">{wagePct}%</span>
-            </div>
-            <div className="fm-meter-row__track">
-              <div
-                className="fm-meter-row__fill"
-                style={{
-                  width: `${wagePct}%`,
-                  background: wagePct >= 95 ? 'var(--red)' : wagePct >= 80 ? 'var(--gold)' : 'var(--green)',
-                }}
-              />
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div
-              className="fm-ring"
-              style={{
-                ['--ring-pct' as string]: windowPct,
-                ['--ring-color' as string]: win.open ? 'var(--green)' : 'var(--gold)',
-              }}
-            >
-              <span className="fm-ring__value">{win.weeksLeft}</span>
-            </div>
-            <p className="fm-club-line" style={{ margin: 0 }}>
-              {win.open ? (
-                <>
-                  <strong>{win.name} window open</strong>
-                  <br />
-                  {win.weeksLeft === 0
-                    ? 'Deadline day — last week to deal'
-                    : `${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'} to deadline`}
-                </>
-              ) : (
-                <>
-                  <strong>Window shut</strong>
-                  <br />
-                  {win.weeksLeft > 0
-                    ? `${win.name} opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}`
-                    : 'No window left this season'}
-                  <br />
-                  Free agents can still be signed.
-                </>
-              )}
-            </p>
-          </div>
-        </div>
-
-        <div className="fm-panel">
-          <p className="fm-label" style={{ marginTop: 0 }}>Scouting assignments</p>
-          <p className="fm-club-line">Assign scouts to opponents or player searches. Reports land after their due week.</p>
-          <div className="fm-filters">
-            <button className="fm-pill" onClick={() => onChange(assignScout(state, 'player-search'))}>
-              Assign: player search (2wk)
-            </button>
-            <button className="fm-pill" onClick={() => onChange(assignScout(state, 'youth'))}>
-              Assign: youth scouting (3wk)
-            </button>
-          </div>
-          <select
-            className="fm-search"
-            style={{ marginTop: 8 }}
-            defaultValue=""
-            onChange={(e) => {
-              const clubId = Number(e.target.value);
-              if (clubId) onChange(assignScout(state, 'opponent', clubId));
-              e.target.value = '';
-            }}
-          >
-            <option value="" disabled>Assign: scout an opponent (1wk)…</option>
-            {opponentClubs.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-
-          {activeAssignments.length > 0 ? (
-            <ul className="fm-news" style={{ marginTop: 10 }}>
-              {activeAssignments.map((a) => {
-                const total = Math.max(1, a.dueWeek - a.startWeek || 1);
-                const progress = Math.round((1 - a.weeksRemaining / total) * 100);
-                const region =
-                  a.kind === 'opponent' ? clubName(a.targetClubId ?? 0)
-                  : a.kind === 'youth' ? 'Youth scouting'
-                  : 'Player search';
-                return (
-                  <li key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span className="fm-icon-tile fm-icon-tile--sm"><Icon name="binoculars" size={16} /></span>
-                    <span style={{ flex: 1 }}>
-                      {region}
-                      <span className="fm-hint" style={{ display: 'block' }}>{a.scoutName}</span>
-                    </span>
-                    <span className="fm-hint">{Math.max(0, Math.min(100, progress))}%</span>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="fm-hint">No scouts out in the field right now.</p>
-          )}
-
-          {sc.reports.length > 0 && (
-            <div style={{ marginTop: 10 }}>
-              <p className="fm-label">Opponent reports</p>
-              {sc.reports.slice(0, 5).map((r) => (
-                <div key={r.id} style={{ marginBottom: 6 }}>
-                  <p className="fm-club-line" style={{ margin: 0 }}>{clubName(r.clubId)} — {r.summary}</p>
-                  <p className="fm-hint" style={{ margin: 0 }}>
-                    Strengths: {r.strengths.join(', ') || 'none noted'} · Weaknesses: {r.weaknesses.join(', ') || 'none noted'}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="fm-filters" style={{ marginTop: 14 }}>
-        <button className="fm-pill" onClick={() => onGo('search')}>Search the market</button>
-        <button className="fm-pill" onClick={() => onGo('shortlist')}>View shortlist</button>
-        <button className="fm-pill" onClick={() => onGo('sent')}>Offers sent</button>
-        <button className="fm-pill" onClick={() => onGo('received')}>Offers received</button>
-      </div>
-    </>
+    <Pulse
+      items={[
+        {
+          icon: 'money-in',
+          label: 'Transfer budget',
+          value: formatMoney(state.budget),
+          tone: state.budget > 0 ? 'green' : 'red',
+        },
+        {
+          icon: 'money-out',
+          label: 'Wage room',
+          value: `${formatMoney(room)}/wk`,
+          tone: usedPct >= 0.95 ? 'red' : usedPct >= 0.8 ? 'gold' : 'green',
+          meter: usedPct,
+        },
+        {
+          icon: 'calendar',
+          label: win.open ? `${win.name} window` : 'Window shut',
+          value: win.open
+            ? win.weeksLeft === 0 ? 'Deadline' : `${win.weeksLeft}wk left`
+            : win.weeksLeft > 0 ? `Opens in ${win.weeksLeft}wk` : 'None left',
+          tone: win.open ? (win.weeksLeft <= 1 ? 'gold' : 'green') : 'gold',
+        },
+        {
+          icon: 'squad',
+          label: `Squad (${MIN_SQUAD_SIZE}-${MAX_SQUAD_SIZE})`,
+          value: String(squadSize),
+          tone: toneFor(squadSize, MIN_SQUAD_SIZE + 1, MIN_SQUAD_SIZE + 4),
+        },
+      ]}
+    />
   );
 }
 
@@ -883,53 +810,6 @@ function OfferField({
 /** Read-only dropdown-alike, for a select whose value the stage has fixed. */
 function LockedValue({ children }: { children: React.ReactNode }) {
   return <div className="fm-stepper fm-stepper--locked"><span className="fm-stepper__value">{children}</span></div>;
-}
-
-function ContractNegotiationPanel({
-  state, neg, onApply, onBack,
-}: {
-  state: GameState;
-  neg: Negotiation;
-  onApply: (r: { state: GameState; ok: boolean; message: string }) => void;
-  onBack: () => void;
-}) {
-  const player = state.players[neg.playerId];
-  const [years, setYears] = useState(neg.contractYears || 3);
-  const [baseSalary, setBaseSalary] = useState(neg.lastWage ?? neg.neg.wageDemand ?? player?.wage ?? 260000);
-  const [signingBonus, setSigningBonus] = useState(neg.signingBonus || 2500000);
-  const [appearanceBonus, setAppearanceBonus] = useState(15000);
-  const [loyaltyBonus, setLoyaltyBonus] = useState(1000000);
-  const [releaseClause, setReleaseClause] = useState(neg.releaseClause || 80000000);
-  const [error, setError] = useState<string | null>(null);
-  if (!player) return null;
-
-  const wageRoom = wageCeiling(state) - weeklyWageBill(state);
-  const totalWeeklyCost = baseSalary + (signingBonus + loyaltyBonus + appearanceBonus) / 52;
-  const remaining = wageRoom - totalWeeklyCost;
-  const previous = neg.lastWage ? { baseSalary: neg.lastWage, contractLength: neg.contractYears, signingBonus: neg.signingBonus, releaseClause: neg.releaseClause } : null;
-  const mood = !previous ? 'NEUTRAL' : baseSalary >= previous.baseSalary && signingBonus >= previous.signingBonus ? 'HAPPY' : baseSalary < previous.baseSalary || signingBonus < previous.signingBonus ? 'ANGRY' : 'NEUTRAL';
-  const advice = baseSalary < 240000 ? 'Offer is below player expectations.' : baseSalary >= 280000 && signingBonus >= 3000000 ? 'Excellent offer — likely to be accepted.' : `Player expects a higher base salary. Consider increasing to ${formatMoney(280000)} p/w to match squad leaders.`;
-  const change = previous ? `${baseSalary - previous.baseSalary >= 0 ? '+' : ''}${formatMoney(baseSalary - previous.baseSalary)} p/w` : 'No previous offer recorded';
-  const adjust = (setter: (n: number) => void, value: number, step: number) => (delta: number) => setter(Math.max(0, value + delta * step));
-  const submit = () => {
-    if (years < 1 || baseSalary < 0 || signingBonus < 0 || appearanceBonus < 0 || loyaltyBonus < 0 || releaseClause < 0) return setError('Values cannot be negative and contract length must be at least one year.');
-    if (baseSalary > wageRoom) return setError('Base salary exceeds the remaining wage budget.');
-    setError(null);
-    onApply(submitTermsOffer(state, neg.id, baseSalary, { contractYears: years, signingBonus, releaseClause }));
-  };
-  const Field = ({ label, value, setValue, step, suffix }: { label: string; value: number; setValue: (n: number) => void; step: number; suffix?: string }) => (
-    <label className="fm-contract-field"><span>{label}</span><span className="fm-contract-control"><button type="button" aria-label={`Decrease ${label}`} onClick={() => adjust(setValue, value, step)(-1)}>-</button><input aria-label={label} inputMode="numeric" value={value} onChange={(e) => setValue(Number(e.target.value.replace(/\\D/g, '')) || 0)} /><button type="button" aria-label={`Increase ${label}`} onClick={() => adjust(setValue, value, step)(1)}>+</button>{suffix && <em>{suffix}</em>}</span></label>
-  );
-
-  return <div className="fm-contract-panel">
-    <header className="fm-contract-header"><div className="fm-contract-avatar" aria-hidden>{player.name.slice(0, 1)}</div><div><h2>{player.name}</h2><p>{player.pos} · {player.age} years old · Date of birth: 1 Jan {state.seasonYear - player.age}</p></div><div className="fm-contract-header__rating"><strong>{player.rating}</strong><span>★ {((player.rating / 10) - 0.0).toFixed(2)}</span></div></header>
-    <div className="fm-contract-grid">
-      <section className="fm-contract-card"><h3>PLAYER STATUS</h3>{[['VALUE', formatMoney(player.value)], ['WAGE', `${formatMoney(player.wage)} p/w`], ['CONTRACT ENDS', player.contractEnd], ['SQUAD STATUS', 'Key Player'], ['INTEREST', `${neg.rival ? '2' : '0'} teams`]].map(([label, value]) => <div className="fm-contract-stat" key={label}><span>{label}</span><strong>{value}</strong></div>)}</section>
-      <section className="fm-contract-card"><h3>CURRENT OFFER</h3><div className="fm-contract-badge">Contract Extension</div><Field label="CONTRACT LENGTH" value={years} setValue={setYears} step={1} suffix="years" /><Field label="BASE SALARY" value={baseSalary} setValue={setBaseSalary} step={5000} suffix="p/w" /><Field label="SIGNING BONUS" value={signingBonus} setValue={setSigningBonus} step={500000} suffix="£" /><Field label="APPEARANCE BONUS" value={appearanceBonus} setValue={setAppearanceBonus} step={5000} suffix="per app" /><Field label="LOYALTY BONUS" value={loyaltyBonus} setValue={setLoyaltyBonus} step={500000} suffix="annual" /><Field label="RELEASE CLAUSE" value={releaseClause} setValue={setReleaseClause} step={5000000} suffix="£" /><div className={`fm-contract-budget${remaining < 0 ? ' is-negative' : ''}`}><span>WAGE BUDGET REMAINING</span><strong>{formatMoney(remaining)} p/w</strong></div><div className="fm-contract-advice"><span>ASSISTANT ADVICE</span><p>{advice}</p></div></section>
-      <section className="fm-contract-card"><h3>PREVIOUS OFFER</h3>{previous ? <><Field label="CONTRACT LENGTH" value={previous.contractLength} setValue={() => undefined} step={1} suffix="years" /><div className="fm-contract-readonly">BASE SALARY <strong>{formatMoney(previous.baseSalary)} p/w</strong></div><div className="fm-contract-readonly">SIGNING BONUS <strong>{formatMoney(previous.signingBonus)}</strong></div><div className="fm-contract-readonly">RELEASE CLAUSE <strong>{formatMoney(previous.releaseClause)}</strong></div></> : <p className="fm-contract-empty">No previous offer recorded</p>}<div className={`fm-contract-mood mood-${mood.toLowerCase()}`}><span>MOOD</span><strong>{mood === 'HAPPY' ? 'Happy' : mood === 'ANGRY' ? 'Angry' : 'Neutral'}</strong><small>{change}</small></div></section>
-    </div>
-    {error && <p className="fm-contract-error">{error}</p>}<footer className="fm-contract-footer"><button className="fm-btn fm-btn--ghost" onClick={onBack}>Close</button><button className="fm-btn fm-btn--danger" onClick={() => { onApply(walkAwayNegotiation(state, neg.id)); onBack(); }}>Reject Offer</button><button className="fm-btn fm-btn--primary" disabled={remaining < 0 || neg.awaiting === 'club'} title={remaining < 0 ? 'Insufficient wage budget' : undefined} onClick={submit}>Accept Offer</button></footer>
-  </div>;
 }
 
 type NegTab = 'current' | 'previous' | 'interest';

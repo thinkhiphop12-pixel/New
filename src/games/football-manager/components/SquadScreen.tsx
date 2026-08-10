@@ -7,7 +7,6 @@ import { FORMATIONS, getFormation } from '@/engine/gameRules';
 import { autoPickLineup, getSquad, isOnLoan, lineupStrength, setPlayerRole } from '@/engine/teamManagement';
 import { getRole } from '@/lib/playerRoles';
 import { PitchMarkings, PlayerToken } from './visuals';
-import { PlayerFace } from './PlayerFace';
 import PlayerModal from './PlayerModal';
 import type { ScreenId } from './hubNav';
 
@@ -98,13 +97,12 @@ export default function SquadScreen({
           return (
             <button
               key={p.id}
-              className={`fm-player-row fm-player-row--faced fm-pos-${p.pos}${canPick ? ' highlight' : ''}${inLineup ? ' in-lineup' : ''}`}
+              className={`fm-player-row fm-pos-${p.pos}${canPick ? ' highlight' : ''}${inLineup ? ' in-lineup' : ''}`}
               disabled={selectedSlot !== null && !canPick}
               onClick={() =>
                 selectedSlot !== null ? assignToSlot(p.id) : setDetailId(detailId === p.id ? null : p.id)
               }
             >
-              <PlayerFace playerId={p.id} size={26} />
               {p.squadNumber !== undefined && (
                 <span className="fm-player-row__num" aria-label={`Shirt number ${p.squadNumber}`}>
                   {p.squadNumber}

@@ -65,6 +65,19 @@ function fileChance(stars: number): number {
   return 0.08 + stars * 0.08;
 }
 
+/**
+ * How long, on average, a scout of this rating takes to file his next lead,
+ * in weeks. Derived from `fileChance` rather than restated, so the number
+ * the Scouting screen quotes can never drift from the roll it describes.
+ *
+ * Exported because "how long does a scout take?" had no answer anywhere in
+ * the UI: you hired one, nothing visibly happened, and there was no way to
+ * tell a working system from a broken one.
+ */
+export function expectedLeadWeeks(stars: number): number {
+  return Math.round(1 / fileChance(stars));
+}
+
 /** Note detail scales with star rating — a 1-star scout gives a vague read,
  *  a 5-star scout gives real attribute detail. */
 function reportNote(stars: number, name: string, region: string): string {

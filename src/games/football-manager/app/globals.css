@@ -891,8 +891,6 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-player-row:disabled { opacity: 0.4; cursor: not-allowed; }
 .fm-player-row.highlight { border-color: var(--green); background: var(--green-dim); }
 .fm-player-row.in-lineup { border-color: var(--green-600); }
-/* Squad list rows lead with a player avatar; other player lists don't. */
-.fm-player-row--faced { grid-template-columns: 26px 40px 1fr auto auto; }
 .fm-player-row__badge {
   display: flex; align-items: center; justify-content: center;
   font-size: 9.5px; font-weight: 900; border-radius: 6px;
@@ -1399,7 +1397,6 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 
 /* Club crest (procedural shield or real artwork) and player avatar. */
 .fm-crest { display: block; flex: none; object-fit: contain; }
-.fm-face { display: block; flex: none; border-radius: 999px; }
 .fm-player-detail__head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 
 /* Finance ledger */
@@ -3401,3 +3398,27 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-renewal-field label { font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em; }
 .fm-renewal-field .fm-contract-control { display: flex; align-items: center; gap: 4px; }
 .fm-renewal-meta { font-size: 11px; color: var(--muted); margin: 0 0 10px; }
+
+/* ---------------------------------------------------------------- scouting
+   One-off scout assignments. Each card leads with what it is and how many
+   weeks it takes, because the duration is the decision — the whole point of
+   restoring these controls was that nothing in the game ever said how long
+   a scout would be gone. */
+.fm-assign-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+}
+.fm-assign-card {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 12px; border-radius: var(--r-md);
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+}
+.fm-assign-card__head { display: flex; align-items: center; gap: 7px; color: var(--muted); }
+.fm-assign-card__label { flex: 1; font-size: 12.5px; font-weight: 800; color: var(--text); }
+.fm-assign-card__weeks {
+  font-size: 10.5px; font-weight: 900; letter-spacing: 0.03em;
+  padding: 2px 7px; border-radius: 999px;
+  background: var(--green-dim); color: var(--green); border: 1px solid var(--green-600);
+}
+.fm-assign-card__blurb { margin: 0; flex: 1; font-size: 11.5px; line-height: 1.45; color: var(--muted); }
