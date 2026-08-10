@@ -977,7 +977,9 @@ export function submitTermsOffer(
   if (N.preContract) N.signingBonus = Math.max(N.signingBonus, Math.round(N.lastWage * 52 * 0.5));
   if (N.signingBonus > s.budget) return fail(state, "You can't cover that signing-on fee.");
   N.awaiting = 'club';
-  N.responseWeek = s.week + 1;
+  // The weekly resolver runs before the season loop advances s.week. Using
+  // s.week + 1 here skipped the first response round entirely.
+  N.responseWeek = s.week;
   N.lastTouchWeek = s.week;
   pushLog(N, `You offer ${money(N.lastWage)}/wk over ${N.contractYears} years.`, 'you');
   pushLog(N, `${N.playerName} will think it over.`, 'info');
