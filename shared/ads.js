@@ -64,18 +64,51 @@ if (typeof getConsent === 'undefined') { window.getConsent = () => 'all'; }
 if (typeof track === 'undefined') { window.track = () => {}; }
 
 const REMOVE_ADS_KEY = 'bk_remove_ads';
-const LAST_AD_TIME_KEY = 'bk_last_ad_time';
+const SESSION_START_KEY = 'bk_session_start';
+const LAST_POPUNDER_TIME_KEY = 'bk_last_popunder_time';
+const LAST_SMARTLINK_TIME_KEY = 'bk_last_smartlink_time';
+
 function adsRemoved() {
   try { return localStorage.getItem(REMOVE_ADS_KEY) === '1'; } catch (e) { return false; }
 }
-function canShowAdsterra() {
+
+function getSessionTime() {
   try {
-    const lastAdTime = parseInt(localStorage.getItem(LAST_AD_TIME_KEY), 10) || 0;
-    return Date.now() - lastAdTime >= CONFIG.FREQUENCY_LIMIT_MS;
-  } catch (e) { return true; }
+    let startTime = parseInt(localStorage.getItem(SESSION_START_KEY), 10);
+    if (!startTime) {
+      startTime = Date.now();
+      localStorage.setItem(SESSION_START_KEY, startTime.toString());
+    }
+    return Date.now() - startTime;
+  } catch (e) { return 0; }
 }
-function recordAdsterraSeen() {
-  try { localStorage.setItem(LAST_AD_TIME_KEY, Date.now().toString()); } catch (e) { }
+
+function canShowPopunder() {
+  try {
+    const sessionTime = getSessionTime();
+    // Show 2 mins into session, then every 30 mins
+    if (sessionTime < 2 * 60 * 1000) return false;
+    const lastTime = parseInt(localStorage.getItem(LAST_POPUNDER_TIME_KEY), 10) || 0;
+    return Date.now() - lastTime >= CONFIG.FREQUENCY_LIMIT_MS;
+  } catch (e) { return false; }
+}
+
+function canShowSmartlink() {
+  try {
+    const sessionTime = getSessionTime();
+    // Show 32 mins into session (2 + 30), then every 30 mins
+    if (sessionTime < 32 * 60 * 1000) return false;
+    const lastTime = parseInt(localStorage.getItem(LAST_SMARTLINK_TIME_KEY), 10) || 0;
+    return Date.now() - lastTime >= CONFIG.FREQUENCY_LIMIT_MS;
+  } catch (e) { return false; }
+}
+
+function recordPopunderSeen() {
+  try { localStorage.setItem(LAST_POPUNDER_TIME_KEY, Date.now().toString()); } catch (e) { }
+}
+
+function recordSmartlinkSeen() {
+  try { localStorage.setItem(LAST_SMARTLINK_TIME_KEY, Date.now().toString()); } catch (e) { }
 }
 function recordAdEvent(placement, kind) {
   track(`ad_${kind}`, { placement });
@@ -241,8 +274,8 @@ function trackNativeHeight(slot, wrap, frame, onFirstRender) {
 }
 
 // Fills a slot with an Adsterra placement (popunder or socialbar) in a sandboxed iframe
-function fillSlotWithAdsterra(slot, adsterraScript) {
-  if (adsRemoved() || getConsent() !== 'all' || !canShowAdsterra()) return false;
+function fillSlotWithAdsterra(slot, adsterraScript, adType) {
+  if (adsRemoved() || getConsent() !== 'all') return false;
 
   const wrap = document.createElement('div');
   wrap.className = 'ad-frame-wrap';
@@ -263,7 +296,11 @@ function fillSlotWithAdsterra(slot, adsterraScript) {
   slot.innerHTML = '';
   slot.appendChild(wrap);
   slot.classList.add('is-filled', 'is-adsterra');
-  recordAdsterraSeen();
+
+  // Record impression for the specific ad type
+  if (adType === 'popunder') recordPopunderSeen();
+  else if (adType === 'smartlink') recordSmartlinkSeen();
+
   recordAdEvent(slot.id || 'adsterra', 'impression');
   return true;
 }
@@ -331,15 +368,18 @@ function renderAdSlot(slot) {
   if (adsRemoved() || getConsent() !== 'all') return;
   if (!slotIsVisible(slot)) return;
 
-  // Check for Adsterra placement type
+  // Check for Adsterra placement type with timing control
   const adsterraBrand = (slot.dataset.adsterraBrand || '').toLowerCase();
-  if (adsterraBrand === 'popunder' && canShowAdsterra()) {
-    if (fillSlotWithAdsterra(slot, CONFIG.ADSTERRA_POPUNDER)) return;
-  } else if (adsterraBrand === 'socialbar' && canShowAdsterra()) {
-    if (fillSlotWithAdsterra(slot, CONFIG.ADSTERRA_SOCIALBAR)) return;
+  if (adsterraBrand === 'popunder' && canShowPopunder()) {
+    if (fillSlotWithAdsterra(slot, CONFIG.ADSTERRA_POPUNDER, 'popunder')) return;
+  } else if (adsterraBrand === 'smartlink' && canShowSmartlink()) {
+    if (fillSlotWithAdsterra(slot, CONFIG.ADSTERRA_SMARTLINK, 'smartlink')) return;
+  } else if (adsterraBrand === 'socialbar') {
+    // Socialbar shows with network ads (no timing restriction)
+    if (fillSlotWithAdsterra(slot, CONFIG.ADSTERRA_SOCIALBAR, 'socialbar')) return;
   }
 
-  // Fall back to network ads
+  // Fall back to network ads (always available)
   fillSlotWithNetwork(slot);
 }
 
