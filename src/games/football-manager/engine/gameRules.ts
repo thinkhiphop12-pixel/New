@@ -475,11 +475,12 @@ export const LEAGUES: LeagueDef[] = [
     startingBudget: 1_600_000, gateBase: 35_000, prizeTop: 1_300_000, prizeStep: 50_000,
   },
   {
-    // clubCount 10, not the real 11 — the round-robin scheduler (roundRobin()
-    // in seasonProgression.ts) only supports an even club count; trimmed the
-    // weakest-rated club (Punjab FC) rather than touch that shared scheduler.
+    // 14 clubs, matching what the ratings export actually carries for India.
+    // The round-robin scheduler (roundRobin() in seasonProgression.ts) only
+    // supports an even club count, and 14 is even, so nothing needs trimming
+    // here — the old count of 10 predated the refreshed export.
     id: 'indian_super_league', name: 'Indian Super League', country: 'India', level: 1,
-    clubCount: 10, rounds: 2,
+    clubCount: 14, rounds: 2,
     autoPromotion: 0, playoffSpots: 0, relegation: 0,
     championsLeague: 1, clPlayoff: 0, europaLeague: 0, conferenceLeague: 0,
     tvEqualShare: 1.2,
