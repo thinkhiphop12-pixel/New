@@ -1238,12 +1238,20 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-offer-field__lock { color: var(--muted-dim); }
 .fm-offer-field__hint { font-size: 10.5px; color: var(--muted-dim); line-height: 1.35; }
+/* Text on the green fill is near-black, not white: #fff on --green-600 is a
+   1.9:1 contrast ratio, which is what made these controls unreadable. Every
+   other green-filled surface in this sheet (.fm-badge--new, .fm-banner--green,
+   the filled slot chips) already uses the same #02100a. */
 .fm-offer-field select {
   min-height: 34px; padding: 0 10px; border-radius: var(--r-full);
-  background: var(--green-600); color: #fff; border: none;
+  background: var(--green-600); color: #02100a; border: none;
   font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer;
   text-align: center; text-align-last: center; width: 100%;
 }
+/* The open dropdown is painted by the OS from the select's own colours on
+   some platforms, so pin the list to the panel palette rather than letting
+   it inherit the green pill. */
+.fm-offer-field select option { background: var(--panel-2); color: var(--text); }
 .fm-offer-field select:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 
 /* A buy-back is opt-in: the switch arms the clause, and the stepper stays in
@@ -1255,7 +1263,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   display: flex; align-items: center; justify-content: center; cursor: pointer;
   background: var(--panel-3); border: 1px solid var(--border); color: transparent;
 }
-.fm-offer-toggle--on { background: var(--green-600); border-color: var(--green-600); color: #fff; }
+.fm-offer-toggle--on { background: var(--green-600); border-color: var(--green-600); color: #02100a; }
 
 /* Board budgets and patience, read-only. */
 .fm-offer-bar {
@@ -1292,17 +1300,20 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-stepper__btn {
   flex: 0 0 auto; width: 32px; display: flex; align-items: center; justify-content: center;
-  background: transparent; border: none; color: #fff; font-size: 17px; font-weight: 900;
+  background: transparent; border: none; color: #02100a; font-size: 17px; font-weight: 900;
   cursor: pointer; font-family: inherit; line-height: 1;
 }
 .fm-stepper__btn:hover:not(:disabled) { background: rgba(255,255,255,0.16); }
 .fm-stepper__btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .fm-stepper__value {
-  flex: 1; display: flex; align-items: center; justify-content: center; color: #fff;
+  flex: 1; display: flex; align-items: center; justify-content: center; color: #02100a;
   font-weight: 800; font-size: 13px; padding: 0 4px; font-variant-numeric: tabular-nums;
 }
+/* The locked and "hot" variants drop the green fill for a dark panel, so the
+   near-black glyphs above have to go back to a light colour there. */
 .fm-stepper--locked { background: var(--panel-3); }
 .fm-stepper--locked .fm-stepper__value { color: var(--muted); }
+.fm-stepper--locked .fm-stepper__btn { color: var(--muted); }
 /* The one number the two sides are actually arguing over. Outlined rather
    than recoloured so it stays legible against the same green as its
    neighbours — the point is "this is the live field", not "this is wrong". */
