@@ -36,11 +36,12 @@ const CONFIG = {
   FREQUENCY_LIMIT_MS: 30 * 60 * 1000,
 };
 
-// The banner tag sets `atOptions` as a page-global before loading its
-// script — a second 468x60 unit on the same page would clobber the first
-// one's config. Cap it at one per page; every other slot gets the native
-// (responsive) unit instead, which has no such global-state conflict.
-let bannerSlotClaimed = false;
+// The banner tag sets `atOptions` as a page-global before loading its script,
+// so two 468x60 units injected into the same document would clobber each
+// other's config. That is no longer how these render: bannerAdDoc() is a
+// complete standalone document handed to the frame via srcdoc, so each banner
+// gets its own window and its own `atOptions`. There is nothing left to
+// collide, and the old one-per-page cap only suppressed paying units.
 
 // True when some slot on the page has explicitly asked for the banner format,
 // in which case no other slot may take it on width alone.
@@ -314,14 +315,13 @@ function fillSlotWithNetwork(slot) {
   const requested = (slot.dataset.adFormat || '').toLowerCase();
   const avail = availableWidthFor(slot);
   let useBanner;
-  if (requested === 'banner') useBanner = !bannerSlotClaimed;
+  if (requested === 'banner') useBanner = true;
   else if (requested === 'native') useBanner = false;
   // Down to 300px of room the banner still scales to a clean, legible strip —
   // which covers every phone. Narrower than that, fall back to the native unit.
   // A slot that asked for the banner by name always outranks this auto pick,
   // even if it sits further down the page.
-  else useBanner = !bannerSlotClaimed && !pageRequestsBanner() && avail >= CONFIG.BANNER_MIN_FIT;
-  if (useBanner) bannerSlotClaimed = true;
+  else useBanner = !pageRequestsBanner() && avail >= CONFIG.BANNER_MIN_FIT;
 
   const wrap = document.createElement('div');
   wrap.className = 'ad-frame-wrap' + (useBanner ? ' is-fixed' : '');
