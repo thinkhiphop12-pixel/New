@@ -28,6 +28,12 @@ const CONFIG = {
   MEASURE_TAIL_MS: 30000,// slow re-measure window after that, for slow fills
   PRELOAD_OFFSET: 200,   // px of preload margin for lazy loading
   ADBLOCK_NOTICE: true,  // polite, dismissible whitelist prompt only
+  // Adsterra placements
+  ADSTERRA_POPUNDER: '<script src="https://vibrategrin.com/fe/33/d2/fe33d2be9e814339b1c0fa3d089168a8.js"><\/script>',
+  ADSTERRA_SOCIALBAR: '<script src="https://vibrategrin.com/5f/72/7f/5f727f4293263daa3c71da133b05633c.js"><\/script>',
+  ADSTERRA_SMARTLINK: 'https://vibrategrin.com/r6ivkxqs?key=63bef8366f207f2572aa4af240234677',
+  // Frequency limiting: one ad per 30 minutes per user
+  FREQUENCY_LIMIT_MS: 30 * 60 * 1000,
 };
 
 // The banner tag sets `atOptions` as a page-global before loading its
@@ -58,8 +64,18 @@ if (typeof getConsent === 'undefined') { window.getConsent = () => 'all'; }
 if (typeof track === 'undefined') { window.track = () => {}; }
 
 const REMOVE_ADS_KEY = 'bk_remove_ads';
+const LAST_AD_TIME_KEY = 'bk_last_ad_time';
 function adsRemoved() {
   try { return localStorage.getItem(REMOVE_ADS_KEY) === '1'; } catch (e) { return false; }
+}
+function canShowAdsterra() {
+  try {
+    const lastAdTime = parseInt(localStorage.getItem(LAST_AD_TIME_KEY), 10) || 0;
+    return Date.now() - lastAdTime >= CONFIG.FREQUENCY_LIMIT_MS;
+  } catch (e) { return true; }
+}
+function recordAdsterraSeen() {
+  try { localStorage.setItem(LAST_AD_TIME_KEY, Date.now().toString()); } catch (e) { }
 }
 function recordAdEvent(placement, kind) {
   track(`ad_${kind}`, { placement });
@@ -224,6 +240,34 @@ function trackNativeHeight(slot, wrap, frame, onFirstRender) {
   measure();
 }
 
+// Fills a slot with an Adsterra placement (popunder or socialbar) in a sandboxed iframe
+function fillSlotWithAdsterra(slot, adsterraScript) {
+  if (adsRemoved() || getConsent() !== 'all' || !canShowAdsterra()) return false;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'ad-frame-wrap';
+
+  const frame = document.createElement('iframe');
+  frame.title = 'Advertisement';
+  frame.loading = 'lazy';
+  frame.setAttribute('scrolling', 'no');
+  frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox');
+
+  // Build a minimal HTML doc with the Adsterra script
+  const html = `<!doctype html><html><head><meta charset="utf-8">` +
+    `<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;}</style></head>` +
+    `<body>${adsterraScript}</body></html>`;
+  frame.srcdoc = html;
+
+  wrap.appendChild(frame);
+  slot.innerHTML = '';
+  slot.appendChild(wrap);
+  slot.classList.add('is-filled', 'is-adsterra');
+  recordAdsterraSeen();
+  recordAdEvent(slot.id || 'adsterra', 'impression');
+  return true;
+}
+
 function fillSlotWithNetwork(slot) {
   if (adsRemoved() || getConsent() !== 'all') return false;
 
@@ -286,6 +330,16 @@ function renderAdSlot(slot) {
   if (!slot || slot.classList.contains('is-filled')) return;
   if (adsRemoved() || getConsent() !== 'all') return;
   if (!slotIsVisible(slot)) return;
+
+  // Check for Adsterra placement type
+  const adsterraBrand = (slot.dataset.adsterraBrand || '').toLowerCase();
+  if (adsterraBrand === 'popunder' && canShowAdsterra()) {
+    if (fillSlotWithAdsterra(slot, CONFIG.ADSTERRA_POPUNDER)) return;
+  } else if (adsterraBrand === 'socialbar' && canShowAdsterra()) {
+    if (fillSlotWithAdsterra(slot, CONFIG.ADSTERRA_SOCIALBAR)) return;
+  }
+
+  // Fall back to network ads
   fillSlotWithNetwork(slot);
 }
 
