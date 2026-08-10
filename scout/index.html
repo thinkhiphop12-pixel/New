@@ -53,16 +53,13 @@
       "primaryImageOfPage": "https://ballknw.com/assets/og-image.png"
     },
     {
-      "@type": "VideoGame",
+      "@type": "Game",
       "@id": "https://ballknw.com/scout/#game",
       "name": "Scout",
       "url": "https://ballknw.com/scout/",
       "description": "Group 16 footballers into 4 sets of 4 by a hidden shared theme — nation, position, rating tier or World Cup year. Daily puzzle, four mistakes allowed, shareable results.",
       "genre": "Puzzle",
-      "gamePlatform": "Web Browser",
-      "operatingSystem": "Web",
-      "applicationCategory": "Game",
-      "playMode": "SinglePlayer",
+      "numberOfPlayers": { "@type": "QuantitativeValue", "value": 1 },
       "isAccessibleForFree": true,
       "datePublished": "2024-01-15",
       "dateModified": "2026-07-08",
@@ -153,13 +150,13 @@
 <body class="bg-zinc-950 text-zinc-200">
     <div class="max-w-lg mx-auto px-5 pt-8 pb-12">
         <!-- Header -->
-        <div class="flex items-center justify-between mb-6">
+        <header class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-emerald-400 rounded-2xl flex items-center justify-center">
                     <span class="text-zinc-950 text-2xl">🧩</span>
                 </div>
                 <div>
-                    <span class="font-display text-4xl tracking-tighter">SCOUT</span>
+                    <h1 class="font-display text-4xl tracking-tighter leading-none">SCOUT</h1>
                     <div id="puzzle-number" class="text-emerald-400 text-xs font-mono tracking-[2px] -mt-1">SCOUT #—</div>
                 </div>
             </div>
@@ -171,8 +168,9 @@
                 </div>
                 <div class="text-[10px] text-zinc-500 -mt-1">DAY STREAK</div>
             </div>
-        </div>
+        </header>
 
+        <main>
         <!-- Instructions -->
         <div class="text-center mb-6">
             <p class="text-zinc-400 text-sm">Group these 16 footballers into <span class="font-semibold">4 sets of 4</span> by a hidden theme.<br>4 wrong guesses and it's over.</p>
@@ -232,6 +230,92 @@
         </div>
 
         <div class="ad-slot" id="scoutBottomAd"><span class="ad-slot-label">Advertisement</span></div>
+        </main>
+
+        <section class="mt-12 border-t border-zinc-800 pt-8 text-zinc-300 text-sm leading-relaxed">
+            <h2 class="font-display text-2xl tracking-tight text-white mb-3">About Scout</h2>
+            <p class="mb-4">
+                Scout is a daily football word puzzle in the connections format. Every day you get the
+                same sixteen footballers as everyone else, arranged in a four-by-four grid, and your
+                job is to sort them into the four groups of four that the puzzle is hiding. There is no
+                account to create, nothing to install and no timer counting down — just one board a day,
+                free in your browser.
+            </p>
+
+            <h2 class="font-display text-2xl tracking-tight text-white mb-3">How a puzzle works</h2>
+            <p class="mb-4">
+                Tap four names you think belong together, then hit Submit. Get it right and the group
+                locks in with its theme revealed. Get it wrong and you lose one of your four lives. If
+                the four you picked contained three members of a real group, the board tells you
+                you are <em>one away</em> — which is often the most useful clue you will get all day.
+                Solve all four groups before your fourth mistake and the puzzle is yours.
+            </p>
+            <ul class="mb-4 list-disc pl-5 space-y-1">
+                <li><strong class="text-white">Shared nation</strong> — four players who represented the same country.</li>
+                <li><strong class="text-white">Position</strong> — four keepers, four centre-backs, four out-and-out strikers.</li>
+                <li><strong class="text-white">Rating tier</strong> — four players sitting in the same quality bracket.</li>
+                <li><strong class="text-white">World Cup year</strong> — four players who were at the same tournament.</li>
+            </ul>
+            <p class="mb-4">
+                The catch is that plenty of players honestly fit two of those at once. A Brazilian
+                striker from 2002 can anchor three different groups, so the trick is usually to work out
+                where he <em>is not</em> needed. Deeper tactics, worked examples and streak advice live
+                in the <a href="/scout-guide.html" class="text-emerald-400 hover:underline">Scout guide</a>.
+            </p>
+
+            <h2 class="font-display text-2xl tracking-tight text-white mb-3">Four habits that save lives</h2>
+            <ul class="mb-4 list-disc pl-5 space-y-1">
+                <li><strong class="text-white">Submit your safest group first.</strong> Clearing a group you are certain about removes four names from the board and makes everything left easier to read.</li>
+                <li><strong class="text-white">Count the obvious group.</strong> If five or six players look like they share a theme, one of them belongs somewhere else — find out which before you submit anything.</li>
+                <li><strong class="text-white">Treat "one away" as a gift.</strong> It tells you three of your four are correct, so swap one name at a time rather than rebuilding the whole group.</li>
+                <li><strong class="text-white">Shuffle when you stall.</strong> Re-ordering the grid breaks the visual pairings your eye has settled into, and a theme you walked past three times often jumps straight out.</li>
+            </ul>
+
+            <h2 class="font-display text-2xl tracking-tight text-white mb-3">Streaks and sharing</h2>
+            <p class="mb-4">
+                Your current streak, best streak and games played are stored locally in your own browser,
+                so nothing is uploaded and nothing is tied to an identity. Solve the board and you can
+                copy a spoiler-free emoji grid showing the order you cracked the groups in — the squares
+                give away your route through the puzzle without naming a single player. Miss a day and
+                the streak goes back to zero; the puzzle rolls over at midnight UTC.
+            </p>
+
+            <h2 class="font-display text-2xl tracking-tight text-white mb-3">Common questions</h2>
+            <dl class="space-y-3">
+                <div>
+                    <dt class="text-white font-semibold">Is Scout free?</dt>
+                    <dd>Yes. It is free to play, there is no account, and it runs in any modern browser on phone or desktop.</dd>
+                </div>
+                <div>
+                    <dt class="text-white font-semibold">Does everyone get the same puzzle?</dt>
+                    <dd>Yes. The board is generated from the date, so every player worldwide sees the same sixteen names on the same day.</dd>
+                </div>
+                <div>
+                    <dt class="text-white font-semibold">Where do the players come from?</dt>
+                    <dd>A database spanning roughly 1930 to the present, mixing current squads with retired greats. Ratings are our own stylised numbers, not official ones, so treat them as tiers rather than exact values.</dd>
+                </div>
+                <div>
+                    <dt class="text-white font-semibold">Can I play yesterday's puzzle?</dt>
+                    <dd>No — Scout is one board a day, and when it rolls over the old one is gone. That is the point of the streak.</dd>
+                </div>
+            </dl>
+        </section>
+
+        <footer class="mt-10 pt-6 border-t border-zinc-800 text-xs text-zinc-500">
+            <nav class="flex flex-wrap gap-x-4 gap-y-2 mb-4">
+                <a href="/" class="hover:text-emerald-400">Home</a>
+                <a href="/scout-guide.html" class="hover:text-emerald-400">Scout guide</a>
+                <a href="/gaffa/" class="hover:text-emerald-400">Gaffa</a>
+                <a href="/perfect-cup/" class="hover:text-emerald-400">Draft XI</a>
+                <a href="/football-terms.html" class="hover:text-emerald-400">Football terms</a>
+                <a href="/privacy.html" class="hover:text-emerald-400">Privacy</a>
+                <a href="/terms.html" class="hover:text-emerald-400">Terms</a>
+            </nav>
+            <p>
+                BALLKNW is an unofficial fan-made project, not affiliated with Sports Interactive, SEGA,
+                EA Sports, FIFA, the Premier League, or any club or federation.
+            </p>
+        </footer>
     </div>
 
     <script>
@@ -569,7 +653,7 @@
 
         init();
     </script>
-    <script src="/shared/consent.js" defer></script>
-    <script src="/shared/ads.js" defer></script>
+    <script src="/shared/consent.min.js" defer></script>
+    <script src="/shared/ads.min.js" defer></script>
 </body>
 </html>

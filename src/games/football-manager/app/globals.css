@@ -191,7 +191,11 @@ body {
 .fm-header__brand b {
   font-weight: 800; color: var(--lime);
 }
+/* An <h1> so the page has one — the game's own name is the only honest
+   candidate. `margin: 0` cancels the UA heading margin that a <span> never
+   carried, keeping the header strip pixel-identical. */
 .fm-header__title {
+  margin: 0;
   font-weight: 600; color: var(--muted); font-size: 12px;
   padding-left: 10px; border-left: 1px solid var(--border);
 }
@@ -3412,3 +3416,61 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-renewal-field label { font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em; }
 .fm-renewal-field .fm-contract-control { display: flex; align-items: center; gap: 4px; }
 .fm-renewal-meta { font-size: 11px; color: var(--muted); margin: 0 0 10px; }
+
+/* ── Static explainer copy under the app (app/page.tsx) ──
+   Server-rendered, so it is in the exported HTML before the game's client
+   bundle runs. Sits after `.fm-app` (min-height: 100dvh), so it is below the
+   fold and never competes with the game for space. The bottom padding clears
+   the `.fm-rail` thumb dock, which is position: fixed under 900px. */
+.fm-about,
+.fm-about-foot {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+.fm-about {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border-soft);
+  color: var(--muted);
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+.fm-about h2 {
+  margin: 28px 0 8px;
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--text);
+}
+.fm-about h2:first-child { margin-top: 0; }
+.fm-about p { margin: 0 0 14px; }
+.fm-about ul { margin: 0 0 14px; padding-left: 20px; }
+.fm-about li { margin-bottom: 6px; }
+.fm-about strong { color: var(--text); }
+.fm-about dt { margin-top: 12px; font-weight: 700; color: var(--text); }
+.fm-about dd { margin: 2px 0 0; }
+.fm-about a,
+.fm-about-foot a { color: var(--green); text-decoration: none; }
+.fm-about a:hover,
+.fm-about-foot a:hover { text-decoration: underline; }
+
+.fm-about-foot {
+  margin-top: 32px;
+  padding-top: 18px;
+  padding-bottom: 40px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 12px;
+  color: var(--muted-dim, var(--muted));
+}
+.fm-about-foot nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 14px;
+}
+.fm-about-foot p { margin: 0; }
+
+@media (max-width: 899px) {
+  .fm-about-foot { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+}

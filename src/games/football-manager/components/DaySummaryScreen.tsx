@@ -68,7 +68,7 @@ export default function DaySummaryScreen({
     <div className="fm-daysummary">
       <div className="fm-daysummary__head">
         <p className="fm-hint" style={{ margin: 0 }}>Sim Next Day</p>
-        <h1 className="fm-daysummary__date">{formatGameDateLong(state)}</h1>
+        <h2 className="fm-daysummary__date">{formatGameDateLong(state)}</h2>
         {stops.length > 0 && (
           <p className="fm-hint" style={{ textAlign: 'left', margin: '4px 0 0' }}>
             {stops.length} item{stops.length === 1 ? '' : 's'} need{stops.length === 1 ? 's' : ''} you

@@ -46,12 +46,12 @@ export default function MainMenuScreen({
       {/* Wordmark, not an image: the same boxed-initial + Inter-caps lockup
           ballknw.com uses for BALLKNW, so the two logos are one mark. Text
           also stays crisp at any density and needs no asset request. */}
-      <h1 className="fm-start__title" style={{ margin: '8px 0 0' }}>
+      <h2 className="fm-start__title" style={{ margin: '8px 0 0' }}>
         <span className="fm-brand fm-brand--hero">
           <span className="fm-brand__mark" aria-hidden>G</span>
           <span>GAFFA</span>
         </span>
-      </h1>
+      </h2>
       <p className="fm-start__tagline">
         Take charge of a club across three divisions. Set your tactics, work the market, bring
         through the kids — and survive the board. League, cup and continental glory await.

@@ -605,7 +605,7 @@ export default function FootballManagerGame() {
           </svg>
           <span>{"BALL"}<b>{"KNW"}</b></span>
         </div>
-        <span className="fm-header__title">Gaffa</span>
+        <h1 className="fm-header__title">Gaffa</h1>
         <span className="fm-header__spacer" />
         {/* Interactive tutorial, reopenable any time — not just the one-shot
             first-run checklist. Only shown once a career exists, since the
