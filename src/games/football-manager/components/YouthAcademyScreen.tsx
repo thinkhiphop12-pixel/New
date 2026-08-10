@@ -8,6 +8,7 @@ import { MAX_SQUAD_SIZE } from '@/engine/gameRules';
 import { Icon } from './Icon';
 import PlayerModal from './PlayerModal';
 import { Pulse, toneFor } from './SectionHub';
+import { pushToast } from './ToastQueue';
 
 /**
  * The academy.
@@ -111,14 +112,20 @@ export default function YouthAcademyScreen({
                   <button
                     type="button"
                     className="fm-btn fm-btn--primary fm-btn--small"
-                    onClick={() => onChange(signTrialist(state, p.id))}
+                    onClick={() => {
+                      onChange(signTrialist(state, p.id));
+                      pushToast(`${p.name} signed — he joins the youth squad. Book him a one-to-one session to bring him on.`, 'success');
+                    }}
                   >
                     Sign
                   </button>
                   <button
                     type="button"
                     className="fm-btn fm-btn--ghost fm-btn--small"
-                    onClick={() => onChange(releaseTrialist(state, p.id))}
+                    onClick={() => {
+                      onChange(releaseTrialist(state, p.id));
+                      pushToast(`${p.name} released — he leaves the club.`, 'info');
+                    }}
                   >
                     Release
                   </button>
@@ -173,7 +180,12 @@ export default function YouthAcademyScreen({
                 style={{ marginLeft: 8, opacity: squadFull ? 0.5 : 1 }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!squadFull) onChange(promoteYouthPlayer(state, p.id));
+                  if (squadFull) {
+                    pushToast('Squad is full — sell or release someone before promoting.', 'error');
+                    return;
+                  }
+                  onChange(promoteYouthPlayer(state, p.id));
+                  pushToast(`${p.name} promoted to the first-team squad.`, 'success');
                 }}
               >
                 Promote

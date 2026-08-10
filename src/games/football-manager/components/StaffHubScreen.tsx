@@ -4,14 +4,15 @@ import { useEffect, useState } from 'react';
 import type { Coach, GameState } from '@/engine/types';
 import { fireCoach, hireCoach, newFacilities } from '@/engine/facilities';
 import {
-  COACH_ROLE_LABEL, approvalFor, coachWageFor, consumeApproval, cooldownWeeksLeft,
-  requestStaffSanction,
+  COACH_ROLE_LABEL, REJECTION_COOLDOWN_WEEKS, approvalFor, coachWageFor, consumeApproval,
+  cooldownWeeksLeft, requestStaffSanction,
 } from '@/engine/boardRequests';
 import { staffWageBill } from '@/engine/seasonProgression';
 import { formatMoney } from '@/engine/utils';
 import { Icon, type IconName } from './Icon';
 import StaffProfileModal from './StaffProfileModal';
 import { Pulse, toneFor } from './SectionHub';
+import { pushToast } from './ToastQueue';
 
 /**
  * Backroom staff.
@@ -73,6 +74,29 @@ export default function StaffHubScreen({
   const appoint = (role: Coach['role'], quality: number) => {
     const withCoach = hireCoach({ ...state, facilities: fs }, role, quality);
     onChange(consumeApproval(withCoach, 'staff', role));
+    // The card silently swaps from "Appoint" to a name — which is easy to
+    // miss, and is the moment the whole onboarding is built around when the
+    // role is Assistant Manager. Say it out loud.
+    const appointed = (withCoach.facilities?.coaches ?? []).find((c) => c.role === role);
+    pushToast(
+      `${COACH_ROLE_LABEL[role]} appointed: ${appointed?.name ?? 'your new coach'} (Q${quality}). He starts today.`,
+      'success',
+    );
+  };
+
+  /** Ask the board, and read their answer back — the chairman's reply lands
+   *  on the card and in the inbox, neither of which the player is looking at
+   *  when they press the button. */
+  const ask = (role: Coach['role']) => {
+    const next = requestStaffSanction(state, role);
+    onChange(next);
+    const answer = approvalFor(next, 'staff', role);
+    pushToast(
+      answer
+        ? `Board approves a ${COACH_ROLE_LABEL[role].toLowerCase()} up to quality ${answer.tier}. Appoint him below.`
+        : `Board turns down a ${COACH_ROLE_LABEL[role].toLowerCase()} — they will not hear it again for ${REJECTION_COOLDOWN_WEEKS} weeks.`,
+      answer ? 'success' : 'error',
+    );
   };
 
   return (
@@ -125,7 +149,10 @@ export default function StaffHubScreen({
                   <button
                     type="button"
                     className="fm-btn fm-btn--ghost fm-btn--small fm-staffcard__action"
-                    onClick={() => onChange(fireCoach({ ...state, facilities: fs }, coach.id))}
+                    onClick={() => {
+                      onChange(fireCoach({ ...state, facilities: fs }, coach.id));
+                      pushToast(`${coach.name} released — ${formatMoney(coach.wage)}/wk off the wage bill.`, 'info');
+                    }}
                   >
                     Release
                   </button>
@@ -156,7 +183,7 @@ export default function StaffHubScreen({
                   <button
                     type="button"
                     className="fm-btn fm-btn--secondary fm-btn--small fm-staffcard__action"
-                    onClick={() => onChange(requestStaffSanction(state, role.id))}
+                    onClick={() => ask(role.id)}
                   >
                     <Icon name="target" size={12} /> Ask the board
                   </button>

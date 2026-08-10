@@ -5,8 +5,10 @@ import { leagueFixtures, userLeagueId } from '@/engine/seasonProgression';
 import { isClubAlive, knockoutRoundDue, roundName } from '@/engine/cups';
 import { continentalRoundDue, continentalRoundName, isContinentalClubAlive } from '@/engine/europeanCup';
 import { getSchedule } from '@/engine/schedule';
+import { TRANSFER_WINDOWS } from '@/engine/gameRules';
 import {
-  DAY_LABELS, MATCH_DAY, dayIndexOfDay, dayOfSeason, formatGameDateOfDay, weekOfDayNumber,
+  DAYS_PER_WEEK, DAY_LABELS, MATCH_DAY, dayIndexOfDay, dayOfSeason, formatGameDateOfDay,
+  seasonLastDay, weekOfDayNumber,
 } from '@/engine/calendar';
 import { Icon, type IconName } from './Icon';
 
@@ -62,6 +64,60 @@ function buildRows(state: GameState): Row[] {
   return rows;
 }
 
+type Skip = { label: string; when: string; day: number; dateLabel: string; icon: IconName };
+
+/**
+ * The named places a manager actually wants to skip to.
+ *
+ * "Simulate to here" on a specific row already existed, but it makes the
+ * player do the work: find the row that is the next match, or the row that
+ * is deadline day, and press the button on it. These name the destination
+ * instead. Every one of them is a target for the same engine the dock uses,
+ * so the stop rules still apply on the way — a skip to deadline day that
+ * runs into an injury still stops at the injury.
+ *
+ * Anything already behind us, or past the end of the season, is left out
+ * rather than shown disabled: a row that cannot do anything is noise.
+ */
+function buildSkips(state: GameState, rows: Row[]): Skip[] {
+  const today = dayOfSeason(state);
+  const lastDay = seasonLastDay();
+  const skips: Skip[] = [];
+
+  const push = (label: string, day: number, icon: IconName) => {
+    if (day <= today || day > lastDay) return;
+    const days = day - today;
+    skips.push({
+      label,
+      when: days === 1 ? 'tomorrow' : `${days} days`,
+      day,
+      dateLabel: formatGameDateOfDay(state.seasonYear, day),
+      icon,
+    });
+  };
+
+  // The next fixture of any kind, taken from the rows already built so the
+  // two can never disagree about when the next match is.
+  const nextMatch = rows.find((r) => !r.isToday && r.event);
+  if (nextMatch) push(`Next match — ${nextMatch.event!.title}`, nextMatch.day, nextMatch.event!.icon);
+
+  // Monday of next week: the natural planning boundary, since training and
+  // the weekly schedule both reset on it.
+  const dayIdx = dayIndexOfDay(today);
+  push('End of the week', today + (DAYS_PER_WEEK - dayIdx), 'calendar');
+
+  // Whichever transfer deadline is still ahead. `closes` is the last week
+  // the window is open, so the deadline is the end of that week.
+  const week = weekOfDayNumber(today);
+  const window = TRANSFER_WINDOWS.find((w) => w.closes >= week);
+  if (window) {
+    const deadlineDay = window.closes * DAYS_PER_WEEK - 1;
+    push(`${window.name} deadline day`, deadlineDay, 'transfers');
+  }
+
+  return skips;
+}
+
 /**
  * Calendar: the season laid out as days, not weeks — matches, cup ties and
  * the Weekly Schedule's training/recovery split for the next four weeks,
@@ -85,6 +141,7 @@ export default function CalendarScreen({
   simRunning: boolean;
 }) {
   const rows = buildRows(state);
+  const skips = buildSkips(state, rows);
 
   return (
     <>
@@ -95,9 +152,31 @@ export default function CalendarScreen({
             twice on screen at once. This screen's own contribution is
             picking a *target* day via "Simulate to here" below. */}
         <p className="fm-label" style={{ margin: 0 }}>Calendar</p>
-        <p className="fm-hint" style={{ textAlign: 'left', margin: '2px 0 0' }}>
+        <p className="fm-hint" style={{ textAlign: 'left', margin: '2px 0 6px' }}>
           Next four weeks. Simulate straight to a day — the sim still stops early for anything that needs you.
         </p>
+
+        {/* Named destinations, not just "the next thing". The dock's Next
+            Event answers "what happens next"; these answer "get me to the
+            part I care about" — the question a manager who wants to plan a
+            run-in, or get to deadline day, was previously left to solve by
+            counting rows and clicking one of them. */}
+        <div className="fm-skiprow" data-tour="calendar-skips">
+          {skips.map((s) => (
+            <button
+              key={s.label}
+              type="button"
+              className="fm-skipbtn"
+              disabled={simRunning}
+              title={simRunning ? 'Stop the current run first' : `Simulate to ${s.dateLabel}`}
+              onClick={() => onSimulate(s.day)}
+            >
+              <Icon name={s.icon} size={14} />
+              <span className="fm-skipbtn__label">{s.label}</span>
+              <span className="fm-skipbtn__when">{s.when}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="fm-panel">

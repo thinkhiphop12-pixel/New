@@ -25,7 +25,7 @@ import {
  */
 
 /** Weeks a refusal stands before the same thing can be asked for again. */
-const REJECTION_COOLDOWN_WEEKS = 8;
+export const REJECTION_COOLDOWN_WEEKS = 8;
 
 /** Absolute week counter, so a cooldown can cross a season boundary. */
 function tick(s: GameState): number {

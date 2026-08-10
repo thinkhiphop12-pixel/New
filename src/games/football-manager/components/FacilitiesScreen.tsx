@@ -4,12 +4,13 @@ import { useEffect } from 'react';
 import type { GameState } from '@/engine/types';
 import { ACADEMY_REPUTATION_CAP, newFacilities, startFacilityProject } from '@/engine/facilities';
 import {
-  FACILITY_LABEL, approvalFor, consumeApproval, cooldownWeeksLeft, facilityCost,
-  requestFacilitySanction, type FacilityKey,
+  FACILITY_LABEL, REJECTION_COOLDOWN_WEEKS, approvalFor, consumeApproval, cooldownWeeksLeft,
+  facilityCost, requestFacilitySanction, type FacilityKey,
 } from '@/engine/boardRequests';
 import { formatMoney } from '@/engine/utils';
 import { Icon, type IconName } from './Icon';
 import { Pulse, toneFor } from './SectionHub';
+import { pushToast } from './ToastQueue';
 
 /**
  * Facilities.
@@ -76,8 +77,35 @@ export default function FacilitiesScreen({
     // (already maxed, already building, can't cover the cost). Returning the
     // same object is the only signal it gives, so the sanction is only spent
     // when the work is genuinely under way.
-    if (started === base) return;
+    if (started === base) {
+      // The refusal used to be completely silent — the button simply did
+      // nothing, which is indistinguishable from a broken button.
+      pushToast(`Can't start work on the ${FACILITY_LABEL[key].toLowerCase()} — check the cost against your balance.`, 'error');
+      return;
+    }
     onChange(consumeApproval(started, 'facility', key));
+    const project = started.facilities?.projects?.find((pr) => pr.kind === key && !pr.complete);
+    const weeksLeft = project ? Math.max(1, project.durationWeeks - project.weeksElapsed) : 0;
+    pushToast(
+      project
+        ? `Work started on the ${FACILITY_LABEL[key].toLowerCase()} — ready in about ${weeksLeft} week${weeksLeft === 1 ? '' : 's'}.`
+        : `Work started on the ${FACILITY_LABEL[key].toLowerCase()}.`,
+      'success',
+    );
+  };
+
+  /** Ask the board, and read the answer back rather than leaving it to a card
+   *  the player has already looked away from. */
+  const ask = (key: FacilityKey) => {
+    const next = requestFacilitySanction(state, key);
+    onChange(next);
+    const answer = approvalFor(next, 'facility', key);
+    pushToast(
+      answer
+        ? `Board funds the ${FACILITY_LABEL[key].toLowerCase()}. Start the work below.`
+        : `Board turns down the ${FACILITY_LABEL[key].toLowerCase()} — they will not hear it again for ${REJECTION_COOLDOWN_WEEKS} weeks.`,
+      answer ? 'success' : 'error',
+    );
   };
 
   return (
@@ -158,7 +186,7 @@ export default function FacilitiesScreen({
                   <button
                     type="button"
                     className="fm-btn fm-btn--secondary fm-btn--small"
-                    onClick={() => onChange(requestFacilitySanction(state, f.key))}
+                    onClick={() => ask(f.key)}
                   >
                     <Icon name="target" size={12} /> Ask the board
                   </button>

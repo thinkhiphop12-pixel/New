@@ -14,7 +14,8 @@
     "reddit:post": "node services/reddit-bot.mjs",
     "discord:start": "node services/discord-bot.mjs",
     "generate:og": "node scripts/generate-og-image.mjs",
-    "export:static": "bash scripts/export-static.sh"
+    "export:static": "bash scripts/export-static.sh",
+    "check:negotiation": "tsx scripts/negotiation-panel-check.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.38.0",

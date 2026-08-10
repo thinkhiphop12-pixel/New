@@ -22,7 +22,7 @@ import { setPendingChanges, clearPendingChanges, type PendingChanges } from './p
  * — and every existing call site inside it goes on working, now against the
  * draft.
  *
- * Two hazards the naive version has, both handled here:
+ * Three hazards the naive version has, all handled here:
  *
  *  - **The world moves while you are editing.** Advancing a day rewrites
  *    `committed` under the draft. Rather than silently discarding the edits
@@ -33,6 +33,14 @@ import { setPendingChanges, clearPendingChanges, type PendingChanges } from './p
  *    Edits are committed on the way out rather than dropped: the player made
  *    them deliberately, and losing them silently would be worse than saving
  *    them. The bar says so, and `discard` is right there.
+ *  - **An un-memoised `onCommit`.** The commit handler these screens are
+ *    given is a plain function defined in the parent's body, so it is a new
+ *    value on every parent render — and the parent re-renders on a debounced
+ *    save landing, among other things. Anything that closes over it must not
+ *    end up in an effect's dependency list, or the "commit on unmount"
+ *    cleanup fires on an ordinary re-render and applies the draft the moment
+ *    it is touched. Everything published or scheduled below therefore reads
+ *    through refs and keeps a stable identity for the whole mount.
  */
 export interface Draft<T> {
   /** The working copy to render and edit. */
@@ -57,23 +65,27 @@ export function useDraft<T>(
 ): Draft<T> {
   const [draft, setDraft] = useState<T>(committed);
   const [count, setCount] = useState(0);
+
   // The last `committed` value we know about, so an incoming change can be
   // told apart from the one our own save just caused.
   const seen = useRef(committed);
-  // Live values for the callbacks published to `pendingChanges`, which are
-  // captured once and must not go stale.
+  // Live values for the stable callbacks below, which are created once and
+  // must not close over a stale render.
   const draftRef = useRef(draft);
   draftRef.current = draft;
   const countRef = useRef(count);
   countRef.current = count;
+  const commitRef = useRef(onCommit);
+  commitRef.current = onCommit;
 
+  // Stable for the whole mount — see the third hazard above.
   const save = useCallback(() => {
     if (countRef.current === 0) return;
     const next = draftRef.current;
     seen.current = next;
     setCount(0);
-    onCommit(next);
-  }, [onCommit]);
+    commitRef.current(next);
+  }, []);
 
   const discard = useCallback(() => {
     setDraft(seen.current);
@@ -95,7 +107,8 @@ export function useDraft<T>(
     setCount(0);
   }, [committed]);
 
-  // Publish/retract the flag the action dock reads.
+  // Publish/retract the flag the action dock reads. `save`/`discard` are
+  // stable, so this only re-runs when the count actually changes.
   useEffect(() => {
     if (count === 0) {
       setPendingChanges(null);
@@ -106,13 +119,9 @@ export function useDraft<T>(
     return () => clearPendingChanges(mine);
   }, [count, label, save, discard]);
 
-  // On the way out, commit rather than drop. `save` reads refs, so the value
-  // committed here is the last draft, not a stale render's.
-  useEffect(() => {
-    return () => {
-      if (countRef.current > 0) save();
-    };
-  }, [save]);
+  // On the way out, commit rather than drop. Empty deps: this cleanup must
+  // run on unmount and on nothing else.
+  useEffect(() => () => { save(); }, [save]);
 
   return { draft, edit, dirty: count > 0, count, save, discard };
 }

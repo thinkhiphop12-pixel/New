@@ -8,6 +8,7 @@ import { DRILLS_PER_WEEK } from '@/engine/development';
 import { Icon, type IconName } from './Icon';
 import TrainingDrillModal from './TrainingDrillModal';
 import { Pulse } from './SectionHub';
+import { pushToast } from './ToastQueue';
 
 /**
  * One-to-one training.
@@ -181,6 +182,17 @@ export default function OneToOneScreen({
                     onClick={() => {
                       onChange(setOneToOne(state, pickingSlot, p.id));
                       setPickingSlot(null);
+                      // The slot fills in behind a closing modal, so without
+                      // this the only evidence is a card the player has to go
+                      // and look at. Quote the wait too — individual work is
+                      // the slowest system in the game and the one most often
+                      // assumed to be broken.
+                      pushToast(
+                        weeks == null
+                          ? `${p.name} booked in — he is at his ceiling, so expect little from it.`
+                          : `${p.name} booked in — about ${weeks} week${weeks === 1 ? '' : 's'} to his next attribute point.`,
+                        'success',
+                      );
                     }}
                   >
                     <span className="fm-player-row__name">
@@ -201,6 +213,7 @@ export default function OneToOneScreen({
                 onClick={() => {
                   onChange(setOneToOne(state, pickingSlot, null));
                   setPickingSlot(null);
+                  pushToast('Session left empty — that week of individual work is not used.', 'info');
                 }}
               >
                 Leave empty

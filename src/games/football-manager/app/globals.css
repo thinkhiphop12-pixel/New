@@ -3586,3 +3586,23 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
    unsaved changes. */
 .fm-confirm__body { margin: 0 0 14px; font-size: 13px; line-height: 1.55; color: var(--muted); }
 .fm-confirm__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: flex-end; }
+
+/* ------------------------------------------------------------ calendar skips
+   Named jump targets above the day list. Each says where it goes and how far
+   away that is, because "3 days" is the part that decides whether you press
+   it. Wraps rather than scrolls — there are only ever three. */
+.fm-skiprow { display: flex; flex-wrap: wrap; gap: 8px; }
+.fm-skipbtn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 12px; border-radius: 999px;
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+  color: var(--text-2); font: inherit; font-size: 12.5px; cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.fm-skipbtn:hover:not(:disabled) { border-color: var(--green-600); background: var(--panel-3); }
+.fm-skipbtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.fm-skipbtn__label { font-weight: 700; }
+.fm-skipbtn__when {
+  font-size: 11px; font-weight: 800; color: var(--green);
+  padding-left: 7px; border-left: 1px solid var(--border-soft);
+}

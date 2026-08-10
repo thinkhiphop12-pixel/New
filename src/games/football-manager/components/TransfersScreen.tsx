@@ -212,6 +212,13 @@ export default function TransfersScreen({
   // The window gates every paid deal, so the screens where deals are started
   // have to say so up front — otherwise the buttons just fail on click.
   const win = transferWindow(state.week);
+  // The squad cap is the other gate that does, and it had no such treatment:
+  // every Sign / Guide / Quick loan button stayed live at 30 players and
+  // failed with "Squad is full (max 30)" only after being pressed. A club
+  // that starts a career at the cap — most big clubs do — met that on its
+  // first click in the market.
+  const squadFull = mySquad.length >= MAX_SQUAD_SIZE;
+  const fullReason = `Squad is full (${MAX_SQUAD_SIZE} players). Sell or loan someone out first.`;
 
   const clubName = (id: number) => (id === 0 ? 'Free agent' : state.clubs.find((c) => c.id === id)?.name ?? '—');
 
@@ -252,6 +259,7 @@ export default function TransfersScreen({
       {tab === 'search' && (
         <div role="tabpanel">
           <WindowNotice win={win} />
+          {squadFull && <SquadFullNotice reason={fullReason} />}
           <div className="fm-filtercards" data-tour="transfers-filters">
             <FilterCard label="Position" icon="squad">
               <select className="fm-search" value={posFilter} onChange={(e) => setPosFilter(e.target.value as Position | 'ALL')}>
@@ -340,16 +348,21 @@ export default function TransfersScreen({
                   {p.clubId === 0 ? (
                     <button
                       className="fm-btn fm-btn--small fm-btn--primary"
-                      disabled={askingPrice(p) > state.budget}
+                      disabled={askingPrice(p) > state.budget || squadFull}
+                      title={squadFull ? fullReason : undefined}
                       onClick={(e) => { e.stopPropagation(); doSign(p.id); }}
                     >
-                      Sign {formatMoney(askingPrice(p))}
+                      {squadFull ? 'Squad full' : `Sign ${formatMoney(askingPrice(p))}`}
                     </button>
                   ) : (
                     <button
                       className="fm-btn fm-btn--small fm-btn--primary"
-                      disabled={banned || alreadyTalking || !win.open}
-                      title={!win.open ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}` : undefined}
+                      disabled={banned || alreadyTalking || !win.open || squadFull}
+                      title={
+                        !win.open
+                          ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}`
+                          : squadFull ? fullReason : undefined
+                      }
                       onClick={(e) => { e.stopPropagation(); openTalks(p); }}
                     >
                       {banned
@@ -358,7 +371,9 @@ export default function TransfersScreen({
                           ? 'Talking'
                           : !win.open
                             ? 'Window shut'
-                            : `Guide ${formatMoney(p.askingGuide)}`}
+                            : squadFull
+                              ? 'Squad full'
+                              : `Guide ${formatMoney(p.askingGuide)}`}
                     </button>
                   )}
                   <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
@@ -391,11 +406,15 @@ export default function TransfersScreen({
                     deal, so unlike free agents there is no shut-window exemption. */}
                 <button
                   className="fm-btn fm-btn--small fm-btn--primary"
-                  disabled={p.fee > state.budget || !win.open}
-                  title={!win.open ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}` : 'Instant yes/no — no back-and-forth'}
+                  disabled={p.fee > state.budget || !win.open || squadFull}
+                  title={
+                    !win.open
+                      ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}`
+                      : squadFull ? fullReason : 'Instant yes/no — no back-and-forth'
+                  }
                   onClick={(e) => { e.stopPropagation(); apply(requestLoanIn(state, p.id)); }}
                 >
-                  {!win.open ? 'Window shut' : `Quick loan ${formatMoney(p.fee)}`}
+                  {!win.open ? 'Window shut' : squadFull ? 'Squad full' : `Quick loan ${formatMoney(p.fee)}`}
                 </button>
                 {/* The negotiated alternative to the instant Quick Loan above —
                     opens real talks over wage share / playing time, and (Loan +
@@ -403,14 +422,16 @@ export default function TransfersScreen({
                     a transfer uses. */}
                 <button
                   className="fm-btn fm-btn--small fm-btn--secondary"
-                  disabled={!win.open}
+                  disabled={!win.open || squadFull}
+                  title={squadFull ? fullReason : undefined}
                   onClick={(e) => { e.stopPropagation(); openLoanTalks(p, 'loan'); }}
                 >
                   Negotiate loan
                 </button>
                 <button
                   className="fm-btn fm-btn--small fm-btn--ghost"
-                  disabled={!win.open}
+                  disabled={!win.open || squadFull}
+                  title={squadFull ? fullReason : undefined}
                   onClick={(e) => { e.stopPropagation(); openLoanTalks(p, 'loan_to_buy'); }}
                 >
                   + buy option
@@ -463,6 +484,7 @@ export default function TransfersScreen({
       {tab === 'shortlist' && (
         <div role="tabpanel">
           <WindowNotice win={win} />
+          {squadFull && <SquadFullNotice reason={fullReason} />}
           <div className="fm-player-list">
           <p className="fm-hint">
             Full shortlist, with a scouting-status dot per player — full colour once one of your scouts
@@ -501,11 +523,17 @@ export default function TransfersScreen({
                   </button>
                   <button
                     className="fm-btn fm-btn--small fm-btn--primary"
-                    disabled={askingPrice(p) > state.budget || (!win.open && p.clubId !== 0)}
-                    title={!win.open && p.clubId !== 0 ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}` : undefined}
+                    disabled={askingPrice(p) > state.budget || (!win.open && p.clubId !== 0) || squadFull}
+                    title={
+                      !win.open && p.clubId !== 0
+                        ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}`
+                        : squadFull ? fullReason : undefined
+                    }
                     onClick={() => doSign(p.id)}
                   >
-                    {!win.open && p.clubId !== 0 ? 'Window shut' : `Sign ${formatMoney(askingPrice(p))}`}
+                    {!win.open && p.clubId !== 0
+                      ? 'Window shut'
+                      : squadFull ? 'Squad full' : `Sign ${formatMoney(askingPrice(p))}`}
                   </button>
                 </span>
                 <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
@@ -678,6 +706,36 @@ function MarketPulse({
         },
       ]}
     />
+  );
+}
+
+/**
+ * Said out loud, rather than left for the player to infer from a screen of
+ * greyed-out buttons.
+ *
+ * Every club starts a career at the cap, so this is the first thing a new
+ * manager meets in the market — and "why is everything greyed out" with no
+ * answer on screen is exactly the kind of dead end this pass exists to
+ * remove. The button scrolls to the sell list rather than switching tabs:
+ * it is further down the same screen.
+ */
+function SquadFullNotice({ reason }: { reason: string }) {
+  return (
+    <p className="fm-hint" style={{ color: 'var(--gold-2)', marginTop: 0, textAlign: 'left' }}>
+      <Icon name="warning" size={12} style={{ verticalAlign: -1 }} /> {reason}{' '}
+      <button
+        type="button"
+        className="fm-btn fm-btn--ghost fm-btn--small"
+        style={{ marginLeft: 6 }}
+        onClick={() =>
+          document
+            .querySelector('[data-tour="transfers-sell"]')
+            ?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+        }
+      >
+        Go to My squad
+      </button>
+    </p>
   );
 }
 
