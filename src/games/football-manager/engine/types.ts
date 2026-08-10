@@ -119,6 +119,11 @@ export interface Player {
   age: number;
   value: number;
   wage: number; // weekly wage
+  /** Real-world weekly wage, when known from the source dataset. Used only as
+   *  a relative weight by calibrateClubWages (engine/finances.ts) — never
+   *  assigned as `wage` directly, since this game's wage economy is
+   *  deliberately not real-world scale (see the note atop finances.ts). */
+  realWage?: number;
   clubId: number; // 0 = free agent
   form: number; // 0.85–1.15 multiplier, drifts weekly
   injuryWeeks: number; // 0 = fit
@@ -131,6 +136,10 @@ export interface Player {
   /** Contract expiry as an ISO date (YYYY-MM-DD), always snapped to a
    *  31 Jan / 30 Jun transfer window. Kept in sync with `contractYears`. */
   contractEnd: string;
+  /** Real-world year this player's contract runs until, when known from the
+   *  source dataset. Only consulted once, by newGame(), to derive an accurate
+   *  starting contractYears/contractEnd instead of a random pick. */
+  contractUntil?: number;
   /** Fee that automatically buys the player out of his contract. 0 = none. */
   releaseClause: number;
   /** A loyal player resists moves and accepts smaller pay rises. */
