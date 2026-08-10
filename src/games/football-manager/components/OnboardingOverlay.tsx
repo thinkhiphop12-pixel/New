@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Icon, type IconName } from './Icon';
+import type { ScreenId } from './hubNav';
 
 /** Gap 20 (Userbrain): there is no onboarding at all, and the report's
  *  repeated "what do I do?" traces straight back to that — a first-time
@@ -13,21 +14,24 @@ import { Icon, type IconName } from './Icon';
  *  A step-through (one thing at a time, Next/Back) rather than a wall of
  *  four items at once, reusing the existing `.fm-modal` shell. */
 
-const STEPS: { icon: IconName; title: string; body: string }[] = [
+const STEPS: { icon: IconName; title: string; body: string; route?: ScreenId }[] = [
   {
     icon: 'squad',
     title: 'Squad',
     body: 'Check your players and pick a lineup — every match needs 11 fit starters.',
+    route: 'squad',
   },
   {
     icon: 'tactics',
     title: 'Tactics',
     body: 'Set your formation, team identity and mentality here before kickoff.',
+    route: 'tactics',
   },
   {
     icon: 'transfers',
     title: 'Transfers',
     body: 'Sign, loan or sell players. Realistic targets for your budget sort to the top.',
+    route: 'transfers',
   },
   {
     icon: 'play',
@@ -58,7 +62,17 @@ function markOnboardingSeen(slot: number): void {
   }
 }
 
-export default function OnboardingOverlay({ slot, onClose }: { slot: number; onClose: () => void }) {
+export default function OnboardingOverlay({
+  slot,
+  onClose,
+  onGoTo,
+}: {
+  slot: number;
+  onClose: () => void;
+  /** Optional: lets a step's "Go there" button jump straight to the Hub
+   *  screen it's describing, instead of just dismissing the overlay. */
+  onGoTo?: (route: ScreenId) => void;
+}) {
   const [step, setStep] = useState(0);
   const last = step === STEPS.length - 1;
   const current = STEPS[step];
@@ -128,6 +142,19 @@ export default function OnboardingOverlay({ slot, onClose }: { slot: number; onC
           >
             Back
           </button>
+          {current.route && onGoTo && (
+            <button
+              type="button"
+              className="fm-btn fm-btn--ghost fm-btn--small"
+              onClick={() => {
+                markOnboardingSeen(slot);
+                onGoTo(current.route!);
+                onClose();
+              }}
+            >
+              Go there
+            </button>
+          )}
           {last ? (
             <button type="button" className="fm-btn fm-btn--primary fm-btn--small" onClick={dismiss}>
               Got it

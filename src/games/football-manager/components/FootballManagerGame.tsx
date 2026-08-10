@@ -38,6 +38,8 @@ import { setVolume, setMuted } from '@/lib/sound';
 import { setHaptics } from '@/lib/haptics';
 import { useKeyboardShortcuts } from '@/lib/useKeyboardShortcuts';
 import PreMatchWarningsModal from './PreMatchWarningsModal';
+import AssistantFab from './assistant/AssistantFab';
+import AssistantPanel from './assistant/AssistantPanel';
 
 type View = 'menu' | 'managerpick' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'daysummary' | 'match' | 'seasonend' | 'character';
 
@@ -65,6 +67,7 @@ export default function FootballManagerGame() {
   const [settings, setSettings] = useState<GameSettings | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [showAssistant, setShowAssistant] = useState(false);
   const [selectedDivisions, setSelectedDivisions] = useState<string[]>(['premier_league', 'championship', 'league_one', 'league_two']);
   const [managerProfile, setManagerProfile] = useState<ManagerProfile | null>(null);
   // True while the manager-pick/character screens are resolving the
@@ -777,7 +780,34 @@ export default function FootballManagerGame() {
       })()}
 
       {showOnboarding && (
-        <OnboardingOverlay slot={slot} onClose={() => setShowOnboarding(false)} />
+        <OnboardingOverlay
+          slot={slot}
+          onClose={() => setShowOnboarding(false)}
+          onGoTo={(r) => {
+            setHubRoute(r);
+            setView('hub');
+          }}
+        />
+      )}
+
+      {gs && (view === 'hub' || view === 'daysummary') && (
+        <>
+          <AssistantFab state={gs} route={hubRoute ?? 'overview'} onOpen={() => setShowAssistant(true)} />
+          {showAssistant && (
+            <AssistantPanel
+              state={gs}
+              route={hubRoute ?? 'overview'}
+              onClose={() => setShowAssistant(false)}
+              onRoute={(r) => {
+                setHubRoute(r);
+                setView('hub');
+              }}
+              onChange={apply}
+              onShowTour={() => setShowOnboarding(true)}
+              onOpenSettings={() => setShowSettings(true)}
+            />
+          )}
+        </>
       )}
 
       {preMatchCheck && gs && (

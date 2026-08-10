@@ -279,6 +279,25 @@ body {
   }
 }
 
+/* Summonable Assistant Manager FAB. */
+.fm-assistant-fab {
+  position: fixed; right: 16px; bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  z-index: 46; width: 52px; height: 52px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--cta-gradient); color: #02100a; border: none;
+  box-shadow: var(--shadow-lg); cursor: pointer; font-weight: 900; font-size: 18px;
+  transition: transform 0.15s ease;
+}
+.fm-assistant-fab:active { transform: scale(0.94); }
+.fm-assistant-fab__initial { line-height: 1; }
+.fm-assistant-fab__badge {
+  position: absolute; top: 2px; right: 2px; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--red); border: 2px solid var(--panel);
+}
+@media (max-width: 899px) {
+  .fm-assistant-fab { right: 12px; bottom: calc(132px + env(safe-area-inset-bottom, 0px)); }
+}
+
 /* Phase 14: reusable brief background-pulse utility for card/goal/event
    moments — e.g. a stat tile or table row that just changed. Deliberately
    separate from ToastQueue.tsx's own `fm-toast-in` (checked first, that one
