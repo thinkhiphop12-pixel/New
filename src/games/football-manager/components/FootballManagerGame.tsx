@@ -34,6 +34,8 @@ import { ToastHost, pushToast } from './ToastQueue';
 import { Icon, IconSprite } from './Icon';
 import type { ScreenId } from './hubNav';
 import OnboardingOverlay, { hasSeenOnboarding } from './OnboardingOverlay';
+import { setVolume, setMuted } from '@/lib/sound';
+import { setHaptics } from '@/lib/haptics';
 import PreMatchWarningsModal from './PreMatchWarningsModal';
 
 type View = 'menu' | 'managerpick' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'daysummary' | 'match' | 'seasonend' | 'character';
@@ -316,6 +318,15 @@ export default function FootballManagerGame() {
   useEffect(() => { gsRef.current = gs; }, [gs]);
   const settingsRef = useRef<GameSettings | null>(null);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
+
+  // Feed the sound/haptics modules whenever settings change (they hold
+  // module-level state so every sfx call site doesn't need the settings).
+  useEffect(() => {
+    if (!settings) return;
+    setVolume(settings.volume ?? 0.7);
+    setMuted(settings.muted ?? false);
+    setHaptics(settings.haptics ?? true);
+  }, [settings]);
 
   // Gap 20 (Userbrain): first entry into a fresh career's Hub gets a one-time
   // orientation checklist, gated per save slot via localStorage (mirrors
