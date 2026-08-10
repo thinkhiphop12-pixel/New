@@ -7,42 +7,34 @@ import type { IconName } from './Icon';
 /**
  * The hub's two-level navigation model.
  *
- * Level 1 is the Hub landing screen: the club at a glance, nothing else.
- * Level 2 is a group — you land on its *Overview*, a glance screen built
- * from the group's own data, and switch between siblings with the sub-tab
- * strip. Every group has one: opening Market used to mean landing in the
- * transfer market's full table, and opening Club meant the inbox with a
- * seven-tab strip above it and no orientation.
+ * Six sections in the bar, two to four screens inside each. The previous
+ * shape was four sections, one of which (Club) held eight screens and
+ * opened on an *Overview* built entirely out of icon tiles that duplicated
+ * the sub-tab strip directly above it. Every group had one of those. So the
+ * player met the same destination three ways — rail icon, tile, sub-tab —
+ * and the screens themselves were mostly navigation.
  *
- * This replaces the old flat 14-entry rail (plus its "More" overflow sheet
- * on phones), which showed every destination at once and made the phone dock
- * need progressive disclosure. Four top-level destinations fit a thumb dock
- * without an overflow menu, so both layouts render the same single `.fm-rail`.
+ * Moving destinations up into the bar means each one is reachable in one
+ * tap, the strip under it is short enough to read at a glance, and the
+ * icon-grid landing screens are gone entirely: opening a section lands you
+ * on something that does a job, not on a menu.
  *
- * There used to be five, because "Hub" and "Matchday" were separate rail
- * entries whose landing screens were the *same component* — Matchday →
- * Overview and the Hub landing both rendered `Dashboard`. Two icons, one
- * screen. They are now a single group: Hub is the group, its Overview is the
- * Dashboard, and Calendar/Fixtures/Table/Cups/Europe are its siblings.
+ * Two things also went with them. **Identity** was a nine-panel scroll of
+ * club trivia, most of it restated from Finances, Board and Squad; what was
+ * worth keeping (records, legends, the captain's armband) now lives with the
+ * screens it belongs to. **Weekly Schedule** was unreachable from the strip
+ * anyway and has folded into Training, where the rest of the week's plan is.
  */
 
 export type ScreenId =
-  | 'overview' | 'calendar' | 'fixtures' | 'table' | 'cups' | 'european'
-  | 'team-hub' | 'squad' | 'tactics' | 'training' | 'schedule'
-  | 'market-hub' | 'transfers' | 'scouting' | 'jobs'
-  | 'club-hub' | 'inbox' | 'club' | 'facilities' | 'staff' | 'academy' | 'finances' | 'board';
+  | 'overview' | 'calendar' | 'inbox'
+  | 'squad' | 'tactics'
+  | 'training' | 'one-to-one' | 'academy'
+  | 'transfers' | 'scouting' | 'jobs'
+  | 'facilities' | 'staff' | 'finances' | 'board'
+  | 'table' | 'fixtures' | 'cups' | 'european';
 
-/** The four landing screens, one per group — the first tab of each. Every
- *  group now opens on a glance screen instead of dropping you into its
- *  heaviest table, which is what Matchday → Overview always did and the
- *  other three never did. */
-export const HUB_SCREENS = ['overview', 'team-hub', 'market-hub', 'club-hub'] as const;
-
-export function isHubScreen(id: ScreenId): boolean {
-  return (HUB_SCREENS as readonly string[]).includes(id);
-}
-
-export type GroupId = 'hub' | 'team' | 'market' | 'club';
+export type GroupId = 'home' | 'squad' | 'training' | 'market' | 'club' | 'league';
 
 export type ScreenDef = { id: ScreenId; label: string; icon: IconName };
 export type GroupDef = {
@@ -55,32 +47,32 @@ export type GroupDef = {
 
 export const GROUPS: GroupDef[] = [
   {
-    id: 'hub',
-    label: 'Hub',
+    id: 'home',
+    label: 'Home',
     icon: 'home',
     screens: [
       { id: 'overview', label: 'Overview', icon: 'home' },
+      { id: 'inbox', label: 'Inbox', icon: 'inbox' },
       { id: 'calendar', label: 'Calendar', icon: 'calendar' },
-      { id: 'fixtures', label: 'Fixtures', icon: 'fixtures' },
-      { id: 'table', label: 'Table', icon: 'table' },
-      { id: 'cups', label: 'Cups', icon: 'trophy' },
-      { id: 'european', label: 'Europe', icon: 'european' },
     ],
   },
   {
-    id: 'team',
-    label: 'Team',
+    id: 'squad',
+    label: 'Squad',
     icon: 'squad',
     screens: [
-      { id: 'team-hub', label: 'Overview', icon: 'home' },
-      { id: 'squad', label: 'Squad', icon: 'squad' },
+      { id: 'squad', label: 'Players', icon: 'squad' },
       { id: 'tactics', label: 'Tactics', icon: 'tactics' },
-      { id: 'training', label: 'Training', icon: 'training' },
-      // Schedule (rest-day planning) pulled from nav for now — folds into
-      // Training's own weekly plan later rather than living as its own tab.
-      // 'schedule' stays a valid ScreenId so WeeklyScheduleScreen keeps
-      // compiling; it's just unreachable from the tab strip until it's
-      // wired back in.
+    ],
+  },
+  {
+    id: 'training',
+    label: 'Training',
+    icon: 'training',
+    screens: [
+      { id: 'training', label: 'Team', icon: 'training' },
+      { id: 'one-to-one', label: 'One-to-one', icon: 'person' },
+      { id: 'academy', label: 'Academy', icon: 'sprout' },
     ],
   },
   {
@@ -88,7 +80,6 @@ export const GROUPS: GroupDef[] = [
     label: 'Market',
     icon: 'transfers',
     screens: [
-      { id: 'market-hub', label: 'Overview', icon: 'home' },
       { id: 'transfers', label: 'Transfers', icon: 'transfers' },
       { id: 'scouting', label: 'Scouting', icon: 'binoculars' },
       // The manager's own market. It sat in Club next to "Job Security",
@@ -102,16 +93,21 @@ export const GROUPS: GroupDef[] = [
     label: 'Club',
     icon: 'club',
     screens: [
-      { id: 'club-hub', label: 'Overview', icon: 'home' },
-      { id: 'inbox', label: 'Inbox', icon: 'inbox' },
-      // Was labelled "Club" inside the Club group, with the group's own
-      // icon — you could not tell the tab from its container.
-      { id: 'club', label: 'Identity', icon: 'flag' },
-      { id: 'facilities', label: 'Facilities', icon: 'facilities' },
-      { id: 'staff', label: 'Staff', icon: 'staff' },
-      { id: 'academy', label: 'Academy', icon: 'sprout' },
-      { id: 'finances', label: 'Finances', icon: 'finances' },
       { id: 'board', label: 'Board', icon: 'target' },
+      { id: 'staff', label: 'Staff', icon: 'staff' },
+      { id: 'facilities', label: 'Facilities', icon: 'facilities' },
+      { id: 'finances', label: 'Finances', icon: 'finances' },
+    ],
+  },
+  {
+    id: 'league',
+    label: 'League',
+    icon: 'table',
+    screens: [
+      { id: 'table', label: 'Table', icon: 'table' },
+      { id: 'fixtures', label: 'Fixtures', icon: 'fixtures' },
+      { id: 'cups', label: 'Cups', icon: 'trophy' },
+      { id: 'european', label: 'Europe', icon: 'european' },
     ],
   },
 ];
@@ -152,9 +148,8 @@ export function isScreenVisible(state: GameState, id: ScreenId): boolean {
 }
 
 /**
- * Attention count for a single screen. Only two screens can demand
- * attention: transfers (offers waiting on us — both the old flat offers and
- * Phase-7 negotiations, which populate independently) and inbox (unread).
+ * Attention count for a single screen — the things that are genuinely
+ * waiting on a decision, not a count of what a screen contains.
  */
 export function screenBadge(state: GameState, id: ScreenId): number {
   if (id === 'transfers') {
@@ -168,6 +163,16 @@ export function screenBadge(state: GameState, id: ScreenId): number {
   // as a *disabled* action-dock button — flagged, but unreachable from
   // anywhere. Badging Tactics puts it on the rail from every screen.
   if (id === 'tactics') return isLineupValid(state, state.userClubId, state.lineup) ? 0 : 1;
+  // This season's trialists, until every one of them has been signed or let
+  // go. The intake expires with the season, so an unanswered class is a real
+  // deadline rather than a list that will keep.
+  if (id === 'academy') return (state.academyIntake ?? []).length;
+  // Empty individual slots. Four unused sessions a week is free development
+  // being thrown away, and nothing else in the UI would ever say so.
+  if (id === 'one-to-one') {
+    const booked = Object.values(state.oneToOne ?? {}).filter((v) => v != null).length;
+    return 4 - booked;
+  }
   // Jobs badges only when the market is worth looking at *from where you are*:
   // your own board has lost patience and something is open. There is almost
   // always a vacancy somewhere, so badging on the count alone would be noise
