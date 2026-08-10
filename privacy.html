@@ -2,6 +2,25 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- Google tag (gtag.js) -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  /* Consent Mode v2 defaults. Everything starts denied so no cookie is set
+     before the visitor answers the banner; shared/consent.js relays their
+     choice with gtag('consent','update'). Measurement still works in the
+     meantime via cookieless pings, which is the point for EEA traffic. */
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'denied',
+    wait_for_update: 500
+  });
+  gtag('js', new Date());
+  gtag('config', 'G-YK8TS0NPNG');
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YK8TS0NPNG"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a1f14">
 <link rel="stylesheet" href="theme.min.css">
@@ -68,9 +87,13 @@
         footer of any page.</p>
 
       <h3>Analytics</h3>
-      <p>If you accept all cookies, we use PostHog to understand which features and pages are used, so we can
-        improve the games. This is aggregate usage data (e.g. which game was opened, which formation was
-        picked, whether a game was completed) — not anything that identifies you personally.</p>
+      <p>If you accept all cookies, we use Google Analytics and PostHog to understand which features and pages
+        are used, so we can improve the games. This is aggregate usage data (e.g. which game was opened, which
+        formation was picked, whether a game was completed) — not anything that identifies you personally.</p>
+      <p>Google Analytics runs in Google's <strong>consent mode</strong>. Until you choose "Accept all" — and
+        permanently, if you choose "Essential only" — it is not allowed to store anything on your device, and
+        reports your visit only as an anonymous, cookieless page count that cannot be tied back to you or
+        followed between visits.</p>
 
       <h3>Advertising</h3>
       <p>If you accept all cookies, the site may show ads in the slots marked "Advertisement", served by our ad
