@@ -49,6 +49,26 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
+/* The Google tag, matching the snippet the hand-written pages carry in
+   <head>. dataLayer is an ordered queue, so pushing the Consent Mode
+   defaults from this inline script before the gtag.js library finishes
+   loading is what makes them apply — shared/consent.js later relays the
+   visitor's banner choice with gtag('consent','update'). Gated on the
+   static export for the same reason the shared scripts are: `next dev`
+   should not report itself as production traffic. */
+const GA_ID = 'G-YK8TS0NPNG';
+const GTAG_BOOTSTRAP = `window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('consent', 'default', {
+  ad_storage: 'denied',
+  ad_user_data: 'denied',
+  ad_personalization: 'denied',
+  analytics_storage: 'denied',
+  wait_for_update: 500
+});
+gtag('js', new Date());
+gtag('config', '${GA_ID}');`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.className}>
@@ -57,6 +77,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SpeedInsights />
         {IS_STATIC_EXPORT && (
           <>
+            <Script id="gtag-init" strategy="afterInteractive">
+              {GTAG_BOOTSTRAP}
+            </Script>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
             {/* consent.js self-injects the cookie banner and only calls
                 initAds() after "Accept all" — ads.js stays inert until then. */}
             <Script src="/shared/consent.js" strategy="afterInteractive" />

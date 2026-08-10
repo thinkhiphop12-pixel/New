@@ -42,10 +42,26 @@ function loadMonetagVignette(){
   document.body.appendChild(s);
 }
 
+/* Google Consent Mode v2. The gtag snippet in every page's <head> defaults
+   every storage type to denied; this relays what the visitor actually chose.
+   "Essential only" still sends the update — an explicit denial ends gtag's
+   wait_for_update window instead of letting it time out. */
+function applyGoogleConsent(choice){
+  if (typeof window.gtag !== 'function') return;
+  const granted = choice === 'all' ? 'granted' : 'denied';
+  window.gtag('consent', 'update', {
+    ad_storage: granted,
+    ad_user_data: granted,
+    ad_personalization: granted,
+    analytics_storage: granted
+  });
+}
+
 function applyConsent(choice){
   setConsent(choice);
   const banner = document.getElementById('consentBanner');
   if (banner) banner.classList.add('hidden');
+  applyGoogleConsent(choice);
   if (choice === 'all') {
     loadPostHog(); loadMonetagVignette();
     if (typeof initAds === 'function') initAds();
@@ -95,6 +111,7 @@ function initConsent(){
   const existing = getConsent();
   const banner = document.getElementById('consentBanner');
   if (existing) {
+    applyGoogleConsent(existing);
     if (existing === 'all') {
       loadPostHog(); loadMonetagVignette();
       if (typeof initAds === 'function') initAds();
