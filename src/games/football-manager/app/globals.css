@@ -1725,6 +1725,17 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 @media (prefers-reduced-motion: reduce) {
   .fm-goal-flash, .fm-goal-flash__text { animation: none; opacity: 1; }
 }
+.fm-confetti {
+  position: absolute; top: -10px; width: 8px; height: 12px;
+  animation: fm-confetti-fall 2s linear forwards;
+}
+@keyframes fm-confetti-fall {
+  from { transform: translateY(-10%) rotate(0); opacity: 1; }
+  to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-confetti { display: none; }
+}
 .fm-live2d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
 /* ── Match screen (FM Mobile-style landscape replay) ── */

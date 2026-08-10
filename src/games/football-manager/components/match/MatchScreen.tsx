@@ -23,6 +23,9 @@ import MatchPreview from './MatchPreview';
 import StatsOverlay from './StatsOverlay';
 import TacticsModal, { type TacticsSelection } from './TacticsModal';
 import TeamTalkModal from './TeamTalkModal';
+import GoalCelebration from './GoalCelebration';
+import { sfx, crowd } from '@/lib/sound';
+import { vibrate } from '@/lib/haptics';
 
 const SPEEDS = [1, 2, 4, 8];
 const MS_PER_MINUTE = 640;
@@ -109,6 +112,19 @@ export default function MatchScreen({
   const finished = minute >= matchEnd;
   const overlayOpen = showTactics || showSubs || showHt || showMenu || showEvents || showTeamTalk !== null;
 
+  // Full-time whistle + stop the crowd ambience, once, when the match ends.
+  const ftPlayedRef = useRef(false);
+  useEffect(() => {
+    if (finished && !ftPlayedRef.current) {
+      ftPlayedRef.current = true;
+      sfx.whistle('full');
+      crowd.stop();
+    }
+  }, [finished]);
+
+  // Crowd loop always stops when the screen unmounts (e.g. exiting mid-match).
+  useEffect(() => () => crowd.stop(), []);
+
   // Replay clock.
   useEffect(() => {
     if (!timeline || !kickedOff || paused || finished || overlayOpen) return;
@@ -157,17 +173,49 @@ export default function MatchScreen({
   // yet). Tracks total goals rather than home/away separately so an own
   // goal or a goal for either side both trigger it.
   const [scoreFlash, setScoreFlash] = useState(false);
+  const [celebrationScorer, setCelebrationScorer] = useState<string | null>(null);
   const prevGoalsRef = useRef(0);
+  const prevScoreRef = useRef({ home: 0, away: 0 });
   useEffect(() => {
-    const total = (snap?.score.home ?? 0) + (snap?.score.away ?? 0);
+    const home = snap?.score.home ?? 0;
+    const away = snap?.score.away ?? 0;
+    const total = home + away;
     if (total > prevGoalsRef.current) {
       setScoreFlash(true);
-      const t = setTimeout(() => setScoreFlash(false), 700);
+      const flashTimer = setTimeout(() => setScoreFlash(false), 1000);
+
+      const userScored = userIsHome ? home > prevScoreRef.current.home : away > prevScoreRef.current.away;
+      sfx.goal(userScored ? 'for' : 'against');
+      vibrate('goal');
+
+      let celebrationTimer: ReturnType<typeof setTimeout> | undefined;
+      if (userScored) {
+        const lastGoal = [...(timeline?.events ?? [])].reverse().find((e) => e.type === 'goal' && e.minute <= minute);
+        const scorerName = lastGoal?.playerId != null ? state.players[lastGoal.playerId]?.name : undefined;
+        setCelebrationScorer(scorerName ?? '');
+        celebrationTimer = setTimeout(() => setCelebrationScorer(null), 2200);
+      }
+
       prevGoalsRef.current = total;
-      return () => clearTimeout(t);
+      prevScoreRef.current = { home, away };
+      return () => {
+        clearTimeout(flashTimer);
+        if (celebrationTimer) clearTimeout(celebrationTimer);
+      };
     }
     prevGoalsRef.current = total;
-  }, [snap?.score.home, snap?.score.away]);
+    prevScoreRef.current = { home, away };
+  }, [snap?.score.home, snap?.score.away, userIsHome, timeline, minute, state.players]);
+
+  // Card sound on the newest revealed event.
+  const prevEventCountRef = useRef(0);
+  useEffect(() => {
+    if (shownEvents.length > prevEventCountRef.current) {
+      const latest = shownEvents[shownEvents.length - 1];
+      if (latest?.type === 'card') sfx.card();
+    }
+    prevEventCountRef.current = shownEvents.length;
+  }, [shownEvents]);
 
   const liveRatings = useMemo(() => {
     if (!snap) return {};
@@ -357,7 +405,10 @@ export default function MatchScreen({
           <Crest name={home?.name} code={home?.code ?? ''} color={home?.color ?? 'var(--panel-3)'} size={22} />
           <span className="fm-fmbar__team">{home?.code}</span>
         </div>
-        <div className={`fm-fmbar__seg fm-fmbar__seg--score${scoreFlash ? ' fm-flash' : ''}`}>
+        <div
+          key={`${score.home}-${score.away}`}
+          className={`fm-fmbar__seg fm-fmbar__seg--score${scoreFlash ? ' fm-flash' : ''}`}
+        >
           {score.home} - {score.away}
         </div>
         <div className="fm-fmbar__seg fm-fmbar__seg--away">
@@ -408,8 +459,14 @@ export default function MatchScreen({
         <button
           className={`fm-fmbar__play${!kickedOff ? ' fm-fmbar__play--cta' : ''}`}
           onClick={() => {
-            if (!kickedOff) setKickedOff(true);
-            else setPaused((p) => !p);
+            if (!kickedOff) {
+              setKickedOff(true);
+              sfx.whistle('short');
+              crowd.start();
+              vibrate('whistle');
+            } else {
+              setPaused((p) => !p);
+            }
           }}
           disabled={finished}
           aria-label={!kickedOff ? 'Kick off' : paused ? 'Play' : 'Pause'}
@@ -473,6 +530,7 @@ export default function MatchScreen({
         ) : (
           <PitchCanvas snapshots={timeline.snapshots} minute={minute} homeClub={home} awayClub={away} resetKey={0} />
         )}
+        {celebrationScorer !== null && <GoalCelebration scorer={celebrationScorer || undefined} />}
         {showStats && (
           <StatsOverlay
             homeClub={home}

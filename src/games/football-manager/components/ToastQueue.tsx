@@ -9,6 +9,7 @@
  * renders whatever's currently queued.
  */
 import { useEffect, useState } from 'react';
+import { sfx } from '@/lib/sound';
 
 export type ToastKind = 'info' | 'success' | 'error';
 
@@ -23,6 +24,7 @@ let listeners: ((t: ToastMsg) => void)[] = [];
 
 export function pushToast(text: string, kind: ToastKind = 'info'): void {
   const msg: ToastMsg = { id: ++seq, text, kind };
+  sfx.notify();
   for (const l of listeners) l(msg);
 }
 
