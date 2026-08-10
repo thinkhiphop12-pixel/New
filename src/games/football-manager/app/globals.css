@@ -298,6 +298,18 @@ body {
   .fm-assistant-fab { right: 12px; bottom: calc(132px + env(safe-area-inset-bottom, 0px)); }
 }
 
+/* Progressive disclosure card (dense tables — ledger, objectives, squad by
+   position) collapsed by default. */
+.fm-disclose__head { cursor: pointer; }
+.fm-disclose__head svg { transition: transform 0.15s ease; flex-shrink: 0; }
+.fm-disclose__summary { color: var(--muted); font-size: 12px; font-weight: 600; margin-left: auto; margin-right: 6px; }
+.fm-disclose__body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.2s ease; }
+.fm-disclose__body.open { grid-template-rows: 1fr; }
+.fm-disclose__inner { overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .fm-disclose__body { transition: none; }
+}
+
 /* Phase 14: reusable brief background-pulse utility for card/goal/event
    moments — e.g. a stat tile or table row that just changed. Deliberately
    separate from ToastQueue.tsx's own `fm-toast-in` (checked first, that one

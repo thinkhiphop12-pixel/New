@@ -1,7 +1,8 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Icon, type IconName } from './Icon';
+import { sfx } from '@/lib/sound';
 
 /**
  * The shared furniture for a group's landing screen (Team → Overview,
@@ -81,6 +82,14 @@ export type TodoItem = {
 /** "Needs you" — renders nothing at all when the list is empty, which is the
  *  point: a quiet section should look quiet, not show an empty panel. */
 export function Todos({ items }: { items: TodoItem[] }) {
+  // A brief chime when the list gets shorter — something the player did
+  // just resolved one of these. Skipped on mount and on growth.
+  const prevCountRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (prevCountRef.current !== null && items.length < prevCountRef.current) sfx.notify();
+    prevCountRef.current = items.length;
+  }, [items.length]);
+
   if (items.length === 0) return null;
   return (
     <div className="fm-todos">
@@ -196,6 +205,43 @@ export function MiniRow({
       </span>
       <span className={`fm-minirow__right fm-tone-${tone}`}>{right}</span>
     </div>
+  );
+}
+
+/* --------------------------------------------------------------- disclose */
+
+/** Tap-to-expand card for a dense block (a full ledger, a long objectives
+ *  list) that doesn't need to be visible the moment the screen opens. The
+ *  summary stays visible either way; `children` only mounts once opened, so
+ *  a heavy table isn't rendered until asked for. */
+export function Disclose({
+  title,
+  summary,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  summary?: ReactNode;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section className="fm-hubcard fm-disclose">
+      <button
+        type="button"
+        className="fm-hubcard__head fm-disclose__head"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+      >
+        <span>{title}</span>
+        <span className="fm-disclose__summary">{summary}</span>
+        <Icon name="chevron" size={13} style={{ transform: open ? 'rotate(90deg)' : undefined }} />
+      </button>
+      <div className={`fm-disclose__body${open ? ' open' : ''}`}>
+        <div className="fm-disclose__inner">{open && children}</div>
+      </div>
+    </section>
   );
 }
 

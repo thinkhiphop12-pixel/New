@@ -8,6 +8,7 @@ import { formatMoney } from '@/engine/utils';
 import { totalCapacity } from '@/engine/facilities';
 import { ReputationStars, Bar, ordinalSuffix } from './visuals';
 import { Icon } from './Icon';
+import { Disclose } from './SectionHub';
 import {
   TICKET_TIERS, canRequestBoardFunds,
   ffpStatus, financesView, requestBoardFunds, scrStatus,
@@ -211,8 +212,7 @@ export default function FinancesScreen({
 
       {/* --- Season breakdown ------------------------------------------------ */}
       {fin.history.length > 0 && (
-        <div className="fm-panel">
-          <p className="fm-label" style={{ marginTop: 0 }}>Season History</p>
+        <Disclose title="Season History" summary={`${fin.history.length} season${fin.history.length === 1 ? '' : 's'}`}>
           <table className="fm-finance-table">
             <thead>
               <tr><th>Year</th><th>Pos</th><th>Income</th><th>Expenses</th><th>Profit</th></tr>
@@ -229,11 +229,10 @@ export default function FinancesScreen({
               ))}
             </tbody>
           </table>
-        </div>
+        </Disclose>
       )}
 
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>Recent Transactions</p>
+      <Disclose title="Recent Transactions" summary={`${state.ledger.length} entr${state.ledger.length === 1 ? 'y' : 'ies'}`}>
         {state.ledger.length > 0 ? (
           <ul className="fm-ledger">
             {state.ledger.slice(0, 15).map((e, i) => (
@@ -247,7 +246,7 @@ export default function FinancesScreen({
         ) : (
           <p className="fm-hint">No transactions yet</p>
         )}
-      </div>
+      </Disclose>
     </>
   );
 }
