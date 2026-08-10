@@ -6,8 +6,9 @@ import type {
   RunStyle, Tackling, TacticStyle, Tempo, Width,
 } from '@/engine/types';
 import { ALL_FORMATIONS, buildCustomFormation, getFormation, getLeague, parseCustomFormationId } from '@/engine/gameRules';
-import { autoPickLineup, previewEffectiveXG } from '@/engine/teamManagement';
-import { nextUserFixture } from '@/engine/seasonProgression';
+import { autoPickLineup, getSquad, previewEffectiveXG } from '@/engine/teamManagement';
+import { nextUserFixture, setCaptain } from '@/engine/seasonProgression';
+import { traitNames } from '@/engine/traits';
 import {
   coachDrillMult, needsDrilling, projectedFamiliarity, seedFamiliarityForSwitch,
   styleExec, styleFamiliarity, weeksToDrill,
@@ -252,6 +253,13 @@ export default function TacticsScreen({
   const defenceLineTop = defLine === 'high' ? 25 : defLine === 'deep' ? 75 : 50;
 
   const captain = state.captainId != null ? state.players[state.captainId] : null;
+  // Leaders first, then by rating — the two things that actually decide who
+  // gets the armband, so the top of the list is the obvious answer.
+  const captainCandidates = getSquad(state, state.userClubId).sort((a, b) => {
+    const la = traitNames(a).includes('Leader') ? 1 : 0;
+    const lb = traitNames(b).includes('Leader') ? 1 : 0;
+    return lb - la || b.rating - a.rating;
+  });
 
   return (
     <div className="fm-panel fm-tactics">
@@ -752,8 +760,26 @@ export default function TacticsScreen({
             </div>
             <div>
               <div className="fm-rolecard__label">Captain</div>
-              <div className="fm-rolecard__name">{captain?.name ?? 'Not appointed'}</div>
-              <div className="fm-rolecard__sub">{captain ? captain.pos : 'Appoint from the Club screen'}</div>
+              {/* The armband used to be appointed on the Identity screen,
+                  which no longer exists. It is a team-sheet decision, so it
+                  belongs on the team sheet — and it is now editable here
+                  rather than a read-only line pointing somewhere else. */}
+              <select
+                className="fm-sp-taker__select"
+                aria-label="Club captain"
+                value={state.captainId ?? ''}
+                onChange={(e) => onChange(setCaptain(state, e.target.value === '' ? null : Number(e.target.value)))}
+              >
+                <option value="">Not appointed</option>
+                {captainCandidates.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}{traitNames(p).includes('Leader') ? ' ★' : ''} · {p.pos}
+                  </option>
+                ))}
+              </select>
+              <div className="fm-rolecard__sub">
+                {captain ? `${captain.pos} · wears the armband` : 'A Leader (★) steadies the dressing room'}
+              </div>
             </div>
           </div>
           {SP_ROLES.map(({ job, label, stat, icon }) => {
@@ -772,8 +798,8 @@ export default function TacticsScreen({
             );
           })}
           <p className="fm-hint" style={{ gridColumn: '1 / -1' }}>
-            Captain is appointed from the Club screen; dead-ball takers are set on the Set Pieces
-            tab above — this is a read-only summary of both.
+            Dead-ball takers are set on the Set Pieces tab above — those four cards are a read-only
+            summary of it.
           </p>
           </div>
         </div>

@@ -222,6 +222,11 @@ export interface Player {
    *  squad-wide `GameState.training` focus. Absent means "balanced / auto" —
    *  the pre-existing generic per-player roll in seasonProgression.ts. */
   devPlan?: DevPlan;
+  /** Accumulated credit from one-to-one training sessions, 0-1. Crossing 1
+   *  spends itself on a +1 to a relevant attribute (engine/training.ts).
+   *  Kept as a running total rather than a weekly dice roll so a player the
+   *  manager keeps booking in visibly gets somewhere. */
+  oneToOneXp?: number;
   /** Season week a "not playing enough"-style complaint last fired for this
    *  player, so the inbox doesn't spam him every week. */
   lastComplaintWeek?: number;
@@ -1260,15 +1265,15 @@ export interface GameState {
   /** Phase 10: scout assignments, opponent reports and the persisted
    *  shortlist. */
   scouting?: ScoutingState;
-  /** Temporary trialist pool from September youth intake awaiting accept/reject. */
-  trialistPool?: Array<{
-    playerId: number;
-    trialistId: string;
-    starRating: number;
-    pos: Position;
-    ca: number;
-    pa: number;
-  }>;
+  /** The trialists offered at the start of a season, awaiting sign/pass.
+   *  Written by `generateYouthIntake` (engine/youthAcademy.ts) and cleared
+   *  the next time an intake is generated. Each entry is a *view* of a
+   *  player already in `players` — the scout's read on him, deliberately
+   *  fuzzier than his real numbers. */
+  academyIntake?: AcademyTrialist[];
+  /** Season year the current `academyIntake` was generated for, so a single
+   *  season can't roll two intakes. */
+  academyIntakeYear?: number;
   /** Career mode weekly planner: one entry per day, Monday first. Optional —
    *  absent means "the default split" (see engine/schedule.ts DEFAULT_SCHEDULE).
    *  Drives per-day sharpness/fitness/injury-risk in the weekly tick. */
@@ -1276,6 +1281,101 @@ export interface GameState {
   /** Manual training mini-game: drills run so far this week, reset to 0 in
    *  `playRound`'s weekly-advance section. Capped at `DRILLS_PER_WEEK`. */
   drillsUsedThisWeek?: number;
+
+  /* --- Training overhaul. Both optional so older saves load unchanged and
+     fall back to the defaults in engine/training.ts. --- */
+  /** The club's two weekly team sessions. Index 0 is midweek, 1 is the day
+   *  before the match. */
+  teamSessions?: [TeamDrill, TeamDrill];
+  /** The four players booked in for individual work this week, one per
+   *  position group. Cleared once the week's sessions have been applied. */
+  oneToOne?: Partial<Record<Position, number>>;
+  /** Absolute tick (`seasonYear * 100 + week`) the one-to-one slots were
+   *  last resolved, so a week's individual work can only ever pay out once. */
+  oneToOneResolved?: number;
+
+  /* --- Board requests. Optional; absent means "nothing asked for yet". --- */
+  /** Every sanction the manager has asked the board for this career, newest
+   *  first. An `approved` entry is what unlocks the spend it names. */
+  boardRequests?: BoardRequest[];
+  nextBoardRequestId?: number;
+
+  /** Live contract renewal talks, keyed by player id. Holds the board's
+   *  running counter-offer between rounds so a negotiation survives closing
+   *  the panel (and a save/reload). */
+  renewalTalks?: Record<number, RenewalTalk>;
+}
+
+/* ------------------------------------------------------------- academy */
+
+/** A prospect on trial. `potentialLow`/`potentialHigh` bracket his real
+ *  `potential`, widened by a weak academy and narrowed by a good one — the
+ *  player is told roughly how good the kid might get, never exactly. */
+export interface AcademyTrialist {
+  playerId: number;
+  pos: Position;
+  /** 1-5, from the midpoint of the predicted band. */
+  stars: number;
+  potentialLow: number;
+  potentialHigh: number;
+  /** What the assistant manager thinks: sign him, or let him go. */
+  verdict: 'sign' | 'maybe' | 'pass';
+  /** One line of reasoning in the assistant's voice. */
+  note: string;
+}
+
+/* ------------------------------------------------------------ training */
+
+/** A team training session. Deliberately the same shape as the FIFA-style
+ *  drill categories the mini-games will later plug into — picking one here
+ *  is picking which drill the squad runs, the mini-game is just not built
+ *  yet. */
+export type TeamDrill =
+  | 'attacking' | 'defending' | 'possession' | 'set-pieces' | 'fitness' | 'match-prep';
+
+/* ------------------------------------------------------- board requests */
+
+/** What the board is being asked to sanction. */
+export type BoardRequestKind = 'staff' | 'facility';
+
+export interface BoardRequest {
+  id: number;
+  kind: BoardRequestKind;
+  /** Coach role id (`'attack'`, `'fitness'`, …) or facility project kind
+   *  (`'training'`, `'medical'`, `'academy'`). */
+  key: string;
+  label: string;
+  status: 'approved' | 'rejected';
+  /** Money the board signed off, for a facility request. */
+  amount?: number;
+  /** Coach quality the board signed off, for a staff request — you asked for
+   *  the best in the business, they'll fund a promising young one. */
+  tier?: number;
+  week: number;
+  seasonYear: number;
+  /** Why the board said what it said, in the chairman's words. */
+  reason: string;
+  /** Set once an approved sanction has been spent, so one approval buys one
+   *  hire or one project rather than an unlimited licence. */
+  used?: boolean;
+}
+
+/* ------------------------------------------------ contract renegotiation */
+
+export interface RenewalTalk {
+  playerId: number;
+  /** How many offers the manager has put to him in this talk. */
+  round: number;
+  /** What he last said he'd sign for — the counter the panel shows. */
+  wantWage: number;
+  wantYears: number;
+  wantStatus: SquadStatusKey | null;
+  /** The last offer the manager made, so the panel can reopen where it was. */
+  lastOfferWage?: number;
+  lastOfferYears?: number;
+  /** How the talk currently stands. `ended` means he walked away and the
+   *  renewal cooldown is running. */
+  state: 'open' | 'ended';
 }
 
 export type ScheduleDay = 'training' | 'recovery';
