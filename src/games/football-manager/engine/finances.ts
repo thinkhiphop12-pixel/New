@@ -459,8 +459,23 @@ export function calibrateClubWages(state: GameState, club: Club): void {
   const target = squad.reduce((t, p) => t + formulaWage(p), 0);
   const weights = squad.map((p) => Math.max(1, p.realWage ?? formulaWage(p)));
   const weightTotal = weights.reduce((t, w) => t + w, 0);
+  // Reserve WAGE_FLOOR for every player first and distribute only what's left
+  // proportionally — applying the floor per-player *after* a proportional
+  // split (the previous approach) could push the total above `target` for a
+  // squad with a low-weight player, breaking the "total exactly matches the
+  // formula" guarantee this function exists for. `target` is always >=
+  // WAGE_FLOOR * squad.length because formulaWage() applies the same floor
+  // per player, so `distributable` never goes negative.
+  const distributable = target - WAGE_FLOOR * squad.length;
+  const wages = weights.map((weight) =>
+    WAGE_FLOOR + Math.round((distributable * (weight / weightTotal)) / 100) * 100
+  );
+  // £100 rounding can leave the sum a little off target; put the remainder on
+  // the highest earner rather than leave the club's bill silently drifting.
+  const highestWeightIndex = weights.indexOf(Math.max(...weights));
+  wages[highestWeightIndex] += target - wages.reduce((sum, w) => sum + w, 0);
   squad.forEach((p, i) => {
-    p.wage = Math.max(WAGE_FLOOR, Math.round((target * (weights[i] / weightTotal)) / 100) * 100);
+    p.wage = wages[i];
   });
 }
 
