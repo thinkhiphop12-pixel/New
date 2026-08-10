@@ -1,0 +1,57 @@
+# Google Search Console disavow file — ballknw.com
+# Generated 2026-08-10 from Semrush Backlink Analytics (backlinks_refdomains)
+#
+# CONTEXT: All 34 referring domains in the profile were first seen between
+# 2026-06-28 and 2026-08-10 — a single ~6 week window. The cluster is made up of
+# Fiverr-gig SEO link farms (*.site / *.shop), expired-domain PBNs, casino and
+# gaming spam, and scraped-directory placements. None are editorially given and
+# none are topically related to football content.
+#
+# This is what produced the "+126.67% referring domains" figure on the SEO
+# dashboard. It is not growth worth keeping.
+#
+# BEFORE UPLOADING: review each line. Disavowing is reversible but slow to take
+# effect. If you knowingly purchased any of these placements, remove them at the
+# source first where possible.
+#
+# Upload at: https://search.google.com/search-console/disavow-links
+
+# --- Fiverr / bulk SEO gig link farms ---
+domain:fiverr-affordable-seo-services.site
+domain:fiverr-cost-effective-seo.site
+domain:fiverr-quality-seo-at-affordable-rates.site
+domain:fiverr-seo-for-business-growth.site
+domain:fiverr-seo-for-small-businesses.site
+domain:seo-growth-authority-boost-hub.shop
+domain:seo-growth-optimization-hub.shop
+domain:seopxl-organic-boost-lab.shop
+domain:seopxl-performance-authority-engine.shop
+domain:seopxl-ranking-boost-lab.shop
+domain:seopxl-traffic-growth-lab.shop
+domain:newblogerseo.com
+
+# --- Gambling / adult / unrelated commercial spam ---
+domain:casinooftheking.com
+domain:hotonlinegaming.com
+domain:exotichealths.com
+domain:dupurgeniefr.com
+domain:8coint.com
+domain:sahammurah.com
+
+# --- Scraped directories, expired domains, auto-generated placements ---
+domain:anchorurl.cloud
+domain:toplikevideo.com
+domain:trasa.net.pl
+domain:blogorama.com
+domain:juaralaundry.com
+domain:southfwb.com
+domain:wecelebrities.com
+domain:breachviews.com
+domain:clifflisting.com
+domain:daechul.co.com
+domain:fletcherrld.com
+domain:ggmap.us.com
+domain:masihnyata.com
+domain:plrdownloadshub.com
+domain:soulvocable.com
+domain:domraider.gb.net

@@ -1,0 +1,713 @@
+<title>ballknw.com — The Road to 50</title>
+<style>
+  :root {
+    --paper:      #F2F3EF;
+    --surface:    #FAFBF8;
+    --surface-2:  #E9EBE4;
+    --ink:        #16191A;
+    --ink-2:      #4A5150;
+    --ink-3:      #767D7A;
+    --rule:       #D2D6CE;
+    --rule-soft:  #E2E5DD;
+    --accent:     #A85D08;
+    --accent-ink: #7A4406;
+    --good:       #2C6B4C;
+    --warn:       #96700F;
+    --crit:       #A5382A;
+    --good-bg:    #E4EDE7;
+    --warn-bg:    #F1EADA;
+    --crit-bg:    #F3E4E1;
+
+    --serif: 'Iowan Old Style', Charter, 'Bitstream Charter', Georgia, 'Times New Roman', serif;
+    --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:     #141816;
+      --surface:   #1B211E;
+      --surface-2: #232A26;
+      --ink:       #E7EAE4;
+      --ink-2:     #A8B0AA;
+      --ink-3:     #7C847E;
+      --rule:      #333B36;
+      --rule-soft: #262D29;
+      --accent:    #E0A052;
+      --accent-ink:#EFC48D;
+      --good:      #7CBE9A;
+      --warn:      #D9B45E;
+      --crit:      #E0897A;
+      --good-bg:   #1D2A23;
+      --warn-bg:   #2A2519;
+      --crit-bg:   #2B1E1B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:     #141816;
+    --surface:   #1B211E;
+    --surface-2: #232A26;
+    --ink:       #E7EAE4;
+    --ink-2:     #A8B0AA;
+    --ink-3:     #7C847E;
+    --rule:      #333B36;
+    --rule-soft: #262D29;
+    --accent:    #E0A052;
+    --accent-ink:#EFC48D;
+    --good:      #7CBE9A;
+    --warn:      #D9B45E;
+    --crit:      #E0897A;
+    --good-bg:   #1D2A23;
+    --warn-bg:   #2A2519;
+    --crit-bg:   #2B1E1B;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.65;
+    margin: 0;
+    padding: 0 24px 96px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1060px; margin: 0 auto; }
+  .col  { max-width: 680px; }
+
+  /* ---------- masthead ---------- */
+  header.masthead {
+    padding: 64px 0 32px;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 40px;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    margin: 0 0 20px;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(38px, 6.5vw, 62px);
+    line-height: 1.04;
+    font-weight: 600;
+    letter-spacing: -.015em;
+    text-wrap: balance;
+    margin: 0 0 20px;
+  }
+  .standfirst {
+    font-family: var(--serif);
+    font-size: clamp(19px, 2.4vw, 23px);
+    line-height: 1.5;
+    color: var(--ink-2);
+    max-width: 640px;
+    margin: 0 0 28px;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink-3);
+  }
+  .meta b { color: var(--ink-2); font-weight: 600; }
+
+  /* ---------- sections ---------- */
+  section { margin: 0 0 64px; }
+  h2 {
+    font-family: var(--serif);
+    font-size: clamp(26px, 3.4vw, 33px);
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+    margin: 0 0 8px;
+    padding-top: 28px;
+    border-top: 1px solid var(--rule);
+  }
+  h3 {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 650;
+    letter-spacing: .01em;
+    margin: 34px 0 10px;
+  }
+  p { margin: 0 0 16px; }
+  .col p, .col ul { max-width: 68ch; }
+  strong { font-weight: 650; }
+  a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+  code {
+    font-family: var(--mono);
+    font-size: .88em;
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  ul { padding-left: 20px; margin: 0 0 16px; }
+  li { margin-bottom: 7px; }
+
+  /* ---------- the three findings ---------- */
+  .findings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(258px, 1fr));
+    gap: 2px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin: 0 0 20px;
+  }
+  .finding { background: var(--surface); padding: 26px 24px 28px; }
+  .finding .n {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: .12em;
+    color: var(--ink-3);
+    display: block;
+    margin-bottom: 14px;
+  }
+  .finding .big {
+    font-family: var(--serif);
+    font-size: 42px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    display: block;
+    margin-bottom: 10px;
+  }
+  .finding .big.is-crit { color: var(--crit); }
+  .finding p { font-size: 15px; line-height: 1.55; color: var(--ink-2); margin: 0; }
+  .finding p b { color: var(--ink); font-weight: 650; }
+
+  /* ---------- tables ---------- */
+  .scroll { overflow-x: auto; margin: 0 0 12px; border: 1px solid var(--rule); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 620px; }
+  caption {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid var(--rule);
+  }
+  th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--ink-3);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule);
+    white-space: nowrap;
+  }
+  td {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .metric { font-weight: 600; }
+  .kw { font-family: var(--mono); font-size: 13.5px; }
+  .dim { color: var(--ink-3); }
+
+  /* verdict chips — color is paired with a word, never alone */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    padding: 4px 9px 4px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .chip::before {
+    content: "";
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    flex: none;
+  }
+  .chip.yes { color: var(--good); background: var(--good-bg); }
+  .chip.part { color: var(--warn); background: var(--warn-bg); }
+  .chip.no  { color: var(--crit); background: var(--crit-bg); }
+
+  /* ---------- callout ---------- */
+  .callout {
+    background: var(--crit-bg);
+    border: 1px solid var(--crit);
+    padding: 24px 26px;
+    margin: 0 0 24px;
+  }
+  .callout .label {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--crit);
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .callout p { margin: 0 0 12px; max-width: 68ch; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .note {
+    border-left: 2px solid var(--accent);
+    padding: 2px 0 2px 18px;
+    margin: 0 0 24px;
+    color: var(--ink-2);
+    font-size: 15.5px;
+  }
+  .note p { margin: 0; max-width: 66ch; }
+
+  /* ---------- phases ---------- */
+  .phase {
+    display: grid;
+    grid-template-columns: 132px 1fr;
+    gap: 0 32px;
+    padding: 30px 0;
+    border-top: 1px solid var(--rule-soft);
+  }
+  .phase:first-of-type { border-top: 1px solid var(--rule); }
+  .phase-when { position: sticky; top: 20px; align-self: start; }
+  .phase-when .idx {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .12em;
+    color: var(--accent-ink);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .phase-when .when {
+    font-family: var(--serif);
+    font-size: 20px;
+    line-height: 1.2;
+    display: block;
+  }
+  .phase-when .cost {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-3);
+    display: block;
+    margin-top: 8px;
+  }
+  .phase-body h3:first-child { margin-top: 0; }
+  .phase-body ul { max-width: 68ch; }
+  .phase-body > p { max-width: 68ch; }
+  .outcome {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink-2);
+    background: var(--surface-2);
+    padding: 10px 14px;
+    margin-top: 16px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  .outcome b { color: var(--ink); }
+
+  @media (max-width: 640px) {
+    .phase { grid-template-columns: 1fr; gap: 14px; }
+    .phase-when { position: static; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .phase-when .cost { margin-top: 0; }
+    body { font-size: 16px; padding: 0 18px 72px; }
+  }
+
+  details {
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    padding: 0;
+    margin: 0 0 12px;
+  }
+  summary {
+    cursor: pointer;
+    padding: 15px 18px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  details[open] summary { border-bottom: 1px solid var(--rule); }
+  details .scroll { border: none; margin: 0; }
+
+  footer {
+    border-top: 2px solid var(--ink);
+    padding-top: 24px;
+    margin-top: 24px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink-3);
+    line-height: 1.7;
+  }
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">SEO Situation Report</p>
+  <h1>ballknw.com: the road to 50</h1>
+  <p class="standfirst">Nine of the ten dashboard numbers can reach 50. One of them cannot, one of them should not, and the metric that looks healthiest right now is the one doing active damage.</p>
+  <div class="meta">
+    <span><b>Domain</b> ballknw.com</span>
+    <span><b>Source</b> Semrush API, US database</span>
+    <span><b>Pulled</b> 10 Aug 2026</span>
+  </div>
+</header>
+
+<section class="col">
+  <p>You asked to set every number on the SEO dashboard to 50. Those numbers are Semrush's <em>measurements</em> — there's no field to write to, so the only way they move is if the thing they measure moves. So I pulled the live data instead and worked out what it would actually take.</p>
+  <p>The good news is bigger than expected: <strong>the site is already built for 50 organic keywords.</strong> It is not a content problem. Nearly all the work is done and sitting unindexed.</p>
+</section>
+
+<section>
+  <h2>What the live data says</h2>
+  <p class="col dim" style="margin-bottom:26px">Three numbers reframe the whole picture.</p>
+
+  <div class="findings">
+    <div class="finding">
+      <span class="n">FINDING 01</span>
+      <span class="big">1 of 19</span>
+      <p>Pages that rank for anything at all. <b>gaffer-guide.html</b> carries all five of the site's organic keywords. The other eighteen published pages return zero.</p>
+    </div>
+    <div class="finding">
+      <span class="n">FINDING 02</span>
+      <span class="big">KD 4–25</span>
+      <p>Difficulty of the keywords those unranked pages target. <b>These are winnable without a single new backlink</b> — the false 9 and low block clusters are near-open goals.</p>
+    </div>
+    <div class="finding">
+      <span class="n">FINDING 03</span>
+      <span class="big is-crit">34 of 34</span>
+      <p>Referring domains that are spam. <b>The entire backlink profile is junk</b> — every link acquired since 28 June. That is the "+126.67%" on your dashboard.</p>
+    </div>
+  </div>
+
+  <div class="scroll">
+    <table>
+      <caption>Every organic keyword the domain currently holds</caption>
+      <thead>
+        <tr><th>Keyword</th><th>Position</th><th>Volume</th><th>Difficulty</th><th>Ranking URL</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="kw">football gaffer</td><td class="num">9</td><td class="num">110</td><td class="num">24</td><td class="kw dim">/gaffer-guide.html</td></tr>
+        <tr><td class="kw">gaffer soccer</td><td class="num">52</td><td class="num">480</td><td class="num">15</td><td class="kw dim">/gaffer-guide.html</td></tr>
+        <tr><td class="kw">gaffer football</td><td class="num">53</td><td class="num">320</td><td class="num">29</td><td class="kw dim">/gaffer-guide.html</td></tr>
+        <tr><td class="kw">gaffer' in football</td><td class="num">57</td><td class="num">140</td><td class="num">23</td><td class="kw dim">/gaffer-guide.html</td></tr>
+        <tr><td class="kw">gaffer meaning soccer</td><td class="num">57</td><td class="num">40</td><td class="num">18</td><td class="kw dim">/gaffer-guide.html</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="col dim" style="font-size:14.5px">Four of the five sit on page 5–6, where they earn no clicks — hence <span class="num">0</span> organic traffic. Only one page has ever been given time to rank, and it did.</p>
+</section>
+
+<section>
+  <h2>Can each number reach 50?</h2>
+  <p class="col" style="margin-bottom:24px">Honest verdict per metric, with what I'd target instead where 50 is the wrong goal.</p>
+
+  <div class="scroll">
+    <table>
+      <caption>Dashboard metric → realistic trajectory</caption>
+      <thead>
+        <tr><th>Metric</th><th>Now</th><th>50?</th><th>Realistic target and timing</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="metric">Organic Keywords</td><td class="num">5</td>
+          <td><span class="chip yes">Yes</span></td>
+          <td><strong>50+ in 6–10 weeks</strong>, no new content required. 54 qualifying keywords are already covered by published pages.</td>
+        </tr>
+        <tr>
+          <td class="metric">Organic Traffic</td><td class="num">0</td>
+          <td><span class="chip yes">Yes</span></td>
+          <td><strong>50–150/mo in 2–4 months.</strong> Follows automatically once the above ranks on page 1–2 rather than page 5.</td>
+        </tr>
+        <tr>
+          <td class="metric">Ref. Domains</td><td class="num">34</td>
+          <td><span class="chip part">Wrong goal</span></td>
+          <td>Should go <strong>down to ~0, then up to 15–25 real ones</strong> over 6 months. Growing this number as-is makes things worse.</td>
+        </tr>
+        <tr>
+          <td class="metric">Backlinks</td><td class="num">53</td>
+          <td><span class="chip part">Wrong goal</span></td>
+          <td>Same as above. Count is meaningless; source quality is everything. Expect a dip before a rise.</td>
+        </tr>
+        <tr>
+          <td class="metric">Authority Score</td><td class="num">2</td>
+          <td><span class="chip no">No</span></td>
+          <td><strong>8–15 within 12 months</strong> with genuine links. AS 50 is established-media territory (BBC Sport, FourFourTwo) and takes years.</td>
+        </tr>
+        <tr>
+          <td class="metric">Semrush Rank</td><td class="num">21.9M</td>
+          <td><span class="chip part">Inverted</span></td>
+          <td>Lower is better here, so 50 would mean top-50 site on earth. <strong>Sub-3M is a strong year-one outcome.</strong></td>
+        </tr>
+        <tr>
+          <td class="metric">AI Visibility / Mentions</td><td class="num">0</td>
+          <td><span class="chip part">Partly</span></td>
+          <td>Trails organic by 3–6 months — models cite what already ranks. <code>llms.txt</code> and FAQ schema are in place, which is the prerequisite.</td>
+        </tr>
+        <tr>
+          <td class="metric">Cited Pages</td><td class="num">1</td>
+          <td><span class="chip part">Partly</span></td>
+          <td><strong>5–15 realistic</strong> once more pages rank. Definition-style content is disproportionately cited, which suits this site.</td>
+        </tr>
+        <tr>
+          <td class="metric">Paid Keywords</td><td class="num">0</td>
+          <td><span class="chip yes">Yes, for money</span></td>
+          <td>50 paid keywords is one afternoon in Google Ads and an ongoing budget. <strong>Not recommended</strong> — CPC on these terms is $0.00; there's no commercial intent to buy.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>The urgent one</h2>
+
+  <div class="callout">
+    <span class="label">Act on this first</span>
+    <p><strong>Every single one of the 34 referring domains is spam,</strong> and all of them appeared between 28 June and today. There is no legitimate link mixed in.</p>
+    <p>The profile is made up of Fiverr-gig link farms (<code>seopxl-ranking-boost-lab.shop</code>, <code>fiverr-cost-effective-seo.site</code> and nine more of that pattern), casino and gambling spam, expired-domain PBNs, and scraped directories. Anchor text is 51 text links into a football site from laundry, crypto and "celebrity news" domains.</p>
+    <p>If someone bought an SEO gig recently, this is what was delivered. If not, it's a scraper network or negative SEO. Either way the <strong>+126.67% referring domains</strong> figure — the healthiest-looking number on the dashboard — is the one actively suppressing the site.</p>
+  </div>
+
+  <p class="col">I've generated a ready-to-upload disavow file covering all 34, grouped and annotated by category: <code>disavow-ballknw.txt</code>. Review it, then upload at Search Console's disavow tool. It's reversible, but give it weeks to take effect.</p>
+</section>
+
+<section>
+  <h2>Why 18 pages rank for nothing</h2>
+  <p class="col">I audited the site expecting to find broken technical SEO. I didn't. Canonicals are consistent and correct across all 19 pages, the sitemap is complete, <code>robots.txt</code> is permissive, internal linking is genuinely good (every article is linked from the homepage and from 3–9 sibling pages), and structured data is thorough — <code>Article</code>, <code>FAQPage</code> and <code>DefinedTerm</code> schema are already in place on the content pages.</p>
+  <p class="col">The actual explanation is simpler, and it's in the file dates:</p>
+
+  <div class="scroll">
+    <table>
+      <caption>Publication date vs. ranking outcome</caption>
+      <thead><tr><th>Page</th><th>Last modified</th><th>Age</th><th>Keywords</th></tr></thead>
+      <tbody>
+        <tr><td class="kw">gaffer-guide.html</td><td class="num">8 Jul 2026</td><td class="num">33 days</td><td class="num">5</td></tr>
+        <tr><td class="kw dim">what-is-a-false-9.html</td><td class="num">7 Aug 2026</td><td class="num">3 days</td><td class="num">0</td></tr>
+        <tr><td class="kw dim">what-is-a-low-block-in-football.html</td><td class="num">8 Aug 2026</td><td class="num">2 days</td><td class="num">0</td></tr>
+        <tr><td class="kw dim">football-manager-26.html</td><td class="num">10 Aug 2026</td><td class="num">today</td><td class="num">0</td></tr>
+        <tr><td class="kw dim">what-does-a-football-manager-do.html</td><td class="num">10 Aug 2026</td><td class="num">today</td><td class="num">0</td></tr>
+        <tr><td class="kw dim">how-to-become-a-football-manager.html</td><td class="num">10 Aug 2026</td><td class="num">today</td><td class="num">0</td></tr>
+        <tr><td class="kw dim">football-manager-pa-ca-explained.html</td><td class="num">10 Aug 2026</td><td class="num">today</td><td class="num">0</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="col">The one page old enough to have been crawled, indexed and ranked <em>was</em>. Everything else was published in the last four days. This isn't a defect to fix — it's a queue to wait out, and to accelerate.</p>
+
+  <div class="note">
+    <p>There is one real content gap, though, and it's worth money. The US search database — the one your dashboard is set to — puts the volume on <strong>soccer</strong>-worded phrasings: <span class="num">false 9 soccer</span> (1,000/mo), <span class="num">false nine soccer</span> (590), <span class="num">gaffer soccer</span> (480), <span class="num">low block soccer</span> (390). Your pages are written in British English: the false 9 page uses "football" 18 times and "soccer" twice. You already rank #52 for <span class="num">gaffer soccer</span> almost by accident — the demand is proven, the vocabulary just isn't on the page.</p>
+  </div>
+</section>
+
+<section>
+  <h2>The plan</h2>
+  <p class="col" style="margin-bottom:8px">Ordered by leverage. The first phase is genuinely tonight's work; the rest is calendar time you can't compress.</p>
+
+  <div class="phase">
+    <div class="phase-when">
+      <span class="idx">PHASE 01</span>
+      <span class="when">Tonight</span>
+      <span class="cost">~2 hours</span>
+    </div>
+    <div class="phase-body">
+      <h3>Stop the bleeding, start the clock</h3>
+      <ul>
+        <li><strong>Upload the disavow file.</strong> <code>disavow-ballknw.txt</code> is written and ready — review it, then submit in Search Console. Nothing else you do matters as much.</li>
+        <li><strong>Submit the sitemap in Google Search Console</strong>, then use URL Inspection → Request Indexing on all 18 unranked pages individually. This is the single biggest accelerator available; it turns months of passive discovery into days.</li>
+        <li><strong>Do the same in Bing Webmaster Tools</strong> — <code>BingSiteAuth.xml</code> is already in the repo, and Bing's IndexNow submits instantly.</li>
+        <li><strong>Add US-English phrasing</strong> to the false 9, low block and gaffer pages: an FAQ entry each answering "what is a false 9 in soccer", "what is a low block in soccer", "what is a gaffer in soccer", with the soccer wording in the <code>&lt;h2&gt;</code> and in the existing <code>FAQPage</code> schema. That's ~2,600/mo of addressable volume the pages currently spell wrong.</li>
+      </ul>
+      <p class="outcome">Realistic by morning: <b>nothing visible.</b> Indexing takes days. This phase sets everything else in motion.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-when">
+      <span class="idx">PHASE 02</span>
+      <span class="when">Days 2–14</span>
+      <span class="cost">passive</span>
+    </div>
+    <div class="phase-body">
+      <h3>Let the queue drain</h3>
+      <ul>
+        <li>Pages get crawled and enter the index. Expect the keyword count to move in steps, not a curve — a page lands and brings 3–6 keywords at once.</li>
+        <li>Watch Search Console's Pages report for anything marked <em>Discovered – currently not indexed</em>. That's the one status that signals a real problem rather than a wait.</li>
+        <li>Don't touch published content in this window. Editing resets crawl scheduling on pages that are mid-assessment.</li>
+      </ul>
+      <p class="outcome">Expected: <b>15–30 organic keywords</b>, most on page 3–5. Traffic still ~0.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-when">
+      <span class="idx">PHASE 03</span>
+      <span class="when">Weeks 3–10</span>
+      <span class="cost">the 50</span>
+    </div>
+    <div class="phase-body">
+      <h3>Cross 50 keywords</h3>
+      <p>This is where the target is actually hit, and it needs no new pages — the four clusters below already have published articles behind them.</p>
+      <ul>
+        <li><strong>Deepen rather than widen.</strong> Each existing page should cover its cluster's variants explicitly — headings and FAQ entries for "false 9 formation", "433 false 9", "false 9 meaning" on the one page, rather than new thin pages for each.</li>
+        <li><strong>Fix the four page-5 rankings first.</strong> <span class="num">gaffer soccer</span>, <span class="num">gaffer football</span> and the two others sit at #52–57 on a page that already ranks #9 for a sibling term. Moving those to page 2 is the cheapest traffic on the site.</li>
+        <li><strong>Then, and only then, add new content</strong> — the FM26 cluster (<span class="num">fm 26 database</span>, <span class="num">fm26 mods</span>, <span class="num">football manager 2026 system requirements</span>) is KD 7–16 and seasonally hot right now.</li>
+      </ul>
+      <p class="outcome">Expected: <b>50–65 organic keywords</b> — target met — and first real traffic.</p>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-when">
+      <span class="idx">PHASE 04</span>
+      <span class="when">Months 3–12</span>
+      <span class="cost">the slow part</span>
+    </div>
+    <div class="phase-body">
+      <h3>Authority, honestly</h3>
+      <ul>
+        <li>Real links only: football subreddits and forums where the tactical explainers genuinely answer a question, FM community sites, guest pieces on established football-writing outlets. Ten real links beat a thousand of what's there now.</li>
+        <li>Re-audit the backlink profile monthly and disavow new spam as it appears — the current campaign is ongoing, not finished.</li>
+        <li>AI Visibility follows organic with a lag. Nothing extra to do; <code>llms.txt</code> and the schema already handle it.</li>
+      </ul>
+      <p class="outcome">Expected at 12 months: <b>Authority Score 8–15</b>, 150–400 keywords. Not 50 AS — that isn't a one-year number for any new domain.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>The 50 keywords, named</h2>
+  <p class="col">These are real Semrush figures for terms your <em>already-published</em> pages target. 54 keywords across four clusters — which is why 50 is a conservative target rather than a stretch.</p>
+
+  <details open>
+    <summary>Cluster 1 — False 9 · 17 keywords · page exists · avg KD 15</summary>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Keyword</th><th>Volume</th><th>Difficulty</th></tr></thead>
+        <tbody>
+          <tr><td class="kw">false 9 soccer</td><td class="num">1,000</td><td class="num">12</td></tr>
+          <tr><td class="kw">false nine in football</td><td class="num">880</td><td class="num">11</td></tr>
+          <tr><td class="kw">false 9 football</td><td class="num">720</td><td class="num">25</td></tr>
+          <tr><td class="kw">false nine soccer</td><td class="num">590</td><td class="num">8</td></tr>
+          <tr><td class="kw">what is a false 9 in soccer</td><td class="num">390</td><td class="num">22</td></tr>
+          <tr><td class="kw">false nine</td><td class="num">320</td><td class="num">20</td></tr>
+          <tr><td class="kw">what is a false 9</td><td class="num">320</td><td class="num">22</td></tr>
+          <tr><td class="kw">false 9 formation</td><td class="num">260</td><td class="num">6</td></tr>
+          <tr><td class="kw">false 9 in football</td><td class="num">260</td><td class="num">6</td></tr>
+          <tr><td class="kw">false 9 meaning</td><td class="num">170</td><td class="num">16</td></tr>
+          <tr><td class="kw">the false nine</td><td class="num">140</td><td class="num">16</td></tr>
+          <tr><td class="kw">soccer false 9</td><td class="num">110</td><td class="num">7</td></tr>
+          <tr><td class="kw">messi false 9</td><td class="num">110</td><td class="num">27</td></tr>
+          <tr><td class="kw">false 9 messi</td><td class="num">90</td><td class="num">23</td></tr>
+          <tr><td class="kw">what is a false nine in soccer</td><td class="num">90</td><td class="num">1</td></tr>
+          <tr><td class="kw">4 3 3 false 9</td><td class="num">70</td><td class="num">13</td></tr>
+          <tr><td class="kw">433 false 9</td><td class="num">70</td><td class="num">23</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>Cluster 2 — Gaffer · 22 keywords · page exists · already ranking</summary>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Keyword</th><th>Volume</th><th>Difficulty</th></tr></thead>
+        <tbody>
+          <tr><td class="kw">what is a gaffer</td><td class="num">3,600</td><td class="num">31</td></tr>
+          <tr><td class="kw">gaffer soccer</td><td class="num">480</td><td class="num">6</td></tr>
+          <tr><td class="kw">what's a gaffer</td><td class="num">480</td><td class="num">31</td></tr>
+          <tr><td class="kw">gaffer in football</td><td class="num">390</td><td class="num">25</td></tr>
+          <tr><td class="kw">gaffer in sports</td><td class="num">260</td><td class="num">24</td></tr>
+          <tr><td class="kw">gaffer british slang</td><td class="num">210</td><td class="num">39</td></tr>
+          <tr><td class="kw">gaffer' in football</td><td class="num">170</td><td class="num">28</td></tr>
+          <tr><td class="kw">what is a gaffer in england</td><td class="num">170</td><td class="num">37</td></tr>
+          <tr><td class="kw">gaffer meaning football</td><td class="num">140</td><td class="num">24</td></tr>
+          <tr><td class="kw">football gaffer</td><td class="num">110</td><td class="num">24</td></tr>
+          <tr><td class="kw">gaffer meaning british</td><td class="num">110</td><td class="num">35</td></tr>
+          <tr><td class="kw">gaffer sports</td><td class="num">110</td><td class="num">23</td></tr>
+          <tr><td class="kw">what is a gaffer in soccer</td><td class="num">90</td><td class="num">8</td></tr>
+          <tr><td class="kw">what does gaffer mean in england</td><td class="num">90</td><td class="num">32</td></tr>
+          <tr><td class="kw">gaffer slang</td><td class="num">70</td><td class="num">32</td></tr>
+          <tr><td class="kw">old gaffer meaning</td><td class="num">70</td><td class="num">26</td></tr>
+          <tr><td class="kw">meaning gaffer</td><td class="num">70</td><td class="num">37</td></tr>
+          <tr><td class="kw">whats a gaffer in soccer</td><td class="num">50</td><td class="num">19</td></tr>
+          <tr><td class="kw">what does old gaffer mean</td><td class="num">50</td><td class="num">15</td></tr>
+          <tr><td class="kw">gaffer etymology</td><td class="num">50</td><td class="num">30</td></tr>
+          <tr><td class="kw">gaffer meaning soccer</td><td class="num">40</td><td class="num">18</td></tr>
+          <tr><td class="kw">the gaffer meaning</td><td class="num">40</td><td class="num">38</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>Cluster 3 — Low block · 8 keywords · page exists · lowest difficulty on the site</summary>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Keyword</th><th>Volume</th><th>Difficulty</th></tr></thead>
+        <tbody>
+          <tr><td class="kw">low block soccer</td><td class="num">390</td><td class="num">5</td></tr>
+          <tr><td class="kw">low block</td><td class="num">260</td><td class="num">19</td></tr>
+          <tr><td class="kw">lowblock</td><td class="num">170</td><td class="num">7</td></tr>
+          <tr><td class="kw">low blocks</td><td class="num">140</td><td class="num">12</td></tr>
+          <tr><td class="kw">what is a low block in soccer</td><td class="num">140</td><td class="num">7</td></tr>
+          <tr><td class="kw">soccer block</td><td class="num">90</td><td class="num">14</td></tr>
+          <tr><td class="kw">soccer low block</td><td class="num">70</td><td class="num">4</td></tr>
+          <tr><td class="kw">low block in soccer</td><td class="num">40</td><td class="num">7</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>Cluster 4 — Football Manager 26 · 7 keywords · page exists · seasonal peak now</summary>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Keyword</th><th>Volume</th><th>Difficulty</th></tr></thead>
+        <tbody>
+          <tr><td class="kw">fm 26 demo</td><td class="num">590</td><td class="num">25</td></tr>
+          <tr><td class="kw">fm 26 database</td><td class="num">390</td><td class="num">15</td></tr>
+          <tr><td class="kw">fm 26 ultrawide screen</td><td class="num">390</td><td class="num">24</td></tr>
+          <tr><td class="kw">fm26 database</td><td class="num">320</td><td class="num">16</td></tr>
+          <tr><td class="kw">fm26 mods</td><td class="num">320</td><td class="num">7</td></tr>
+          <tr><td class="kw">football manager 2026 system requirements</td><td class="num">320</td><td class="num">13</td></tr>
+          <tr><td class="kw">fm26 update</td><td class="num">320</td><td class="num">28</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <p class="col dim" style="font-size:14.5px">Piracy-intent terms in the FM26 cluster (<span class="num">football manager 26 crack</span>, 880/mo) are excluded deliberately — they'd rank, and they'd poison the site's standing with both Google and any future ad partner.</p>
+</section>
+
+<section class="col">
+  <h2>The one-line version</h2>
+  <p>Disavow 34 spam domains tonight, request indexing on 18 pages that Google has never seen, and add American spellings to three articles. <strong>50 organic keywords is roughly 6–10 weeks away and needs no new writing.</strong> Authority Score 50 is not reachable in a year by any honest method — 8 to 15 is the real number, and it's worth more than the 2 you have.</p>
+</section>
+
+<footer>
+  All figures pulled live from the Semrush API on 10 August 2026 — domain_rank, resource_organic,<br>
+  resource_organic_unique, backlinks_overview, backlinks_refdomains, phrase_related · US database.<br>
+  Volumes are monthly US searches. Difficulty is Semrush KD (0–100, lower is easier).
+</footer>
+
+</div>
