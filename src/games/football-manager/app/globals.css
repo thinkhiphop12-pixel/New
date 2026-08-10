@@ -3542,3 +3542,47 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-timings__note { grid-column: 1 / -1; font-size: 11.5px; line-height: 1.45; color: var(--muted); }
 
 .fm-guide-list { display: flex; flex-direction: column; gap: 6px; }
+
+/* ---------------------------------------------------------------- savebar
+   Sticks to the bottom of a configuration screen while edits are pending.
+   Sits under the action dock's z-index (44/45) so it can never cover Next
+   Event — the dock is what the bar is warning you about pressing. */
+.fm-savebar {
+  position: sticky; bottom: 8px; z-index: 20;
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 14px; padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--panel-2); border: 1px solid var(--gold);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 45%);
+  animation: fm-savebar-in 0.18s ease;
+}
+@keyframes fm-savebar-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fm-savebar__icon {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 28px; height: 28px; border-radius: 8px;
+  background: rgb(201 162 39 / 14%); color: var(--gold);
+}
+.fm-savebar__text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.fm-savebar__text b { font-size: 12.5px; font-weight: 800; color: var(--text-2); }
+.fm-savebar__text span { font-size: 11px; color: var(--muted-dim); }
+/* Below 900px the action dock goes position:fixed over the bottom of the
+   viewport (and the thumb rail sits under that), so the sticky bar has to
+   stop above both — otherwise the one control telling you there are unsaved
+   changes hides behind the button those changes are at risk from. */
+@media (max-width: 899px) {
+  .fm-savebar { bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 560px) {
+  .fm-savebar { flex-wrap: wrap; }
+  .fm-savebar__text { flex-basis: calc(100% - 38px); }
+  .fm-savebar .fm-btn { flex: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .fm-savebar { animation: none; } }
+
+/* The confirm the action dock puts up when time is about to move past
+   unsaved changes. */
+.fm-confirm__body { margin: 0 0 14px; font-size: 13px; line-height: 1.55; color: var(--muted); }
+.fm-confirm__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: flex-end; }

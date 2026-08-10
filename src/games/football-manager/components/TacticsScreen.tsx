@@ -22,6 +22,8 @@ import { getRole } from '@/lib/playerRoles';
 import { PitchMarkings, PlayerToken } from './visuals';
 import { Icon, type IconName } from './Icon';
 import { pushToast } from './ToastQueue';
+import SaveBar from './SaveBar';
+import { useDraft } from '@/lib/useDraft';
 
 const ROUTINE_LABEL: Record<CornerRoutine, string> = {
   'near-post': 'Near Post',
@@ -106,12 +108,20 @@ const TACTICS_SUB_TABS = [
 type TacticsSubTab = (typeof TACTICS_SUB_TABS)[number]['id'];
 
 export default function TacticsScreen({
-  state,
-  onChange,
+  state: committed,
+  onChange: onCommit,
 }: {
   state: GameState;
   onChange: (next: GameState) => void;
 }) {
+  /* Everything below is written against `state`/`onChange` as it always was;
+   * those names now point at a draft rather than straight at game state, so
+   * a formation you are still deciding about is not already the formation
+   * you will line up in. See lib/useDraft.ts. */
+  const tacticsDraft = useDraft(committed, onCommit, 'tactics');
+  const state = tacticsDraft.draft;
+  const onChange = tacticsDraft.edit;
+
   const [subTab, setSubTab] = useState<TacticsSubTab>('formation');
   const [previewShape, setPreviewShape] = useState<'ip' | 'oop'>('ip');
 
@@ -139,7 +149,7 @@ export default function TacticsScreen({
       lineup: newLineup,
       formationId: id, // legacy
     });
-    pushToast(`In-possession formation set to ${getFormation(id).name}`, 'success');
+    pushToast(`In-possession shape set to ${getFormation(id).name} — save to confirm.`, 'info');
   };
 
   const setOOPFormation = (id: string) => {
@@ -149,7 +159,7 @@ export default function TacticsScreen({
         outOfPossessionId: id,
       },
     });
-    pushToast(`Out-of-possession formation set to ${getFormation(id).name}`, 'success');
+    pushToast(`Out-of-possession shape set to ${getFormation(id).name} — save to confirm.`, 'info');
   };
 
   /* --- Team identity ---------------------------------------------------- */
@@ -804,6 +814,10 @@ export default function TacticsScreen({
           </div>
         </div>
       )}
+
+      {/* The one statement on this screen that an edit is outstanding. Renders
+          nothing until something is actually changed. */}
+      <SaveBar draft={tacticsDraft} what="Tactics" />
     </div>
   );
 }

@@ -39,6 +39,7 @@ import { markSeen, nextOnboardingBeat, resetOnboarding } from './onboarding/onbo
 import TourHost from './tour/TourHost';
 import { HIRE_ASSISTANT_TOUR, ORIENTATION_TOUR } from './tour/tourSteps';
 import { getAssistant } from '@/engine/assistant';
+import { getPendingChanges, type PendingChanges } from '@/lib/pendingChanges';
 import { setVolume, setMuted } from '@/lib/sound';
 import { setHaptics } from '@/lib/haptics';
 import { useKeyboardShortcuts } from '@/lib/useKeyboardShortcuts';
@@ -47,6 +48,12 @@ import AssistantFab from './assistant/AssistantFab';
 import AssistantPanel from './assistant/AssistantPanel';
 
 type View = 'menu' | 'managerpick' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'daysummary' | 'match' | 'seasonend' | 'character';
+
+/** Something that moves the clock, held rather than run while unsaved edits
+ *  are being resolved. Stored as data, not a closure: resolving may commit a
+ *  draft, and a closure captured before that commit would run against the
+ *  state it was meant to include. */
+type TimeIntent = { kind: 'simulate'; untilDay?: number } | { kind: 'match' };
 
 /** How long a held SIM NEXT DAY press waits between days — fast enough that
  *  a run of quiet days feels like a montage, slow enough that the date in
@@ -90,6 +97,15 @@ export default function FootballManagerGame() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [welcomeStage, setWelcomeStage] = useState<WelcomeStage | null>(null);
   const [tourId, setTourId] = useState<string | null>(null);
+  // Non-null while time is being held up by unsaved edits on a screen. The
+  // stored action is what to run once the player has said what to do with
+  // them, so one confirm serves Next Event, Proceed to Match and the
+  // Calendar's simulate-to-here alike.
+  const [unsavedGate, setUnsavedGate] = useState<{ pending: PendingChanges; intent: TimeIntent } | null>(null);
+  // Set when the gate answered "save first": the save is a setState, so the
+  // action has to wait for the committed state to land rather than running
+  // against the closure it was captured with.
+  const [queuedIntent, setQueuedIntent] = useState<TimeIntent | null>(null);
   // The FM21-style kickoff gate: non-null while the pre-match check has
   // something worth showing the manager before the match actually starts.
   const [preMatchCheck, setPreMatchCheck] = useState<PreMatchCheck | null>(null);
@@ -431,6 +447,21 @@ export default function FootballManagerGame() {
    *  A click while already running cancels it — useful if a target day was
    *  further out than expected and something's caught the player's eye on
    *  the way there. */
+  /**
+   * Wrap anything that moves time so it cannot run past unsaved edits.
+   *
+   * Screens with a Save bar hold their changes in a draft (lib/useDraft.ts),
+   * and advancing a day rebases that draft on the new world — correct, but
+   * it would mean pressing Next Event with a half-set formation on screen
+   * quietly threw it away. Ask instead, once, with the screen's own save and
+   * discard as the answers.
+   */
+  const guardUnsaved = (intent: TimeIntent) => {
+    const pending = getPendingChanges();
+    if (!pending) { runIntent(intent); return; }
+    setUnsavedGate({ pending, intent });
+  };
+
   const handleSimulate = (untilDay?: number) => {
     // A day already stopped and hasn't been acknowledged — reopen the
     // summary instead of quietly ticking past whatever it's waiting on.
@@ -443,9 +474,7 @@ export default function FootballManagerGame() {
       setHolding(false);
       return;
     }
-    holdingRef.current = true;
-    setHolding(true);
-    runToNextEvent(untilDay);
+    guardUnsaved({ kind: 'simulate', untilDay });
   };
 
   /** A stop's "resolve" action for anything that isn't matchday — send the
@@ -529,12 +558,9 @@ export default function FootballManagerGame() {
    */
   const handleProceedToMatch = () => {
     if (!gs) return;
-    const check = runPreMatchChecks(gs);
-    if (hasPreMatchWarnings(check)) {
-      setPreMatchCheck(check);
-    } else {
-      kickOff(check.lineup, check.formationId, check.riskyIds);
-    }
+    // Unsaved tactics matter most here of all — this is the click that picks
+    // the shape you actually line up in.
+    guardUnsaved({ kind: 'match' });
   };
 
   /** Apply whatever the check (or the manager, via the modal) settled on, and
@@ -546,6 +572,39 @@ export default function FootballManagerGame() {
     setPreMatchCheck(null);
     handlePlayMatch(next, riskyIds);
   };
+
+  /** Actually move the clock, once nothing is in the way. Reads `gsRef`
+   *  rather than the `gs` closure for the match path: this can be called
+   *  from the effect below, one render after a draft was committed, and the
+   *  whole point of deferring it is to use the state that commit produced. */
+  const runIntent = (intent: TimeIntent) => {
+    if (intent.kind === 'simulate') {
+      holdingRef.current = true;
+      setHolding(true);
+      runToNextEvent(intent.untilDay);
+      return;
+    }
+    const current = gsRef.current;
+    if (!current) return;
+    const check = runPreMatchChecks(current);
+    if (hasPreMatchWarnings(check)) {
+      setPreMatchCheck(check);
+    } else {
+      kickOff(check.lineup, check.formationId, check.riskyIds);
+    }
+  };
+
+  /** The deferred half of "save, then carry on": the save is a setState, so
+   *  the intent waits here for the committed state to arrive. */
+  useEffect(() => {
+    if (!queuedIntent || !gs) return;
+    setQueuedIntent(null);
+    runIntent(queuedIntent);
+    // Deliberately keyed on the state landing, not on every dependency of
+    // runIntent — re-running this on an unrelated render would fire the same
+    // intent twice.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queuedIntent, gs]);
 
   // Global shortcuts: Escape closes Settings (More Menu and other sheets
   // already own their own Escape handler — this only covers the one that
@@ -878,6 +937,75 @@ export default function FootballManagerGame() {
             />
           )}
         </>
+      )}
+
+      {/* Time is about to move past edits the player has not applied. Asked
+          once, with the editing screen's own save/discard as the answers —
+          "Cancel" is deliberately the safe default a backdrop click lands on. */}
+      {unsavedGate && (
+        <div className="fm-modal-backdrop" onClick={() => setUnsavedGate(null)}>
+          <div
+            className="fm-modal fm-modal-pop"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="fm-unsaved-title"
+            style={{ maxWidth: 400, padding: 20 }}
+          >
+            <div className="fm-modal__header">
+              <h2 id="fm-unsaved-title" style={{ margin: 0, fontSize: 17 }}>
+                Unsaved {unsavedGate.pending.label}
+              </h2>
+            </div>
+            <p className="fm-confirm__body">
+              You have {unsavedGate.pending.count} change
+              {unsavedGate.pending.count === 1 ? '' : 's'} to your {unsavedGate.pending.label} that
+              {unsavedGate.pending.count === 1 ? ' has' : ' have'} not been applied yet.
+              {unsavedGate.intent.kind === 'match'
+                ? ' The match will be played with your saved setup unless you apply them first.'
+                : ' Moving time on will play them out with your saved setup unless you apply them first.'}
+            </p>
+            <div className="fm-confirm__actions">
+              <button
+                type="button"
+                className="fm-btn fm-btn--ghost fm-btn--small"
+                onClick={() => setUnsavedGate(null)}
+              >
+                Go back
+              </button>
+              <button
+                type="button"
+                className="fm-btn fm-btn--ghost fm-btn--small"
+                onClick={() => {
+                  const { pending, intent } = unsavedGate;
+                  setUnsavedGate(null);
+                  pending.discard();
+                  pushToast(`${pending.label[0].toUpperCase()}${pending.label.slice(1)} reverted.`, 'info');
+                  // Discarding touches no game state, so nothing to wait for.
+                  runIntent(intent);
+                }}
+              >
+                Discard &amp; continue
+              </button>
+              <button
+                type="button"
+                className="fm-btn fm-btn--primary fm-btn--small"
+                onClick={() => {
+                  const { pending, intent } = unsavedGate;
+                  setUnsavedGate(null);
+                  const n = pending.count;
+                  pending.save();
+                  pushToast(`${pending.label[0].toUpperCase()}${pending.label.slice(1)} saved — ${n} change${n === 1 ? '' : 's'} applied.`, 'success');
+                  // Queue rather than run: the save above is a setState, and
+                  // the whole point is to act on what it produces.
+                  setQueuedIntent(intent);
+                }}
+              >
+                Save &amp; continue
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {preMatchCheck && gs && (

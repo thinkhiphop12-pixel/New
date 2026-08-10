@@ -11,6 +11,8 @@ import {
 } from '@/engine/schedule';
 import { assistantScheduleAdvice } from '@/engine/assistant';
 import { Icon, type IconName } from './Icon';
+import SaveBar from './SaveBar';
+import { useDraft } from '@/lib/useDraft';
 
 /**
  * Team training.
@@ -50,12 +52,20 @@ function toneOf(n: number): string {
 }
 
 export default function TrainingScreen({
-  state,
-  onChange,
+  state: committed,
+  onChange: onCommit,
 }: {
   state: GameState;
   onChange: (next: GameState) => void;
 }) {
+  /* `state`/`onChange` below are the draft, not live game state — the week's
+   * plan is something you set up and then commit, so the projections on this
+   * screen describe what you are about to do rather than what you have
+   * already silently done. See lib/useDraft.ts. */
+  const trainingDraft = useDraft(committed, onCommit, 'training plan');
+  const state = trainingDraft.draft;
+  const onChange = trainingDraft.edit;
+
   const sessions = getSessions(state);
   const squad = getSquad(state, state.userClubId);
   const days = getSchedule(state);
@@ -194,6 +204,8 @@ export default function TrainingScreen({
             </div>
           ))}
       </div>
+
+      <SaveBar draft={trainingDraft} what="Training plan" />
     </>
   );
 }
