@@ -1452,6 +1452,13 @@ export interface GameSettings {
    *  All off by default; delegating is an opt-in, not a hidden behavior
    *  change for existing saves. */
   assistantDelegation?: Partial<Record<'complaints' | 'contracts' | 'schedule', boolean>>;
+  /** Sound effect volume, 0–1. Optional — older settings blobs fall back
+   *  to the UI default (0.7). */
+  volume?: number;
+  /** Mute all synthesized sound effects. */
+  muted?: boolean;
+  /** Vibration feedback on supported (mobile) devices. */
+  haptics?: boolean;
 }
 
 export interface AvatarConfig {

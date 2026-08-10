@@ -222,7 +222,8 @@ export default function HubScreen({
         </div>
 
         <div
-          className="fm-hub-panel"
+          key={activeRoute}
+          className="fm-hub-panel fm-screen-slide"
           id="fm-screen-panel"
           role="tabpanel"
           aria-labelledby={`fm-subtab-${activeRoute}`}

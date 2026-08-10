@@ -14,6 +14,8 @@ import { Crest } from './Crest';
 import PressConferenceModal from './PressConferenceModal';
 import { Icon, type IconName } from './Icon';
 import type { ScreenId } from './hubNav';
+import { getAssistant } from '@/engine/assistant';
+import { assistantTips } from './assistant/tips';
 
 function ord(n: number): string {
   if (n % 100 >= 11 && n % 100 <= 13) return 'th';
@@ -206,7 +208,11 @@ export default function Dashboard({
             {attention.length > 0 && <span className="fm-badge fm-badge--alert">{attention.length}</span>}
           </div>
           {attention.length === 0 ? (
-            <p className="fm-hint" style={{ margin: 0 }}>Nothing urgent — you're all caught up.</p>
+            <p className="fm-hint" style={{ margin: 0 }}>
+              {getAssistant(state)
+                ? `"${assistantTips(state, 'overview')[0]?.text ?? "All quiet, boss — I'd get to the next match."}"`
+                : "Nothing urgent — you're all caught up."}
+            </p>
           ) : (
             <div className="fm-msg-list">
               {attention.map((row, i) => (

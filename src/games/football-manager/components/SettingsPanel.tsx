@@ -61,7 +61,17 @@ const DEFAULTS: GameSettings = {
   showTeamTalks: true,
   difficulty: 1,
   continueStops: defaultContinueStops(),
+  volume: 0.7,
+  muted: false,
+  haptics: true,
 };
+
+/** Volume steps for the segmented control. */
+const VOLUMES: { value: number; label: string }[] = [
+  { value: 0.3, label: 'Low' },
+  { value: 0.7, label: 'Med' },
+  { value: 1, label: 'High' },
+];
 
 const STORAGE_KEY = 'gaffer_settings';
 
@@ -199,6 +209,67 @@ export default function SettingsPanel({
                 onClick={() => update({ showTeamTalks: !settings.showTeamTalks })}
                 aria-pressed={settings.showTeamTalks}
                 aria-label="Toggle team talks"
+              />
+            </div>
+          </div>
+
+          <div className="fm-setgroup">
+            <p className="fm-setgroup__title">Sound &amp; feel</p>
+
+            <div className="fm-settings-row">
+              <div className="fm-settings-row__head">
+                <SettingTile icon="block" tint="var(--red)" />
+                <div>
+                  <div className="fm-settings-label">Mute</div>
+                  <div className="fm-settings-desc">Silence all sound effects</div>
+                </div>
+              </div>
+              <button
+                className={`fm-toggle${settings.muted ? ' on' : ''}`}
+                onClick={() => update({ muted: !settings.muted })}
+                aria-pressed={settings.muted ?? false}
+                aria-label="Toggle mute"
+              />
+            </div>
+
+            <div className="fm-settings-row fm-settings-row--stacked">
+              <div className="fm-settings-row__head">
+                <SettingTile icon="mic" tint="var(--blue)" />
+                <div>
+                  <div className="fm-settings-label">Volume</div>
+                  <div className="fm-settings-desc">Whistles, crowd, and UI sounds</div>
+                </div>
+              </div>
+              <div className="fm-settings-control">
+                <div className="fm-segmented">
+                  {VOLUMES.map((v) => (
+                    <button
+                      key={v.value}
+                      type="button"
+                      className={`fm-segmented__opt${(settings.volume ?? 0.7) === v.value ? ' active' : ''}`}
+                      aria-pressed={(settings.volume ?? 0.7) === v.value}
+                      onClick={() => update({ volume: v.value })}
+                    >
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="fm-settings-row">
+              <div className="fm-settings-row__head">
+                <SettingTile icon="target" tint="var(--gold)" />
+                <div>
+                  <div className="fm-settings-label">Haptics</div>
+                  <div className="fm-settings-desc">Vibration on goals and whistles (mobile)</div>
+                </div>
+              </div>
+              <button
+                className={`fm-toggle${settings.haptics ?? true ? ' on' : ''}`}
+                onClick={() => update({ haptics: !(settings.haptics ?? true) })}
+                aria-pressed={settings.haptics ?? true}
+                aria-label="Toggle haptics"
               />
             </div>
           </div>

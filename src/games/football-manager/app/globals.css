@@ -242,6 +242,74 @@ body {
   .fm-view-fade { animation: none; }
 }
 
+/* Lighter per-screen transition for switching tabs within a Hub group —
+   .fm-view-fade above covers whole-view swaps (menu → hub → match), this
+   covers Hub sub-tab swaps (Squad → Tactics) with a smaller, quicker move. */
+.fm-screen-slide { animation: fm-screen-slide 0.2s ease-out; }
+@keyframes fm-screen-slide {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-screen-slide { animation: none; }
+}
+
+/* Modal/sheet entrance pop, applied to the match-screen modal panel and the
+   settings panel. */
+.fm-modal-pop { animation: fm-modal-pop 0.15s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes fm-modal-pop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-modal-pop { animation: none; }
+}
+
+/* Press feedback on the game's three most-tapped interactive shapes. */
+.fm-btn:not(:disabled):active,
+.fm-jump:active,
+.fm-todo:active {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-btn:not(:disabled):active,
+  .fm-jump:active,
+  .fm-todo:active {
+    transform: none;
+  }
+}
+
+/* Summonable Assistant Manager FAB. */
+.fm-assistant-fab {
+  position: fixed; right: 16px; bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  z-index: 46; width: 52px; height: 52px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--cta-gradient); color: #02100a; border: none;
+  box-shadow: var(--shadow-lg); cursor: pointer; font-weight: 900; font-size: 18px;
+  transition: transform 0.15s ease;
+}
+.fm-assistant-fab:active { transform: scale(0.94); }
+.fm-assistant-fab__initial { line-height: 1; }
+.fm-assistant-fab__badge {
+  position: absolute; top: 2px; right: 2px; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--red); border: 2px solid var(--panel);
+}
+@media (max-width: 899px) {
+  .fm-assistant-fab { right: 12px; bottom: calc(132px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* Progressive disclosure card (dense tables — ledger, objectives, squad by
+   position) collapsed by default. */
+.fm-disclose__head { cursor: pointer; }
+.fm-disclose__head svg { transition: transform 0.15s ease; flex-shrink: 0; }
+.fm-disclose__summary { color: var(--muted); font-size: 12px; font-weight: 600; margin-left: auto; margin-right: 6px; }
+.fm-disclose__body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.2s ease; }
+.fm-disclose__body.open { grid-template-rows: 1fr; }
+.fm-disclose__inner { overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .fm-disclose__body { transition: none; }
+}
+
 /* Phase 14: reusable brief background-pulse utility for card/goal/event
    moments — e.g. a stat tile or table row that just changed. Deliberately
    separate from ToastQueue.tsx's own `fm-toast-in` (checked first, that one
@@ -1580,6 +1648,10 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   border-radius: var(--r-xl);
   overflow: hidden;
   box-shadow: var(--shadow-lg);
+  animation: fm-modal-pop 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-settings-panel { animation: none; }
 }
 .fm-settings-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -1716,6 +1788,17 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 @keyframes fm-goal-pop { 0% { transform: scale(0.3); } 25% { transform: scale(1.2); } 40% { transform: scale(1); } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) {
   .fm-goal-flash, .fm-goal-flash__text { animation: none; opacity: 1; }
+}
+.fm-confetti {
+  position: absolute; top: -10px; width: 8px; height: 12px;
+  animation: fm-confetti-fall 2s linear forwards;
+}
+@keyframes fm-confetti-fall {
+  from { transform: translateY(-10%) rotate(0); opacity: 1; }
+  to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-confetti { display: none; }
 }
 .fm-live2d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
@@ -1883,6 +1966,10 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   width: 100%; max-width: var(--w-screen); max-height: 92dvh; overflow-y: auto;
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-lg);
   padding: 16px; box-shadow: var(--shadow-lg);
+  animation: fm-modal-pop 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-matchx-modal__panel { animation: none; }
 }
 .fm-matchx-modal__panel--narrow { max-width: var(--w-narrow); }
 .fm-matchx-modal__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }

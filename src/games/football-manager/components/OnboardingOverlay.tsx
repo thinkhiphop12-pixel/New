@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Icon, type IconName } from './Icon';
+import type { ScreenId } from './hubNav';
 
 /** Gap 20 (Userbrain): there is no onboarding at all, and the report's
  *  repeated "what do I do?" traces straight back to that — a first-time
@@ -13,7 +14,10 @@ import { Icon, type IconName } from './Icon';
  *  A step-through (one thing at a time, Next/Back) rather than a wall of
  *  four items at once, reusing the existing `.fm-modal` shell. */
 
-const STEPS: { icon: IconName; title: string; body: string }[] = [
+/** Exported so the Assistant Manager panel can reuse this same copy as its
+ *  per-screen "what is this" line, instead of maintaining a second set of
+ *  explainer text that would drift from the tour. */
+export const STEPS: { icon: IconName; title: string; body: string; route?: ScreenId }[] = [
   {
     icon: 'squad',
     title: 'Six sections',
@@ -23,26 +27,31 @@ const STEPS: { icon: IconName; title: string; body: string }[] = [
     icon: 'tactics',
     title: 'Squad & Tactics',
     body: 'Pick your lineup and set the formation, identity and mentality here before kickoff.',
+    route: 'tactics',
   },
   {
     icon: 'training',
     title: 'Team training',
     body: 'Two sessions a week — pick what each one drills. One-to-one gives four players guaranteed individual progress.',
+    route: 'training',
   },
   {
     icon: 'sprout',
     title: 'Academy',
     body: 'Every pre-season a handful of trialists report in. Your assistant gives a verdict and a predicted ceiling — sign the ones worth keeping.',
+    route: 'academy',
   },
   {
     icon: 'target',
     title: 'The board',
     body: "Staff hires and facility upgrades need the board's sign-off first — ask, and they'll fund what they trust you with.",
+    route: 'board',
   },
   {
     icon: 'transfers',
     title: 'Transfers',
     body: 'Sign, loan or sell players. Realistic targets for your budget sort to the top.',
+    route: 'transfers',
   },
   {
     icon: 'play',
@@ -73,7 +82,17 @@ function markOnboardingSeen(slot: number): void {
   }
 }
 
-export default function OnboardingOverlay({ slot, onClose }: { slot: number; onClose: () => void }) {
+export default function OnboardingOverlay({
+  slot,
+  onClose,
+  onGoTo,
+}: {
+  slot: number;
+  onClose: () => void;
+  /** Optional: lets a step's "Go there" button jump straight to the Hub
+   *  screen it's describing, instead of just dismissing the overlay. */
+  onGoTo?: (route: ScreenId) => void;
+}) {
   const [step, setStep] = useState(0);
   const last = step === STEPS.length - 1;
   const current = STEPS[step];
@@ -143,6 +162,19 @@ export default function OnboardingOverlay({ slot, onClose }: { slot: number; onC
           >
             Back
           </button>
+          {current.route && onGoTo && (
+            <button
+              type="button"
+              className="fm-btn fm-btn--ghost fm-btn--small"
+              onClick={() => {
+                markOnboardingSeen(slot);
+                onGoTo(current.route!);
+                onClose();
+              }}
+            >
+              Go there
+            </button>
+          )}
           {last ? (
             <button type="button" className="fm-btn fm-btn--primary fm-btn--small" onClick={dismiss}>
               Got it
