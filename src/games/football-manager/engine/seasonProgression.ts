@@ -37,6 +37,8 @@ import { tickFacilitiesWeek } from './facilities';
 import { applyScheduleDay, applyWeeklySchedule, getSchedule } from './schedule';
 import { tickScoutNetwork } from './scouting';
 import { applyDevPlans } from './development';
+import { applyWeeklyTraining } from './training';
+import { generateYouthIntake } from './youthAcademy';
 import { DAYS_PER_WEEK } from './calendar';
 
 export { markInboxRead, markAllInboxRead } from './inbox';
@@ -535,7 +537,9 @@ export function newGame(
     title: `Welcome to ${userClub.name}`,
     body: `You have been appointed manager of ${userClub.name}.\n\nThe board's objective for this season: ${state.board.objective}. Finish ${state.board.minPosition}${ordinal(state.board.minPosition)} or higher to keep their confidence.\n\nGood luck, ${managerName}.`,
   });
-  return state;
+  // The first pre-season's academy class, so a brand-new career has the same
+  // decision waiting for it that every later season does.
+  return generateYouthIntake(state, clubWageScale(state, userClub));
 }
 
 export function computeTable(state: GameState, leagueId: string): TableRow[] {
@@ -1106,6 +1110,12 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   // behaviour exactly (same total probabilities, same formulas).
   const fitnessFocus = s.training === 'fitness';
   applyDailyPlayerSystems(s, { mode: 'week' });
+
+  // The two team sessions the manager picked, plus the week's four
+  // one-to-one slots (engine/training.ts). Runs after the generic systems
+  // above so a booked player's individual work lands on top of, not instead
+  // of, everything the rest of the squad got.
+  applyWeeklyTraining(s);
 
   // Injury risk for the user's starters (keeps the squad decision interesting).
   const staff = getStaff(s);
@@ -1843,23 +1853,11 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     }
   }
 
-  // Youth academy intake. New prospects join the youth squad, not the first
-  // team directly — the user promotes them via the Youth Academy screen
-  // (engine/youthAcademy.ts promoteYouthPlayer), subject to MAX_SQUAD_SIZE.
-  const intakeCount = s.academyLevel >= 3 ? 2 : 1;
+  // Youth academy intake is no longer handed to the manager finished —
+  // see engine/youthAcademy.ts. The class is rolled after the rollover
+  // below, once `seasonYear` is the season the kids are actually joining
+  // for, and it arrives as trialists the manager has to sign or pass on.
   if (!userClub.youthPlayerIds) userClub.youthPlayerIds = [];
-  for (let i = 0; i < intakeCount; i++) {
-    const kid = makeYouthPlayer(s.nextPlayerId++, s.userClubId, s.academyLevel, s.seasonYear, clubWageScale(s, userClub));
-    s.players[kid.id] = kid;
-    userClub.youthPlayerIds.push(kid.id);
-    s.news.unshift(`Academy intake: ${kid.name} (${kid.role}, ${kid.rating} OVR, ${kid.potential} PA) joins the youth squad.`);
-    pushInbox(s, {
-      category: 'youth',
-      title: `${kid.name} joins the youth academy`,
-      body: `A new prospect has entered the academy: ${kid.name}, a ${kid.age}-year-old ${kid.role} rated ${kid.rating} OVR with potential of ${kid.potential}.\n\nHe's in the youth squad now — promote him to the first team from the Youth Academy screen whenever he's ready.`,
-      playerId: kid.id,
-    });
-  }
 
   // Ageing, development and retirement.
   //
@@ -2045,6 +2043,10 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
   s.cup = makeDomesticCup(s);
   s.board = { ...makeBoardObjective(s), confidence: s.board.confidence };
   s.lineup = autoPickLineup(s, s.userClubId, getFormation(s.formationId));
+  // Individual training slots don't carry across a summer — the squad that
+  // reports back is not the one that finished last season.
+  s.oneToOne = {};
+  s.oneToOneResolved = undefined;
   s.news = [
     summary.champions
       ? `CHAMPIONS! ${userClub.name} win the title!`
@@ -2057,7 +2059,10 @@ export function endSeason(state: GameState): { state: GameState; summary: Season
     ...(reinvestNote ? [reinvestNote] : []),
     `Board objective: ${s.board.objective}.`,
   ];
-  return { state: s, summary };
+
+  // This season's academy class, waiting on the manager from day one. Rolled
+  // last so it reads the post-rollover season year, league and facilities.
+  return { state: generateYouthIntake(s, clubWageScale(s, userClub)), summary };
 }
 
 function ordinal(n: number): string {

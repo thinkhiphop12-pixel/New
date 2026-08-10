@@ -16,13 +16,28 @@ import { Icon, type IconName } from './Icon';
 const STEPS: { icon: IconName; title: string; body: string }[] = [
   {
     icon: 'squad',
-    title: 'Squad',
-    body: 'Check your players and pick a lineup — every match needs 11 fit starters.',
+    title: 'Six sections',
+    body: 'Home, Squad, Training, Market, Club and League — every screen in the game lives under one of these six.',
   },
   {
     icon: 'tactics',
-    title: 'Tactics',
-    body: 'Set your formation, team identity and mentality here before kickoff.',
+    title: 'Squad & Tactics',
+    body: 'Pick your lineup and set the formation, identity and mentality here before kickoff.',
+  },
+  {
+    icon: 'training',
+    title: 'Team training',
+    body: 'Two sessions a week — pick what each one drills. One-to-one gives four players guaranteed individual progress.',
+  },
+  {
+    icon: 'sprout',
+    title: 'Academy',
+    body: 'Every pre-season a handful of trialists report in. Your assistant gives a verdict and a predicted ceiling — sign the ones worth keeping.',
+  },
+  {
+    icon: 'target',
+    title: 'The board',
+    body: "Staff hires and facility upgrades need the board's sign-off first — ask, and they'll fund what they trust you with.",
   },
   {
     icon: 'transfers',

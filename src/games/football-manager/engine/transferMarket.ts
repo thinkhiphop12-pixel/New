@@ -330,7 +330,10 @@ export function aiWeeklyTransfers(s: GameState): string[] {
   // save that never opens the Transfers screen still sees a living market.
   const headlines: string[] = tickTransferWeek(s);
   const aiClubs = s.clubs.filter((c) => c.id !== s.userClubId);
-  const freeAgents = Object.values(s.players).filter((p) => p.clubId === 0);
+  // Academy trialists also sit at `clubId: 0`, but they are on trial with the
+  // user's club, not on the market — signing one away would delete him from
+  // under the manager when next season's intake clears the class.
+  const freeAgents = Object.values(s.players).filter((p) => p.clubId === 0 && !p.onTrial);
   for (let n = 0; n < 2; n++) {
     if (Math.random() > 0.55) continue;
     const club = aiClubs[Math.floor(Math.random() * aiClubs.length)];
@@ -577,7 +580,9 @@ export function getTransferMarket(s: GameState, filters: MarketFilters = {}): Ma
   // in the game — the shortlist holds what you have already flagged, so it
   // cannot be where you first meet a player.
   for (const p of Object.values(s.players)) {
-    if (p.clubId !== 0 || p.loan) continue;
+    // `onTrial` kids are at `clubId: 0` but belong to the academy screen, not
+    // the transfer market — they are signed or passed on there.
+    if (p.clubId !== 0 || p.loan || p.onTrial) continue;
     if (ratingVal != null && (ratingMode === 'under' ? p.rating > ratingVal : p.rating < ratingVal)) continue;
     if (priceVal != null && (priceMode === 'under' ? p.value > priceVal : p.value < priceVal)) continue;
     if (pos && pos !== 'ALL' && p.pos !== pos) continue;
