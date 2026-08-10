@@ -99,10 +99,10 @@ export default function Dashboard({
       <div className="fm-portal__header">
         <Crest name={club.name} code={club.code} color={club.color} size={48} />
         <div className="fm-portal__club-info">
-          <h1 className="fm-portal__club-name">
+          <h2 className="fm-portal__club-name">
             {club.name}
             {club.reputation != null && <ReputationStars value={club.reputation} />}
-          </h1>
+          </h2>
           <p className="fm-portal__club-meta">
             {state.seasonYear}/{(state.seasonYear + 1) % 100} · {position > 0 ? `${position}${ord(position)} in the ${leagueName(leagueId)}` : leagueName(leagueId)}
           </p>

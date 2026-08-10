@@ -52,16 +52,13 @@
       "primaryImageOfPage": "https://ballknw.com/assets/og-image.png"
     },
     {
-      "@type": "VideoGame",
+      "@type": "Game",
       "@id": "https://ballknw.com/perfect-cup/#game",
       "name": "BALLKNW Draft XI",
       "url": "https://ballknw.com/perfect-cup/",
       "description": "Spin real Premier League, club and World Cup squads and draft any open-position player into your chosen formation, then simulate a full league season and chase objectives like Champions and The Invincibles.",
       "genre": "Sports",
-      "gamePlatform": "Web Browser",
-      "operatingSystem": "Web",
-      "applicationCategory": "Game",
-      "playMode": "SinglePlayer",
+      "numberOfPlayers": { "@type": "QuantitativeValue", "value": 1 },
       "isAccessibleForFree": true,
       "datePublished": "2024-01-15",
       "dateModified": "2026-07-08",
@@ -234,14 +231,29 @@ a{color:var(--lime-deep);text-decoration:none}
 .table .tr.you{background:rgba(0,214,143,.12);font-weight:800}
 .table .tr .rk{color:var(--muted);font-weight:700}
 .table .num{text-align:center}
+
+/* ===== SEO / explainer copy under the game ===== */
+.seo{margin-top:40px;padding-top:26px;border-top:1px solid var(--line);font-size:14.5px;line-height:1.65;color:var(--muted)}
+.seo h2{font-size:20px;font-weight:800;color:var(--text);margin:26px 0 8px}
+.seo h2:first-child{margin-top:0}
+.seo p{margin:0 0 14px}
+.seo ul{margin:0 0 14px;padding-left:20px}
+.seo li{margin-bottom:5px}
+.seo strong{color:var(--text)}
+.seo dt{font-weight:700;color:var(--text);margin-top:12px}
+.seo dd{margin:2px 0 0}
+.foot{margin-top:32px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.foot nav{display:flex;flex-wrap:wrap;gap:8px 16px;margin-bottom:14px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="top">
+  <header class="top">
     <span class="brandtag">BALLKNW · Draft XI</span>
     <a href="/" class="back">← All games</a>
-  </div>
+  </header>
+
+  <main>
 
   <!-- ============ START ============ -->
   <section id="start">
@@ -307,6 +319,130 @@ a{color:var(--lime-deep);text-decoration:none}
   <section id="offseason" class="hidden">
     <div id="offContent"></div>
   </section>
+  </main>
+
+  <section class="seo">
+    <h2>What is Draft XI?</h2>
+    <p>
+      Draft XI is a free football drafting and season-simulation game you play in the browser.
+      You pick a squad pool, spin up real teams one at a time, and take a single player from each
+      spin to fill one of the eleven positions in your chosen formation. Once the eleven slots are
+      full, your team is simulated through a full league season and you find out where the side you
+      built actually finishes.
+    </p>
+
+    <h2>How a draft works</h2>
+    <p>
+      Every spin reveals a real squad. You can take any player from it whose position is still open
+      in your formation — so a spin that turns up a world-class striker is worthless if your striker
+      slot is already filled. That tension is the whole game: take the best player on screen, or
+      hold out for the position you still desperately need.
+    </p>
+    <ul>
+      <li><strong>Pools</strong> — draft from Premier League squads, club sides from across Europe, or World Cup nations.</li>
+      <li><strong>Formations</strong> — the shape you choose decides which eleven slots you have to fill, and how hard they are to fill.</li>
+      <li><strong>Tactics</strong> — your approach shifts how the simulation weighs attack against defence.</li>
+      <li><strong>Difficulty</strong> — sets the standard of the league your finished XI is dropped into.</li>
+      <li><strong>Re-rolls</strong> — a limited escape hatch when a spin gives you nothing usable.</li>
+    </ul>
+
+    <h2>Choosing a formation</h2>
+    <p>
+      Your formation is not just a shape on a pitch, it is the shopping list you are drafting
+      against. A back three needs three centre-halves of a similar standard, and spins that hand you
+      a fourth are wasted; a 4-3-3 spreads the load across the middle but asks you to fill two
+      wide forward slots that only a handful of squads can supply. Narrow shapes tend to be easier
+      to draft well because more of the players you see are eligible, while wide, front-loaded
+      shapes give you a higher ceiling if the spins fall kindly. If you are new, start with a
+      balanced four-at-the-back setup and learn which positions the pools actually run short of.
+    </p>
+
+    <h2>Choosing a pool</h2>
+    <p>
+      The pool decides which squads can appear on a spin, and each one plays differently. Premier
+      League squads give you depth almost everywhere, so drafting is forgiving and the challenge is
+      hunting for genuine quality rather than filling slots. The broader club pool spans a much
+      wider range, which means brilliant spins and useless ones in the same session — high variance,
+      high reward. World Cup nations are the awkward one: national squads are shallow in specific
+      positions, so a full-back slot you left open can go several spins without a single option.
+      Leaving your hardest positions unfilled for too long is the mistake that ends most drafts.
+    </p>
+
+    <h2>How the season is decided</h2>
+    <p>
+      Each position is weighted by how much it matters to the shape you picked, so a strong spine
+      counts for more than a couple of brilliant wingers. The simulation plays out a full league
+      campaign, then hands back a final table, your points total, and a verdict on the season. Beat
+      the objectives — a title, an unbeaten run — and you can carry the same squad into another year.
+    </p>
+    <p>
+      A deeper breakdown of formations, pools and the objectives worth chasing is in the
+      <a href="/draft-xi-guide.html">Draft XI guide</a>.
+    </p>
+
+    <h2>Five ways to draft a better team</h2>
+    <ul>
+      <li>
+        <strong>Fill the awkward positions early.</strong> Goalkeepers, full-backs and holding
+        midfielders show up far less often than attackers. Take a merely decent one while you can,
+        because the alternative is finishing the draft with a gaping hole you had ten spins to plug.
+      </li>
+      <li>
+        <strong>Judge a player against the slot, not the board.</strong> The question is never
+        whether this is the best player on screen — it is whether anyone better is realistically
+        coming for this specific position before you run out of spins.
+      </li>
+      <li>
+        <strong>Spend re-rolls on dead spins, not merely disappointing ones.</strong> A squad with
+        nothing eligible is worth burning a re-roll on. A squad with three usable players you happen
+        not to love is not, and re-rolls run out faster than you expect.
+      </li>
+      <li>
+        <strong>Protect the spine.</strong> Keeper, centre-half, central midfield and centre-forward
+        carry more weight in the simulation than the flanks. A side that is strong down the middle
+        and thin out wide consistently outperforms the reverse.
+      </li>
+      <li>
+        <strong>Let the pool set your expectations.</strong> An 80-rated player is an ordinary pick
+        in the Premier League pool and an excellent one in a shallow World Cup nation pool. Chasing
+        club-pool numbers in a national-squad draft is how good runs fall apart.
+      </li>
+    </ul>
+
+    <h2>Common questions</h2>
+    <dl>
+      <dt>Is Draft XI free?</dt>
+      <dd>Yes — free to play, no account, no download. It runs in any modern browser on phone or desktop.</dd>
+      <dt>Are the players real?</dt>
+      <dd>Yes. Squads are built from real teams and real players. Ratings are our own stylised numbers rather than official ones.</dd>
+      <dt>Can I keep a squad going?</dt>
+      <dd>Yes. Finish a season and you can continue the same career into the next one instead of starting a fresh draft.</dd>
+      <dt>Does my progress save?</dt>
+      <dd>Your career is stored locally in your own browser. Clearing site data clears it, and it does not follow you to another device.</dd>
+      <dt>What happens if I cannot fill a position?</dt>
+      <dd>You keep spinning until something eligible appears, which is exactly why leaving a scarce position open late is so costly. Re-rolls exist to rescue that situation, but only a limited number of times.</dd>
+      <dt>Does the formation I choose change the simulation?</dt>
+      <dd>Yes. It sets which slots you draft into, and it changes how much each position contributes to the result — so the same eleven players can finish in noticeably different places under different shapes.</dd>
+      <dt>How long does a run take?</dt>
+      <dd>A draft and a simulated season usually take a few minutes. Continuing a career into further seasons is quicker, since the squad is already built.</dd>
+    </dl>
+  </section>
+
+  <footer class="foot">
+    <nav>
+      <a href="/">Home</a>
+      <a href="/draft-xi-guide.html">Draft XI guide</a>
+      <a href="/gaffa/">Gaffa</a>
+      <a href="/scout/">Scout</a>
+      <a href="/football-terms.html">Football terms</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+    </nav>
+    <p>
+      BALLKNW is an unofficial fan-made project, not affiliated with Sports Interactive, SEGA,
+      EA Sports, FIFA, the Premier League, or any club or federation.
+    </p>
+  </footer>
 </div>
 
 <script>
@@ -838,7 +974,7 @@ function copy(t){navigator.clipboard.writeText(t).then(()=>alert('Result copied!
 })();
 </script>
 <script>window.BK_VIGNETTE_ZONE = '11417067';</script>
-<script src="/shared/consent.js" defer></script>
-<script src="/shared/ads.js" defer></script>
+<script src="/shared/consent.min.js" defer></script>
+<script src="/shared/ads.min.js" defer></script>
 </body>
 </html>

@@ -88,8 +88,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             />
             {/* consent.js self-injects the cookie banner and only calls
                 initAds() after "Accept all" — ads.js stays inert until then. */}
-            <Script src="/shared/consent.js" strategy="afterInteractive" />
-            <Script src="/shared/ads.js" strategy="afterInteractive" />
+            <Script src="/shared/consent.min.js" strategy="afterInteractive" />
+            <Script src="/shared/ads.min.js" strategy="afterInteractive" />
           </>
         )}
       </body>
