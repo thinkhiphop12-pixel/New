@@ -43,6 +43,10 @@ Allow: /what-is-a-low-block-in-football.html
 Allow: /best-football-manager-games-pc.html
 Allow: /best-football-manager-games-android.html
 Allow: /best-football-manager-games-iphone.html
+Allow: /football-manager-26.html
+Allow: /what-does-a-football-manager-do.html
+Allow: /how-to-become-a-football-manager.html
+Allow: /football-manager-pa-ca-explained.html
 
 # Policy and reference pages
 Allow: /about.html

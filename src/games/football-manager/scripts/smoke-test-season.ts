@@ -24,7 +24,6 @@ import { newFacilities, startStandProject, tickFacilitiesWeek, totalCapacity } f
 import type { StandId } from '../engine/types';
 import { evaluateFeeOffer, evaluateMove, marketStatus, startNegotiation } from '../engine/negotiation';
 import { contextualizeTactics, previewEffectiveXG, squadAvgRating } from '../engine/teamManagement';
-import { computeMarkets, scoreGrid, toOdds } from '../engine/odds';
 import { continentalEntrants } from '../engine/seasonProgression';
 import { continentalTieWinner, tieAggregate, tieComplete } from '../engine/europeanCup';
 import {
@@ -715,26 +714,10 @@ assert(
   console.log('\nPhase 5 remainder: custom formations resolve correctly, AI tactics read the quality gap, previewEffectiveXG reacts to tactical changes. ✓');
 }
 
-// --- Phase 12: odds model + weekly news -------------------------------------
+// --- Phase 12: weekly news ---------------------------------------------------
+// The odds model this block also covered is gone (engine/odds.ts deleted
+// along with the Table screen's Odds tab), so only the news half remains.
 {
-  const home = state.clubs.find((c) => c.name === 'Liverpool') ?? state.clubs[0];
-  const away = state.clubs.find((c) => c.name === 'Burnley') ?? state.clubs[1];
-  const sg = scoreGrid(state, home.id, away.id);
-  let gridSum = 0;
-  for (const row of sg.grid) for (const p of row) gridSum += p;
-  assert(Math.abs(gridSum - 1) < 0.01, `scoreline grid sums to ${gridSum}, expected ~1.0`);
-
-  const markets = computeMarkets(sg);
-  const oneXTwo = markets.homeWin + markets.draw + markets.awayWin;
-  assert(Math.abs(oneXTwo - 1) < 0.01, `1X2 market sums to ${oneXTwo}, expected ~1.0`);
-  assert(Math.abs((markets.bttsYes + markets.bttsNo) - 1) < 0.001, 'BTTS yes/no must sum to 1');
-  assert(Math.abs((markets.over25 + markets.under25) - 1) < 0.001, 'over/under 2.5 must sum to 1');
-
-  const priced = toOdds(markets.homeWin);
-  assert(typeof priced === 'string' && priced.length > 0, 'toOdds must return a non-empty fractional string');
-
-  console.log(`\nOdds: ${home.name} v ${away.name} — home ${toOdds(markets.homeWin)}, draw ${toOdds(markets.draw)}, away ${toOdds(markets.awayWin)}. ✓`);
-
   // Weekly news: cooldowns must actually prevent the same story firing every
   // week (a real bug this system could easily have — checked directly rather
   // than trusted, since a spammy news feed would be indistinguishable from a

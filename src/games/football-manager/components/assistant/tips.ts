@@ -2,6 +2,7 @@ import type { GameState } from '@/engine/types';
 import { getSquad, isLineupValid } from '@/engine/teamManagement';
 import { getAssistant } from '@/engine/assistant';
 import type { ScreenId } from '../hubNav';
+import { STEPS } from '../OnboardingOverlay';
 
 export interface AssistantTip {
   text: string;
@@ -9,33 +10,12 @@ export interface AssistantTip {
   urgent?: boolean;
 }
 
-/** One explainer line per Hub screen — what the assistant would say if you
- *  asked him "what is this screen for" while looking at it. */
-const SCREEN_EXPLAINERS: Record<ScreenId, string> = {
-  overview: "This is Home — your next match, what needs you, and how the squad's doing, all in one glance.",
-  calendar: 'The calendar. Sim forward day by day, or jump straight to a date if nothing needs your eye before then.',
-  fixtures: 'Your full season run-in — who you play, when, and where.',
-  table: "The league table. Keep an eye on where you'd finish if the season ended today.",
-  cups: 'Cup progress — who you drew, and when the next round kicks off.',
-  european: "European progress, if you're in it this season.",
-  'team-hub': 'The Team group — squad, tactics, training, schedule. Everything about how the team plays.',
-  squad: 'Your full squad. Set roles, check fitness and form, and manage who plays where.',
-  tactics: 'Formation, mentality, and instructions. This is where the lineup for the next match gets set.',
-  training: "How hard the squad's training and what it's doing to fitness and sharpness.",
-  schedule: "This week's training plan, day by day.",
-  'market-hub': 'The Market group — transfers, scouting, incoming interest in your players.',
-  transfers: 'Buy, sell, and negotiate. Offers awaiting your reply live here too.',
-  scouting: 'Scout reports on players worth watching.',
-  jobs: "Other clubs' vacancies, if you're weighing a move.",
-  'club-hub': 'The Club group — finances, facilities, staff, and the board.',
-  inbox: 'Every message the club sends you — news, requests, and things worth a look.',
-  club: 'Club identity and reputation — the read-only stuff about who you are.',
-  facilities: 'Training ground and academy investment.',
-  staff: 'Your coaching staff — including hiring an Assistant Manager, if you haven’t already.',
-  academy: 'Youth intake — trialists worth signing, and the ones to let go.',
-  finances: "The club's money: balance, wage bill, and where it's going.",
-  board: "What the board expects of you this season, and how confident they are in you.",
-};
+/** What's this screen for — reuses the guided tour's own copy (keyed by the
+ *  route each step points at) instead of a second, separately-maintained
+ *  set of explainer lines. Screens the tour doesn't stop at get no line. */
+function screenExplainer(route: ScreenId): string | undefined {
+  return STEPS.find((s) => s.route === route)?.body;
+}
 
 function fallback(): AssistantTip[] {
   return [
@@ -86,7 +66,8 @@ export function assistantTips(state: GameState, route: ScreenId): AssistantTip[]
     tips.push({ text: `${unreadInbox} unread message${unreadInbox === 1 ? '' : 's'} in the inbox.`, route: 'inbox' });
   }
 
-  tips.push({ text: SCREEN_EXPLAINERS[route] });
+  const explainer = screenExplainer(route);
+  if (explainer) tips.push({ text: explainer });
 
   return tips;
 }

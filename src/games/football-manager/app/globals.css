@@ -1771,14 +1771,6 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-stat-tile__icon svg { width: 16px; height: 16px; }
 .fm-stat-tile__val { font-size: 17px; font-weight: 900; }
 .fm-stat-tile__lbl { font-size: 10px; color: var(--muted); }
-.fm-odds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-bottom: 14px; }
-.fm-odds-cell {
-  display: flex; flex-direction: column; gap: 2px; align-items: center;
-  border: 1px solid var(--border); border-radius: var(--r-sm); padding: 8px 4px;
-  background: var(--panel-2); font-variant-numeric: tabular-nums;
-}
-.fm-odds-cell span { font-size: 10px; color: var(--muted); }
-.fm-odds-cell b { font-size: 15px; }
 
 /* Goal flash */
 .fm-goal-flash {
@@ -3205,3 +3197,207 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   font-variant-numeric: tabular-nums; color: var(--text-1);
 }
 .fm-split-unit { font-size: 12px; font-weight: 700; color: var(--muted); }
+
+/* ==========================================================================
+   Nav/board-request/training/academy/contract-talk overhaul additions.
+   ========================================================================== */
+
+/* --- Staff hub cards ------------------------------------------------------ */
+.fm-staffgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.fm-staffcard {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 12px; border-radius: var(--r-md);
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+}
+.fm-staffcard.is-filled { border-color: var(--green-600); }
+.fm-staffcard__icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--panel-3); color: var(--muted);
+}
+.fm-staffcard.is-filled .fm-staffcard__icon { color: var(--green); }
+.fm-staffcard__head { display: flex; flex-direction: column; }
+.fm-staffcard__role { font-weight: 800; font-size: 13px; }
+.fm-staffcard__effect { font-size: 11px; color: var(--muted-dim); }
+.fm-staffcard__person {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  background: none; border: none; padding: 0; cursor: pointer; text-align: left;
+  font-family: inherit;
+}
+.fm-staffcard__name { font-weight: 700; font-size: 12.5px; }
+.fm-staffcard__meta { font-size: 11px; color: var(--muted); }
+.fm-staffcard__quote {
+  margin: 0; font-size: 11.5px; font-style: italic; color: var(--muted);
+  line-height: 1.4;
+}
+.fm-staffcard__quote--cold { color: var(--muted-dim); }
+.fm-staffcard__action { align-self: flex-start; margin-top: 2px; }
+
+/* --- Facilities cards ------------------------------------------------------ */
+.fm-buildrow { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.fm-buildrow__label { flex: 0 0 40%; font-size: 12.5px; font-weight: 600; }
+.fm-buildrow .fm-bar { flex: 1; }
+.fm-buildrow__weeks { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+.fm-facgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+}
+.fm-faccard {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 12px; border-radius: var(--r-md);
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+}
+.fm-faccard__icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--panel-3); color: var(--green);
+}
+.fm-faccard__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fm-faccard__name { font-weight: 800; font-size: 13px; }
+.fm-faccard__effect { margin: 0; font-size: 11px; color: var(--muted-dim); }
+.fm-faccard__note { margin: 0; font-size: 11.5px; color: var(--muted); }
+.fm-faccard__quote { margin: 0; font-size: 11.5px; font-style: italic; color: var(--muted); line-height: 1.4; }
+.fm-faccard__quote--cold { color: var(--muted-dim); }
+
+.fm-pips { display: inline-flex; gap: 3px; }
+.fm-pips__pip { width: 8px; height: 8px; border-radius: 2px; background: var(--panel-3); display: inline-block; }
+.fm-pips__pip.is-on { background: var(--green); }
+
+/* --- Training: two team sessions + intensity row --------------------------- */
+.fm-drillrow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 6px;
+}
+.fm-drill {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 6px; border-radius: var(--r-md);
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+  color: var(--muted); cursor: pointer; font-family: inherit;
+}
+.fm-drill:hover { border-color: var(--border-bright); }
+.fm-drill.active { border-color: var(--green-600); background: var(--green-dim); color: var(--text); }
+.fm-drill__label { font-size: 10.5px; font-weight: 700; text-align: center; }
+
+.fm-dayrow { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 10px; }
+.fm-day {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 2px; border-radius: var(--r-sm);
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+  color: var(--muted); cursor: pointer; font-family: inherit;
+}
+.fm-day.is-training { border-color: var(--gold); color: var(--gold); }
+.fm-day.is-match { border-color: var(--red); color: var(--red); cursor: default; }
+.fm-day__label { font-size: 10px; font-weight: 700; }
+
+.fm-projrow {
+  display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px;
+  font-size: 12px; color: var(--muted);
+}
+.fm-projrow b { font-variant-numeric: tabular-nums; }
+
+.fm-advice {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 10px; border-radius: var(--r-md);
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+}
+.fm-advice__icon { flex-shrink: 0; color: var(--muted); margin-top: 2px; }
+.fm-advice__quote { flex: 1; margin: 0; font-size: 12px; font-style: italic; color: var(--muted); line-height: 1.45; }
+
+.fm-condgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.fm-condgrid__cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.fm-condgrid__val { font-size: 20px; font-weight: 900; }
+.fm-condgrid__lbl { font-size: 10.5px; color: var(--muted-dim); text-align: center; }
+
+/* --- One-to-one slots ------------------------------------------------------ */
+.fm-slotgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+}
+.fm-o2o {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px; border-radius: var(--r-md);
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+}
+.fm-o2o.is-booked { border-color: var(--green-600); }
+.fm-o2o__head { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.fm-o2o__icon { display: inline-flex; }
+.fm-o2o__slot { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; }
+.fm-o2o__player { display: flex; align-items: center; gap: 8px; }
+.fm-o2o__name { display: block; font-weight: 700; font-size: 13px; }
+.fm-o2o__meta { display: block; font-size: 11px; color: var(--muted-dim); }
+.fm-o2o__track { height: 5px; border-radius: 3px; background: var(--panel-3); overflow: hidden; }
+.fm-o2o__fill { height: 100%; background: var(--green); }
+.fm-o2o__note { margin: 0; font-size: 11.5px; color: var(--muted); }
+.fm-o2o__note--empty { color: var(--muted-dim); font-style: italic; }
+.fm-o2o__actions { display: flex; gap: 6px; }
+
+/* --- Academy intake --------------------------------------------------------- */
+.fm-intakegrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+.fm-trialist {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 12px; border-radius: var(--r-md);
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+}
+.fm-trialist--sign { border-color: var(--green-600); }
+.fm-trialist--pass { opacity: 0.85; }
+.fm-trialist__id {
+  display: flex; align-items: center; gap: 8px;
+  background: none; border: none; padding: 0; cursor: pointer; text-align: left; font-family: inherit;
+}
+.fm-trialist__name { display: block; font-weight: 700; font-size: 13px; }
+.fm-trialist__meta { display: block; font-size: 11px; color: var(--muted-dim); }
+.fm-trialist__read { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fm-trialist__band { font-size: 11px; color: var(--muted); }
+.fm-trialist__quote { margin: 0; font-size: 11.5px; font-style: italic; color: var(--muted); line-height: 1.4; }
+.fm-trialist__verdict {
+  align-self: flex-start; font-size: 10.5px; font-weight: 800;
+  padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.03em;
+}
+.fm-trialist__verdict--sign { background: var(--green-dim); color: var(--green); }
+.fm-trialist__verdict--maybe { background: var(--gold-dim); color: var(--gold); }
+.fm-trialist__verdict--pass { background: var(--panel-3); color: var(--muted); }
+.fm-trialist__actions { display: flex; gap: 6px; margin-top: 2px; }
+
+.fm-stars { display: inline-flex; gap: 1px; }
+.fm-stars__on { color: var(--gold); }
+.fm-stars__off { color: var(--panel-3); }
+
+/* --- Contract renegotiation panel ------------------------------------------ */
+.fm-renewal-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.6); padding: 16px;
+}
+.fm-renewal-panel {
+  width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--border-soft); border-radius: var(--r-lg);
+  padding: 18px;
+}
+.fm-renewal-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.fm-renewal-header h2 { margin: 0; font-size: 16px; }
+.fm-renewal-header p { margin: 2px 0 0; font-size: 11.5px; color: var(--muted-dim); }
+.fm-renewal-thread { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.fm-renewal-bubble {
+  padding: 10px 12px; border-radius: var(--r-md); font-size: 12.5px; line-height: 1.45;
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+}
+.fm-renewal-bubble--player { border-color: var(--border-bright); }
+.fm-renewal-bubble--accept { border-color: var(--green-600); background: var(--green-dim); }
+.fm-renewal-bubble--reject { border-color: var(--red); background: var(--red-soft); }
+.fm-renewal-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.fm-renewal-field { display: flex; flex-direction: column; gap: 4px; }
+.fm-renewal-field label { font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em; }
+.fm-renewal-field .fm-contract-control { display: flex; align-items: center; gap: 4px; }
+.fm-renewal-meta { font-size: 11px; color: var(--muted); margin: 0 0 10px; }

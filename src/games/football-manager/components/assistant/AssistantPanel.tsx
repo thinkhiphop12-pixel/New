@@ -5,6 +5,7 @@ import type { GameState, InboxCategory } from '@/engine/types';
 import { getAssistant } from '@/engine/assistant';
 import { getSquad } from '@/engine/teamManagement';
 import { contractMonthsLeft } from '@/engine/negotiation';
+import { getIntake } from '@/engine/youthAcademy';
 import { pushInbox } from '@/engine/inbox';
 import { sfx } from '@/lib/sound';
 import { Icon } from '../Icon';
@@ -49,7 +50,7 @@ export default function AssistantPanel({
   const pending: Record<TaskId, boolean> = {
     renew: squad.some((p) => contractMonthsLeft(p, state) <= 12),
     lineup: true,
-    youth: (state.trialistPool ?? []).length > 0,
+    youth: getIntake(state).length > 0,
     bids: (state.negotiations ?? []).some((n) => n.type === 'incoming' && n.awaiting === 'user'),
   };
 

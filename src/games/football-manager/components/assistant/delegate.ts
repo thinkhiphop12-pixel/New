@@ -2,7 +2,7 @@ import type { GameState } from '@/engine/types';
 import { getSquad, autoPickLineup, contextualizeTactics } from '@/engine/teamManagement';
 import { contractMonthsLeft } from '@/engine/negotiation';
 import { renewContract, saleValue, acceptIncomingOffer, rejectIncomingOffer } from '@/engine/transferMarket';
-import { acceptTrialist, rejectTrialist } from '@/engine/youthAcademy';
+import { getIntake, signTrialist, releaseTrialist } from '@/engine/youthAcademy';
 import { nextUserFixture } from '@/engine/seasonProgression';
 import { getFormation } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
@@ -60,21 +60,24 @@ export function setLineupAndTactics(state: GameState): DelegateResult {
 }
 
 export function sortYouthIntake(state: GameState): DelegateResult {
-  const pool = state.trialistPool ?? [];
-  if (pool.length === 0) {
+  const intake = getIntake(state);
+  if (intake.length === 0) {
     return { state, report: ['No trialists waiting on a decision.'] };
   }
 
   let s = state;
   const report: string[] = [];
-  for (const t of pool) {
-    const name = s.players[t.playerId]?.name ?? 'A trialist';
-    if (t.starRating >= 3.5) {
-      s = acceptTrialist(s, t.playerId);
-      report.push(`Signed ${name} (${t.starRating}★ potential) to the youth squad.`);
+  for (const { trialist, player } of intake) {
+    // Trust the assistant's own read on each prospect ('sign' outright, or
+    // 'maybe' when the upside is still strong) over a second-guessed
+    // threshold — it's already factoring in academy reputation and his own
+    // scouting quality.
+    if (trialist.verdict === 'sign' || (trialist.verdict === 'maybe' && trialist.stars >= 4)) {
+      s = signTrialist(s, trialist.playerId);
+      report.push(`Signed ${player.name} (${trialist.stars}★ potential) to the youth squad.`);
     } else {
-      s = rejectTrialist(s, t.playerId);
-      report.push(`Let ${name} go — not enough potential.`);
+      s = releaseTrialist(s, trialist.playerId);
+      report.push(`Let ${player.name} go — ${trialist.verdict === 'pass' ? "assistant's verdict was pass" : 'not enough potential'}.`);
     }
   }
   return { state: s, report };
