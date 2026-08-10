@@ -424,7 +424,11 @@ export interface Club {
   id: number;
   name: string;
   code: string;
+  /** First-choice kit colour. Stamped from lib/clubColors on load/migration. */
   color: string;
+  /** Second kit colour, used for change strips and crest bands. Optional so
+   *  a save written before kits existed still deserializes. */
+  secondaryColor?: string;
   /** LeagueDef.id this club is registered in. Exactly one, always. */
   leagueId: string;
   playerIds: number[];
@@ -456,6 +460,7 @@ export interface DataClub {
   name: string;
   code: string;
   color: string;
+  secondaryColor?: string;
   division: Division;
   playerIds: number[];
 }

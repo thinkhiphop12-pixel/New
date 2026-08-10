@@ -2,6 +2,7 @@
 
 import type { Club, Player } from '@/engine/types';
 import { getFormation } from '@/engine/gameRules';
+import { matchKits } from '@/lib/clubColors';
 
 function lastName(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -65,8 +66,11 @@ export default function LineupScreen({
   players: Record<number, Player>;
   captainId?: number | null;
 }) {
+  // Shirt colours resolved as a pair so the team sheet shows the same change
+  // strip the match itself will use.
+  const kits = matchKits(homeClub?.name, awayClub?.name);
   const side = (
-    club: Club | undefined,
+    shirtColor: string,
     lineup: (number | null)[],
     formationId: string,
     mirror: boolean
@@ -85,7 +89,7 @@ export default function LineupScreen({
         <div key={`${mirror ? 'a' : 'h'}${i}`} className="fm-ko__player" style={{ left: `${left}%`, top: `${top}%` }}>
           {/* The player's real shirt number; falls back to the formation slot
               index only for a pre-v7 save not yet numbered by the week tick. */}
-          <Shirt color={club?.color ?? '#888'} gk={gk} num={p.squadNumber ?? i + 1} />
+          <Shirt color={shirtColor} gk={gk} num={p.squadNumber ?? i + 1} />
           <span className="fm-ko__name">
             {lastName(p.name)}
             {captainId != null && p.id === captainId ? ' (c)' : ''}
@@ -107,8 +111,8 @@ export default function LineupScreen({
           <rect x="1" y="37" width="4.5" height="26" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="0.4" />
           <rect x="94.5" y="37" width="4.5" height="26" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="0.4" />
         </svg>
-        {side(homeClub, homeLineup, homeFormationId, false)}
-        {side(awayClub, awayLineup, awayFormationId, true)}
+        {side(kits.home, homeLineup, homeFormationId, false)}
+        {side(kits.away, awayLineup, awayFormationId, true)}
       </div>
     </div>
   );
