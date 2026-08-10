@@ -160,6 +160,18 @@ export interface Player {
    *  cup and European games. */
   lgApps: number;
   lgGoals: number;
+
+  /* --- Discipline. Cards were previously counted only inside a single match
+     (tickEngine `PlayerCounts`, for ratings) and thrown away at full time, so
+     nothing could ever accumulate into a ban. These persist across the season
+     and are reset at the rollover. All optional so pre-existing saves load
+     unchanged and simply start counting from their next match. --- */
+  /** Yellows picked up this season. Every `YELLOW_BAN_STEP` earns a ban. */
+  yellowCards?: number;
+  /** Reds picked up this season (straight reds and second yellows alike). */
+  redCards?: number;
+  /** Matches still to sit out. Suspended players cannot be selected. */
+  suspendedMatches?: number;
   /** Season year the loan ends; while set the player is away on loan. */
   onLoanUntil?: number;
   career: CareerEntry[];
@@ -412,7 +424,11 @@ export interface Club {
   id: number;
   name: string;
   code: string;
+  /** First-choice kit colour. Stamped from lib/clubColors on load/migration. */
   color: string;
+  /** Second kit colour, used for change strips and crest bands. Optional so
+   *  a save written before kits existed still deserializes. */
+  secondaryColor?: string;
   /** LeagueDef.id this club is registered in. Exactly one, always. */
   leagueId: string;
   playerIds: number[];
@@ -444,6 +460,7 @@ export interface DataClub {
   name: string;
   code: string;
   color: string;
+  secondaryColor?: string;
   division: Division;
   playerIds: number[];
 }
@@ -553,6 +570,12 @@ export interface MatchEvent {
   contact?: 'header' | 'volley' | 'foot';
   /** Assisting player for a goal. */
   assistId?: number;
+  /** Which card was shown (card events only). A second yellow is reported as
+   *  a `'red'` here and booked as both by `applyDiscipline`. */
+  card?: 'yellow' | 'red';
+  /** Set on a red that came from a second booking, so the yellow is counted
+   *  too rather than being lost behind the sending-off. */
+  secondYellow?: boolean;
   /** Injury detail (injury events only). */
   injuryType?: string;
   injuryDays?: number;

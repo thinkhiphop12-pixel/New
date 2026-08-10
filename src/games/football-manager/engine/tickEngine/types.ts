@@ -57,7 +57,8 @@ export interface TickMatchEvent extends MatchEvent {
   side?: TeamSide;
   assistant?: boolean; // ASST analysis line
   kind?: 'shot' | 'save' | 'block' | 'corner' | 'foul' | 'sub' | 'kickoff' | 'halftime' | 'fulltime' | 'mentality';
-  card?: 'yellow' | 'red';
+  /* `card`/`secondYellow` now live on the base `MatchEvent`, so they survive
+     the trip into `MatchReport` and reach engine/discipline.ts. */
 }
 
 /** One replay frame per match minute (omitted in headless mode). */
@@ -96,6 +97,14 @@ export interface TickSimOptions {
   initialMomentum?: number;
   /** Skip snapshots/commentary for cheap AI/auto sims. */
   headless?: boolean;
+  /**
+   * Players the manager was warned about before kick-off (unfit, below the
+   * pre-match fitness floor) and chose to play anyway. They carry
+   * `RISKED_INJURY_MULT` times the normal injury chance for the whole match.
+   * Empty or absent — the overwhelmingly common case — leaves the injury
+   * model exactly as it was.
+   */
+  riskedPlayerIds?: number[];
   /**
    * Knockout tie that must produce a winner (gap 27-28): if still level at
    * the end of regulation (plus stoppage), play two 15-minute extra-time

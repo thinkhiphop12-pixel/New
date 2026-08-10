@@ -3,6 +3,7 @@
 import type { Club } from '@/engine/types';
 import type { SideStats } from '@/engine/tickEngine/types';
 import { Icon } from '../Icon';
+import { matchKits } from '@/lib/clubColors';
 
 const REFEREES = [
   'Martin Atkinson', 'Mike Dean', 'Anthony Taylor', 'Michael Oliver', 'Craig Pawson',
@@ -112,8 +113,9 @@ export default function StatsOverlay({
   const refStyle = REF_STYLES[seed % REF_STYLES.length];
   const attendance = 14000 + ((seed * 2654435761) % 38000 | 0);
 
-  const homeColor = homeClub?.color ?? '#ffffff';
-  const awayColor = awayClub?.color ?? '#8c2440';
+  // Same clash resolution as the pitch, so the stats bars match the shirts
+  // the player is actually watching.
+  const { home: homeColor, away: awayColor } = matchKits(homeClub?.name, awayClub?.name);
 
   // Simple live win chance from score, xG and momentum.
   const edge =

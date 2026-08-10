@@ -2,6 +2,7 @@ import type { GameState, Player, Position, Tactics, FormationDef } from './types
 import { FORMATIONS, getFormation, getLeague } from './gameRules';
 import { styleExec, styleFamiliarity } from './familiarity';
 import { traitsFor } from './traits';
+import { isSuspended } from './discipline';
 import { buildXI, calcMatchXG } from './tickEngine/xgModel';
 import { normalizeMentality } from './tickEngine/tacticsData';
 import { clamp } from './utils';
@@ -126,7 +127,7 @@ export function isOnLoan(p: Player): boolean {
 
 /** Players actually available to pick (fit and not away on loan). */
 export function availableSquad(state: GameState, clubId: number): Player[] {
-  return getSquad(state, clubId).filter((p) => p.injuryWeeks === 0 && !isOnLoan(p));
+  return getSquad(state, clubId).filter((p) => p.injuryWeeks === 0 && !isOnLoan(p) && !isSuspended(p));
 }
 
 /** Effective matchday rating: base rating × form, zero if injured or on loan. */
@@ -167,6 +168,10 @@ export function isLineupValid(state: GameState, clubId: number, lineup: (number 
   for (const id of lineup) {
     if (id === null || !clubPlayers.has(id) || seen.has(id)) return false;
     if (state.players[id].injuryWeeks > 0 || isOnLoan(state.players[id])) return false;
+    // A suspended man is as unpickable as an injured one — the lineup gate
+    // has to agree with `availableSquad`, or the dock would call an XI valid
+    // that the pre-match check then has to break up.
+    if (isSuspended(state.players[id])) return false;
     seen.add(id);
   }
   return lineup.length === 11;

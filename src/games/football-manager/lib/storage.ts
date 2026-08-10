@@ -6,6 +6,7 @@ import { LEAGUES, getLeague, leagueIdForDivision } from '@/engine/gameRules';
 import { contractEndFor, rollRetireAge, weeklyWage } from '@/engine/utils';
 import { seedClubIdentities } from '@/engine/clubIdentity';
 import { newFacilities, newScouting } from '@/engine/facilities';
+import { clubKit } from '@/lib/clubColors';
 import { compressToUTF16, decompressFromUTF16, WORKER_SOURCE } from '@/lib/lz';
 import { idbDelete, idbGet, idbPut } from '@/lib/idb';
 
@@ -169,6 +170,15 @@ function migrate(raw: RawSave): GameState {
     const legacy = h as typeof h & { division?: number };
     if (!legacy.leagueId) legacy.leagueId = leagueIdForDivision(legacy.division ?? 1);
     delete legacy.division;
+  }
+
+  // Kit colours: re-stamped every load rather than back-filled once, so a
+  // save picks up palette corrections without a version bump. Clubs created
+  // mid-career (phantom pools, regenerated leagues) are covered too.
+  for (const club of s.clubs) {
+    const kit = clubKit(club.name);
+    club.color = kit.primary;
+    club.secondaryColor = kit.secondary;
   }
 
   s.board = s.board ?? makeBoardObjective(s);

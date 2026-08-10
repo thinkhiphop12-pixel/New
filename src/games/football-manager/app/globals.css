@@ -704,6 +704,19 @@ body {
 .fm-daysummary__match-title { font-weight: 800; font-size: 15px; }
 .fm-daysummary__actions { display: flex; justify-content: center; padding: 6px 0 0; }
 
+/* ── Pre-match warnings modal (FM21-style kickoff gate) ──
+   Reuses `.fm-matchx-modal` for the overlay/panel shell — same chrome as
+   Press Conference, just its own row list instead of a form. */
+.fm-prematch-list { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 4px; }
+.fm-prematch-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+  border-radius: var(--r-md); padding: 10px 12px;
+}
+.fm-prematch-row__body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.fm-prematch-row__title { font-weight: 800; font-size: 13px; }
+.fm-prematch-row__detail { font-size: 12px; color: var(--muted); text-align: left; }
+
 /* ── Hub module grid (Touchline) ──
    The hero next-match panel plus a responsive card grid, replacing the
    old single-column card stack in PortalHub.tsx. */

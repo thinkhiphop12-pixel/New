@@ -1,5 +1,12 @@
 /** Real crest artwork, used as an override for the procedural <Crest /> shield.
  *
+ *  ⚠️ LICENSING: club crests and competition logos are trademarked artwork.
+ *  Only add a file here that we have the rights to ship — the entries below
+ *  (two club crests, three EFL competition badges) predate this warning and
+ *  have not been cleared. Everything else in the game is safe by design:
+ *  <Crest /> draws original geometry from kit colours, which are not
+ *  protectable. Emptying these two maps is all it takes to ship clean.
+ *
  *  Most clubs have no artwork and fall back to the drawn shield, which is why
  *  the procedural crest — not this map — is the default everywhere. Drop a PNG
  *  into `public/badges/` and add its club name here to promote it. */

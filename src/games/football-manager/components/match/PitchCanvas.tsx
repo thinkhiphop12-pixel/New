@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import type { Club } from '@/engine/types';
 import type { MinuteSnapshot, TeamSide } from '@/engine/tickEngine/types';
 import { getFormation } from '@/engine/gameRules';
+import { matchKits } from '@/lib/clubColors';
 
 /** Deterministic per-player-per-minute jitter so replays look identical. */
 function noise(seed: number): number {
@@ -23,11 +24,7 @@ function luminance(hex: string): number {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 }
 
-function colorsClash(a: string, b: string): boolean {
-  const [r1, g1, b1] = hexToRgb(a);
-  const [r2, g2, b2] = hexToRgb(b);
-  return Math.abs(r1 - r2) + Math.abs(g1 - g2) + Math.abs(b1 - b2) < 110;
-}
+
 
 interface Token {
   key: string;
@@ -39,12 +36,10 @@ interface Token {
   onBall?: boolean;
 }
 
-/** Kit colours: home uses club colour, away flips to an alternate on clash. */
+/** Kit colours: home keeps its first choice, away changes if it would clash
+ *  (see matchKits — Arsenal vs Wrexham cannot both be red on this pitch). */
 function kitColors(homeClub: Club | undefined, awayClub: Club | undefined) {
-  const home = homeClub?.color ?? '#ffffff';
-  let away = awayClub?.color ?? '#8c2440';
-  if (colorsClash(home, away)) away = luminance(home) > 0.5 ? '#8c2440' : '#f4f4f4';
-  return { home, away };
+  return matchKits(homeClub?.name, awayClub?.name);
 }
 
 /**
