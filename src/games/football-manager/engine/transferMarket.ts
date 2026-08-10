@@ -1686,8 +1686,50 @@ function resolveNegotiationResponses(s: GameState, headlines: string[]): void {
   s.negotiations = keep;
 }
 
-function resolveOutgoingResponse(s: GameState, N: Negotiation, keep: Negotiation[], headlines: string[]): void {
+  function resolveRenewalResponse(s: GameState, N: Negotiation, keep: Negotiation[], headlines: string[]): void {
+    const p = s.players[N.playerId];
+    if (!p) return;
+    N.awaiting = 'user';
+    N.lastTouchWeek = s.week;
+    const result = evaluateTermsOffer(N.neg, N.lastWage ?? 0, {
+      projectedStatus: N.projectedStatus,
+      signingBonus: N.signingBonus,
+      releaseClause: N.releaseClause,
+      contractYears: N.contractYears,
+      age: p.age,
+    });
+    if (result.decision === 'accept') {
+      p.wage = N.lastWage ?? p.wage;
+      p.contractYears = N.contractYears;
+      p.contractEnd = contractEndFor(s.seasonYear, N.contractYears);
+      p.releaseClause = N.releaseClause || 0;
+      p.promisedStatus = N.promisedStatus;
+      p.promiseWeeks = 0;
+      p.promiseBreachWeeks = 0;
+      s.negotiations = (s.negotiations ?? []).filter((n) => n.id !== N.id);
+      pushInbox(s, { category: 'transfer', title: `${p.name} accepted your contract offer`, body: `${p.name} agreed to ${money(p.wage)} per week for ${p.contractYears} years.`, playerId: p.id });
+      headlines.push(`${p.name} accepted your contract offer.`);
+      return;
+    }
+    if (result.decision === 'counter') {
+      pushLog(N, `${p.name} suggests ${money(N.neg.wageDemand)}/wk instead.`, 'info');
+      pushInbox(s, { category: 'transfer', title: `${p.name} made a counter-offer`, body: `The player wants ${money(N.neg.wageDemand)} per week. Review and respond in the contract negotiation.`, playerId: p.id });
+      headlines.push(`${p.name} countered at ${money(N.neg.wageDemand)}/wk.`);
+      keep.push(N);
+      return;
+    }
+    s.negotiations = (s.negotiations ?? []).filter((n) => n.id !== N.id);
+    markTransferBan(s, N.playerId);
+    pushInbox(s, { category: 'transfer', title: `${p.name} rejected your contract offer`, body: `${p.name} has ended contract talks after rejecting the proposed terms.`, playerId: p.id });
+    headlines.push(`${p.name} rejected your contract offer.`);
+  }
+
+  function resolveOutgoingResponse(s: GameState, N: Negotiation, keep: Negotiation[], headlines: string[]): void {
   const p = s.players[N.playerId];
+  if (N.stage === 'terms' && N.clubId === s.userClubId && p?.clubId === s.userClubId) {
+    resolveRenewalResponse(s, N, keep, headlines);
+    return;
+  }
   const seller = clubOf(s, N.clubId);
   if (!p || !seller || p.clubId !== seller.id) return; // he moved on — drop the deal
   N.awaiting = 'user';

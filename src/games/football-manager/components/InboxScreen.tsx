@@ -359,12 +359,12 @@ export default function InboxScreen({
         {current.kind === 'complaint' && current.responded && (
           <span className="fm-hint" style={{ textAlign: 'left', margin: 0 }}>You've already responded to this.</span>
         )}
-        {current.kind === 'contractExpiring' && player && (
+        {player && (current.kind === 'contractExpiring' || !!state.negotiations?.some((n) => n.playerId === player.id && n.type === 'outgoing' && n.stage === 'terms')) && (
           <button
             className="fm-btn fm-btn--secondary fm-btn--small"
             onClick={() => { const result = openRenewalNegotiation(state, player.id); onChange(result.state); if (result.ok) setContractPlayerId(player.id); }}
           >
-            Open contract negotiation
+            {state.negotiations?.some((n) => n.playerId === player.id && n.awaiting === 'user') ? 'Respond to counter-offer' : 'Open contract negotiation'}
           </button>
         )}
         {current.kind === 'scoutLead' && onOpenScreen && (

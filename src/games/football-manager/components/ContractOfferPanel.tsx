@@ -9,8 +9,8 @@ import type { Negotiation } from '@/engine/types';
 export default function ContractOfferPanel({ state, player, negotiationId, onChange, onClose }: { state: GameState; player: Player; negotiationId: string; onChange: (state: GameState) => void; onClose: () => void }) {
   const negotiation = state.negotiations?.find((n) => n.id === negotiationId) as Negotiation | undefined;
   const [length, setLength] = useState(3);
-  const [salary, setSalary] = useState(player.wage);
-  const [signing, setSigning] = useState(2500000);
+  const [salary, setSalary] = useState(negotiation?.awaiting === 'user' ? negotiation.neg.wageDemand : player.wage);
+  const [signing, setSigning] = useState(negotiation?.signingBonus ?? 2500000);
   const [appearance, setAppearance] = useState(15000);
   const [loyalty, setLoyalty] = useState(1000000);
   const [clause, setClause] = useState(80000000);

@@ -2,4 +2,4 @@
 2:I[39756,["/gaffa/_next/static/chunks/1eozb9pl5x7_g.js","/gaffa/_next/static/chunks/36vv_grlrhxq7.js"],"default"]
 3:I[37457,["/gaffa/_next/static/chunks/1eozb9pl5x7_g.js","/gaffa/_next/static/chunks/36vv_grlrhxq7.js"],"default"]
 4:[]
-0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"isPartial":false,"staleTime":300,"varyParams":"$W4","buildId":"kotMFZm5Np9xcJRXftnpN"}
+0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"isPartial":false,"staleTime":300,"varyParams":"$W4","buildId":"S7uyctn9mqAoa9VZwwBU2"}
