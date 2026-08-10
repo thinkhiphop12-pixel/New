@@ -96,6 +96,9 @@ function makeTrialist(state: GameState, id: number, pos: Position, wageScale: nu
     wage: Math.round(weeklyWage(value, rating) * wageScale),
     // Unattached until the manager signs him — a trialist is not on the books.
     clubId: 0,
+    // ...but not a free agent either: `onTrial` keeps rival clubs from signing
+    // him out from under the manager before he has made his call.
+    onTrial: true,
     form: 1,
     injuryWeeks: 0,
     injuryDays: 0,
@@ -183,8 +186,14 @@ export function generateYouthIntake(state: GameState, wageScale = 1): GameState 
   const userClub = s.clubs.find((c) => c.id === s.userClubId);
   if (!userClub) return state;
 
-  // Anyone left unsigned from last year's class goes with them.
-  for (const old of s.academyIntake ?? []) delete s.players[old.playerId];
+  // Anyone left unsigned from last year's class goes with them. Guard on the
+  // trial flag rather than deleting the id outright: a player who has picked up
+  // a club since the class was rolled is somebody's squad member now, and
+  // dropping his record would leave a dangling id behind in that squad.
+  for (const old of s.academyIntake ?? []) {
+    const p = s.players[old.playerId];
+    if (p?.onTrial) delete s.players[old.playerId];
+  }
 
   const count = INTAKE_MIN + Math.floor(Math.random() * (INTAKE_MAX - INTAKE_MIN + 1));
   const pool = [...INTAKE_SPREAD];
@@ -235,6 +244,8 @@ export function signTrialist(state: GameState, playerId: number): GameState {
 
   club.youthPlayerIds = [...(club.youthPlayerIds ?? []), playerId];
   player.clubId = s.userClubId;
+  // The trial is over — he is a contracted youth player from here on.
+  delete player.onTrial;
   player.contractYears = 3;
   player.contractEnd = contractEndFor(s.seasonYear, 3);
   s.academyIntake = (s.academyIntake ?? []).filter((t) => t.playerId !== playerId);

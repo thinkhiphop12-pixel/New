@@ -148,6 +148,13 @@ export interface Player {
   transferListed: boolean;
   /** Has asked to leave. */
   wantsMove: boolean;
+  /**
+   * An academy trialist awaiting the manager's verdict. He carries `clubId: 0`
+   * like a free agent because he is not on anyone's books, but he is not on the
+   * market either — nobody else may sign him, and he is discarded unsigned when
+   * next season's class arrives (engine/youthAcademy.ts).
+   */
+  onTrial?: boolean;
   /** Squad status promised to him ('star' | 'important' | 'rotation' | …). */
   promisedStatus: string | null;
   /** Personal retirement age (35–43 outfield, 35–47 GK). */
