@@ -229,7 +229,7 @@ export default function InboxScreen({
               ))}
             </div>
 
-            <div id="fm-inbox-panel" role="tabpanel" aria-labelledby={`fm-inbox-tab-${filter}`}>
+            <div id="fm-inbox-panel" role="tabpanel" aria-labelledby={`fm-inbox-tab-${filter}`} data-tour="inbox-list">
               {shown.length === 0 ? (
                 <p className="fm-hint">
                   {filter === 'unread' ? 'Everything here is read.' : 'No messages in this category.'}

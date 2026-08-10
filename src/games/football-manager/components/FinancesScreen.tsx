@@ -44,7 +44,7 @@ export default function FinancesScreen({
 
   return (
     <>
-      <div className="fm-panel">
+      <div className="fm-panel" data-tour="finances-summary">
         <p className="fm-label" style={{ marginTop: 0 }}>Current Budget</p>
         <p style={{ fontSize: '28px', fontWeight: 900, color: 'var(--green)', margin: '4px 0 0' }}>
           {formatMoney(state.budget)}

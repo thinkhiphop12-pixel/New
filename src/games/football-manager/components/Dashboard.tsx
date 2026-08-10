@@ -202,7 +202,7 @@ export default function Dashboard({
         )}
 
         {/* Needs your attention — clickable, resolvable, never a dead end. */}
-        <div className="fm-mod">
+        <div className="fm-mod" data-tour="dash-todo">
           <div className="fm-mod__head">
             <h2 className="fm-mod__title">Needs your attention</h2>
             {attention.length > 0 && <span className="fm-badge fm-badge--alert">{attention.length}</span>}
@@ -231,7 +231,7 @@ export default function Dashboard({
         </div>
 
         {/* Squad status: injuries, unhappiness, sharpness/fitness. */}
-        <div className="fm-mod">
+        <div className="fm-mod" data-tour="dash-pulse">
           <div className="fm-mod__head"><h2 className="fm-mod__title">Squad status</h2></div>
           <div className="fm-stats-strip">
             <div className="fm-stat">

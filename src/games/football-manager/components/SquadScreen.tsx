@@ -90,7 +90,7 @@ export default function SquadScreen({
   const renderGroup = (label: string, players: Player[]) => (
     <div className="fm-mod">
       <div className="fm-mod__head"><h2 className="fm-mod__title">{label}</h2></div>
-      <div className="fm-player-list">
+      <div className="fm-player-list" data-tour="squad-list">
         {players.map((p) => {
           const inLineup = state.lineup.includes(p.id);
           const canPick = selectedSlot !== null && eligible(p);
@@ -228,7 +228,7 @@ export default function SquadScreen({
         </p>
       </div>
 
-      <div className="fm-pitch">
+      <div className="fm-pitch" data-tour="squad-pitch">
         <PitchMarkings />
         {formation.slots.map((slot, i) => {
           const p = slotPlayer(i);

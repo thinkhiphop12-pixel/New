@@ -1,189 +1,132 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Icon, type IconName } from './Icon';
 import type { ScreenId } from './hubNav';
+import { ORIENTATION_TOUR, SECTION_TOURS } from './tour/tourSteps';
 
-/** Gap 20 (Userbrain): there is no onboarding at all, and the report's
- *  repeated "what do I do?" traces straight back to that — a first-time
- *  player lands on the Hub with no orientation to the screens that matter
- *  (Squad, Tactics, Transfers) or to the control that actually advances the
- *  game. Reachable two ways: automatically once per save on first entering
- *  the Hub, and any time after via the header's "?" button — so it's a
- *  reference a player can come back to, not just a one-shot interruption.
- *  A step-through (one thing at a time, Next/Back) rather than a wall of
- *  four items at once, reusing the existing `.fm-modal` shell. */
+/**
+ * The guide index — the header's "?" and the assistant's "Show me around".
+ *
+ * This used to *be* the tutorial: seven cards of prose in a dialog, stepped
+ * through with Next/Back, describing controls the player could not see while
+ * reading about them. That is the shape of a manual, not a tutorial, and the
+ * feedback it drew was exactly what you would expect — that the game is hard
+ * to use and needs arrows pointing at things.
+ *
+ * So the explaining moved to the coach-marks (components/tour/), which
+ * spotlight the real control, and this became the way in to them: a menu of
+ * every walkthrough, none of it one-shot, so a player who is stuck on one
+ * screen can be shown that screen rather than re-reading all six sections.
+ */
 
-/** Exported so the Assistant Manager panel can reuse this same copy as its
- *  per-screen "what is this" line, instead of maintaining a second set of
- *  explainer text that would drift from the tour. */
-export const STEPS: { icon: IconName; title: string; body: string; route?: ScreenId }[] = [
-  {
-    icon: 'squad',
-    title: 'Six sections',
-    body: 'Home, Squad, Training, Market, Club and League — every screen in the game lives under one of these six.',
-  },
-  {
-    icon: 'tactics',
-    title: 'Squad & Tactics',
-    body: 'Pick your lineup and set the formation, identity and mentality here before kickoff.',
-    route: 'tactics',
-  },
-  {
-    icon: 'training',
-    title: 'Team training',
-    body: 'Two sessions a week — pick what each one drills. One-to-one gives four players guaranteed individual progress.',
-    route: 'training',
-  },
-  {
-    icon: 'sprout',
-    title: 'Academy',
-    body: 'Every pre-season a handful of trialists report in. Your assistant gives a verdict and a predicted ceiling — sign the ones worth keeping.',
-    route: 'academy',
-  },
-  {
-    icon: 'target',
-    title: 'The board',
-    body: "Staff hires and facility upgrades need the board's sign-off first — ask, and they'll fund what they trust you with.",
-    route: 'board',
-  },
-  {
-    icon: 'transfers',
-    title: 'Transfers',
-    body: 'Sign, loan or sell players. Realistic targets for your budget sort to the top.',
-    route: 'transfers',
-  },
-  {
-    icon: 'play',
-    title: 'Next event',
-    body: 'This is how time moves — it skips straight to the next thing that needs you, including matchday.',
-  },
-];
+/** Which icon fronts each section tour in the list. Keyed by tour id so a
+ *  tour without an entry still lists (with a neutral icon) rather than
+ *  failing to render. */
+const TOUR_ICON: Record<string, IconName> = {
+  overview: 'home',
+  squad: 'squad',
+  tactics: 'tactics',
+  training: 'training',
+  'one-to-one': 'person',
+  academy: 'sprout',
+  transfers: 'transfers',
+  scouting: 'binoculars',
+  staff: 'staff',
+  board: 'target',
+  finances: 'finances',
+  inbox: 'inbox',
+  calendar: 'calendar',
+  table: 'table',
+};
 
+/* Kept for saves written before the guide was rebuilt: the old one-shot
+ * checklist wrote this key, and `resetOnboarding` still clears it. */
 export function onboardingKey(slot: number): string {
   return `gaffa-onboarding-seen-${slot}`;
 }
 
-export function hasSeenOnboarding(slot: number): boolean {
-  if (typeof window === 'undefined') return true;
-  try {
-    return localStorage.getItem(onboardingKey(slot)) === 'true';
-  } catch {
-    return true;
-  }
-}
-
-function markOnboardingSeen(slot: number): void {
-  try {
-    localStorage.setItem(onboardingKey(slot), 'true');
-  } catch {
-    // Storage can be unavailable (private mode, quota) — not seeing the
-    // checklist again isn't worth surfacing an error for.
-  }
-}
-
 export default function OnboardingOverlay({
-  slot,
+  currentRoute,
+  onStartTour,
   onClose,
-  onGoTo,
 }: {
-  slot: number;
+  /** The screen the player is on, so its own walkthrough sorts to the top. */
+  currentRoute: ScreenId;
+  onStartTour: (tourId: string) => void;
   onClose: () => void;
-  /** Optional: lets a step's "Go there" button jump straight to the Hub
-   *  screen it's describing, instead of just dismissing the overlay. */
-  onGoTo?: (route: ScreenId) => void;
 }) {
-  const [step, setStep] = useState(0);
-  const last = step === STEPS.length - 1;
-  const current = STEPS[step];
-
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') dismiss();
-      else if (e.key === 'ArrowRight') setStep((s) => Math.min(s + 1, STEPS.length - 1));
-      else if (e.key === 'ArrowLeft') setStep((s) => Math.max(s - 1, 0));
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
     };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
-  const dismiss = () => {
-    markOnboardingSeen(slot);
+  // The tour for wherever they are standing goes first — a player opening
+  // the guide is usually stuck on the screen in front of them, not shopping
+  // for a section.
+  const here = SECTION_TOURS.find((t) => t.screen === currentRoute);
+  const rest = SECTION_TOURS.filter((t) => t !== here);
+
+  const start = (id: string) => {
+    onStartTour(id);
     onClose();
   };
 
   return (
-    <div className="fm-modal-backdrop" onClick={dismiss}>
+    <div className="fm-modal-backdrop" onClick={onClose}>
       <div
-        className="fm-modal"
+        className="fm-modal fm-modal-pop"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="onboarding-title"
-        style={{ maxWidth: 400, padding: 20 }}
+        style={{ maxWidth: 420, padding: 20 }}
       >
         <div className="fm-modal__header">
           <h2 id="onboarding-title" style={{ margin: 0, fontSize: 17 }}>How to play</h2>
+          <button className="fm-settings-close" onClick={onClose} aria-label="Close">&times;</button>
         </div>
 
-        {/* Step dots double as jump-to-step controls — tapping ahead is fine,
-            this is a reference, not a forced sequence. */}
-        <div className="fm-onboard-dots" role="tablist" aria-label="Steps">
-          {STEPS.map((s, i) => (
-            <button
-              key={s.title}
-              type="button"
-              role="tab"
-              aria-selected={i === step}
-              aria-label={s.title}
-              className={`fm-onboard-dot${i === step ? ' active' : ''}`}
-              onClick={() => setStep(i)}
-            />
+        <p className="fm-hint" style={{ textAlign: 'left', margin: '0 0 14px' }}>
+          Every walkthrough points at the real controls on the screen it describes. Pick one — you can
+          stop at any time, and come back as often as you like.
+        </p>
+
+        <button type="button" className="fm-btn fm-btn--primary fm-btn--full" onClick={() => start(ORIENTATION_TOUR.id)}>
+          <Icon name="play" size={14} /> Show me around the whole game
+        </button>
+
+        {here && (
+          <>
+            <p className="fm-label" style={{ margin: '16px 0 6px' }}>The screen you are on</p>
+            <button type="button" className="fm-menurow" onClick={() => start(here.id)}>
+              <span className="fm-icon-tile fm-icon-tile--sm">
+                <Icon name={TOUR_ICON[here.id] ?? 'info'} size={15} />
+              </span>
+              <span className="fm-menurow__main">
+                <span className="fm-menurow__label">{here.label}</span>
+                <span className="fm-menurow__value">{here.steps.length} steps</span>
+              </span>
+            </button>
+          </>
+        )}
+
+        <p className="fm-label" style={{ margin: '16px 0 6px' }}>Every section</p>
+        <div className="fm-guide-list">
+          {rest.map((t) => (
+            <button key={t.id} type="button" className="fm-menurow" onClick={() => start(t.id)}>
+              <span className="fm-icon-tile fm-icon-tile--sm">
+                <Icon name={TOUR_ICON[t.id] ?? 'info'} size={15} />
+              </span>
+              <span className="fm-menurow__main">
+                <span className="fm-menurow__label">{t.label}</span>
+                <span className="fm-menurow__value">{t.steps.length} steps</span>
+              </span>
+            </button>
           ))}
-        </div>
-
-        <div className="fm-onboard-step">
-          <span className="fm-icon-tile" style={{ flexShrink: 0 }}>
-            <Icon name={current.icon} size={20} />
-          </span>
-          <div>
-            <span style={{ display: 'block', fontWeight: 800, fontSize: 15 }}>{current.title}</span>
-            <span className="fm-hint" style={{ textAlign: 'left', margin: '4px 0 0' }}>{current.body}</span>
-          </div>
-        </div>
-
-        <div className="fm-actions" style={{ marginBottom: 0, justifyContent: 'space-between' }}>
-          <button
-            type="button"
-            className="fm-btn fm-btn--ghost fm-btn--small"
-            onClick={() => setStep((s) => Math.max(s - 1, 0))}
-            disabled={step === 0}
-          >
-            Back
-          </button>
-          {current.route && onGoTo && (
-            <button
-              type="button"
-              className="fm-btn fm-btn--ghost fm-btn--small"
-              onClick={() => {
-                markOnboardingSeen(slot);
-                onGoTo(current.route!);
-                onClose();
-              }}
-            >
-              Go there
-            </button>
-          )}
-          {last ? (
-            <button type="button" className="fm-btn fm-btn--primary fm-btn--small" onClick={dismiss}>
-              Got it
-            </button>
-          ) : (
-            <button type="button" className="fm-btn fm-btn--primary fm-btn--small" onClick={() => setStep((s) => s + 1)}>
-              Next
-            </button>
-          )}
         </div>
       </div>
     </div>

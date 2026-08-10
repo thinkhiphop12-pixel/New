@@ -86,7 +86,7 @@ export default function StaffHubScreen({
         ]}
       />
 
-      <div className="fm-staffgrid">
+      <div className="fm-staffgrid" data-tour="staff-grid">
         {ROLES.map((role) => {
           const coach = fs.coaches.find((c) => c.role === role.id);
           const approval = approvalFor(state, 'staff', role.id);
@@ -94,7 +94,13 @@ export default function StaffHubScreen({
           const label = COACH_ROLE_LABEL[role.id];
 
           return (
-            <div key={role.id} className={`fm-staffcard${coach ? ' is-filled' : ''}`}>
+            <div
+              key={role.id}
+              className={`fm-staffcard${coach ? ' is-filled' : ''}`}
+              /* The onboarding tour points here by name — it is the one
+                 appointment a new manager is walked through. */
+              data-tour={role.id === 'assistant' ? 'staff-assistant' : undefined}
+            >
               <span className="fm-staffcard__icon">
                 <Icon name={role.icon} size={18} />
               </span>

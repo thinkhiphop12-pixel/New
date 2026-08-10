@@ -33,7 +33,12 @@ import { readableTextOn } from './visuals';
 import { ToastHost, pushToast } from './ToastQueue';
 import { Icon, IconSprite } from './Icon';
 import type { ScreenId } from './hubNav';
-import OnboardingOverlay, { hasSeenOnboarding } from './OnboardingOverlay';
+import OnboardingOverlay from './OnboardingOverlay';
+import WelcomeOverlay, { type WelcomeStage } from './onboarding/WelcomeOverlay';
+import { markSeen, nextOnboardingBeat, resetOnboarding } from './onboarding/onboardingState';
+import TourHost from './tour/TourHost';
+import { HIRE_ASSISTANT_TOUR, ORIENTATION_TOUR } from './tour/tourSteps';
+import { getAssistant } from '@/engine/assistant';
 import { setVolume, setMuted } from '@/lib/sound';
 import { setHaptics } from '@/lib/haptics';
 import { useKeyboardShortcuts } from '@/lib/useKeyboardShortcuts';
@@ -79,7 +84,12 @@ export default function FootballManagerGame() {
   // Progress label for the scenario fast-forward below. Non-null means a long
   // synchronous engine job is being run in yielded chunks; see `handlePickClub`.
   const [busy, setBusy] = useState<string | null>(null);
+  // The guide index (header "?"), the opening beats, and whichever
+  // walkthrough is currently running. `tourId` is the only one of the three
+  // that draws on top of a live screen rather than over it.
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [welcomeStage, setWelcomeStage] = useState<WelcomeStage | null>(null);
+  const [tourId, setTourId] = useState<string | null>(null);
   // The FM21-style kickoff gate: non-null while the pre-match check has
   // something worth showing the manager before the match actually starts.
   const [preMatchCheck, setPreMatchCheck] = useState<PreMatchCheck | null>(null);
@@ -187,6 +197,10 @@ export default function FootballManagerGame() {
     setSlot(s);
     setSelectedScenarioId(undefined);
     setCareerManagerFlow(true);
+    // A slot is reusable, and the opening is per-career, not per-device — a
+    // second career started in a slot whose first career finished the
+    // introduction should still get welcomed.
+    resetOnboarding(s);
     // A profile already on file gets a choice (continue with it or build a
     // new one); with nothing on file yet there's nothing to choose between,
     // so go straight to the customizer — creating one is mandatory either way.
@@ -332,15 +346,44 @@ export default function FootballManagerGame() {
     setHaptics(settings.haptics ?? true);
   }, [settings]);
 
-  // Gap 20 (Userbrain): first entry into a fresh career's Hub gets a one-time
-  // orientation checklist, gated per save slot via localStorage (mirrors
-  // RotatePrompt's sessionStorage-dismiss pattern) so it never reappears once
-  // seen for that career.
+  /**
+   * The opening, in two beats.
+   *
+   * The first beat is the appointment and the single job that follows it —
+   * hire an Assistant Manager. The second fires the moment he is in post,
+   * and hands the player to him for the tour. That order is the whole point:
+   * a first-time manager is asked to do one thing they can finish, and the
+   * reward for finishing it is the character who explains everything else,
+   * rather than seven cards of prose read before any of it means anything.
+   *
+   * Re-evaluated on every state change rather than only on entering the Hub,
+   * because the second beat is triggered by something the player does *on* a
+   * Hub screen (making the appointment), not by arriving at one. It is
+   * suppressed while a tour, the day summary or a modal is up so it can
+   * never interrupt something already in progress.
+   */
   useEffect(() => {
-    if (view === 'hub' && gs && !hasSeenOnboarding(slot)) {
-      setShowOnboarding(true);
+    if (view !== 'hub' || !gs || tourId || welcomeStage) return;
+    const beat = nextOnboardingBeat(gs, slot);
+    if (!beat) return;
+    setWelcomeStage(beat);
+  }, [view, gs, slot, tourId, welcomeStage]);
+
+  /** Finish an opening beat, whether it was accepted or waved away — either
+   *  way it has been seen, and the assistant button can summon all of it. */
+  const closeWelcome = (accepted: boolean) => {
+    const stage = welcomeStage;
+    setWelcomeStage(null);
+    if (!stage) return;
+    markSeen(stage === 'welcome' ? 'welcome' : 'intro', slot);
+    if (!accepted) return;
+    if (stage === 'welcome') {
+      setHubRoute('staff');
+      setTourId(HIRE_ASSISTANT_TOUR.id);
+    } else {
+      setTourId(ORIENTATION_TOUR.id);
     }
-  }, [view, gs, slot]);
+  };
 
   /** One tick of the daily loop. Runs the day, applies the result, and — if
    *  it produced a stop — opens the Day Summary and reports back `true` so a
@@ -740,7 +783,7 @@ export default function FootballManagerGame() {
         const otherPending = dayStops.filter((s) => s.category !== 'matchday').length;
         return (
           <div className="fm-actiondock">
-            <div className="fm-actiondock__date">
+            <div className="fm-actiondock__date" data-tour="dock-date">
               <b>{formatGameDate(gs)}</b>
               <span>Week {Math.min(gs.week, SEASON_ROUNDS)}/{SEASON_ROUNDS} · {gs.seasonYear}/{(gs.seasonYear + 1) % 100}</span>
             </div>
@@ -763,6 +806,7 @@ export default function FootballManagerGame() {
             <button
               type="button"
               className="fm-actiondock__cta"
+              data-tour="dock-cta"
               onClick={() => (matchdayPending ? handleProceedToMatch() : handleSimulate())}
             >
               {matchdayPending ? (
@@ -779,14 +823,39 @@ export default function FootballManagerGame() {
         );
       })()}
 
+      {/* The guide index — every section's walkthrough, reachable any time
+          from the header "?" or the assistant panel. */}
       {showOnboarding && (
         <OnboardingOverlay
-          slot={slot}
+          currentRoute={hubRoute ?? 'overview'}
+          onStartTour={(id) => setTourId(id)}
           onClose={() => setShowOnboarding(false)}
-          onGoTo={(r) => {
-            setHubRoute(r);
-            setView('hub');
-          }}
+        />
+      )}
+
+      {/* The opening: welcome, then the assistant's introduction once he is
+          appointed (or the board's refusal, which still gets you the tour). */}
+      {welcomeStage && gs && (
+        <WelcomeOverlay
+          stage={welcomeStage}
+          managerName={gs.manager.name}
+          assistantName={getAssistant(gs)?.name}
+          clubName={gs.clubs.find((c) => c.id === gs.userClubId)?.name ?? 'the club'}
+          onAccept={() => closeWelcome(true)}
+          onDismiss={() => closeWelcome(false)}
+        />
+      )}
+
+      {/* Coach-marks over the live screen. Drawn last so it sits above the
+          hub and the dock, and pointer-transparent except its own callout —
+          a player being shown a button can press it. */}
+      {tourId && gs && view === 'hub' && (
+        <TourHost
+          tourId={tourId}
+          route={hubRoute ?? 'overview'}
+          speaker={getAssistant(gs)?.name}
+          onRoute={setHubRoute}
+          onClose={() => setTourId(null)}
         />
       )}
 
@@ -803,7 +872,8 @@ export default function FootballManagerGame() {
                 setView('hub');
               }}
               onChange={apply}
-              onShowTour={() => setShowOnboarding(true)}
+              onShowGuide={() => setShowOnboarding(true)}
+              onStartTour={(id) => setTourId(id)}
               onOpenSettings={() => setShowSettings(true)}
             />
           )}

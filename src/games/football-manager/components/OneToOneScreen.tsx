@@ -75,7 +75,7 @@ export default function OneToOneScreen({
         ]}
       />
 
-      <div className="fm-slotgrid">
+      <div className="fm-slotgrid" data-tour="o2o-slots">
         {ONE_TO_ONE_SLOTS.map((pos) => {
           const id = booked[pos];
           const p = id != null ? state.players[id] : undefined;

@@ -74,7 +74,7 @@ export default function TableScreen({ state }: { state: GameState }) {
           );
         })}
       </div>
-      <div className="fm-panel" style={{ padding: '8px 6px', overflowX: 'auto' }}>
+      <div className="fm-panel" style={{ padding: '8px 6px', overflowX: 'auto' }} data-tour="table-grid">
         <table className="fm-table">
           <thead>
             <tr>

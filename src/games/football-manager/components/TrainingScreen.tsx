@@ -78,7 +78,7 @@ export default function TrainingScreen({
       {([0, 1] as const).map((slot) => {
         const active = sessions[slot];
         return (
-          <div key={slot} className="fm-mod">
+          <div key={slot} className="fm-mod" data-tour={slot === 0 ? 'training-sessions' : undefined}>
             <div className="fm-mod__head">
               <h2 className="fm-mod__title">{SESSION_LABELS[slot]}</h2>
               <span className="fm-actiondock__spacer" />
@@ -103,7 +103,7 @@ export default function TrainingScreen({
       })}
 
       {/* --- How hard the week is --------------------------------------- */}
-      <div className="fm-mod">
+      <div className="fm-mod" data-tour="training-schedule">
         <div className="fm-mod__head">
           <h2 className="fm-mod__title">Week intensity</h2>
           <span className="fm-actiondock__spacer" />

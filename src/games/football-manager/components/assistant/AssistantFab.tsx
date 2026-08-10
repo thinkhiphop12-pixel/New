@@ -27,6 +27,7 @@ export default function AssistantFab({
     <button
       type="button"
       className="fm-assistant-fab"
+      data-tour="assistant-fab"
       onClick={() => {
         sfx.click();
         onOpen();

@@ -101,7 +101,7 @@ export default function CalendarScreen({
       </div>
 
       <div className="fm-panel">
-        <div className="fm-calendar-list">
+        <div className="fm-calendar-list" data-tour="calendar-grid">
           {rows.map((row) => (
             <div key={row.day} className={`fm-calendar-row${row.isToday ? ' fm-calendar-row--today' : ''}`}>
               <div className="fm-calendar-row__date">

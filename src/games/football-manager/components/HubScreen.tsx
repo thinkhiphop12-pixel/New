@@ -154,7 +154,7 @@ export default function HubScreen({
       {/* One rail for both layouts: a sticky icon column at ≥900px, a fixed
           thumb dock below it. Four destinations fit a phone directly, which
           is why the old "More" overflow sheet is gone. */}
-      <nav className="fm-rail" aria-label="Game sections">
+      <nav className="fm-rail" aria-label="Game sections" data-tour="rail">
         {GROUPS.map((g) => {
           const count = groupBadge(state, g.id);
           const on = group.id === g.id;
@@ -181,7 +181,7 @@ export default function HubScreen({
       </nav>
 
       <div className="fm-hub-shell__main">
-        <div className="fm-subnav">
+        <div className="fm-subnav" data-tour="subnav">
           <span className="fm-subnav__group">
             <Icon name={group.icon} size={13} /> {group.label}
           </span>

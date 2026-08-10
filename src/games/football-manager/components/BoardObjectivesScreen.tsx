@@ -54,7 +54,7 @@ export default function BoardObjectivesScreen({ state }: { state: GameState }) {
 
   return (
     <>
-      <div className="fm-panel">
+      <div className="fm-panel" data-tour="board-objectives">
         <p className="fm-label" style={{ marginTop: 0 }}>Primary Objective</p>
         <p className="fm-club-line">{board.objective}</p>
         <p className="fm-hint">

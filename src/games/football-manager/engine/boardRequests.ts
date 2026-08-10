@@ -43,6 +43,13 @@ export const COACH_ROLE_LABEL: Record<Coach['role'], string> = {
   head: 'Head Coach',
 };
 
+/** "a" or "an" for a role label. `assistant manager` and `analyst` both
+ *  start with a vowel, so a hard-coded "a" read as broken English in the
+ *  chairman's own inbox message. */
+function article(word: string): string {
+  return /^[aeiou]/i.test(word) ? 'an' : 'a';
+}
+
 export type FacilityKey = 'training' | 'medical' | 'academy';
 
 export const FACILITY_LABEL: Record<FacilityKey, string> = {
@@ -167,7 +174,7 @@ export function requestStaffSanction(
     pushInbox(s, {
       category: 'board',
       title: `Board turns down your ${label.toLowerCase()} request`,
-      body: `${reason}\n\nThe board will not revisit a ${label.toLowerCase()} appointment for another ${REJECTION_COOLDOWN_WEEKS} weeks.`,
+      body: `${reason}\n\nThe board will not revisit ${article(label)} ${label.toLowerCase()} appointment for another ${REJECTION_COOLDOWN_WEEKS} weeks.`,
     });
     return s;
   }
@@ -180,7 +187,7 @@ export function requestStaffSanction(
   record(s, { kind: 'staff', key: role, label: `${label} — appointment`, status: 'approved', tier, reason });
   pushInbox(s, {
     category: 'board',
-    title: `Board sanctions a ${label.toLowerCase()}`,
+    title: `Board sanctions ${article(label)} ${label.toLowerCase()}`,
     body: `${reason}\n\nApproved up to quality ${tier}, roughly ${formatMoney(wage)} a week. Make the appointment from the Staff screen.`,
   });
   return s;

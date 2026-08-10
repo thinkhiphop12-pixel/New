@@ -11,6 +11,8 @@ import { sfx } from '@/lib/sound';
 import { Icon } from '../Icon';
 import type { ScreenId } from '../hubNav';
 import { assistantTips } from './tips';
+import { tourForScreen } from '../tour/tourSteps';
+import { TIMINGS } from './timings';
 import {
   answerIncomingBids, renewExpiringContracts, setLineupAndTactics, sortYouthIntake, type DelegateResult,
 } from './delegate';
@@ -30,7 +32,8 @@ export default function AssistantPanel({
   onClose,
   onRoute,
   onChange,
-  onShowTour,
+  onShowGuide,
+  onStartTour,
   onOpenSettings,
 }: {
   state: GameState;
@@ -38,13 +41,21 @@ export default function AssistantPanel({
   onClose: () => void;
   onRoute: (id: ScreenId) => void;
   onChange: (next: GameState) => void;
-  onShowTour: () => void;
+  /** Open the full guide index (every section's walkthrough). */
+  onShowGuide: () => void;
+  /** Run one walkthrough now, spotlighting the real controls. */
+  onStartTour: (tourId: string) => void;
   onOpenSettings: () => void;
 }) {
   const [result, setResult] = useState<{ title: string; lines: string[] } | null>(null);
+  const [showTimings, setShowTimings] = useState(false);
   const assistant = getAssistant(state);
   const name = assistant?.name ?? 'Your assistant';
   const tips = assistantTips(state, route);
+  // The walkthrough for the screen behind this panel, if there is one. This
+  // is the "explain this section" the feedback asked for: not a paragraph
+  // about the screen, but the assistant standing on it pointing at things.
+  const sectionTour = tourForScreen(route);
 
   const squad = getSquad(state, state.userClubId);
   const pending: Record<TaskId, boolean> = {
@@ -105,17 +116,57 @@ export default function AssistantPanel({
           </div>
 
           <div className="fm-setgroup">
-            <p className="fm-setgroup__title">Guide</p>
+            <p className="fm-setgroup__title">Explain things</p>
+            {/* The screen you are actually looking at, first. */}
+            {sectionTour && (
+              <button
+                type="button"
+                className="fm-btn fm-btn--primary fm-btn--full"
+                onClick={() => {
+                  onStartTour(sectionTour.id);
+                  onClose();
+                }}
+              >
+                <Icon name="target" size={14} /> Explain this section ({sectionTour.label})
+              </button>
+            )}
             <button
               type="button"
               className="fm-btn fm-btn--secondary fm-btn--full"
+              style={{ marginTop: 8 }}
               onClick={() => {
-                onShowTour();
+                onShowGuide();
                 onClose();
               }}
             >
               <Icon name="info" size={14} /> Show me around
             </button>
+            {/* "How long does a scout take?" and the rest of the questions the
+                game gave no way to answer. Collapsed by default so it costs
+                nothing until it is wanted. */}
+            <button
+              type="button"
+              className="fm-btn fm-btn--ghost fm-btn--full"
+              style={{ marginTop: 8 }}
+              aria-expanded={showTimings}
+              onClick={() => setShowTimings((v) => !v)}
+            >
+              <Icon name="calendar" size={14} /> How long does everything take?
+            </button>
+            {showTimings && (
+              <div className="fm-timings">
+                {TIMINGS.map((t) => (
+                  <div key={t.what} className="fm-timings__row">
+                    <span className="fm-timings__what">{t.what}</span>
+                    <span className="fm-timings__how-long">{t.howLong}</span>
+                    <span className="fm-timings__note">{t.note}</span>
+                  </div>
+                ))}
+                <p className="fm-hint" style={{ textAlign: 'left', margin: '8px 0 0' }}>
+                  None of it moves on its own — time only passes when you advance it from the dock.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="fm-setgroup">

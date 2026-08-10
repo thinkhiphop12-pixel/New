@@ -85,7 +85,7 @@ export default function YouthAcademyScreen({
             </span>
           </div>
 
-          <div className="fm-intakegrid">
+          <div className="fm-intakegrid" data-tour="academy-intake">
             {intake.map(({ trialist: t, player: p }) => (
               <div key={p.id} className={`fm-trialist fm-trialist--${t.verdict}`}>
                 <button type="button" className="fm-trialist__id" onClick={() => setDetailId(p.id)}>

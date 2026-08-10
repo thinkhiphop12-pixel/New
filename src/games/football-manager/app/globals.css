@@ -3422,3 +3422,123 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   background: var(--green-dim); color: var(--green); border: 1px solid var(--green-600);
 }
 .fm-assign-card__blurb { margin: 0; flex: 1; font-size: 11.5px; line-height: 1.45; color: var(--muted); }
+
+/* ------------------------------------------------------------------ tour
+   Coach-marks: a hole punched over a real control, with a callout beside it
+   pointing back at it (components/tour/CoachMarks.tsx).
+
+   The dim is painted by the hole's own box-shadow, spread far wider than any
+   viewport — so the element inside the hole is never covered by anything,
+   and needs no z-index of its own to stay bright. The layer is
+   pointer-events:none throughout except the callout itself: a player being
+   shown a button should be able to press it. */
+.fm-tour {
+  position: fixed; inset: 0; z-index: 150;
+  pointer-events: none;
+}
+.fm-tour__scrim {
+  position: absolute; inset: 0;
+  background: rgb(0 0 0 / 62%);
+  animation: fm-tour-fade 0.18s ease;
+}
+.fm-tour__hole {
+  position: absolute;
+  border-radius: var(--r-md);
+  box-shadow: 0 0 0 9999px rgb(0 0 0 / 62%), 0 0 0 2px var(--green), 0 0 22px 2px rgb(184 255 60 / 35%);
+  transition: top 0.22s cubic-bezier(0.4, 0, 0.2, 1), left 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.22s cubic-bezier(0.4, 0, 0.2, 1), height 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes fm-tour-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.fm-tour__callout {
+  position: absolute;
+  pointer-events: auto;
+  width: min(330px, calc(100vw - 24px));
+  padding: 14px;
+  background: var(--panel);
+  border: 1px solid var(--green-600);
+  border-radius: var(--r-lg);
+  box-shadow: 0 18px 44px rgb(0 0 0 / 62%);
+  animation: fm-tour-pop 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes fm-tour-pop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* The arrow. One rotated square pinned to whichever edge faces the hole —
+   `--top` means "the hole is above me", so the point goes on my top edge. */
+.fm-tour__arrow {
+  position: absolute; width: 12px; height: 12px;
+  background: var(--panel);
+  border: 1px solid var(--green-600);
+  transform: rotate(45deg);
+}
+.fm-tour__callout--top .fm-tour__arrow {
+  top: -7px; left: 50%; margin-left: -6px;
+  border-right: none; border-bottom: none;
+}
+.fm-tour__callout--bottom .fm-tour__arrow {
+  bottom: -7px; left: 50%; margin-left: -6px;
+  border-left: none; border-top: none;
+}
+.fm-tour__callout--left .fm-tour__arrow {
+  left: -7px; top: 50%; margin-top: -6px;
+  border-right: none; border-top: none;
+}
+.fm-tour__callout--right .fm-tour__arrow {
+  right: -7px; top: 50%; margin-top: -6px;
+  border-left: none; border-bottom: none;
+}
+
+.fm-tour__head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.fm-tour__who {
+  display: inline-flex; align-items: center; gap: 5px; flex: 1;
+  font-size: 10.5px; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--green);
+}
+.fm-tour__count { font-size: 11px; font-weight: 800; color: var(--muted-dim); }
+.fm-tour__title { margin: 0 0 5px; font-size: 14.5px; font-weight: 800; line-height: 1.3; }
+.fm-tour__body { margin: 0 0 12px; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.fm-tour__actions { display: flex; align-items: center; gap: 6px; }
+.fm-tour__spacer { flex: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fm-tour__hole { transition: none; }
+  .fm-tour__callout, .fm-tour__scrim { animation: none; }
+}
+
+/* ------------------------------------------------------------- onboarding
+   The welcome / assistant-introduction card. Same `.fm-modal` shell as the
+   rest of the game, sized for two short paragraphs of someone talking. */
+.fm-welcome { max-width: 440px; padding: 20px; }
+.fm-welcome__kicker {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10.5px; font-weight: 900; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--green);
+}
+.fm-welcome__title { margin: 8px 0 12px; font-size: 19px; font-weight: 900; line-height: 1.25; }
+.fm-welcome__body { margin: 0 0 10px; font-size: 13px; line-height: 1.55; color: var(--muted); white-space: pre-line; }
+.fm-welcome__actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.fm-welcome__foot {
+  margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--border-soft);
+  font-size: 11.5px; line-height: 1.5; color: var(--muted-dim);
+}
+
+/* The assistant's "how long does everything take" table. Three columns on a
+   wide panel, stacked on a phone — the duration always reads before the
+   caveat, since the duration is the answer. */
+.fm-timings { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.fm-timings__row {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 10px;
+  padding: 8px 10px; border-radius: var(--r-md);
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+}
+.fm-timings__what { font-size: 12.5px; font-weight: 700; color: var(--text-2); }
+.fm-timings__how-long {
+  font-size: 11px; font-weight: 900; letter-spacing: 0.02em; color: var(--green);
+  white-space: nowrap; align-self: center;
+}
+.fm-timings__note { grid-column: 1 / -1; font-size: 11.5px; line-height: 1.45; color: var(--muted); }
+
+.fm-guide-list { display: flex; flex-direction: column; gap: 6px; }

@@ -2,7 +2,7 @@ import type { GameState } from '@/engine/types';
 import { getSquad, isLineupValid } from '@/engine/teamManagement';
 import { getAssistant } from '@/engine/assistant';
 import type { ScreenId } from '../hubNav';
-import { STEPS } from '../OnboardingOverlay';
+import { tourForScreen } from '../tour/tourSteps';
 
 export interface AssistantTip {
   text: string;
@@ -10,11 +10,11 @@ export interface AssistantTip {
   urgent?: boolean;
 }
 
-/** What's this screen for — reuses the guided tour's own copy (keyed by the
- *  route each step points at) instead of a second, separately-maintained
- *  set of explainer lines. Screens the tour doesn't stop at get no line. */
+/** What's this screen for — the opening line of the screen's own walkthrough,
+ *  rather than a second set of explainer text maintained alongside it and
+ *  free to drift. Screens with no walkthrough get no line. */
 function screenExplainer(route: ScreenId): string | undefined {
-  return STEPS.find((s) => s.route === route)?.body;
+  return tourForScreen(route)?.steps[0]?.body;
 }
 
 function fallback(): AssistantTip[] {

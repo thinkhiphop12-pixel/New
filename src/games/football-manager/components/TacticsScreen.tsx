@@ -263,7 +263,7 @@ export default function TacticsScreen({
 
   return (
     <div className="fm-panel fm-tactics">
-      <div className="fm-subnav__tabs" role="tablist" aria-label="Tactics sections" style={{ marginBottom: 12 }}>
+      <div className="fm-subnav__tabs" role="tablist" aria-label="Tactics sections" style={{ marginBottom: 12 }} data-tour="tactics-tabs">
         {TACTICS_SUB_TABS.map((t) => (
           <button
             key={t.id}
@@ -357,7 +357,7 @@ export default function TacticsScreen({
 
           <div className="fm-tactics__section">
             <div className="fm-tactics__content">
-              <div className="fm-tactics__formation-group">
+              <div className="fm-tactics__formation-group" data-tour="tactics-formation">
                 <label className="fm-label fm-label--sm">In Possession</label>
                 <div className="fm-formation-grid">
                   {ALL_FORMATIONS.map((f) => (
