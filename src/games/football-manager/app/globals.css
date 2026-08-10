@@ -242,6 +242,43 @@ body {
   .fm-view-fade { animation: none; }
 }
 
+/* Lighter per-screen transition for switching tabs within a Hub group —
+   .fm-view-fade above covers whole-view swaps (menu → hub → match), this
+   covers Hub sub-tab swaps (Squad → Tactics) with a smaller, quicker move. */
+.fm-screen-slide { animation: fm-screen-slide 0.2s ease-out; }
+@keyframes fm-screen-slide {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-screen-slide { animation: none; }
+}
+
+/* Modal/sheet entrance pop, applied to the match-screen modal panel and the
+   settings panel. */
+.fm-modal-pop { animation: fm-modal-pop 0.15s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes fm-modal-pop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-modal-pop { animation: none; }
+}
+
+/* Press feedback on the game's three most-tapped interactive shapes. */
+.fm-btn:not(:disabled):active,
+.fm-jump:active,
+.fm-todo:active {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-btn:not(:disabled):active,
+  .fm-jump:active,
+  .fm-todo:active {
+    transform: none;
+  }
+}
+
 /* Phase 14: reusable brief background-pulse utility for card/goal/event
    moments — e.g. a stat tile or table row that just changed. Deliberately
    separate from ToastQueue.tsx's own `fm-toast-in` (checked first, that one
@@ -1580,6 +1617,10 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   border-radius: var(--r-xl);
   overflow: hidden;
   box-shadow: var(--shadow-lg);
+  animation: fm-modal-pop 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-settings-panel { animation: none; }
 }
 .fm-settings-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -1902,6 +1943,10 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   width: 100%; max-width: var(--w-screen); max-height: 92dvh; overflow-y: auto;
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--r-lg);
   padding: 16px; box-shadow: var(--shadow-lg);
+  animation: fm-modal-pop 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-matchx-modal__panel { animation: none; }
 }
 .fm-matchx-modal__panel--narrow { max-width: var(--w-narrow); }
 .fm-matchx-modal__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }

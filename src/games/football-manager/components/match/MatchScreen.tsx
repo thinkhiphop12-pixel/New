@@ -26,6 +26,7 @@ import TeamTalkModal from './TeamTalkModal';
 import GoalCelebration from './GoalCelebration';
 import { sfx, crowd } from '@/lib/sound';
 import { vibrate } from '@/lib/haptics';
+import { useKeyboardShortcuts } from '@/lib/useKeyboardShortcuts';
 
 const SPEEDS = [1, 2, 4, 8];
 const MS_PER_MINUTE = 640;
@@ -216,6 +217,44 @@ export default function MatchScreen({
     }
     prevEventCountRef.current = shownEvents.length;
   }, [shownEvents]);
+
+  useKeyboardShortcuts(
+    {
+      Space: (e) => {
+        e.preventDefault();
+        if (overlayOpen) return;
+        if (!kickedOff) {
+          setKickedOff(true);
+          sfx.whistle('short');
+          crowd.start();
+          vibrate('whistle');
+        } else if (!finished) {
+          setPaused((p) => !p);
+        }
+      },
+      '1': () => setSpeed(SPEEDS[0]),
+      '2': () => setSpeed(SPEEDS[1]),
+      '3': () => setSpeed(SPEEDS[2]),
+      '4': () => setSpeed(SPEEDS[3]),
+      Escape: () => {
+        if (showMenu) setShowMenu(false);
+        else if (showEvents) setShowEvents(false);
+        else if (showTactics) setShowTactics(false);
+        else if (showSubs) setShowSubs(false);
+        else if (showTeamTalk !== null) setShowTeamTalk(null);
+      },
+      t: () => {
+        if (!overlayOpen && !finished) setShowTactics(true);
+      },
+      s: () => {
+        if (!overlayOpen && !finished) {
+          setSubOut(null);
+          setShowSubs(true);
+        }
+      },
+    },
+    [kickedOff, finished, overlayOpen, showMenu, showEvents, showTactics, showSubs, showTeamTalk]
+  );
 
   const liveRatings = useMemo(() => {
     if (!snap) return {};

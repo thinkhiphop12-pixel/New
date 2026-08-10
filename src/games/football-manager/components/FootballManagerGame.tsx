@@ -36,6 +36,7 @@ import type { ScreenId } from './hubNav';
 import OnboardingOverlay, { hasSeenOnboarding } from './OnboardingOverlay';
 import { setVolume, setMuted } from '@/lib/sound';
 import { setHaptics } from '@/lib/haptics';
+import { useKeyboardShortcuts } from '@/lib/useKeyboardShortcuts';
 import PreMatchWarningsModal from './PreMatchWarningsModal';
 
 type View = 'menu' | 'managerpick' | 'scenariopick' | 'nationselect' | 'clubselect' | 'hub' | 'daysummary' | 'match' | 'seasonend' | 'character';
@@ -499,6 +500,26 @@ export default function FootballManagerGame() {
     setPreMatchCheck(null);
     handlePlayMatch(next, riskyIds);
   };
+
+  // Global shortcuts: Escape closes Settings (More Menu and other sheets
+  // already own their own Escape handler — this only covers the one that
+  // didn't). Space on the Hub with nothing else open triggers the same
+  // action as the action dock's primary button.
+  useKeyboardShortcuts(
+    {
+      Escape: () => {
+        if (showSettings) setShowSettings(false);
+      },
+      Space: (e) => {
+        if (view !== 'hub' || !gs || showSettings || showMore) return;
+        e.preventDefault();
+        const matchdayPending = dayStops.some((s) => s.category === 'matchday');
+        if (matchdayPending) handleProceedToMatch();
+        else handleSimulate();
+      },
+    },
+    [showSettings, showMore, view, gs, dayStops]
+  );
 
   // Where the customizer returns to when it closes. It used to hard-code the
   // main menu, which was correct while the main menu was the only way in;
