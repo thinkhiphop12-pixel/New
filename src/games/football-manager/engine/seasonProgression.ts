@@ -16,7 +16,7 @@ import {
   WAGE_BUDGET_HEADROOM, autoPickLineup, clubWageBill, ensureSquadNumbers, getSquad,
   isLineupValid, isOnLoan, squadAvgRating,
 } from './teamManagement';
-import { clamp, contractEndFor, marketValue, pickRandom, rollRetireAge, weeklyWage, MONEY_SCALE } from './utils';
+import { clamp, contractEndFor, contractWindowDate, marketValue, pickRandom, rollRetireAge, weeklyWage, MONEY_SCALE } from './utils';
 import { tickTacticalFamiliarity } from './familiarity';
 import { generateDailyPressStories, generateWeeklyNews } from './news';
 import { seedClubIdentities } from './clubIdentity';
@@ -415,7 +415,14 @@ export function newGame(
   }));
   const players: GameState['players'] = {};
   for (const p of data.players) {
-    const years = 1 + (p.id % 4);
+    // Real contract-expiry years (from the source dataset) take priority over
+    // the random pick, clamped so a contract that's already lapsed by the
+    // in-game season reads as "expires this season" rather than negative.
+    const hasRealContract = p.contractUntil != null;
+    const years = hasRealContract ? Math.max(0, p.contractUntil! - seasonYear) : 1 + (p.id % 4);
+    const contractEnd = hasRealContract
+      ? contractWindowDate(seasonYear + years, true)
+      : contractEndFor(seasonYear, years);
     players[p.id] = {
       ...p,
       // The shipped dataset is authored on the base economy (build-gamedata.mjs
@@ -427,7 +434,7 @@ export function newGame(
       form: 1,
       injuryWeeks: 0,
       contractYears: years,
-      contractEnd: contractEndFor(seasonYear, years),
+      contractEnd,
       transferListed: Math.random() < 0.03,
       wantsMove: false,
       promisedStatus: null,

@@ -44,11 +44,11 @@
  */
 import type {
   Amortization, BalancePoint, Club, FinanceState, Fixture, GameState, KitDeal, KitOffer,
-  LeagueDef, SponsorClause, SponsorDeal, SponsorOffer, SponsorSlotId, TicketTier,
+  LeagueDef, Player, SponsorClause, SponsorDeal, SponsorOffer, SponsorSlotId, TicketTier,
 } from './types';
 import { getLeague, SEASON_ROUNDS, STAFF_WEEKLY_WAGE, leagueAbove } from './gameRules';
 import { clubWageBill } from './teamManagement';
-import { clamp, pickRandom, formatMoney, weeklyWage, MONEY_SCALE } from './utils';
+import { clamp, pickRandom, formatMoney, weeklyWage, MONEY_SCALE, WAGE_FLOOR } from './utils';
 import { pushInbox } from './inbox';
 import { clubBudget } from './jobMarket';
 
@@ -440,13 +440,28 @@ export function clubWageScale(state: GameState, club: Club): number {
 
 /** Price one club's squad against its own revenue. Idempotent — `clubWageScale`
  *  reads the unscaled formula, so re-running never compounds. Call it after
- *  handing a club a newly generated squad. */
+ *  handing a club a newly generated squad.
+ *
+ *  The squad's *total* wage bill is exactly what the pure formula would cost
+ *  at this club's calibrated scale — unchanged from before this had real
+ *  wage data, so every club stays exactly as affordable as it always was.
+ *  What changed is how that total is split: each player's share is weighted
+ *  by his real-world wage when the dataset knows it (falling back to the
+ *  formula's own value/rating weight for players it doesn't, e.g. academy
+ *  graduates and generated filler squads), so pay disparity within a squad —
+ *  a superstar earning many times a fringe player's wage — mirrors reality
+ *  instead of tracking value and rating alone. */
 export function calibrateClubWages(state: GameState, club: Club): void {
+  const squad = club.playerIds.map((id) => state.players[id]).filter(Boolean);
+  if (!squad.length) return;
   const scale = clubWageScale(state, club);
-  for (const id of club.playerIds) {
-    const p = state.players[id];
-    if (p) p.wage = weeklyWage(p.value, p.rating, scale);
-  }
+  const formulaWage = (p: Player) => weeklyWage(p.value, p.rating, scale);
+  const target = squad.reduce((t, p) => t + formulaWage(p), 0);
+  const weights = squad.map((p) => Math.max(1, p.realWage ?? formulaWage(p)));
+  const weightTotal = weights.reduce((t, w) => t + w, 0);
+  squad.forEach((p, i) => {
+    p.wage = Math.max(WAGE_FLOOR, Math.round((target * (weights[i] / weightTotal)) / 100) * 100);
+  });
 }
 
 export function calibrateWages(state: GameState): void {

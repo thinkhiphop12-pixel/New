@@ -84,18 +84,6 @@ function gkAttrs(pos, rating) {
   return { gkReflexes: sc(), gkPositioning: sc() };
 }
 
-/** Release clauses are common in Spain (division 5 = La Liga here) and for
- *  highly-rated young players everywhere. A clause sits ABOVE market value —
- *  it's an escape hatch, not a discount. Rates and multipliers are theirs. */
-function seedReleaseClause(rating, potential, age, value, division) {
-  const spanish = division === 5;
-  const prospect = age <= 23 && potential - rating >= 6;
-  const chance = spanish ? 0.55 : prospect ? 0.2 : rating >= 80 ? 0.12 : 0.05;
-  if (rnd() > chance) return 0;
-  const mult = spanish ? 1.7 + rnd() * 1.6 : 1.5 + rnd() * 1.2;
-  return Math.round((value * mult) / 100_000) * 100_000;
-}
-
 function marketValue(rating, age) {
   const base = 50_000 * Math.pow(1.135, rating - 50);
   const ageMult = age <= 23 ? 1.35 : age <= 28 ? 1.1 : age <= 31 ? 0.8 : 0.5;
@@ -157,9 +145,10 @@ const players = [];
 const clubs = [];
 const seenCodes = new Set();
 
-function addPlayer(p, clubId, division) {
+function addPlayer(p, clubId) {
   const value = p.value ?? marketValue(p.rating, p.age);
-  const potential = potentialFor(p.rating, p.age);
+  const potential = p.potential ?? potentialFor(p.rating, p.age);
+  const gk = gkAttrs(p.pos, p.rating);
   players.push({
     id: nextId++,
     name: p.name,
@@ -169,14 +158,24 @@ function addPlayer(p, clubId, division) {
     rating: p.rating,
     potential,
     pac: p.pac, sho: p.sho, pas: p.pas, dri: p.dri, def: p.def, phy: p.phy,
-    ...gkAttrs(p.pos, p.rating),
-    height: heightFor(p.pos, p.role),
-    altPos: altPosFor(p.role),
+    gkReflexes: p.gkReflexes ?? gk.gkReflexes,
+    gkPositioning: p.gkPositioning ?? gk.gkPositioning,
+    height: p.height ?? heightFor(p.pos, p.role),
+    altPos: p.altPos && p.altPos.length ? p.altPos : altPosFor(p.role),
     age: p.age,
     value,
     wage: weeklyWage(value, p.rating),
+    // Real weekly wage (EUR, unscaled) — used only as a proportional weight
+    // by engine/finances.ts calibrateClubWages, never assigned as the actual
+    // in-game wage directly. See that function for why.
+    realWage: p.realWage,
+    // Real-world contract expiry year, if known — seasonProgression.ts
+    // newGame() turns this into contractYears/contractEnd on load.
+    contractUntil: p.contractUntil,
     clubId,
-    releaseClause: seedReleaseClause(p.rating, potential, p.age, value, division),
+    // 0 = no clause, which is the real, common case — no synthetic clauses
+    // are invented for players the data says don't have one.
+    releaseClause: p.releaseClause ?? 0,
     loyal: rand(0, 99) < 60,
     // Rolled once here and persisted, rather than lazily at first use, so a
     // squad's retirement profile is fixed for the whole career.
@@ -204,10 +203,10 @@ for (const [i, c] of raw.clubs.entries()) {
     division: c.division,
     playerIds: [],
   };
-  for (const p of c.players) club.playerIds.push(addPlayer(p, club.id, club.division));
+  for (const p of c.players) club.playerIds.push(addPlayer(p, club.id));
   clubs.push(club);
 }
-for (const p of raw.freeAgents) addPlayer(p, 0, 0);
+for (const p of raw.freeAgents) addPlayer(p, 0);
 
 // --- League strength ratings -------------------------------------------
 // Derived (not fetched) from the FC 26 ratings already in this dataset:
