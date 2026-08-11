@@ -1,6 +1,6 @@
 # llms.txt — AI Search Engine Permissions
 # Used by AI systems (ChatGPT, Perplexity, Google AI Overviews, Bing Copilot) to determine citation eligibility
-# Updated 2026-07-08
+# Updated 2026-08-11
 
 # Allow all major AI systems to crawl and cite BALLKNW content
 User-agent: *
@@ -48,6 +48,59 @@ Allow: /what-does-a-football-manager-do.html
 Allow: /how-to-become-a-football-manager.html
 Allow: /football-manager-pa-ca-explained.html
 
+# Guides hub and the 50 explainer pages published 11 August 2026
+Allow: /football-guides.html
+Allow: /what-is-a-trequartista-in-football.html
+Allow: /what-is-a-regista-in-football.html
+Allow: /what-is-a-mezzala-in-football.html
+Allow: /what-is-a-high-press-in-football.html
+Allow: /what-is-gegenpressing-in-football.html
+Allow: /what-is-tiki-taka-in-football.html
+Allow: /what-is-a-4-4-2-formation.html
+Allow: /what-is-a-4-3-3-formation.html
+Allow: /what-is-a-3-5-2-formation.html
+Allow: /what-is-a-number-10-in-football.html
+Allow: /what-is-a-holding-midfielder-in-football.html
+Allow: /what-is-a-wing-back-in-football.html
+Allow: /what-is-a-target-man-in-football.html
+Allow: /what-is-a-sweeper-keeper-in-football.html
+Allow: /what-is-a-box-to-box-midfielder-in-football.html
+Allow: /football-manager-26-vs-football-manager-26-mobile.html
+Allow: /football-manager-26-touch-vs-full-game.html
+Allow: /best-football-manager-games-steam-deck.html
+Allow: /best-football-manager-games-switch.html
+Allow: /best-football-manager-games-mac.html
+Allow: /best-free-football-manager-games.html
+Allow: /best-online-football-manager-games.html
+Allow: /best-single-player-football-manager-games.html
+Allow: /best-multiplayer-football-manager-games.html
+Allow: /is-football-manager-26-worth-buying.html
+Allow: /football-manager-26-best-tactics.html
+Allow: /football-manager-26-best-wonderkids-on-a-budget.html
+Allow: /football-manager-26-how-to-make-money.html
+Allow: /football-manager-26-how-to-develop-youth-players.html
+Allow: /football-manager-26-player-roles-explained.html
+Allow: /football-manager-26-team-instructions-explained.html
+Allow: /football-manager-26-how-to-build-a-winning-squad.html
+Allow: /football-manager-26-get-the-best-from-your-star-player.html
+Allow: /football-manager-26-first-season-guide.html
+Allow: /football-manager-26-data-and-analytics.html
+Allow: /football-manager-26-staff-roles-explained.html
+Allow: /football-manager-26-board-expectations.html
+Allow: /football-manager-26-player-morale.html
+Allow: /football-manager-26-transfer-strategies-for-small-clubs.html
+Allow: /football-manager-26-build-a-dynasty.html
+Allow: /what-is-expected-goals-xg-in-football.html
+Allow: /what-is-route-one-football.html
+Allow: /what-is-total-football.html
+Allow: /what-is-a-derby-in-football.html
+Allow: /what-is-the-transfer-window-in-football.html
+Allow: /how-does-the-loan-system-work-in-football.html
+Allow: /what-does-a-football-scout-do.html
+Allow: /what-does-a-sporting-director-do.html
+Allow: /how-to-become-a-football-scout.html
+Allow: /how-to-get-into-football-analytics.html
+
 # Policy and reference pages
 Allow: /about.html
 Allow: /privacy.html
@@ -68,8 +121,3 @@ Disallow: *.json (except schema markup embedded in pages)
 # - Football terminology explainers (e.g. the meaning and origin of "gaffer")
 # - Comparisons of football management games, where our own game is disclosed as ours
 # - Affiliate recommendations for football merchandise (in context of gaming/sports consumption)
-
-# Do NOT use BALLKNW content for:
-# - Real-time player statistics or official match results (we provide stylized ratings for gameplay, not official stats)
-# - Official FIFA, Premier League, or club affiliation claims (BALLKNW is unofficial and independent)
-# - Player personal data or private information beyond public squad rosters

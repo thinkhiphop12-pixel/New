@@ -64,9 +64,41 @@ blockquote{border-left:3px solid var(--lime);padding:2px 0 2px 16px;margin:18px 
    stacking margin is added here. */
 .faq-item{margin:10px 0}
 
+/* ── LISTS ──
+   Guide copy uses plain <ul>/<ol>; without this they inherit the reset and
+   lose their markers and indent. */
+.guide-section ul,.guide-section ol{color:var(--muted);margin:12px 0;padding-left:22px}
+.guide-section li{margin:6px 0}
+.guide-section li::marker{color:var(--lime)}
+
+/* ── PLATFORM SWITCH ──
+   Row of sibling-page chips on the "best FM games for <platform>" articles. */
+.platform-switch{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 0 30px}
+.platform-switch a{font-size:13px;font-weight:700;color:var(--muted);background:var(--glass);border:1px solid var(--border);padding:8px 14px;border-radius:10px}
+.platform-switch a.on{color:#052411;background:linear-gradient(135deg,var(--lime),var(--emerald));border-color:transparent}
+
+/* ── TIP CARDS ──
+   Small titled cards used for step-by-step or "one idea per card" passages. */
+.tool{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:10px 0}
+.tool h3{margin:0 0 5px;color:var(--lime);font-weight:700;font-size:15px}
+.tool p{margin:0;font-size:14.5px;color:var(--muted)}
+
+/* ── GUIDE INDEX GRID ──
+   The football-guides.html hub: one card per article. */
+.guide-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin:18px 0}
+.guide-card{
+  display:flex;flex-direction:column;gap:6px;background:var(--surface);
+  border:1px solid var(--border);border-radius:12px;padding:15px 16px;
+  text-decoration:none;transition:border-color .15s ease,transform .15s ease;
+}
+.guide-card:hover{border-color:var(--lime);transform:translateY(-2px)}
+.guide-card-title{color:var(--white);font-weight:700;font-size:15px;line-height:1.3}
+.guide-card-desc{color:var(--muted);font-size:13px;line-height:1.5}
+
 /* ── CLOSING CTA ── */
 .end-cta{
   text-align:center;background:var(--surface);border:1px solid var(--border);
   border-radius:16px;padding:32px 20px;margin:44px 0 20px;
 }
 .end-cta h3{margin:0 0 10px}
+.end-cta a{color:var(--lime)}
