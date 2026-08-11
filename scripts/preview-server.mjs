@@ -3,7 +3,7 @@
 // Production (see vercel.json) serves the repo root as static files with
 // `outputDirectory: "."` and two redirects. This server reproduces that exactly
 // so the v0 preview matches the live site: landing at `/`, game at `/gaffa/`,
-// guides at `/*.html`, and the `/DraftXI/*` + `/football-manager/*` redirects.
+// guides at `/*.html`, and the retired-game + `/football-manager/*` redirects.
 
 import { createServer } from "node:http"
 import { readFile, stat } from "node:fs/promises"
@@ -16,8 +16,11 @@ const HOST = process.env.HOST || "0.0.0.0"
 
 // Kept in sync with vercel.json "redirects".
 const REDIRECTS = [
-  { source: /^\/DraftXI\/(.*)$/, destination: (m) => `/perfect-cup/${m[1]}` },
-  { source: /^\/DraftXI$/, destination: () => `/perfect-cup/` },
+  { source: /^\/DraftXI(\/.*)?$/, destination: () => `/gaffa/` },
+  { source: /^\/perfect-cup(\/.*)?$/, destination: () => `/gaffa/` },
+  { source: /^\/scout(\/.*)?$/, destination: () => `/gaffa/` },
+  { source: /^\/draft-xi-guide\.html$/, destination: () => `/gaffer-guide.html` },
+  { source: /^\/scout-guide\.html$/, destination: () => `/gaffer-guide.html` },
   { source: /^\/football-manager\/(.*)$/, destination: (m) => `/gaffa/${m[1]}` },
   { source: /^\/football-manager$/, destination: () => `/gaffa/` },
 ]
@@ -122,6 +125,5 @@ server.listen(PORT, HOST, () => {
   console.log(`[preview] Mirroring production at http://${HOST}:${PORT}`)
   console.log(`[preview]   /              -> landing (index.html)`)
   console.log(`[preview]   /gaffa/        -> Gaffa game`)
-  console.log(`[preview]   /perfect-cup/  -> Draft XI / Perfect Cup`)
-  console.log(`[preview]   /scout/        -> Scout`)
+  console.log(`[preview]   /perfect-cup/, /scout/, /DraftXI/ -> 301 /gaffa/`)
 })
