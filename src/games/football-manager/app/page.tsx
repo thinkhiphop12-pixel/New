@@ -130,8 +130,6 @@ function AboutGaffa() {
         <nav>
           <a href="/">Home</a>
           <a href="/gaffer-guide.html">Gaffa guide</a>
-          <a href="/scout/">Scout</a>
-          <a href="/perfect-cup/">Draft XI</a>
           <a href="/football-terms.html">Football terms</a>
           <a href="/privacy.html">Privacy</a>
           <a href="/terms.html">Terms</a>

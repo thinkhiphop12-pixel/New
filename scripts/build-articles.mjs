@@ -192,7 +192,7 @@ ${html}
     .join(' · ');
 
   return `<!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
 ${ANALYTICS}
@@ -208,7 +208,7 @@ ${ANALYTICS}
   <meta property="og:description" content="${esc(a.ogDescription || a.description)}">
   <meta property="og:image" content="${SITE}/assets/og-image.png">
   <meta property="og:type" content="article">
-  <meta property="og:locale" content="en_GB">
+  <meta property="og:locale" content="en_US">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${esc(twitterTitle)}">
   <meta name="twitter:description" content="${esc(a.ogDescription || a.description)}">
@@ -327,7 +327,7 @@ ${items}
   }, null, 2);
 
   return `<!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
 ${ANALYTICS}
@@ -343,7 +343,7 @@ ${ANALYTICS}
   <meta property="og:description" content="Tactical roles, formations, Football Manager 26 guides and football careers — explained plainly.">
   <meta property="og:image" content="${SITE}/assets/og-image.png">
   <meta property="og:type" content="website">
-  <meta property="og:locale" content="en_GB">
+  <meta property="og:locale" content="en_US">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Football Guides &amp; Explainers">
   <meta name="twitter:description" content="Tactical roles, formations, Football Manager 26 guides and football careers — explained plainly.">
@@ -393,14 +393,10 @@ ${FOOTER}
 const STATIC_URLS = [
   ['/', '1.0', 'daily'],
   ['/gaffa/', '0.9', 'weekly'],
-  ['/perfect-cup/', '0.9', 'weekly'],
-  ['/scout/', '0.9', 'daily'],
   ['/privacy.html', '0.5', 'yearly'],
   ['/terms.html', '0.5', 'yearly'],
   ['/about.html', '0.7', 'yearly'],
   ['/gaffer-guide.html', '0.7', 'weekly'],
-  ['/scout-guide.html', '0.7', 'weekly'],
-  ['/draft-xi-guide.html', '0.7', 'weekly'],
   ['/free-football-manager.html', '0.9', 'monthly'],
   ['/football-terms.html', '0.9', 'monthly'],
   ['/what-is-a-low-block-in-football.html', '0.8', 'monthly'],
@@ -413,6 +409,9 @@ const STATIC_URLS = [
   ['/what-does-a-football-manager-do.html', '0.8', 'monthly'],
   ['/how-to-become-a-football-manager.html', '0.8', 'monthly'],
   ['/football-manager-pa-ca-explained.html', '0.8', 'monthly'],
+  ['/soccer-positions-explained.html', '0.9', 'monthly'],
+  ['/how-many-players-on-a-soccer-team.html', '0.9', 'monthly'],
+  ['/arsenal-transfer-round-up.html', '0.5', 'weekly'],
 ];
 
 // lastmod for the hand-written pages, preserved from the previous sitemap so
@@ -420,14 +419,10 @@ const STATIC_URLS = [
 const STATIC_LASTMOD = {
   '/': '2026-07-08',
   '/gaffa/': '2026-07-08',
-  '/perfect-cup/': '2026-07-08',
-  '/scout/': '2026-07-08',
   '/privacy.html': '2026-07-08',
   '/terms.html': '2026-07-08',
   '/about.html': '2026-07-08',
   '/gaffer-guide.html': '2026-07-08',
-  '/scout-guide.html': '2026-07-08',
-  '/draft-xi-guide.html': '2026-07-08',
   '/free-football-manager.html': '2026-08-07',
   '/football-terms.html': '2026-08-07',
   '/what-is-a-low-block-in-football.html': '2026-08-08',

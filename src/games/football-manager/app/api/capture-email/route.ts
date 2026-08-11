@@ -5,7 +5,7 @@
  * Body:
  * {
  *   email: string (required)
- *   game: 'scout' | 'gaffer'
+ *   game: 'gaffer'
  *   score?: number
  *   streak?: number
  *   consentDate: string (ISO 8601)
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!game || !['scout', 'gaffer'].includes(game)) {
+    if (!game || !['gaffer'].includes(game)) {
       return NextResponse.json(
         { error: 'Invalid game' },
         { status: 400 }

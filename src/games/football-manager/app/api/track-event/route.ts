@@ -5,7 +5,7 @@
  * Body:
  * {
  *   eventType: 'game_play' | 'game_complete' | 'streak_achieved' | 'share' | etc.
- *   game: 'scout' | 'gaffer'
+ *   game: 'gaffer'
  *   userId?: string (device ID from localStorage)
  *   metadata?: { score, streak, theme, duration, etc. }
  * }
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!game || !['scout', 'gaffer'].includes(game)) {
+    if (!game || !['gaffer'].includes(game)) {
       return NextResponse.json(
         { error: 'Invalid game' },
         { status: 400 }

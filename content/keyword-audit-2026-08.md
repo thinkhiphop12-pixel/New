@@ -4,6 +4,35 @@ Source: Semrush `phrase_these` (UK database), Google Search Console via Windsor.
 (`sc-domain:ballknw.com`, last 28 days), Vercel Web Analytics (last 30 days).
 Every number below is measured, not estimated.
 
+> ## Correction — supersedes the tiering below
+>
+> **The tier assignments in this document are wrong, and the method that produced
+> them was wrong.** Every target was measured in its spelled-out form only. The
+> abbreviation carries the demand:
+>
+> | Measured here | Vol | Actual demand | Vol |
+> |---|---|---|---|
+> | football manager 26 wonderkids | 210 | **fm26 wonderkids** | **8,100** |
+> | football manager 26 best tactics | 70 | **fm26 tactics** | **6,600** |
+> | football manager 26 | 12,100 | **fm26** | **27,100** |
+> | — | — | fm26 review | 1,600 |
+> | — | — | fm26 mobile | 1,600 |
+> | — | — | fm26 best tactics | 1,000 |
+>
+> The "no data at all" list in Tier 4 is therefore an artefact of the phrasing
+> tested, not a finding about demand. Roughly 20,000/mo is addressable across the
+> FM26 pages this document told you to stop investing in.
+>
+> Two further gaps: everything below was measured in the **UK** database only,
+> and the US database carries substantially more for the soccer-worded variants
+> (false 9 soccer 1,000, tiki taka soccer 1,000, gaffer soccer 480, low block
+> soccer 390). And these pages, added on the production branch, are not covered
+> here at all: `soccer-positions-explained.html` (~11,000/mo, KD 7-27) and
+> `how-many-players-on-a-soccer-team.html` (~10,000/mo, KD 2-13).
+>
+> Treat the sections below as a record of what was measured, not as guidance.
+> The Search Console and backlink figures are unaffected and still hold.
+
 ## Current state
 
 | Metric | Value |
