@@ -5,7 +5,7 @@ import { getAssistant } from '@/engine/assistant';
 import { sfx } from '@/lib/sound';
 import { Icon } from '../Icon';
 import type { ScreenId } from '../hubNav';
-import { assistantTips } from './tips';
+import { hasUrgentTip } from './tips';
 
 /** Floating summon button for the Assistant Manager — mounted on the Hub
  *  and Day Summary only (never during a match). Shows his initial once
@@ -21,7 +21,7 @@ export default function AssistantFab({
   onOpen: () => void;
 }) {
   const assistant = getAssistant(state);
-  const urgent = assistantTips(state, route).some((t) => t.urgent);
+  const urgent = hasUrgentTip(state, route);
 
   return (
     <button

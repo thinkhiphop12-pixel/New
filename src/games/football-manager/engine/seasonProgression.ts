@@ -1115,7 +1115,10 @@ export function playRound(state: GameState, userReport: MatchReport): GameState 
   // one-to-one slots (engine/training.ts). Runs after the generic systems
   // above so a booked player's individual work lands on top of, not instead
   // of, everything the rest of the squad got.
-  applyWeeklyTraining(s);
+  // Keeps the last session's report on the save so the Training screen can
+  // replay what happened rather than inventing a second, disagreeing version.
+  const trainingReport = applyWeeklyTraining(s);
+  if (trainingReport) s.lastTrainingReport = trainingReport;
 
   // Injury risk for the user's starters (keeps the squad decision interesting).
   const staff = getStaff(s);

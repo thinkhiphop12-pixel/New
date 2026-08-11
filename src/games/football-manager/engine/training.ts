@@ -1,4 +1,6 @@
-import type { Coach, GameState, Player, Position, TeamDrill, TrainingFocus } from './types';
+import type {
+  Coach, GameState, Player, Position, TeamDrill, TrainingEvent, TrainingFocus, TrainingReport,
+} from './types';
 import { clamp, marketValue } from './utils';
 import { pushInbox } from './inbox';
 
@@ -6,10 +8,10 @@ import { pushInbox } from './inbox';
  * Training, in two halves.
  *
  * **Team sessions** — the club trains together twice a week and the manager
- * picks what each session works on. The six drills are the categories the
- * FIFA-style training mini-games will eventually sit behind; until those are
- * built, choosing a drill *is* the interaction, and it resolves in the
- * weekly tick rather than in a mini-game.
+ * picks what each session works on. Choosing a drill is the decision; the
+ * week resolves in the weekly tick either way. A drill can additionally be
+ * *played* — see the mini-game section below — which scales that week's
+ * output but is never required.
  *
  * **One-to-one** — four individual slots a week, one per position group
  * (GK / DEF / MID / ATT). Booking a player in gives him guaranteed, visible
@@ -37,6 +39,15 @@ export interface TeamDrillDef {
   sharpness: number;
   fitness: number;
   chemistry: number;
+  /**
+   * How physically hard the session is, 0-100.
+   *
+   * A separate axis from the three deltas above, and not derivable from
+   * them: fitness work *raises* condition while being the most punishing
+   * session of the week, and set pieces barely move anything while being the
+   * lightest. The training screen shows this as the week's load meter.
+   */
+  load: number;
 }
 
 const STAT_KEYS = ['pac', 'sho', 'pas', 'dri', 'def', 'phy'] as const;
@@ -49,7 +60,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
     blurb: 'Finishing and final-third movement.',
     focusPositions: ['MID', 'FWD'],
     stats: ['sho', 'dri'],
-    sharpness: 1.4, fitness: -1.0, chemistry: 0,
+    sharpness: 1.4, fitness: -1.0, chemistry: 0, load: 64,
   },
   {
     id: 'defending',
@@ -57,7 +68,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
     blurb: 'Shape, pressing triggers and one-v-ones.',
     focusPositions: ['GK', 'DEF'],
     stats: ['def', 'phy'],
-    sharpness: 1.4, fitness: -1.0, chemistry: 0,
+    sharpness: 1.4, fitness: -1.0, chemistry: 0, load: 64,
   },
   {
     id: 'possession',
@@ -65,7 +76,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
     blurb: 'Rondos and circulation — passing, and a tighter side.',
     focusPositions: ['DEF', 'MID', 'FWD'],
     stats: ['pas', 'dri'],
-    sharpness: 1.0, fitness: -0.6, chemistry: 1.6,
+    sharpness: 1.0, fitness: -0.6, chemistry: 1.6, load: 52,
   },
   {
     id: 'set-pieces',
@@ -73,7 +84,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
     blurb: 'Dead balls at both ends. Cheap goals, cheap clean sheets.',
     focusPositions: ['DEF', 'MID', 'FWD'],
     stats: ['sho', 'def'],
-    sharpness: 0.7, fitness: -0.3, chemistry: 1.0,
+    sharpness: 0.7, fitness: -0.3, chemistry: 1.0, load: 36,
   },
   {
     id: 'fitness',
@@ -81,7 +92,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
     blurb: 'Running and recovery. Legs back, edge off.',
     focusPositions: ['GK', 'DEF', 'MID', 'FWD'],
     stats: ['phy', 'pac'],
-    sharpness: -0.6, fitness: 2.6, chemistry: 0,
+    sharpness: -0.6, fitness: 2.6, chemistry: 0, load: 88,
   },
   {
     id: 'match-prep',
@@ -89,7 +100,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
     blurb: 'Shadow play against the weekend opponent. Sharpness, nothing else.',
     focusPositions: ['GK', 'DEF', 'MID', 'FWD'],
     stats: [],
-    sharpness: 2.2, fitness: -0.7, chemistry: 0.6,
+    sharpness: 2.2, fitness: -0.7, chemistry: 0.6, load: 44,
   },
 ];
 
@@ -203,16 +214,26 @@ function absTick(s: GameState): number {
  * Idempotent within a week: `oneToOneResolved` records the tick the
  * individual slots last paid out, so a re-entrant call can't double them.
  */
-export function applyWeeklyTraining(state: GameState): void {
+export function applyWeeklyTraining(state: GameState): TrainingReport | null {
   const s = state;
   const club = s.clubs.find((c) => c.id === s.userClubId);
-  if (!club) return;
-  if (s.oneToOneResolved === absTick(s)) return;
+  if (!club) return null;
+  if (s.oneToOneResolved === absTick(s)) return null;
   s.oneToOneResolved = absTick(s);
 
   const sessions = getSessions(s);
+  // How well the manager ran the session, if he played it at all. Unplayed
+  // weeks sit at SESSION_BASE_QUALITY, which is exactly neutral.
+  const mult = sessionMultiplier(sessionQuality(s));
   const booked = getOneToOne(s);
   const bookedIds = new Set(Object.values(booked).filter((v): v is number => typeof v === 'number'));
+
+  const events: TrainingEvent[] = [];
+  const before = new Map<number, { sharpness: number; fitness: number }>();
+  for (const id of club.playerIds) {
+    const p = s.players[id];
+    if (p) before.set(id, { sharpness: p.sharpness, fitness: p.fitness });
+  }
 
   /* --- team sessions ------------------------------------------------- */
   for (const drillId of sessions) {
@@ -221,7 +242,7 @@ export function applyWeeklyTraining(state: GameState): void {
       const p = s.players[id];
       if (!p || p.injuryWeeks > 0) continue;
       const focused = d.focusPositions.includes(p.pos);
-      const weight = focused ? 1 : 0.4;
+      const weight = (focused ? 1 : 0.4) * mult;
       p.sharpness = clamp(p.sharpness + d.sharpness * weight, 0, 100);
       p.fitness = clamp(p.fitness + d.fitness * weight, 15, 100);
       if (d.chemistry) p.chem = clamp(p.chem + d.chemistry * weight * 0.4, 0, 100);
@@ -233,12 +254,19 @@ export function applyWeeklyTraining(state: GameState): void {
       if (!focused || !d.stats.length || p.devPlan || bookedIds.has(p.id)) continue;
       if (p.rating >= (p.potential ?? p.rating)) continue;
       const coach = coachForPosition(s, p.pos);
-      const chance = 0.012 * (1 + (coach ? coach.quality / 200 : 0)) * (p.age <= 24 ? 1.5 : p.age <= 28 ? 1 : 0.35);
+      const chance = 0.012 * mult * (1 + (coach ? coach.quality / 200 : 0)) * (p.age <= 24 ? 1.5 : p.age <= 28 ? 1 : 0.35);
       if (Math.random() < chance) {
         const key = d.stats[Math.floor(Math.random() * d.stats.length)];
         p[key] = clamp(p[key] + 1, 1, 99);
         p.rating = Math.min(p.potential ?? 99, p.rating + 1);
         p.value = marketValue(p.rating, p.age);
+        events.push({
+          playerId: p.id,
+          name: p.name,
+          at: 0.15 + Math.random() * 0.6,
+          text: `${p.name} — ${STAT_NAME[key]} +1, now ${p.rating} overall`,
+          tone: 'good',
+        });
       }
     }
     // The squad drilling together pulls it together as a unit.
@@ -267,6 +295,13 @@ export function applyWeeklyTraining(state: GameState): void {
       p.rating = Math.min(p.potential ?? 99, p.rating + 1);
       p.value = marketValue(p.rating, p.age);
       s.news.unshift(`${p.name} has been sharp in individual work — now ${p.rating} overall.`);
+      events.push({
+        playerId: p.id,
+        name: p.name,
+        at: 0.55 + Math.random() * 0.4,
+        text: `${p.name} steps up in individual work — now ${p.rating} overall`,
+        tone: 'good',
+      });
       pushInbox(s, {
         category: 'club',
         title: `${p.name} steps up in individual training`,
@@ -276,7 +311,137 @@ export function applyWeeklyTraining(state: GameState): void {
       });
     }
   }
+
+  /* --- what the week added up to -------------------------------------- */
+  // Measured against the snapshot taken on entry rather than re-derived from
+  // the drill table, so the report can never disagree with what was applied.
+  let dSharp = 0;
+  let dFit = 0;
+  let attended = 0;
+  let worstDrop: { name: string; delta: number } | null = null;
+  for (const [id, was] of before) {
+    const p = s.players[id];
+    if (!p || p.injuryWeeks > 0) continue;
+    attended += 1;
+    dSharp += p.sharpness - was.sharpness;
+    const fitDelta = p.fitness - was.fitness;
+    dFit += fitDelta;
+    if (fitDelta < -1.2 && (!worstDrop || fitDelta < worstDrop.delta)) {
+      worstDrop = { name: p.name, delta: fitDelta };
+    }
+  }
+  if (worstDrop) {
+    events.push({
+      playerId: -1,
+      name: worstDrop.name,
+      at: 0.45,
+      text: `${worstDrop.name} is blowing — fitness −${Math.abs(worstDrop.delta).toFixed(1)}`,
+      tone: 'bad',
+    });
+  }
+
+  const chemistry = drillDef(sessions[0]).chemistry + drillDef(sessions[1]).chemistry;
+  if (chemistry > 0) {
+    events.push({
+      playerId: -1,
+      name: '',
+      at: 0.85,
+      text: `The squad is knitting together — chemistry +${(chemistry * 0.25).toFixed(1)}`,
+      tone: 'good',
+    });
+  }
+
+  events.sort((a, b) => a.at - b.at);
+
+  // Next week starts neutral: a session's score buys that week's output and
+  // nothing beyond it.
+  const playedQuality = sessionQuality(s);
+  s.sessionQuality = undefined;
+
+  return {
+    quality: playedQuality,
+    tick: absTick(s),
+    drills: sessions,
+    events,
+    sharpness: attended ? dSharp / attended : 0,
+    fitness: attended ? dFit / attended : 0,
+    chemistry: chemistry * 0.25,
+    attended,
+  };
 }
+
+/** Attribute keys as the manager reads them, for report lines. */
+const STAT_NAME: Record<StatKey, string> = {
+  pac: 'Pace', sho: 'Shooting', pas: 'Passing', dri: 'Dribbling', def: 'Defending', phy: 'Physical',
+};
+
+/* --------------------------------------------------- session mini-games */
+
+/**
+ * Playing the session, rather than only choosing it.
+ *
+ * A mini-game is entirely optional. If it is never opened the week resolves
+ * exactly as before, at `SESSION_BASE_QUALITY`. Playing one replaces that
+ * default with what the manager actually managed on the training pitch, which
+ * scales the session's output between `SESSION_MIN_MULT` and
+ * `SESSION_MAX_MULT` — so a good session is worth having and a bad one costs
+ * a little, but neither is worth more than about a quarter either way. This
+ * is a football management game; the drills are seasoning.
+ *
+ * One session may be played per week, tracked the same way the individual
+ * drills are (`drillsUsedThisWeek`), so it cannot be farmed by replaying.
+ */
+
+/** What an unplayed session is worth, on the same 0-100 scale a played one
+ *  scores. Deliberately a decent-but-not-great session. */
+export const SESSION_BASE_QUALITY = 55;
+export const SESSION_MIN_MULT = 0.75;
+export const SESSION_MAX_MULT = 1.25;
+
+/** Score 0-100 → output multiplier. Linear, and centred so that scoring
+ *  `SESSION_BASE_QUALITY` is exactly neutral. */
+export function sessionMultiplier(score: number): number {
+  const q = clamp(score, 0, 100);
+  const span = q >= SESSION_BASE_QUALITY
+    ? (q - SESSION_BASE_QUALITY) / (100 - SESSION_BASE_QUALITY) * (SESSION_MAX_MULT - 1)
+    : (q - SESSION_BASE_QUALITY) / SESSION_BASE_QUALITY * (1 - SESSION_MIN_MULT);
+  return 1 + span;
+}
+
+export function sessionQuality(state: GameState): number {
+  return state.sessionQuality ?? SESSION_BASE_QUALITY;
+}
+
+/** Whether this week's session is still available to play. */
+export function canPlaySession(state: GameState): boolean {
+  return state.sessionPlayedTick !== absTick(state);
+}
+
+/**
+ * Record a played session. Idempotent within a week — a second call in the
+ * same tick is ignored, so the score that counts is the first one earned.
+ */
+export function applySessionResult(state: GameState, score: number): GameState {
+  if (!canPlaySession(state)) return state;
+  return {
+    ...state,
+    sessionQuality: clamp(Math.round(score), 0, 100),
+    sessionPlayedTick: absTick(state),
+  };
+}
+
+/** The mini-game a drill is played as. Six drills, four games — the pairings
+ *  are by what the drill physically *is*, not by name. */
+export type MiniGameId = 'rondo' | 'finishing' | 'shuttle' | 'setpiece';
+
+export const DRILL_MINIGAME: Record<TeamDrill, MiniGameId> = {
+  possession: 'rondo',
+  'match-prep': 'rondo',
+  attacking: 'finishing',
+  defending: 'shuttle',
+  fitness: 'shuttle',
+  'set-pieces': 'setpiece',
+};
 
 /** Squad-wide read on how the week's plan is pitched, for the screen's
  *  summary strip. Pure — no mutation, safe to call on every render. */

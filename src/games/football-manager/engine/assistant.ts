@@ -20,6 +20,30 @@ function avg(nums: number[]): number {
   return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
 }
 
+/** Neutral starting point for a save that has never touched the assistant. */
+export const DEFAULT_ASSISTANT_TRUST = 50;
+
+export function assistantTrust(state: GameState): number {
+  return state.assistantTrust ?? DEFAULT_ASSISTANT_TRUST;
+}
+
+/** Nudge the relationship. Returns a new state — never mutates. */
+export function bumpAssistantTrust(state: GameState, delta: number): GameState {
+  return {
+    ...state,
+    assistantTrust: Math.max(0, Math.min(100, assistantTrust(state) + delta)),
+  };
+}
+
+/** How the trust figure reads back to the manager. */
+export function trustLabel(value: number): string {
+  if (value >= 80) return 'Right-hand man';
+  if (value >= 60) return 'Trusted';
+  if (value >= 40) return 'Settling in';
+  if (value >= 20) return 'Kept at arm’s length';
+  return 'Barely spoken to';
+}
+
 export interface ScheduleAdvice {
   /** What the assistant actually says — a first-person quote, so it reads
    *  as a person with an opinion rather than a system message. */

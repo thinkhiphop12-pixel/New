@@ -1,7 +1,7 @@
 /* theme.css — BALLKNW design tokens + base resets.
    Extracted from index.html's inline <style> block (the live, correct
-   design system) so about.html, privacy.html, terms.html, gaffer-guide.html,
-   scout-guide.html and draft-xi-guide.html render with the same look.
+   design system) so about.html, privacy.html, terms.html and gaffer-guide.html
+   render with the same look.
    index.html itself is untouched and keeps its inline styles. */
 
 :root{

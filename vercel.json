@@ -4,8 +4,14 @@
   "installCommand": null,
   "outputDirectory": ".",
   "redirects": [
-    { "source": "/DraftXI/:path*", "destination": "/perfect-cup/:path*", "permanent": true },
-    { "source": "/football-manager/:path*", "destination": "/gaffa/:path*", "permanent": true },
-    { "source": "/arsenal-transfer-round-up.html", "destination": "/arsenal-transfer-news.html", "permanent": true }
+    { "source": "/DraftXI", "destination": "/gaffa/", "permanent": true },
+    { "source": "/DraftXI/:path*", "destination": "/gaffa/", "permanent": true },
+    { "source": "/perfect-cup", "destination": "/gaffa/", "permanent": true },
+    { "source": "/perfect-cup/:path*", "destination": "/gaffa/", "permanent": true },
+    { "source": "/scout", "destination": "/gaffa/", "permanent": true },
+    { "source": "/scout/:path*", "destination": "/gaffa/", "permanent": true },
+    { "source": "/draft-xi-guide.html", "destination": "/gaffer-guide.html", "permanent": true },
+    { "source": "/scout-guide.html", "destination": "/gaffer-guide.html", "permanent": true },
+    { "source": "/football-manager/:path*", "destination": "/gaffa/:path*", "permanent": true }
   ]
 }

@@ -34,7 +34,7 @@ A major repo restructuring was done to remove vestigial code and clarify what ac
 **Kept and clarified:**
 - Root-level marketing HTML (`index.html`, `gaffer-guide.html`, guides, redirects, SEO files)
 - Game source at `src/games/football-manager/` (React + Tailwind v4)
-- Static exports: `gaffa/`, `perfect-cup/`, `scout/` (pre-built, committed)
+- Static export: `gaffa/` (pre-built, committed)
 - Shared assets: `assets/`, `shared/`, `styles.css`, `theme.css`
 
 **Added:**
@@ -47,14 +47,11 @@ A major repo restructuring was done to remove vestigial code and clarify what ac
 /vercel/share/v0-project/
 ├── index.html                    # Landing page (BALLKNW hero + CTA)
 ├── gaffer-guide.html             # Guide page
-├── perfect-cup.html, scout.html  # Other game landing pages
 ├── vercel.json                   # Redirects, deployment config
 ├── assets/                       # Shared images, fonts, etc.
 ├── shared/                       # Shared CSS/JS snippets
 ├── styles.css, theme.css         # Global styles
 ├── gaffa/                        # Game static export (from `npm run build`)
-├── perfect-cup/                  # Perfect Cup static export
-├── scout/                        # Scout static export
 ├── src/
 │   └── games/
 │       └── football-manager/     # Game source (React/Tailwind v4)
@@ -113,7 +110,7 @@ npm run build
 ### Edit Landing Page / Static Content
 
 - `index.html` — main hero, logo, CTA buttons
-- `gaffer-guide.html`, `perfect-cup.html`, `scout.html` — guide/info pages
+- `gaffer-guide.html` — guide/info page
 - `assets/` — images, fonts, badges
 - `styles.css`, `theme.css` — global styles
 - `shared/` — reusable CSS/JS snippets
@@ -125,7 +122,7 @@ Edit directly and refresh the preview (`npm run dev` keeps serving).
 - **Landing page (`/`)** — Static HTML with embedded CSS, marketing hero with "Play Gaffa" CTA, responsive
 - **Game hub (`/gaffa/`)** — React app with dark FM-style theme, player cards, matchday UI
 - **Guides** — Multiple static HTML guide pages linked from landing
-- **Redirects** — `/football-manager/` → `/gaffa/`, `/DraftXI/` → `/gaffa/`
+- **Redirects** — `/football-manager/` → `/gaffa/`; the retired games (`/DraftXI/`, `/perfect-cup/`, `/scout/`) and their guides 301 to Gaffa
 
 ## Key Tech Notes
 

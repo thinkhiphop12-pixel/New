@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import type { GameState } from '@/engine/types';
 import { leagueFixtures } from '@/engine/seasonProgression';
+import { contrastRatio } from '@/lib/brandTheme';
 
 /** Shared visual primitives used across match/squad/tactics screens so the
  *  game reads as a pitch-and-player sim instead of stacked text lists. */
@@ -195,18 +196,20 @@ export function ReputationStars({ value, title }: { value: number; title?: strin
 }
 
 /** Readable text color (near-black or near-white) for text sitting directly
- *  on a club's color — the reference's `textOn`. Relative luminance via the
- *  standard sRGB coefficients, not a library, matching `tint`'s no-deps
- *  approach above. Used by the club-theming pass (gap 82) so `--brand-text`
- *  stays legible across every club's color, not just the game's own accent
- *  green. */
+ *  on a club's color — the reference's `textOn`.
+ *
+ *  This used to average the raw sRGB channels and cut at 0.55, which is
+ *  neither the gamma-corrected luminance WCAG defines nor a contrast test;
+ *  it handed white ink to plenty of colours white does not read on. It now
+ *  measures both candidate inks and returns whichever actually wins, using
+ *  the shared helpers in lib/brandTheme.
+ *
+ *  Where the *fill* is ours to adjust too — the club-theme chrome — prefer
+ *  `brandTheme()`, which guarantees a ratio rather than just picking the
+ *  better of two losing options. */
 export function readableTextOn(hex: string): string {
   if (!hex || !hex.startsWith('#') || hex.length < 7) return '#04140d';
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  return luminance > 0.55 ? '#04140d' : '#f5f5f5';
+  return contrastRatio('#04140d', hex) >= contrastRatio('#f5f5f5', hex) ? '#04140d' : '#f5f5f5';
 }
 
 /** Horizontal progress bar with label and numeric value. */

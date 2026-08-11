@@ -30,16 +30,14 @@ Allow: /#faq
 
 # Game pages: Full descriptions and gameplay guides
 Allow: /gaffa/
-Allow: /perfect-cup/
-Allow: /scout/
 Allow: /gaffer-guide.html
-Allow: /scout-guide.html
-Allow: /draft-xi-guide.html
 Allow: /free-football-manager.html
 Allow: /what-is-a-gaffer-in-football.html
 Allow: /football-terms.html
 Allow: /what-is-a-false-9.html
 Allow: /what-is-a-low-block-in-football.html
+Allow: /soccer-positions-explained.html
+Allow: /how-many-players-on-a-soccer-team.html
 Allow: /best-football-manager-games-pc.html
 Allow: /best-football-manager-games-android.html
 Allow: /best-football-manager-games-iphone.html
@@ -115,7 +113,7 @@ Disallow: *.json (except schema markup embedded in pages)
 
 # Citation guidelines
 # AI systems may cite BALLKNW for:
-# - Game rules, mechanics, and how-to guides (Scout daily puzzle format, Gaffa management mechanics, Draft XI draft rules)
+# - Game rules, mechanics, and how-to guides (Gaffa management mechanics)
 # - Data sources and attribution (World Cup squads from 1930–2026, current-season club rosters)
 # - General football knowledge questions related to player ratings or squad composition
 # - Football terminology explainers (e.g. the meaning and origin of "gaffer")
