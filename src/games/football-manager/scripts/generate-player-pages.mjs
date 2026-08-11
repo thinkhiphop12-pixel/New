@@ -47,11 +47,11 @@ function generatePlayerPage(player, club) {
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://ballknw.com/players/${slug}.html">
+  <meta property="og:url" content="https://www.ballknw.com/players/${slug}.html">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(description)}">
-  <link rel="canonical" href="https://ballknw.com/players/${slug}.html">
+  <link rel="canonical" href="https://www.ballknw.com/players/${slug}.html">
 
   <!-- Schema.org Person markup -->
   <script type="application/ld+json">
@@ -136,8 +136,8 @@ function generateSquadPage(club, clubPlayers) {
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://ballknw.com/squads/${slug}.html">
-  <link rel="canonical" href="https://ballknw.com/squads/${slug}.html">
+  <meta property="og:url" content="https://www.ballknw.com/squads/${slug}.html">
+  <link rel="canonical" href="https://www.ballknw.com/squads/${slug}.html">
 
   <!-- Schema.org Organization markup -->
   <script type="application/ld+json">

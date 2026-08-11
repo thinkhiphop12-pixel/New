@@ -21,7 +21,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://ballknw.com'),
+  metadataBase: new URL('https://www.ballknw.com'),
   title: 'Gaffa — BALLKNW',
   description:
     'Take charge of a club: pick your formation, work the transfer market, and manage your way through a full league season. Free browser game, no account needed.',
