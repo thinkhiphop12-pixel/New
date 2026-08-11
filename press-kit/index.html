@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gaffa — Press Kit &amp; App Mockups</title>
+<meta name="robots" content="noindex" />
+<style>
+  :root {
+    --bg: #0a0f0c;
+    --panel: #10160f;
+    --panel-2: #141b13;
+    --border: #212a1f;
+    --green: #94e060;
+    --green-dim: #6fae48;
+    --text: #eef4ea;
+    --muted: #8a988a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  a { color: inherit; text-decoration: none; }
+
+  .top {
+    border-bottom: 1px solid var(--border);
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand img { height: 34px; display: block; }
+  .brand-sep {
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .brand-sub {
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .top h1 {
+    font-size: 15px;
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  main { max-width: 1280px; margin: 0 auto; padding: 40px 32px 100px; }
+
+  section { margin-bottom: 64px; }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .section-head h2 {
+    font-size: 22px;
+    margin: 0;
+    font-weight: 700;
+  }
+  .section-head p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid.logos { grid-template-columns: repeat(4, 1fr); }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .card-media {
+    background: #05070a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    min-height: 240px;
+  }
+  .card-media img {
+    max-width: 100%;
+    max-height: 360px;
+    display: block;
+  }
+  .card-body {
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .card-title { font-size: 14px; font-weight: 600; }
+  .card-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--green);
+    color: #08110a;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 9px 14px;
+    border-radius: 999px;
+    white-space: nowrap;
+    transition: background 0.15s ease;
+  }
+  .btn:hover { background: #a8ec7c; }
+  .btn.ghost {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn.ghost:hover { border-color: var(--green-dim); color: var(--green); }
+
+  .logo-card .card-media { background: #0d1210; min-height: 140px; padding: 28px; }
+  .logo-card.dark-tile .card-media { background: #05070a; }
+  .logo-card.light-tile .card-media { background: #eef4ea; }
+  .logo-card .card-media img { max-height: 64px; width: auto; }
+
+  .download-all {
+    margin-top: 28px;
+    padding: 20px 24px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .download-all p { margin: 0; color: var(--muted); font-size: 13px; }
+  code {
+    background: #05070a;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--green);
+  }
+
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .grid.logos { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .grid, .grid.cols-2, .grid.logos { grid-template-columns: 1fr; }
+    main { padding: 28px 18px 80px; }
+    .top { padding: 20px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="brand">
+    <img src="logos/logo-horizontal.svg" alt="BALLKNW logo" />
+    <span class="brand-sep">/</span>
+    <span class="brand-sub">Gaffa press kit</span>
+  </div>
+  <h1>App mockups &amp; icon assets</h1>
+</div>
+
+<main>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Desktop</h2>
+        <p>Home dashboard, squad pitch view, tactics &amp; formation, and the transfer market — framed in a browser window.</p>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="card-media"><img src="deliverables/desktop-home.png" alt="Gaffa desktop home dashboard mockup" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Home dashboard</div><div class="card-sub">1456 × 948</div></div>
+          <a class="btn" href="deliverables/desktop-home.png" download>Download</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-media"><img src="deliverables/desktop-squad.png" alt="Gaffa desktop squad pitch view mockup" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Squad — pitch view</div><div class="card-sub">1456 × 948</div></div>
+          <a class="btn" href="deliverables/desktop-squad.png" download>Download</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-media"><img src="deliverables/desktop-tactics.png" alt="Gaffa desktop tactics formation mockup" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Tactics — formation</div><div class="card-sub">1456 × 948</div></div>
+          <a class="btn" href="deliverables/desktop-tactics.png" download>Download</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-media"><img src="deliverables/desktop-market.png" alt="Gaffa desktop transfer market mockup" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Transfer market</div><div class="card-sub">1456 × 948</div></div>
+          <a class="btn" href="deliverables/desktop-market.png" download>Download</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Tablet</h2>
+        <p>The same screens adapted for a portrait tablet layout.</p>
+      </div>
+    </div>
+    <div class="grid cols-2">
+      <div class="card">
+        <div class="card-media"><img src="deliverables/tablet-home.png" alt="Gaffa tablet home dashboard mockup" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Home dashboard</div><div class="card-sub">894 × 1254</div></div>
+          <a class="btn" href="deliverables/tablet-home.png" download>Download</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-media"><img src="deliverables/tablet-squad.png" alt="Gaffa tablet squad pitch view mockup" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Squad — pitch view</div><div class="card-sub">894 × 1254</div></div>
+          <a class="btn" href="deliverables/tablet-squad.png" download>Download</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Mobile</h2>
+        <p>Home, squad, and transfer market on a phone-size viewport with bottom tab navigation.</p>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="card-media"><img src="deliverables/mobile-home.png" alt="Gaffa mobile home dashboard mockup" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Home dashboard</div><div class="card-sub">414 × 896</div></div>
+          <a class="btn" href="deliverables/mobile-home.png" download>Download</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-media"><img src="deliverables/mobile-squad.png" alt="Gaffa mobile squad pitch view mockup" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Squad — pitch view</div><div class="card-sub">414 × 896</div></div>
+          <a class="btn" href="deliverables/mobile-squad.png" download>Download</a>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-media"><img src="deliverables/mobile-market.png" alt="Gaffa mobile transfer market mockup" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Transfer market</div><div class="card-sub">414 × 896</div></div>
+          <a class="btn" href="deliverables/mobile-market.png" download>Download</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <div>
+        <h2>Logos &amp; icon</h2>
+        <p>Official BALLKNW / Gaffa marks — square icon for the AlternativeTo application icon field, plus wordmark variants.</p>
+      </div>
+    </div>
+    <div class="grid logos">
+      <div class="card logo-card light-tile">
+        <div class="card-media"><img src="logos/gaffa-logo-square.png" alt="Gaffa square app icon" /></div>
+        <div class="card-body">
+          <div><div class="card-title">App icon (square)</div><div class="card-sub">PNG · transparent</div></div>
+          <a class="btn" href="logos/gaffa-logo-square.png" download>Download</a>
+        </div>
+      </div>
+      <div class="card logo-card dark-tile">
+        <div class="card-media"><img src="logos/logo-mark.svg" alt="BALLKNW logo mark" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Logo mark</div><div class="card-sub">SVG</div></div>
+          <a class="btn" href="logos/logo-mark.svg" download>Download</a>
+        </div>
+      </div>
+      <div class="card logo-card light-tile">
+        <div class="card-media"><img src="logos/logo-mark-inverted.svg" alt="BALLKNW logo mark inverted" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Logo mark (inverted)</div><div class="card-sub">SVG</div></div>
+          <a class="btn" href="logos/logo-mark-inverted.svg" download>Download</a>
+        </div>
+      </div>
+      <div class="card logo-card dark-tile">
+        <div class="card-media"><img src="logos/logo-mark-mono.svg" alt="BALLKNW logo mark monochrome" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Logo mark (mono)</div><div class="card-sub">SVG</div></div>
+          <a class="btn" href="logos/logo-mark-mono.svg" download>Download</a>
+        </div>
+      </div>
+      <div class="card logo-card dark-tile">
+        <div class="card-media"><img src="logos/logo-horizontal.svg" alt="BALLKNW horizontal wordmark" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Wordmark (horizontal)</div><div class="card-sub">SVG</div></div>
+          <a class="btn" href="logos/logo-horizontal.svg" download>Download</a>
+        </div>
+      </div>
+      <div class="card logo-card dark-tile">
+        <div class="card-media"><img src="logos/logo-vertical.svg" alt="BALLKNW vertical lockup" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Wordmark (vertical)</div><div class="card-sub">SVG</div></div>
+          <a class="btn" href="logos/logo-vertical.svg" download>Download</a>
+        </div>
+      </div>
+      <div class="card logo-card dark-tile">
+        <div class="card-media"><img src="logos/favicon-192.png" alt="Gaffa favicon" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Favicon</div><div class="card-sub">PNG · 192×192</div></div>
+          <a class="btn" href="logos/favicon-192.png" download>Download</a>
+        </div>
+      </div>
+      <div class="card logo-card dark-tile">
+        <div class="card-media"><img src="logos/og-image.png" alt="BALLKNW social share image" /></div>
+        <div class="card-body">
+          <div><div class="card-title">Social share image</div><div class="card-sub">PNG</div></div>
+          <a class="btn" href="logos/og-image.png" download>Download</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="download-all">
+      <p>Everything on this page lives in your repo under <code>/press-kit</code> — screenshots in <code>screens/</code>, framed mockups in <code>deliverables/</code>, and logos in <code>logos/</code>. Right-click any image and choose “Save Image As…”, or use the Download buttons above.</p>
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>

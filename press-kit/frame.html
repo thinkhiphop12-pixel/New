@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>frame</title>
+<link rel="stylesheet" href="frame.css" />
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var params = new URLSearchParams(location.search);
+  var type = params.get("type");
+  var img = params.get("img");
+  var root = document.getElementById("root");
+
+  function el(html) {
+    var d = document.createElement("div");
+    d.innerHTML = html;
+    return d.firstElementChild;
+  }
+
+  if (type === "desktop") {
+    root.appendChild(el(
+      '<div class="desktop-wrap"><div class="desktop-frame">' +
+        '<div class="desktop-titlebar"><div class="desktop-dots"><span></span><span></span><span></span></div>' +
+        '<div class="desktop-urlbar"><span class="lock">&#128274;</span><span>ballknw.com/gaffa</span></div></div>' +
+        '<div class="desktop-screen"><img src="' + img + '" /></div>' +
+      '</div></div>'
+    ));
+  } else if (type === "tablet") {
+    root.appendChild(el(
+      '<div class="tablet-wrap"><div class="tablet-frame">' +
+        '<div class="tablet-screen"><img src="' + img + '" /></div>' +
+      '</div></div>'
+    ));
+  } else if (type === "mobile") {
+    root.appendChild(el(
+      '<div class="mobile-wrap"><div class="mobile-frame">' +
+        '<div class="mobile-notch"></div>' +
+        '<div class="mobile-screen"><img src="' + img + '" /></div>' +
+        '<div class="mobile-home-indicator"></div>' +
+      '</div></div>'
+    ));
+  }
+</script>
+</body>
+</html>
