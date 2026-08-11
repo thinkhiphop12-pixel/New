@@ -40,7 +40,6 @@ Allow: /what-is-a-gaffer-in-football.html
 Allow: /football-terms.html
 Allow: /what-is-a-false-9.html
 Allow: /what-is-a-low-block-in-football.html
-Allow: /daily-football-games.html
 Allow: /soccer-positions-explained.html
 Allow: /how-many-players-on-a-soccer-team.html
 Allow: /best-football-manager-games-pc.html
