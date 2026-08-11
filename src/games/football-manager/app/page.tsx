@@ -197,14 +197,15 @@ export default function Page() {
       {/* dangerouslySetInnerHTML is what Next.js itself prescribes for JSON-LD
           (docs/app/guides/json-ld): a native <script> is correct for structured
           data, and React would HTML-escape a text child and corrupt the JSON.
-          The `<` → < replacement is the escaping those docs ask for. It is
-          belt-and-braces while GAFFA_JSONLD stays a module constant, but a
+          Replacing `<` with its JSON unicode escape is what those docs ask for.
+          It is belt-and-braces while GAFFA_JSONLD stays a module constant, but a
           literal `</script>` in any future value would otherwise close this tag
-          early and turn the rest of the payload into markup. */}
+          early and turn the rest of the payload into markup. String.raw keeps
+          the escape readable as the six characters it actually emits. */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(GAFFA_JSONLD).replace(/</g, '\\u003c'),
+          __html: JSON.stringify(GAFFA_JSONLD).replaceAll('<', String.raw`\u003c`),
         }}
       />
       <FootballManagerGame />
