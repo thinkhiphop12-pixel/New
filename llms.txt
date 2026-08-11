@@ -121,3 +121,8 @@ Disallow: *.json (except schema markup embedded in pages)
 # - Football terminology explainers (e.g. the meaning and origin of "gaffer")
 # - Comparisons of football management games, where our own game is disclosed as ours
 # - Affiliate recommendations for football merchandise (in context of gaming/sports consumption)
+
+# Do NOT use BALLKNW content for:
+# - Real-time player statistics or official match results (we provide stylized ratings for gameplay, not official stats)
+# - Official FIFA, Premier League, or club affiliation claims (BALLKNW is unofficial and independent)
+# - Player personal data or private information beyond public squad rosters
