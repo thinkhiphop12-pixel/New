@@ -110,6 +110,33 @@ npm run build
 # Exports to /gaffa/ (committed, deployed with repo)
 ```
 
+### Localised Landing Pages (`/zh/`, `/hi/`, `/es/`, `/fr/`, `/ar/`)
+
+The landing page ships in the five most spoken languages after English —
+Mandarin, Hindi, Spanish, French and Arabic (`/ar/` renders RTL).
+
+**They are generated, not hand-written.** `index.html` stays the single source of
+truth for layout, CSS, ad slots and scripts; the translations live in
+`scripts/i18n-strings.mjs` as exact English-snippet → translation pairs.
+
+```bash
+npm run build:i18n     # regenerates all five pages from index.html
+```
+
+Rules of thumb:
+
+- **Never edit `<lang>/index.html` by hand** — the next build overwrites it.
+- **After changing `index.html`, re-run `npm run build:i18n`.** If you changed the
+  wording of a translated string, the build *fails* with the snippet it can no
+  longer find — update that key in `scripts/i18n-strings.mjs` and rebuild. That
+  failure is the feature: it stops half-translated pages from shipping.
+- **Adding a language:** append an entry to `LOCALES`, add a `<link rel="alternate">`
+  to the hreflang block in `index.html`, add a link to the `.langmenu` in the nav,
+  then add the URL to `sitemap.xml` (with its `xhtml:link` alternates) and
+  `robots.txt`.
+- The game itself (`/gaffa/`) and the guide pages are English only; each localised
+  page says so in one line under the embed.
+
 ### Edit Landing Page / Static Content
 
 - `index.html` — main hero, logo, CTA buttons

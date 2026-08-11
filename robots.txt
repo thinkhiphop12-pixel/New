@@ -23,6 +23,13 @@ Allow: /perfect-cup/
 Allow: /gaffa/
 Allow: /assets/
 
+# Localised landing pages
+Allow: /zh/
+Allow: /hi/
+Allow: /es/
+Allow: /fr/
+Allow: /ar/
+
 Disallow: /footygames/
 Disallow: /admin/
 Disallow: /api/

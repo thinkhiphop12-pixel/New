@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "node scripts/preview-server.mjs",
     "build": "npm -w src/games/football-manager run export:static",
+    "build:i18n": "node scripts/build-i18n-pages.mjs",
     "export": "npm -w src/games/football-manager run export:static",
     "dev:game": "npm -w src/games/football-manager run dev"
   },
