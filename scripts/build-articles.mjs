@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { articles, CATEGORIES } from '../content/articles/index.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SITE = 'https://ballknw.com';
+const SITE = 'https://www.ballknw.com';
 const HUB = 'football-guides.html';
 
 /* ── helpers ── */
