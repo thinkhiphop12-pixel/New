@@ -51,9 +51,15 @@
      zone colours must stay on the fixed tokens (--green/--red/--gold) —
      their meaning must never depend on which club is being managed. */
   --brand: var(--green);
+  /* Far stop of the brand gradient, and the ink that sits on both stops.
+     Overridden per-club together with --brand (lib/brandTheme.ts derives all
+     three at once so the ink is guaranteed ≥4.5:1 on the fill it lands on). */
+  --brand-2: color-mix(in srgb, var(--green) 70%, var(--green-600));
   --brand-text: #04140d;
+  /* The brand used as *text* on a dark panel rather than as a fill. */
+  --brand-on-dark: var(--brand);
   --brand-dim: color-mix(in srgb, var(--brand) 16%, transparent);
-  --brand-gradient: linear-gradient(135deg, var(--brand) 0%, color-mix(in srgb, var(--brand) 70%, #00d68f) 100%);
+  --brand-gradient: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
 
   /* Attribute chip ramp — five bands rather than good/mid/bad, so the
      difference between a 78 and a 92 is legible at a glance. */
@@ -173,6 +179,17 @@ body {
 
 /* ── App shell ── */
 .fm-app { display: flex; flex-direction: column; min-height: 100dvh; }
+/* The club theme lands as inline `--brand`/`--brand-2`/… on this element, and
+   a custom property containing var() is substituted where it is DECLARED, not
+   where it is used. Declared on :root above, --brand-gradient and --brand-dim
+   would resolve against :root's default lime and never see the club's colour —
+   which is what left every dark-kitted club with a lime button wearing the
+   white ink picked for its own (dark) colour. Re-declaring them here, on the
+   same element the override lands on, is what makes them track it. */
+.fm-app {
+  --brand-gradient: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+  --brand-dim: color-mix(in srgb, var(--brand) 16%, transparent);
+}
 
 .fm-header {
   display: flex; align-items: center; gap: 10px;
@@ -2391,7 +2408,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .pm-pot-tag { font-size: 11px; font-weight: 900; }
 .ovr-badge {
   display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 20px;
-  padding: 0 5px; border-radius: 5px; background: var(--brand); color: #0a0a0a; font-weight: 900; font-size: 12px;
+  padding: 0 5px; border-radius: 5px; background: var(--brand); color: var(--brand-text); font-weight: 900; font-size: 12px;
 }
 .pm-tab-row { display: flex; gap: 6px; margin: 4px 0 10px; }
 .pm-tab-btn {
@@ -3093,7 +3110,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-jump__icon {
   display: flex;
-  color: var(--brand);
+  color: var(--brand-on-dark);
   margin-bottom: 4px;
 }
 .fm-jump__label { font-size: 14px; font-weight: 800; }
@@ -3155,7 +3172,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-hubcard__head--static { cursor: default; }
 .fm-hubcard__head span:first-of-type { flex: 1; text-align: left; }
-.fm-hubcard__head:not(.fm-hubcard__head--static):hover { color: var(--brand); }
+.fm-hubcard__head:not(.fm-hubcard__head--static):hover { color: var(--brand-on-dark); }
 .fm-hubcard__body { padding-top: 2px; }
 .fm-hubcard__empty {
   margin: 10px 0;
@@ -3199,7 +3216,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--brand);
+  background: var(--brand-on-dark);
   display: block;
 }
 /* Adjust Budget: the two pools side by side, then the shift controls. */

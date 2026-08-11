@@ -29,7 +29,7 @@ import SettingsPanel, { loadSettings } from './SettingsPanel';
 import MoreMenu from './MoreMenu';
 import CharacterCustomizerScreen from './CharacterCustomizerScreen';
 import ManagerPickScreen from './ManagerPickScreen';
-import { readableTextOn } from './visuals';
+import { brandTheme } from '@/lib/brandTheme';
 import { ToastHost, pushToast } from './ToastQueue';
 import { Icon, IconSprite } from './Icon';
 import type { ScreenId } from './hubNav';
@@ -582,9 +582,21 @@ export default function FootballManagerGame() {
   // table-zone colours all stay on their own fixed tokens regardless of this.
   // No club yet (menu, club select) means --brand simply isn't overridden,
   // so those screens render with the game's own default accent unchanged.
+  //
+  // All four tokens come from one derivation (lib/brandTheme.ts) rather than
+  // just the ink: the fill and its gradient's far stop have to be known to
+  // guarantee the ink reads on them. Setting only `--brand` here is what used
+  // to leave the button lime while the ink went white — see the note on
+  // `.fm-app` in globals.css.
   const themedClub = gs ? gs.clubs.find((c) => c.id === gs.userClubId) : null;
-  const brandStyle = themedClub
-    ? ({ '--brand': themedClub.color, '--brand-text': readableTextOn(themedClub.color) } as CSSProperties)
+  const theme = themedClub ? brandTheme(themedClub.color) : null;
+  const brandStyle = theme
+    ? ({
+        '--brand': theme.brand,
+        '--brand-2': theme.brandEnd,
+        '--brand-text': theme.ink,
+        '--brand-on-dark': theme.onDark,
+      } as CSSProperties)
     : undefined;
 
   return (
