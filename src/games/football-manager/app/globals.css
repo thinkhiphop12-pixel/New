@@ -3384,6 +3384,50 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-drill.active { border-color: var(--green-600); background: var(--green-dim); color: var(--text); }
 .fm-drill__label { font-size: 10.5px; font-weight: 700; text-align: center; }
 
+/* Drill cards: what the session does, not just what it is called.
+   Six drills read best as a 3x2 block — the old row of six icon tiles fit,
+   but left no room for any of the numbers the drill table already holds. */
+.fm-drillgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 900px) { .fm-drillgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .fm-drillgrid { grid-template-columns: 1fr; } }
+.fm-drillcard {
+  display: flex; flex-direction: column; gap: 3px; text-align: left;
+  padding: 12px; border-radius: var(--r-md);
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+  color: var(--text); cursor: pointer; font-family: inherit;
+  transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+}
+.fm-drillcard:hover { transform: translateY(-2px); border-color: var(--border-bright); }
+.fm-drillcard.active {
+  border-color: var(--green-600);
+  background: linear-gradient(160deg, rgba(184,255,60,0.09), transparent);
+}
+.fm-drillcard__head { display: flex; align-items: center; gap: 7px; color: var(--green); }
+.fm-drillcard__name { font-size: 13.5px; font-weight: 800; color: var(--text); }
+.fm-drillcard__does {
+  font-size: 11.5px; color: var(--muted); line-height: 1.4;
+  margin-bottom: 6px; min-height: 32px;
+}
+.fm-drillcard__fx { display: flex; flex-wrap: wrap; gap: 5px; }
+.fm-fx {
+  font-size: 10px; font-weight: 800; font-style: normal;
+  border-radius: 4px; padding: 2px 6px; font-variant-numeric: tabular-nums;
+}
+.fm-fx--up { background: rgba(184,255,60,0.13); color: var(--green); }
+.fm-fx--down { background: rgba(242,102,122,0.13); color: var(--red); }
+.fm-fx--flat { background: rgba(255,255,255,0.06); color: var(--muted); }
+
+/* Week load: one meter for how hard the plan is, with a verdict. */
+.fm-loadverdict { font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.fm-loadtrack {
+  height: 9px; border-radius: 5px; background: var(--panel-3);
+  overflow: hidden; margin: 4px 0 10px;
+}
+.fm-loadtrack__fill {
+  display: block; height: 100%;
+  transition: width 0.45s cubic-bezier(0.2,0.8,0.2,1), background 0.45s ease;
+}
+
 .fm-dayrow { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 10px; }
 .fm-day {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -3558,3 +3602,9 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 @media (max-width: 899px) {
   .fm-about-foot { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
 }
+
+/* Session selector above the drill grid: which of the week's two sessions
+   the cards below are setting, with each one's current drill on the tab. */
+.fm-sessionpick { width: 100%; margin-bottom: 10px; }
+.fm-sessionpick .fm-segmented__opt { flex-direction: column; gap: 2px; padding: 8px 6px; }
+.fm-sessionpick__now { display: block; font-size: 10.5px; font-weight: 800; color: var(--green); }

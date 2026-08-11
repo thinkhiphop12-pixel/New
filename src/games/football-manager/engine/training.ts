@@ -37,6 +37,15 @@ export interface TeamDrillDef {
   sharpness: number;
   fitness: number;
   chemistry: number;
+  /**
+   * How physically hard the session is, 0-100.
+   *
+   * A separate axis from the three deltas above, and not derivable from
+   * them: fitness work *raises* condition while being the most punishing
+   * session of the week, and set pieces barely move anything while being the
+   * lightest. The training screen shows this as the week's load meter.
+   */
+  load: number;
 }
 
 const STAT_KEYS = ['pac', 'sho', 'pas', 'dri', 'def', 'phy'] as const;
@@ -49,7 +58,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
     blurb: 'Finishing and final-third movement.',
     focusPositions: ['MID', 'FWD'],
     stats: ['sho', 'dri'],
-    sharpness: 1.4, fitness: -1.0, chemistry: 0,
+    sharpness: 1.4, fitness: -1.0, chemistry: 0, load: 64,
   },
   {
     id: 'defending',
@@ -57,7 +66,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
     blurb: 'Shape, pressing triggers and one-v-ones.',
     focusPositions: ['GK', 'DEF'],
     stats: ['def', 'phy'],
-    sharpness: 1.4, fitness: -1.0, chemistry: 0,
+    sharpness: 1.4, fitness: -1.0, chemistry: 0, load: 64,
   },
   {
     id: 'possession',
@@ -65,7 +74,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
     blurb: 'Rondos and circulation — passing, and a tighter side.',
     focusPositions: ['DEF', 'MID', 'FWD'],
     stats: ['pas', 'dri'],
-    sharpness: 1.0, fitness: -0.6, chemistry: 1.6,
+    sharpness: 1.0, fitness: -0.6, chemistry: 1.6, load: 52,
   },
   {
     id: 'set-pieces',
@@ -73,7 +82,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
     blurb: 'Dead balls at both ends. Cheap goals, cheap clean sheets.',
     focusPositions: ['DEF', 'MID', 'FWD'],
     stats: ['sho', 'def'],
-    sharpness: 0.7, fitness: -0.3, chemistry: 1.0,
+    sharpness: 0.7, fitness: -0.3, chemistry: 1.0, load: 36,
   },
   {
     id: 'fitness',
@@ -81,7 +90,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
     blurb: 'Running and recovery. Legs back, edge off.',
     focusPositions: ['GK', 'DEF', 'MID', 'FWD'],
     stats: ['phy', 'pac'],
-    sharpness: -0.6, fitness: 2.6, chemistry: 0,
+    sharpness: -0.6, fitness: 2.6, chemistry: 0, load: 88,
   },
   {
     id: 'match-prep',
@@ -89,7 +98,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
     blurb: 'Shadow play against the weekend opponent. Sharpness, nothing else.',
     focusPositions: ['GK', 'DEF', 'MID', 'FWD'],
     stats: [],
-    sharpness: 2.2, fitness: -0.7, chemistry: 0.6,
+    sharpness: 2.2, fitness: -0.7, chemistry: 0.6, load: 44,
   },
 ];
 
