@@ -1,5 +1,39 @@
 import FootballManagerGame from '@/components/FootballManagerGame';
 
+/* Structured data for /gaffa/. The hand-written pages each carry their own
+   JSON-LD; this page had none, so the one page on the site that is an actual
+   product was the one search engines were told least about. Rendered from a
+   server component so it lands in the static export rather than being
+   injected on the client, where a crawler that does not run JavaScript would
+   never see it. Absolute URLs because JSON-LD @id values are not resolved
+   against the document, unlike the metadataBase-relative tags in layout.tsx. */
+const GAFFA_JSONLD = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  '@id': 'https://www.ballknw.com/gaffa/#app',
+  name: 'Gaffa',
+  alternateName: 'Gaffa Football Manager',
+  url: 'https://www.ballknw.com/gaffa/',
+  applicationCategory: 'GameApplication',
+  applicationSubCategory: 'Sports Management Simulation',
+  operatingSystem: 'Any modern web browser',
+  browserRequirements: 'Requires JavaScript',
+  description:
+    'Free browser football management game. Take charge of a real club: pick the formation, ' +
+    'name the starting eleven, work the transfer market, run the youth academy and manage a ' +
+    'full league season plus cups. No download, no account and no payment.',
+  inLanguage: 'en-GB',
+  isAccessibleForFree: true,
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'GBP',
+    availability: 'https://schema.org/InStock',
+  },
+  publisher: { '@id': 'https://www.ballknw.com/#org' },
+  isPartOf: { '@id': 'https://www.ballknw.com/#website' },
+};
+
 /* The game itself is a client component that renders almost nothing until the
    player database loads, so the exported HTML for /gaffa/ was a near-empty
    shell — eight words, and no crawlable description of what the page is. This
@@ -14,7 +48,7 @@ function AboutGaffa() {
         <h2>What is Gaffa?</h2>
         <p>
           Gaffa is a free football management game that runs in your browser. You take charge of a
-          real club and manage it the way a manager actually does: pick the shape the team plays,
+          real club and manage it the way a gaffer actually does: pick the shape the team plays,
           decide who starts and who is rested, work the transfer market, keep contracts in order,
           bring players through the youth academy, and steer the club through a full league season
           plus its cup competitions. There is no download, no account and no payment — you open the
@@ -117,6 +151,14 @@ function AboutGaffa() {
             A full league campaign plus cups takes a while, but it is played in short bursts — a
             fixture at a time — and the save is there whenever you come back.
           </dd>
+          <dt>Why is it called Gaffa?</dt>
+          <dd>
+            &ldquo;Gaffer&rdquo; is what an English dressing room calls the manager — the one who
+            picks the team and carries the blame for it. Gaffa is that job rather than the word,
+            but it is where the name comes from, and it is why a search for a gaffer game tends to
+            land here. There is a longer piece on where the term came from in{' '}
+            <a href="/what-is-a-gaffer-in-football.html">what a gaffer is in football</a>.
+          </dd>
           <dt>Is this Football Manager?</dt>
           <dd>
             No. Gaffa is an unofficial fan-made browser game with no connection to Sports
@@ -148,6 +190,10 @@ function AboutGaffa() {
 export default function Page() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(GAFFA_JSONLD) }}
+      />
       <FootballManagerGame />
       <AboutGaffa />
     </>

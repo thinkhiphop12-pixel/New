@@ -18,6 +18,7 @@ Allow: /what-is-a-low-block-in-football.html
 Allow: /best-football-manager-games-pc.html
 Allow: /best-football-manager-games-android.html
 Allow: /best-football-manager-games-iphone.html
+Allow: /arsenal-transfer-news.html
 Allow: /scout/
 Allow: /perfect-cup/
 Allow: /gaffa/

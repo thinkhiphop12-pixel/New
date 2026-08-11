@@ -5,6 +5,7 @@
   "outputDirectory": ".",
   "redirects": [
     { "source": "/DraftXI/:path*", "destination": "/perfect-cup/:path*", "permanent": true },
-    { "source": "/football-manager/:path*", "destination": "/gaffa/:path*", "permanent": true }
+    { "source": "/football-manager/:path*", "destination": "/gaffa/:path*", "permanent": true },
+    { "source": "/arsenal-transfer-round-up.html", "destination": "/arsenal-transfer-news.html", "permanent": true }
   ]
 }
