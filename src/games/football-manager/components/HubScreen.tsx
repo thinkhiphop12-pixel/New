@@ -132,7 +132,7 @@ export default function HubScreen({
       case 'table': return <TableScreen state={state} />;
       case 'cups': return <CupScreen state={state} />;
       case 'european': return <EuropeanScreen state={state} />;
-      case 'squad': return <SquadScreen state={state} onChange={onChange} onRoute={onRoute} />;
+      case 'squad': return <SquadScreen state={state} onChange={onChange} />;
       case 'tactics': return <TacticsScreen state={state} onChange={onChange} />;
       case 'training': return <TrainingScreen state={state} onChange={onChange} />;
       case 'one-to-one': return <OneToOneScreen state={state} onChange={onChange} />;
