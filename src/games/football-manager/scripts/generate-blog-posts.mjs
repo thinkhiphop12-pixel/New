@@ -91,9 +91,9 @@ function generateBlogPost(date) {
   <meta property="og:title" content="${escapeHtml(title)}">
   <meta property="og:description" content="${escapeHtml(description)}">
   <meta property="og:type" content="article">
-  <meta property="og:url" content="https://ballknw.com/blog/${dateStr}.html">
+  <meta property="og:url" content="https://www.ballknw.com/blog/${dateStr}.html">
   <meta property="article:published_time" content="${date.toISOString()}">
-  <link rel="canonical" href="https://ballknw.com/blog/${dateStr}.html">
+  <link rel="canonical" href="https://www.ballknw.com/blog/${dateStr}.html">
 
   <!-- Schema.org Article markup -->
   <script type="application/ld+json">
@@ -193,7 +193,7 @@ function generateBlogIndex(posts) {
   <meta name="description" content="Read about daily Scout puzzles, tips, and football facts.">
   <meta property="og:title" content="Scout Puzzle Blog - Ball KnW">
   <meta property="og:description" content="Daily Scout puzzle commentary and football insights.">
-  <link rel="canonical" href="https://ballknw.com/blog/index.html">
+  <link rel="canonical" href="https://www.ballknw.com/blog/index.html">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; }

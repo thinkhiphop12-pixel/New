@@ -1,8 +1,9 @@
 # Google Search Console disavow file — ballknw.com
-# Generated 2026-08-10 from Semrush Backlink Analytics (backlinks_refdomains)
+# Generated 2026-08-10, refreshed 2026-08-11 from Semrush Backlink Analytics
+# (backlinks_refdomains)
 #
-# CONTEXT: All 34 referring domains in the profile were first seen between
-# 2026-06-28 and 2026-08-10 — a single ~6 week window. The cluster is made up of
+# CONTEXT: All 35 referring domains in the profile were first seen between
+# 2026-06-28 and 2026-08-11 — a single ~6 week window. The cluster is made up of
 # Fiverr-gig SEO link farms (*.site / *.shop), expired-domain PBNs, casino and
 # gaming spam, and scraped-directory placements. None are editorially given and
 # none are topically related to football content.
@@ -14,7 +15,16 @@
 # effect. If you knowingly purchased any of these placements, remove them at the
 # source first where possible.
 #
+# STILL ARRIVING: new domains were first seen on 2026-08-10 and 2026-08-11, so
+# this is an open source, not a closed incident. Re-run the refdomains report
+# monthly and re-upload the full file — the disavow tool REPLACES the previous
+# list on every upload, so each version must contain every domain, not a delta.
+#
 # Upload at: https://search.google.com/search-console/disavow-links
+#
+# GOOGLE ONLY. Bing retired its Disavow Links feature and API in October 2023 —
+# it now discounts unnatural links algorithmically, so there is no Bing list to
+# keep in step with this file.
 
 # --- Fiverr / bulk SEO gig link farms ---
 domain:fiverr-affordable-seo-services.site
@@ -39,6 +49,7 @@ domain:8coint.com
 domain:sahammurah.com
 
 # --- Scraped directories, expired domains, auto-generated placements ---
+domain:fastlifesite.com
 domain:anchorurl.cloud
 domain:toplikevideo.com
 domain:trasa.net.pl
