@@ -11,13 +11,19 @@ const GAFFA_JSONLD = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
   '@id': 'https://www.ballknw.com/gaffa/#app',
+  // No alternateName. "Gaffa Football Manager" appears nowhere a visitor can
+  // see it, and the FAQ below states outright that this is not Football
+  // Manager — claiming it as an alias would contradict the page's own words
+  // and lean on a trademark the disclaimer disowns.
   name: 'Gaffa',
-  alternateName: 'Gaffa Football Manager',
   url: 'https://www.ballknw.com/gaffa/',
   applicationCategory: 'GameApplication',
   applicationSubCategory: 'Sports Management Simulation',
-  operatingSystem: 'Any modern web browser',
-  browserRequirements: 'Requires JavaScript',
+  // operatingSystem takes OS names ("Windows 7", "Android 1.6"); a browser is
+  // not one. The game is genuinely platform-independent, so "All" is the
+  // honest value, and the browser statement belongs in browserRequirements.
+  operatingSystem: 'All',
+  browserRequirements: 'Requires a modern web browser with JavaScript enabled',
   description:
     'Free browser football management game. Take charge of a real club: pick the formation, ' +
     'name the starting eleven, work the transfer market, run the youth academy and manage a ' +
@@ -190,9 +196,18 @@ function AboutGaffa() {
 export default function Page() {
   return (
     <>
+      {/* dangerouslySetInnerHTML is what Next.js itself prescribes for JSON-LD
+          (docs/app/guides/json-ld): a native <script> is correct for structured
+          data, and React would HTML-escape a text child and corrupt the JSON.
+          The `<` → < replacement is the escaping those docs ask for. It is
+          belt-and-braces while GAFFA_JSONLD stays a module constant, but a
+          literal `</script>` in any future value would otherwise close this tag
+          early and turn the rest of the payload into markup. */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(GAFFA_JSONLD) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(GAFFA_JSONLD).replace(/</g, '\\u003c'),
+        }}
       />
       <FootballManagerGame />
       <AboutGaffa />
