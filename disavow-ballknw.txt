@@ -21,7 +21,10 @@
 # list on every upload, so each version must contain every domain, not a delta.
 #
 # Upload at: https://search.google.com/search-console/disavow-links
-# Bing keeps a separate list: https://www.bing.com/webmasters (Disavow Links)
+#
+# GOOGLE ONLY. Bing retired its Disavow Links feature and API in October 2023 —
+# it now discounts unnatural links algorithmically, so there is no Bing list to
+# keep in step with this file.
 
 # --- Fiverr / bulk SEO gig link farms ---
 domain:fiverr-affordable-seo-services.site
