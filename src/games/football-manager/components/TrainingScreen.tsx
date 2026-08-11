@@ -12,6 +12,7 @@ import {
 } from '@/engine/schedule';
 import { assistantScheduleAdvice } from '@/engine/assistant';
 import { Icon, type IconName } from './Icon';
+import TrainingSessionModal from './TrainingSessionModal';
 
 /**
  * Team training.
@@ -74,9 +75,15 @@ export default function TrainingScreen({
 }) {
   /** Which of the two weekly sessions the drill grid is currently setting. */
   const [editing, setEditing] = useState<0 | 1>(0);
+  /** Whether the last session's replay is open. */
+  const [watching, setWatching] = useState(false);
 
   const sessions = getSessions(state);
   const squad = getSquad(state, state.userClubId);
+  // Whatever the last weekly tick recorded. Absent until a week has actually
+  // been played, which is why the Watch button only appears once there is
+  // something real to replay.
+  const lastReport = state.lastTrainingReport ?? null;
   const days = getSchedule(state);
   const advice = assistantScheduleAdvice(state);
   const intensity = projectWeeklySchedule(state);
@@ -120,7 +127,17 @@ export default function TrainingScreen({
         <div className="fm-mod__head">
           <h2 className="fm-mod__title">Team training</h2>
           <span className="fm-actiondock__spacer" />
-          <span className="fm-hint" style={{ margin: 0 }}>Two sessions a week</span>
+          {lastReport ? (
+            <button
+              type="button"
+              className="fm-btn fm-btn--secondary fm-btn--small"
+              onClick={() => setWatching(true)}
+            >
+              <Icon name="play" size={13} /> Watch last session
+            </button>
+          ) : (
+            <span className="fm-hint" style={{ margin: 0 }}>Two sessions a week</span>
+          )}
         </div>
 
         <div className="fm-segmented fm-sessionpick" role="tablist" aria-label="Which session to set">
@@ -273,6 +290,10 @@ export default function TrainingScreen({
             </div>
           ))}
       </div>
+
+      {watching && lastReport && (
+        <TrainingSessionModal report={lastReport} onClose={() => setWatching(false)} />
+      )}
     </>
   );
 }

@@ -1,4 +1,6 @@
-import type { Coach, GameState, Player, Position, TeamDrill, TrainingFocus } from './types';
+import type {
+  Coach, GameState, Player, Position, TeamDrill, TrainingEvent, TrainingFocus, TrainingReport,
+} from './types';
 import { clamp, marketValue } from './utils';
 import { pushInbox } from './inbox';
 
@@ -212,16 +214,23 @@ function absTick(s: GameState): number {
  * Idempotent within a week: `oneToOneResolved` records the tick the
  * individual slots last paid out, so a re-entrant call can't double them.
  */
-export function applyWeeklyTraining(state: GameState): void {
+export function applyWeeklyTraining(state: GameState): TrainingReport | null {
   const s = state;
   const club = s.clubs.find((c) => c.id === s.userClubId);
-  if (!club) return;
-  if (s.oneToOneResolved === absTick(s)) return;
+  if (!club) return null;
+  if (s.oneToOneResolved === absTick(s)) return null;
   s.oneToOneResolved = absTick(s);
 
   const sessions = getSessions(s);
   const booked = getOneToOne(s);
   const bookedIds = new Set(Object.values(booked).filter((v): v is number => typeof v === 'number'));
+
+  const events: TrainingEvent[] = [];
+  const before = new Map<number, { sharpness: number; fitness: number }>();
+  for (const id of club.playerIds) {
+    const p = s.players[id];
+    if (p) before.set(id, { sharpness: p.sharpness, fitness: p.fitness });
+  }
 
   /* --- team sessions ------------------------------------------------- */
   for (const drillId of sessions) {
@@ -248,6 +257,13 @@ export function applyWeeklyTraining(state: GameState): void {
         p[key] = clamp(p[key] + 1, 1, 99);
         p.rating = Math.min(p.potential ?? 99, p.rating + 1);
         p.value = marketValue(p.rating, p.age);
+        events.push({
+          playerId: p.id,
+          name: p.name,
+          at: 0.15 + Math.random() * 0.6,
+          text: `${p.name} — ${STAT_NAME[key]} +1, now ${p.rating} overall`,
+          tone: 'good',
+        });
       }
     }
     // The squad drilling together pulls it together as a unit.
@@ -276,6 +292,13 @@ export function applyWeeklyTraining(state: GameState): void {
       p.rating = Math.min(p.potential ?? 99, p.rating + 1);
       p.value = marketValue(p.rating, p.age);
       s.news.unshift(`${p.name} has been sharp in individual work — now ${p.rating} overall.`);
+      events.push({
+        playerId: p.id,
+        name: p.name,
+        at: 0.55 + Math.random() * 0.4,
+        text: `${p.name} steps up in individual work — now ${p.rating} overall`,
+        tone: 'good',
+      });
       pushInbox(s, {
         category: 'club',
         title: `${p.name} steps up in individual training`,
@@ -285,7 +308,63 @@ export function applyWeeklyTraining(state: GameState): void {
       });
     }
   }
+
+  /* --- what the week added up to -------------------------------------- */
+  // Measured against the snapshot taken on entry rather than re-derived from
+  // the drill table, so the report can never disagree with what was applied.
+  let dSharp = 0;
+  let dFit = 0;
+  let attended = 0;
+  let worstDrop: { name: string; delta: number } | null = null;
+  for (const [id, was] of before) {
+    const p = s.players[id];
+    if (!p || p.injuryWeeks > 0) continue;
+    attended += 1;
+    dSharp += p.sharpness - was.sharpness;
+    const fitDelta = p.fitness - was.fitness;
+    dFit += fitDelta;
+    if (fitDelta < -1.2 && (!worstDrop || fitDelta < worstDrop.delta)) {
+      worstDrop = { name: p.name, delta: fitDelta };
+    }
+  }
+  if (worstDrop) {
+    events.push({
+      playerId: -1,
+      name: worstDrop.name,
+      at: 0.45,
+      text: `${worstDrop.name} is blowing — fitness −${Math.abs(worstDrop.delta).toFixed(1)}`,
+      tone: 'bad',
+    });
+  }
+
+  const chemistry = drillDef(sessions[0]).chemistry + drillDef(sessions[1]).chemistry;
+  if (chemistry > 0) {
+    events.push({
+      playerId: -1,
+      name: '',
+      at: 0.85,
+      text: `The squad is knitting together — chemistry +${(chemistry * 0.25).toFixed(1)}`,
+      tone: 'good',
+    });
+  }
+
+  events.sort((a, b) => a.at - b.at);
+
+  return {
+    tick: absTick(s),
+    drills: sessions,
+    events,
+    sharpness: attended ? dSharp / attended : 0,
+    fitness: attended ? dFit / attended : 0,
+    chemistry: chemistry * 0.25,
+    attended,
+  };
 }
+
+/** Attribute keys as the manager reads them, for report lines. */
+const STAT_NAME: Record<StatKey, string> = {
+  pac: 'Pace', sho: 'Shooting', pas: 'Passing', dri: 'Dribbling', def: 'Defending', phy: 'Physical',
+};
 
 /** Squad-wide read on how the week's plan is pitched, for the screen's
  *  summary strip. Pure — no mutation, safe to call on every render. */

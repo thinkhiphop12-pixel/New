@@ -86,6 +86,38 @@ export interface CareerEntry {
   goals: number;
 }
 
+/**
+ * What a week's training actually did, recorded as it happens.
+ *
+ * The training screen replays this rather than recomputing anything: the
+ * outcome is decided here, in the weekly tick, and the animation is a
+ * retelling of it. That is what makes "watch the session" honest — and what
+ * makes skipping it completely free.
+ */
+export interface TrainingEvent {
+  playerId: number;
+  name: string;
+  /** Ordering hint for the replay, 0-1 through the session. */
+  at: number;
+  text: string;
+  /** Whether this reads as a gain or a knock. */
+  tone: 'good' | 'bad' | 'flat';
+}
+
+export interface TrainingReport {
+  /** Absolute tick the session belongs to, so a stale report is detectable. */
+  tick: number;
+  /** The two drills that were worked on. */
+  drills: [TeamDrill, TeamDrill];
+  events: TrainingEvent[];
+  /** Squad-wide totals, averaged across everyone who trained. */
+  sharpness: number;
+  fitness: number;
+  chemistry: number;
+  /** How many players were on the grass at all. */
+  attended: number;
+}
+
 /** A player record. Static attributes come from the dataset; form/injury/club
  *  are dynamic and live in the save. */
 export interface Player {
@@ -1300,6 +1332,11 @@ export interface GameState {
   /** Absolute tick (`seasonYear * 100 + week`) the one-to-one slots were
    *  last resolved, so a week's individual work can only ever pay out once. */
   oneToOneResolved?: number;
+
+  /** What the most recent week of training actually did, kept so the Training
+   *  screen can replay it. Cleared by nothing — it is simply overwritten each
+   *  week, and the `tick` on it says which week it belongs to. */
+  lastTrainingReport?: TrainingReport;
 
   /** How much the manager leans on his assistant, 0-100. Rises when his
    *  advice is followed or a job is handed to him, so the relationship has a
