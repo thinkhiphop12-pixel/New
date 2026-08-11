@@ -67,7 +67,7 @@ const uniquePages = allPages.filter(page => {
 // Generate XML
 const urlEntries = uniquePages
   .map(page => {
-    let xml = `  <url>\n    <loc>https://ballknw.com${page.path}</loc>`;
+    let xml = `  <url>\n    <loc>https://www.ballknw.com${page.path}</loc>`;
     if (page.lastmod) {
       xml += `\n    <lastmod>${page.lastmod}</lastmod>`;
     } else {

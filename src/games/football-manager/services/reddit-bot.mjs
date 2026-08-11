@@ -74,7 +74,7 @@ function generatePostContent() {
   const emoji = PUZZLE_EMOJIS[emojiIndex];
 
   const title = `${emoji} Daily Scout Puzzle - ${theme} (${dateStr})`;
-  const url = 'https://ballknw.com/scout';
+  const url = 'https://www.ballknw.com/scout';
 
   return { title, url, theme, dateStr };
 }

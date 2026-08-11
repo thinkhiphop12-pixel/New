@@ -83,7 +83,7 @@ class DiscordBotService {
 
     return {
       title: `${emoji} Daily Scout Puzzle`,
-      description: `**Today's Theme:** ${theme}\n\n[Play Scout](https://ballknw.com/scout)`,
+      description: `**Today's Theme:** ${theme}\n\n[Play Scout](https://www.ballknw.com/scout)`,
       color: 0x0066cc,
       fields: [
         {
