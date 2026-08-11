@@ -192,7 +192,7 @@ ${html}
     .join(' · ');
 
   return `<!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
 ${ANALYTICS}
@@ -208,7 +208,7 @@ ${ANALYTICS}
   <meta property="og:description" content="${esc(a.ogDescription || a.description)}">
   <meta property="og:image" content="${SITE}/assets/og-image.png">
   <meta property="og:type" content="article">
-  <meta property="og:locale" content="en_GB">
+  <meta property="og:locale" content="en_US">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${esc(twitterTitle)}">
   <meta name="twitter:description" content="${esc(a.ogDescription || a.description)}">
@@ -327,7 +327,7 @@ ${items}
   }, null, 2);
 
   return `<!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
 ${ANALYTICS}
@@ -343,7 +343,7 @@ ${ANALYTICS}
   <meta property="og:description" content="Tactical roles, formations, Football Manager 26 guides and football careers — explained plainly.">
   <meta property="og:image" content="${SITE}/assets/og-image.png">
   <meta property="og:type" content="website">
-  <meta property="og:locale" content="en_GB">
+  <meta property="og:locale" content="en_US">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Football Guides &amp; Explainers">
   <meta name="twitter:description" content="Tactical roles, formations, Football Manager 26 guides and football careers — explained plainly.">
@@ -409,6 +409,9 @@ const STATIC_URLS = [
   ['/what-does-a-football-manager-do.html', '0.8', 'monthly'],
   ['/how-to-become-a-football-manager.html', '0.8', 'monthly'],
   ['/football-manager-pa-ca-explained.html', '0.8', 'monthly'],
+  ['/soccer-positions-explained.html', '0.9', 'monthly'],
+  ['/how-many-players-on-a-soccer-team.html', '0.9', 'monthly'],
+  ['/arsenal-transfer-round-up.html', '0.5', 'weekly'],
 ];
 
 // lastmod for the hand-written pages, preserved from the previous sitemap so
