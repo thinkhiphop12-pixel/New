@@ -3608,3 +3608,164 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-sessionpick { width: 100%; margin-bottom: 10px; }
 .fm-sessionpick .fm-segmented__opt { flex-direction: column; gap: 2px; padding: 8px 6px; }
 .fm-sessionpick__now { display: block; font-size: 10.5px; font-weight: 800; color: var(--green); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Assistant Manager
+   A character screen, not a settings panel: portrait, one line at a time,
+   things you can ask him, and jobs you can hand over.
+   ══════════════════════════════════════════════════════════════════════ */
+.fm-assistant-overlay {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(0,0,0,0.72); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  animation: fmAssistantIn 0.18s ease;
+}
+@keyframes fmAssistantIn { from { opacity: 0 } to { opacity: 1 } }
+.fm-assistant {
+  position: relative; width: min(720px, 100%); max-height: min(88dvh, 760px);
+  overflow-y: auto; border-radius: var(--r-xl);
+  background:
+    radial-gradient(620px 340px at 10% 0%, rgba(0,214,143,0.13), transparent 68%),
+    linear-gradient(165deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+}
+.fm-assistant__close {
+  position: absolute; top: 12px; right: 12px; z-index: 2;
+  width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--muted);
+  cursor: pointer; font-family: inherit;
+}
+.fm-assistant__close:hover { color: var(--text); border-color: var(--border-bright); }
+.fm-assistant__body {
+  display: grid; grid-template-columns: 172px minmax(0, 1fr); gap: 18px; padding: 20px;
+}
+@media (max-width: 620px) { .fm-assistant__body { grid-template-columns: 1fr; } }
+
+.fm-assistant__who { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.fm-assistant__frame {
+  width: 132px; height: 132px; border-radius: 20px; overflow: hidden;
+  background: linear-gradient(170deg, #1b2a1e, #0b0f0c);
+  border: 1px solid rgba(184,255,60,0.22);
+  box-shadow: inset 0 -30px 50px rgba(0,0,0,0.5);
+  display: grid; place-items: center;
+}
+/* A slow idle bob, so he isn't a still image staring at you. */
+.fm-coach-portrait { animation: fmCoachBob 4.2s ease-in-out infinite; }
+@keyframes fmCoachBob { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-2.5px) } }
+.fm-assistant__vacant { color: var(--muted-dim); }
+.fm-assistant__name { margin: 0; font-size: 14px; font-weight: 900; text-align: center; line-height: 1.25; }
+.fm-assistant__role {
+  margin: 0; font-size: 10px; font-weight: 800; letter-spacing: 1.1px;
+  text-transform: uppercase; color: var(--muted-dim); text-align: center;
+}
+
+.fm-trust { width: 100%; margin-top: 2px; }
+.fm-trust__head {
+  display: flex; justify-content: space-between; margin-bottom: 4px;
+  font-size: 10px; font-weight: 800; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted-dim);
+}
+.fm-trust__head b { color: var(--green); font-variant-numeric: tabular-nums; }
+.fm-trust__track { height: 6px; border-radius: 3px; background: var(--panel-3); overflow: hidden; }
+.fm-trust__fill {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, var(--green-600), var(--green));
+  transition: width 0.6s cubic-bezier(0.2,0.8,0.2,1);
+}
+.fm-trust__label {
+  margin: 5px 0 0; font-size: 10.5px; color: var(--muted-dim); text-align: center;
+}
+
+.fm-assistant__talk { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.fm-bubble {
+  position: relative; background: var(--panel-3); border: 1px solid var(--border-soft);
+  border-radius: 14px; padding: 14px 16px; min-height: 84px;
+  font-size: 14.5px; line-height: 1.55; color: var(--text);
+}
+.fm-bubble--urgent { color: var(--red); font-weight: 700; }
+.fm-bubble::before {
+  content: ""; position: absolute; left: -7px; top: 26px; width: 12px; height: 12px;
+  background: var(--panel-3); border-left: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft); transform: rotate(45deg);
+}
+@media (max-width: 620px) {
+  .fm-bubble::before { left: 26px; top: -7px; transform: rotate(135deg); }
+}
+.fm-bubble__caret {
+  display: inline-block; width: 7px; height: 1em; vertical-align: -2px;
+  background: var(--green); margin-left: 2px; animation: fmCaret 1s steps(2) infinite;
+}
+@keyframes fmCaret { 0%, 49% { opacity: 1 } 50%, 100% { opacity: 0 } }
+
+.fm-asks { display: flex; flex-wrap: wrap; gap: 8px; }
+.fm-ask {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--panel-3); border: 1px solid var(--border); color: var(--text-2);
+  border-radius: var(--r-full); padding: 8px 15px; font-size: 13px; font-weight: 700;
+  font-family: inherit; cursor: pointer; transition: all 0.14s ease; min-height: var(--tap-min);
+}
+.fm-ask:hover { border-color: var(--green); color: var(--text); transform: translateY(-1px); }
+.fm-ask[aria-pressed="true"] { border-color: var(--green); background: var(--green-dim); color: var(--text); }
+.fm-ask__key {
+  width: 17px; height: 17px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 9px; font-weight: 900; background: var(--green); color: #04140d; flex: none;
+}
+.fm-ask--urgent .fm-ask__key { background: var(--red); color: #2a0008; }
+.fm-assistant__goto { align-self: flex-start; }
+.fm-assistant__seclabel { margin: 6px 0 0; }
+
+/* Jobs you can hand him: each one visibly runs, then stamps itself done. */
+.fm-jobs { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 9px; }
+.fm-job {
+  position: relative; overflow: hidden; text-align: left;
+  background: var(--card-gradient); border: 1px solid var(--border-soft);
+  border-radius: var(--r-md); padding: 13px 14px; cursor: pointer;
+  font-family: inherit; color: var(--text);
+  transition: transform 0.14s ease, border-color 0.14s ease;
+}
+.fm-job:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--border-bright); }
+.fm-job:disabled { cursor: not-allowed; }
+.fm-job:disabled:not(.done):not(.running) { opacity: 0.38; }
+.fm-job__top { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+.fm-job__led {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: var(--gold); box-shadow: 0 0 7px var(--gold);
+}
+.fm-job:disabled:not(.done):not(.running) .fm-job__led { background: var(--muted-dim); box-shadow: none; }
+.fm-job.done .fm-job__led { background: var(--green-600); box-shadow: 0 0 7px var(--green-600); }
+.fm-job__label { font-size: 13.5px; font-weight: 800; }
+.fm-job__sub { font-size: 11.5px; color: var(--muted); }
+.fm-job__bar {
+  position: absolute; left: 0; bottom: 0; height: 2px; width: 0;
+  background: var(--green); transition-property: width; transition-timing-function: linear;
+}
+.fm-job.running .fm-job__bar { width: 100%; }
+.fm-job__stamp {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: rgba(5,5,5,0.82); opacity: 0; pointer-events: none;
+}
+.fm-job.done .fm-job__stamp { opacity: 1; animation: fmStamp 0.45s cubic-bezier(0.2,1.5,0.4,1); }
+@keyframes fmStamp {
+  0% { transform: scale(1.5); opacity: 0 }
+  60% { opacity: 1 }
+  100% { transform: scale(1); opacity: 1 }
+}
+.fm-job__stamp span {
+  border: 2.5px solid var(--green-600); color: var(--green-600); border-radius: 6px;
+  font-size: 13px; font-weight: 900; letter-spacing: 2px; padding: 4px 12px;
+  transform: rotate(-7deg);
+}
+.fm-jobreport {
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-left: 2px solid var(--green-600); border-radius: var(--r-sm);
+  padding: 11px 13px;
+}
+.fm-jobreport p { margin: 0 0 3px; font-size: 12.5px; color: var(--text-2); }
+.fm-jobreport p:last-child { margin: 0; }
+.fm-jobreport__title { color: var(--green-600) !important; font-weight: 800; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fm-coach-portrait, .fm-bubble__caret, .fm-job.done .fm-job__stamp { animation: none; }
+  .fm-job__bar { transition: none; }
+}

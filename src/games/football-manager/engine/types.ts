@@ -1301,6 +1301,12 @@ export interface GameState {
    *  last resolved, so a week's individual work can only ever pay out once. */
   oneToOneResolved?: number;
 
+  /** How much the manager leans on his assistant, 0-100. Rises when his
+   *  advice is followed or a job is handed to him, so the relationship has a
+   *  direction rather than being the same conversation every week. Optional:
+   *  saves from before this existed start from the neutral 50. */
+  assistantTrust?: number;
+
   /* --- Board requests. Optional; absent means "nothing asked for yet". --- */
   /** Every sanction the manager has asked the board for this career, newest
    *  first. An `approved` entry is what unlocks the spend it names. */
