@@ -898,6 +898,52 @@ body {
 
 /* ── Player rows ── */
 .fm-player-list { display: flex; flex-direction: column; gap: 5px; }
+
+/* ── Squad screen: one list, first team / youth, sortable ──
+   The roster tab is a list now (the pitch and the tactics accordion it used
+   to open with both live on Tactics). These are the controls above it and the
+   youth row's promote action beside it. */
+.fm-squadbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.fm-squadbar__tabs { flex: 0 0 auto; }
+.fm-segmented__count {
+  display: inline-block; margin-left: 5px; padding: 1px 6px; border-radius: var(--r-full);
+  font-size: 10px; font-weight: 900; background: var(--panel-3); color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.fm-segmented__opt.active .fm-segmented__count { background: var(--brand); color: var(--brand-text); }
+.fm-squadbar__sorts { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.fm-sortchip {
+  background: transparent; border: 1px solid var(--border-soft); color: var(--muted);
+  border-radius: var(--r-full); padding: 6px 12px; font-size: 11.5px; font-weight: 700;
+  font-family: inherit; cursor: pointer; transition: all 0.14s; min-height: 32px;
+}
+.fm-sortchip:hover { color: var(--text); border-color: var(--border-bright); }
+.fm-sortchip.active { color: var(--green); border-color: rgba(184,255,60,0.45); background: var(--green-dim); }
+/* Position headers only appear while the list is in position order. */
+.fm-grouphead {
+  display: flex; align-items: center; gap: 9px; margin: 14px 0 2px;
+  font-size: 10px; font-weight: 900; letter-spacing: 1.3px; text-transform: uppercase;
+  color: var(--muted-dim);
+}
+.fm-grouphead:first-child { margin-top: 0; }
+.fm-grouphead::after { content: ""; flex: 1; height: 1px; background: var(--border-soft); }
+/* A youth row is the player row plus the one action that screen exists for. */
+.fm-squadrow { display: flex; align-items: stretch; gap: 6px; }
+.fm-squadrow > .fm-player-row { flex: 1; min-width: 0; }
+.fm-squadrow__promote {
+  flex: 0 0 auto; border: 1px solid rgba(184,255,60,0.4); background: var(--green-dim);
+  color: var(--green); border-radius: var(--r-sm); font-size: 11px; font-weight: 800;
+  padding: 0 12px; font-family: inherit; cursor: pointer; white-space: nowrap;
+  transition: all 0.14s;
+}
+.fm-squadrow__promote:hover:not(:disabled) { background: rgba(184,255,60,0.2); }
+.fm-squadrow__promote:disabled { opacity: 0.35; cursor: not-allowed; }
+@media (max-width: 560px) {
+  .fm-squadbar__sorts { margin-left: 0; width: 100%; }
+  .fm-squadbar__tabs { width: 100%; }
+}
 .fm-player-row {
   display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 8px;
   background: var(--panel); border: 1px solid var(--border-soft);
@@ -911,9 +957,17 @@ button.fm-player-row { cursor: pointer; font-family: inherit; }
 button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); background: var(--panel-2); }
 .fm-player-row:disabled { opacity: 0.4; cursor: not-allowed; }
 .fm-player-row.highlight { border-color: var(--green); background: var(--green-dim); }
-.fm-player-row.in-lineup { border-color: var(--green-600); }
-/* Squad list rows lead with a player avatar; other player lists don't. */
-.fm-player-row--faced { grid-template-columns: 26px 40px 1fr auto auto; }
+/* Starting XI: a club-coloured rail down the row rather than a full green
+   outline — in a single list most rows are starters, and eleven glowing
+   borders is noise rather than a signal. */
+.fm-player-row.in-lineup { box-shadow: inset 2px 0 0 var(--brand); }
+/* Squad list rows lead with a player avatar; other player lists don't.
+   Six children — face, shirt number, position badge, name, tag, rating — so
+   six tracks. This declared five, which sent the rating chip onto an implicit
+   second row and stretched the badge across the leftover space; invisible
+   while the list sat in a narrow two-column split, obvious once it went
+   full-width. */
+.fm-player-row--faced { grid-template-columns: 26px 22px 42px minmax(0, 1fr) auto auto; }
 .fm-player-row__badge {
   display: flex; align-items: center; justify-content: center;
   font-size: 9.5px; font-weight: 900; border-radius: 6px;
@@ -924,7 +978,20 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-pos-MID .fm-player-row__badge { background: rgba(184,255,60,0.14); color: var(--green); }
 .fm-pos-FWD .fm-player-row__badge { background: rgba(242,102,122,0.14); color: var(--red); }
 .fm-player-row__name { font-weight: 700; font-size: 13px; }
-.fm-player-row__sub { display: block; font-size: 11px; color: var(--muted-dim); font-weight: 400; }
+.fm-player-row__sub {
+  display: block; font-size: 11px; color: var(--muted-dim); font-weight: 400;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Tailwind's preflight sets `svg { display: block }`, which would break the
+   sub-line onto a third row wherever it carries an inline warning icon. */
+.fm-player-row__sub svg { display: inline; vertical-align: -1px; }
+/* Morale sits next to the rating chip, so it needs to not read as a second
+   rating: a coloured dot and a dimmer weight separate the two. */
+.fm-morale {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 11px;
+  font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.fm-morale::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .fm-player-row__tag { font-size: 10.5px; color: var(--muted); text-align: right; }
 .fm-player-row__tag .inj { color: var(--red); font-weight: 700; }
 .fm-player-row__tag .hot { color: var(--green); font-weight: 700; }

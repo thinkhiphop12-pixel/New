@@ -1,20 +1,49 @@
 'use client';
 
-import { useState, type CSSProperties } from 'react';
+import { useMemo, useState } from 'react';
 import { Icon } from './Icon';
-import type { GameState, Player, Pressing, TacticStyle, Tempo, TrainingFocus, Width } from '@/engine/types';
-import { FORMATIONS, getFormation } from '@/engine/gameRules';
-import { autoPickLineup, getSquad, isOnLoan, lineupStrength, setPlayerRole } from '@/engine/teamManagement';
+import type { GameState, Player, Position } from '@/engine/types';
+import { getSquad, isOnLoan } from '@/engine/teamManagement';
+import { getYouthSquad, promoteYouthPlayer, starsForPotential } from '@/engine/youthAcademy';
+import { MAX_SQUAD_SIZE } from '@/engine/gameRules';
 import { getRole } from '@/lib/playerRoles';
-import { PitchMarkings, PlayerToken } from './visuals';
 import { PlayerFace } from './PlayerFace';
 import PlayerModal from './PlayerModal';
-import type { ScreenId } from './hubNav';
+import { pushToast } from './ToastQueue';
 
-function lastName(name: string): string {
-  const parts = name.split(' ').filter((w) => !/^jr\.?$/i.test(w));
-  return parts[parts.length - 1] ?? name;
-}
+/**
+ * The squad, as a list.
+ *
+ * This screen used to open with the formation summary, the tactics accordion
+ * and an interactive pitch — all three of which are what the *Tactics* tab one
+ * across is for. The roster itself then sat underneath in two side-by-side
+ * columns (GK+DEF | MID+FWD), which meant the one thing a list is good for,
+ * comparing any player against any other, was the one thing it couldn't do.
+ *
+ * So: one list, sortable, and the youth team on a toggle beside the first team
+ * rather than three taps away under Training → Academy. Picking the XI moved
+ * with the pitch to Tactics → Shape, where the shape it fills already lives;
+ * that screen used to tell you to "pick your XI on the Squad screen first",
+ * which is no longer a journey anyone has to make.
+ */
+
+type SquadTab = 'first' | 'youth';
+type SortKey = 'pos' | 'ovr' | 'age' | 'form';
+
+const SORTS: { id: SortKey; label: string }[] = [
+  { id: 'pos', label: 'Position' },
+  { id: 'ovr', label: 'Rating' },
+  { id: 'age', label: 'Age' },
+  { id: 'form', label: 'Form' },
+];
+
+const POS_ORDER: Record<Position, number> = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
+const GROUP_LABEL: Record<Position, string> = {
+  GK: 'Goalkeepers',
+  DEF: 'Defenders',
+  MID: 'Midfielders',
+  FWD: 'Forwards',
+};
 
 function moraleColor(v: number): string {
   if (v >= 70) return 'var(--green)';
@@ -31,248 +60,175 @@ function formTag(p: Player): React.ReactNode {
   return null;
 }
 
+/** Form as a single sortable number, so "Form" can rank the whole list rather
+ *  than only separating the three tags the row happens to show. */
+function formRank(p: Player): number {
+  if (p.injuryWeeks > 0 || isOnLoan(p)) return -1;
+  return p.form;
+}
+
 export default function SquadScreen({
   state,
   onChange,
-  onRoute,
 }: {
   state: GameState;
   onChange: (next: GameState) => void;
-  onRoute: (id: ScreenId) => void;
 }) {
-  const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
+  const [tab, setTab] = useState<SquadTab>('first');
+  const [sort, setSort] = useState<SortKey>('pos');
   const [detailId, setDetailId] = useState<number | null>(null);
-  const [tacticsOpen, setTacticsOpen] = useState(false);
-  const formation = getFormation(state.formationId);
-  const squad = getSquad(state, state.userClubId).sort((a, b) => b.rating - a.rating);
-  const strength = lineupStrength(state, state.lineup, formation, state.tactics, state.morale, state.chemistry);
 
-  const update = (patch: Partial<GameState>) => onChange({ ...state, ...patch });
+  const first = getSquad(state, state.userClubId);
+  const youth = getYouthSquad(state, state.userClubId);
+  const players = tab === 'youth' ? youth : first;
 
-  const setFormation = (id: string) => {
-    const f = getFormation(id);
-    update({ formationId: id, lineup: autoPickLineup(state, state.userClubId, f) });
-    setSelectedSlot(null);
-  };
-
-  const assignToSlot = (playerId: number) => {
-    if (selectedSlot === null) return;
-    const lineup = [...state.lineup];
-    const existingIdx = lineup.indexOf(playerId);
-    if (existingIdx >= 0) {
-      // Player already in the XI — swap the two slots.
-      [lineup[existingIdx], lineup[selectedSlot]] = [lineup[selectedSlot], lineup[existingIdx]];
-    } else {
-      lineup[selectedSlot] = playerId;
-    }
-    update({ lineup });
-    setSelectedSlot(null);
-  };
-
-  const slotPlayer = (i: number): Player | null => {
-    const id = state.lineup[i];
-    return id !== null && id !== undefined ? state.players[id] : null;
-  };
-
-  const eligible = (p: Player): boolean => {
-    if (selectedSlot === null) return false;
-    if (p.injuryWeeks > 0 || isOnLoan(p)) return false;
-    const slot = formation.slots[selectedSlot];
-    return (p.pos === 'GK') === (slot.pos === 'GK');
-  };
+  const sorted = useMemo(() => {
+    const list = [...players];
+    if (sort === 'pos') return list.sort((a, b) => POS_ORDER[a.pos] - POS_ORDER[b.pos] || b.rating - a.rating);
+    if (sort === 'ovr') return list.sort((a, b) => b.rating - a.rating);
+    if (sort === 'age') return list.sort((a, b) => a.age - b.age || b.rating - a.rating);
+    return list.sort((a, b) => formRank(b) - formRank(a) || b.rating - a.rating);
+  }, [players, sort]);
 
   const detail = detailId !== null ? state.players[detailId] : null;
+  const squadFull = first.length >= MAX_SQUAD_SIZE;
 
-  // Two rating-coded position groups, matching the design spec's "Goalkeepers
-  // & Defense" / "Midfield & Attack" split — each sorted strongest-first.
-  const groupA = squad.filter((p) => p.pos === 'GK' || p.pos === 'DEF');
-  const groupB = squad.filter((p) => p.pos === 'MID' || p.pos === 'FWD');
+  const promote = (p: Player) => {
+    if (squadFull) {
+      pushToast(`Squad is full at ${MAX_SQUAD_SIZE} — sell or release someone first.`, 'error');
+      return;
+    }
+    onChange(promoteYouthPlayer(state, p.id));
+    pushToast(`${p.name} promoted to the first team.`, 'success');
+  };
 
-  const renderGroup = (label: string, players: Player[]) => (
-    <div className="fm-mod">
-      <div className="fm-mod__head"><h2 className="fm-mod__title">{label}</h2></div>
-      <div className="fm-player-list">
-        {players.map((p) => {
-          const inLineup = state.lineup.includes(p.id);
-          const canPick = selectedSlot !== null && eligible(p);
-          return (
-            <button
-              key={p.id}
-              className={`fm-player-row fm-player-row--faced fm-pos-${p.pos}${canPick ? ' highlight' : ''}${inLineup ? ' in-lineup' : ''}`}
-              disabled={selectedSlot !== null && !canPick}
-              onClick={() =>
-                selectedSlot !== null ? assignToSlot(p.id) : setDetailId(detailId === p.id ? null : p.id)
-              }
-            >
-              <PlayerFace playerId={p.id} size={26} />
-              {p.squadNumber !== undefined && (
-                <span className="fm-player-row__num" aria-label={`Shirt number ${p.squadNumber}`}>
-                  {p.squadNumber}
-                </span>
+  const renderRow = (p: Player) => {
+    const inLineup = state.lineup.includes(p.id);
+    const isYouth = tab === 'youth';
+    return (
+      <div key={p.id} className="fm-squadrow">
+        <button
+          className={`fm-player-row fm-player-row--faced fm-pos-${p.pos}${inLineup ? ' in-lineup' : ''}`}
+          onClick={() => setDetailId(detailId === p.id ? null : p.id)}
+        >
+          <PlayerFace playerId={p.id} size={26} />
+          {p.squadNumber !== undefined && (
+            <span className="fm-player-row__num" aria-label={`Shirt number ${p.squadNumber}`}>
+              {p.squadNumber}
+            </span>
+          )}
+          <span className="fm-player-row__badge">{p.role}</span>
+          <span className="fm-player-row__name">
+            {p.name}
+            <span className="fm-player-row__sub">
+              {p.age}y{inLineup ? ' · XI' : ''}
+              {isYouth
+                ? ` · ceiling ${'★'.repeat(starsForPotential(p.potential ?? p.rating))}`
+                : p.tacticalRole && getRole(p.tacticalRole)?.name
+                  ? ` · ${getRole(p.tacticalRole)?.name}`
+                  : ''}
+              {!isYouth && p.contractYears <= 1 && (
+                <> · <Icon name="warning" size={11} style={{ verticalAlign: -1 }} /> expiring</>
               )}
-              <span className="fm-player-row__badge">{p.role}</span>
-              <span className="fm-player-row__name">
-                {p.name}
-                <span className="fm-player-row__sub">
-                  {p.age}y{inLineup ? ' · XI' : ''}
-                  {p.tacticalRole && getRole(p.tacticalRole)?.name ? ` · ${getRole(p.tacticalRole)?.name}` : ''}
-                  {p.contractYears <= 1 && <> · <Icon name="warning" size={11} style={{ verticalAlign: -1 }} /> expiring</>}
-                </span>
-              </span>
-              <span className="fm-player-row__tag">
-                {formTag(p)}
-                <span style={{ color: moraleColor(p.morale), fontSize: 11, fontWeight: 700 }} title="Morale">
-                  {Math.round(p.morale)}
-                </span>
-              </span>
-              <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
-                {p.rating}
-              </span>
-            </button>
-          );
-        })}
-        {players.length === 0 && <p className="fm-hint">No players in this group.</p>}
+            </span>
+          </span>
+          <span className="fm-player-row__tag">
+            {formTag(p)}
+            <span className="fm-morale" style={{ color: moraleColor(p.morale) }} title={`Morale ${Math.round(p.morale)}`}>
+              {Math.round(p.morale)}
+            </span>
+          </span>
+          <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
+            {p.rating}
+          </span>
+        </button>
+        {isYouth && (
+          // The academy screen's only real action, on the row it belongs to —
+          // no reason to send anyone to another screen to press it.
+          <button
+            type="button"
+            className="fm-squadrow__promote"
+            onClick={() => promote(p)}
+            disabled={squadFull}
+            title={squadFull ? `Squad is full at ${MAX_SQUAD_SIZE}` : `Promote ${p.name} to the first team`}
+          >
+            Promote
+          </button>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
+
+  /* Position headers only make sense while the list *is* in position order —
+     any other sort is a single ranked run, and headers would cut it up. */
+  const body: React.ReactNode[] = [];
+  if (sort === 'pos') {
+    let seen: Position | null = null;
+    for (const p of sorted) {
+      if (p.pos !== seen) {
+        seen = p.pos;
+        body.push(
+          <p key={`h-${p.pos}`} className="fm-grouphead">{GROUP_LABEL[p.pos]}</p>,
+        );
+      }
+      body.push(renderRow(p));
+    }
+  } else {
+    for (const p of sorted) body.push(renderRow(p));
+  }
 
   return (
     <>
-      <div className="fm-panel">
-        <button
-          className="fm-pill active"
-          style={{ width: '100%', textAlign: 'left' }}
-          onClick={() => setTacticsOpen((v) => !v)}
-        >
-          {formation.name} · {state.tactics.style[0].toUpperCase() + state.tactics.style.slice(1)} ·{' '}
-          {state.tactics.pressing === 'low' ? 'Low block' : state.tactics.pressing === 'mid' ? 'Standard press' : 'High press'}
-          {' '}{tacticsOpen ? '▲' : '▼'}
-        </button>
-        {tacticsOpen && (
-          <>
-            <p className="fm-label">Formation</p>
-            <div className="fm-pills">
-              {FORMATIONS.map((f) => (
-                <button
-                  key={f.id}
-                  className={`fm-pill${state.formationId === f.id ? ' active' : ''}`}
-                  onClick={() => setFormation(f.id)}
-                >
-                  {f.name}
-                </button>
-              ))}
-            </div>
-            <p className="fm-label">Style</p>
-            <div className="fm-pills">
-              {(['defensive', 'balanced', 'attacking'] as TacticStyle[]).map((s) => (
-                <button
-                  key={s}
-                  className={`fm-pill${state.tactics.style === s ? ' active' : ''}`}
-                  onClick={() => update({ tactics: { ...state.tactics, style: s } })}
-                >
-                  {s[0].toUpperCase() + s.slice(1)}
-                </button>
-              ))}
-            </div>
-            <p className="fm-label">Pressing</p>
-            <div className="fm-pills">
-              {(['low', 'mid', 'high'] as Pressing[]).map((p) => (
-                <button
-                  key={p}
-                  className={`fm-pill${state.tactics.pressing === p ? ' active' : ''}`}
-                  onClick={() => update({ tactics: { ...state.tactics, pressing: p } })}
-                >
-                  {p === 'low' ? 'Low block' : p === 'mid' ? 'Standard' : 'High press'}
-                </button>
-              ))}
-            </div>
-            <p className="fm-label">Tempo</p>
-            <div className="fm-pills">
-              {(['slow', 'normal', 'fast'] as Tempo[]).map((t) => (
-                <button
-                  key={t}
-                  className={`fm-pill${state.tactics.tempo === t ? ' active' : ''}`}
-                  onClick={() => update({ tactics: { ...state.tactics, tempo: t } })}
-                >
-                  {t[0].toUpperCase() + t.slice(1)}
-                </button>
-              ))}
-            </div>
-            <p className="fm-label">Width</p>
-            <div className="fm-pills">
-              {(['narrow', 'standard', 'wide'] as Width[]).map((w) => (
-                <button
-                  key={w}
-                  className={`fm-pill${state.tactics.width === w ? ' active' : ''}`}
-                  onClick={() => update({ tactics: { ...state.tactics, width: w } })}
-                >
-                  {w[0].toUpperCase() + w.slice(1)}
-                </button>
-              ))}
-            </div>
-            <p className="fm-label">Training focus</p>
-            <div className="fm-pills">
-              {(['balanced', 'attack', 'defense', 'fitness'] as TrainingFocus[]).map((t) => (
-                <button
-                  key={t}
-                  className={`fm-pill${state.training === t ? ' active' : ''}`}
-                  onClick={() => update({ training: t })}
-                >
-                  {t[0].toUpperCase() + t.slice(1)}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-        <p className="fm-hint" style={{ marginBottom: 0, marginTop: 12 }}>
-          Attack {Math.round(strength.attack)} · Midfield {Math.round(strength.midfield)} · Defense{' '}
-          {Math.round(strength.defense)} · Chemistry {state.chemistry}
-        </p>
-      </div>
-
-      <div className="fm-pitch">
-        <PitchMarkings />
-        {formation.slots.map((slot, i) => {
-          const p = slotPlayer(i);
-          return (
+      <div className="fm-squadbar">
+        <div className="fm-segmented fm-squadbar__tabs" role="tablist" aria-label="Squad">
+          {([
+            { id: 'first' as const, label: 'First team', n: first.length },
+            { id: 'youth' as const, label: 'Youth', n: youth.length },
+          ]).map((t) => (
             <button
-              key={i}
-              className={`fm-slot${p ? ' filled' : ''}${selectedSlot === i ? ' selected' : ''}`}
-              style={{ left: `${slot.x}%`, bottom: `${slot.y}%` }}
-              onClick={() => setSelectedSlot(selectedSlot === i ? null : i)}
+              key={t.id}
+              role="tab"
+              aria-selected={tab === t.id}
+              className={`fm-segmented__opt${tab === t.id ? ' active' : ''}`}
+              onClick={() => setTab(t.id)}
             >
-              <PlayerToken label={slot.label} rating={p ? p.rating * p.form : undefined} pos={slot.pos} form={p?.form} />
-              {p && <span className="fm-slot__name">{lastName(p.name)}</span>}
-              {p?.tacticalRole && <span className="fm-slot__role-dot" title={getRole(p.tacticalRole)?.name} />}
+              {t.label} <span className="fm-segmented__count">{t.n}</span>
             </button>
-          );
-        })}
+          ))}
+        </div>
+        <div className="fm-squadbar__sorts">
+          {SORTS.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              className={`fm-sortchip${sort === s.id ? ' active' : ''}`}
+              aria-pressed={sort === s.id}
+              onClick={() => setSort(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="fm-actions">
-        <button
-          className="fm-btn fm-btn--secondary fm-btn--small"
-          onClick={() => {
-            update({ lineup: autoPickLineup(state, state.userClubId, formation) });
-            setSelectedSlot(null);
-          }}
-        >
-          {/* Gap 2 (Userbrain): "I think I added somebody, I have no idea" —
-              this reshuffles the *existing* squad into the strongest XI, it
-              never adds a player. Say so, and put the real acquisition path
-              (Transfers) right next to it. */}
-          Auto-pick best XI from current squad
-        </button>
-        <button className="fm-btn fm-btn--primary fm-btn--small" onClick={() => onRoute('transfers')}>
-          Sign a player
-        </button>
+      <div className="fm-player-list">
+        {body}
+        {sorted.length === 0 && (
+          <p className="fm-hint">
+            {tab === 'youth'
+              ? 'Nobody in the academy yet. Trialists report in every pre-season — sign the ones worth keeping under Training → Academy.'
+              : 'No players in the squad.'}
+          </p>
+        )}
       </div>
 
       <p className="fm-hint">
-        {selectedSlot !== null ? `Pick a ${formation.slots[selectedSlot].label}.` : 'Tap a slot to change it, tap a player for details.'}
+        {tab === 'youth'
+          ? `${youth.length} in the academy. Promoting moves a player onto the first-team roster on a fresh contract.`
+          : `${first.length} registered · ${state.lineup.filter((id) => id != null).length} in the XI. Pick the XI on Tactics → Shape.`}
       </p>
 
-      {detail && selectedSlot === null && (
+      {detail && (
         <PlayerModal
           state={state}
           player={detail}
@@ -281,11 +237,6 @@ export default function SquadScreen({
           onClose={() => setDetailId(null)}
         />
       )}
-
-      <div className="fm-split" style={{ '--split-ratio': '1fr 1fr' } as CSSProperties}>
-        {renderGroup('Goalkeepers & Defense', groupA)}
-        {renderGroup('Midfield & Attack', groupB)}
-      </div>
     </>
   );
 }
