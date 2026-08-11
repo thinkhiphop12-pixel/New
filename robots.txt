@@ -1,32 +1,11 @@
 # robots.txt — BALLKNW crawling rules
-# Updated 2026-07-08
+# Updated 2026-08-11
 
 User-agent: *
 Allow: /
-Allow: /index.html
-Allow: /about.html
-Allow: /privacy.html
-Allow: /terms.html
-Allow: /scout-guide.html
-Allow: /gaffer-guide.html
-Allow: /draft-xi-guide.html
-Allow: /free-football-manager.html
-Allow: /what-is-a-gaffer-in-football.html
-Allow: /football-terms.html
-Allow: /what-is-a-false-9.html
-Allow: /what-is-a-low-block-in-football.html
-Allow: /best-football-manager-games-pc.html
-Allow: /best-football-manager-games-android.html
-Allow: /best-football-manager-games-iphone.html
-Allow: /scout/
-Allow: /perfect-cup/
-Allow: /gaffa/
-Allow: /assets/
-
 Disallow: /footygames/
 Disallow: /admin/
 Disallow: /api/
-
 Crawl-delay: 1
 
 # Search engines — allow faster crawling
@@ -52,4 +31,3 @@ User-agent: anthropic-ai
 Allow: /
 
 Sitemap: https://www.ballknw.com/sitemap.xml
-Sitemap: https://www.ballknw.com/llms.txt
