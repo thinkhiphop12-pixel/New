@@ -2,11 +2,11 @@
 
 import { useState, type CSSProperties } from 'react';
 import type {
-  AttackFocus, BuildUp, DefLine, GameState, PassingStyle, PlayStyle, Pressing,
+  AttackFocus, BuildUp, DefLine, GameState, PassingStyle, PlayStyle, Player, Pressing,
   RunStyle, Tackling, TacticStyle, Tempo, Width,
 } from '@/engine/types';
 import { ALL_FORMATIONS, buildCustomFormation, getFormation, getLeague, parseCustomFormationId } from '@/engine/gameRules';
-import { autoPickLineup, getSquad, previewEffectiveXG } from '@/engine/teamManagement';
+import { autoPickLineup, getSquad, isOnLoan, previewEffectiveXG } from '@/engine/teamManagement';
 import { nextUserFixture, setCaptain } from '@/engine/seasonProgression';
 import { traitNames } from '@/engine/traits';
 import {
@@ -43,6 +43,12 @@ const SP_ROLES: { job: SPJob; label: string; stat: 'pas' | 'sho'; icon: IconName
 const SP_FIELD: Record<SPJob, string> = {
   penalty: 'penalties', corner: 'corners', fkShoot: 'fkShoot', fkDeliver: 'fkDeliver',
 };
+
+/** Surname only — all a pitch token has room for. */
+function lastName(name: string): string {
+  const parts = name.split(' ').filter((w) => !/^jr\.?$/i.test(w));
+  return parts[parts.length - 1] ?? name;
+}
 
 /** Presentation order: the two no-drill fallbacks first, then the identities
  *  that have to be worked on. */
@@ -114,6 +120,8 @@ export default function TacticsScreen({
 }) {
   const [subTab, setSubTab] = useState<TacticsSubTab>('formation');
   const [previewShape, setPreviewShape] = useState<'ip' | 'oop'>('ip');
+  /** Which pitch slot is currently being re-filled, if any. */
+  const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
 
   // Custom formation builder (gap 24): seed the steppers from the current IP
   // formation's line split when it's already a custom one, else a sensible
@@ -246,6 +254,44 @@ export default function TacticsScreen({
 
   const previewFormation = getFormation(previewShape === 'ip' ? currentIPFormation : currentOOPFormation);
 
+  /* --- Naming the XI ---------------------------------------------------- */
+  /* Moved here from SquadScreen along with the interactive pitch, so the
+     roster tab can be a plain list. Same rules as before: a keeper slot only
+     takes a keeper, an outfield slot only takes an outfielder, and the
+     injured and the loaned-out are not selectable. */
+
+  const slotPlayer = (i: number): Player | null => {
+    const id = state.lineup[i];
+    return id !== null && id !== undefined ? state.players[id] : null;
+  };
+
+  const pickableFor = (slotIndex: number): Player[] => {
+    const slot = previewFormation.slots[slotIndex];
+    if (!slot) return [];
+    return getSquad(state, state.userClubId)
+      .filter((p) => p.injuryWeeks === 0 && !isOnLoan(p) && (p.pos === 'GK') === (slot.pos === 'GK'))
+      // Eligibility is only keeper-vs-outfield (a forward *may* fill a
+      // centre-back slot, as before), but a rating-only sort then puts the
+      // best striker at the top of the list for a defensive slot. Natural fits
+      // sort first so the obvious answer is the first row, out-of-position
+      // cover is still there underneath.
+      .sort((a, b) => Number(b.pos === slot.pos) - Number(a.pos === slot.pos) || b.rating - a.rating);
+  };
+
+  const assignToSlot = (playerId: number) => {
+    if (selectedSlot === null) return;
+    const lineup = [...state.lineup];
+    const existing = lineup.indexOf(playerId);
+    if (existing >= 0) {
+      // Already starting — swap the two slots rather than cloning him.
+      [lineup[existing], lineup[selectedSlot]] = [lineup[selectedSlot], lineup[existing]];
+    } else {
+      lineup[selectedSlot] = playerId;
+    }
+    update({ lineup });
+    setSelectedSlot(null);
+  };
+
   // Defensive-line height on the Defence sub-screen's pitch, driven by the
   // real `defLine` instruction the xG chain reads (`LINE_ATK`, and the
   // through-ball/in-behind matchups that key off a high line).
@@ -302,19 +348,76 @@ export default function TacticsScreen({
           </div>
 
           <div className="fm-split" style={{ '--split-ratio': '1.4fr 1fr' } as CSSProperties}>
+            {/* The XI is picked here now, on the shape it fills, rather than
+                on a second pitch over on the Squad tab — which is what left
+                this one a read-only preview telling you to go elsewhere. */}
             <div className="fm-pitch" style={{ marginBottom: 0 }}>
               <PitchMarkings />
-              {previewFormation.slots.map((slot, i) => (
-                <div key={i} className="fm-slot fm-slot--live filled" style={{ left: `${slot.x}%`, bottom: `${slot.y}%` }}>
-                  <PlayerToken label={slot.label} pos={slot.pos} />
-                </div>
-              ))}
+              {previewFormation.slots.map((slot, i) => {
+                const p = slotPlayer(i);
+                return (
+                  <button
+                    key={i}
+                    className={`fm-slot${p ? ' filled' : ''}${selectedSlot === i ? ' selected' : ''}`}
+                    style={{ left: `${slot.x}%`, bottom: `${slot.y}%` }}
+                    onClick={() => setSelectedSlot(selectedSlot === i ? null : i)}
+                    title={p ? `${p.name} — tap to change` : `Empty ${slot.label} — tap to fill`}
+                  >
+                    <PlayerToken label={slot.label} rating={p ? p.rating * p.form : undefined} pos={slot.pos} form={p?.form} />
+                    {p && <span className="fm-slot__name">{lastName(p.name)}</span>}
+                  </button>
+                );
+              })}
             </div>
 
             <div className="fm-mod">
-              <div className="fm-mod__head"><h2 className="fm-mod__title">Squad · Role</h2></div>
+              <div className="fm-mod__head">
+                <h2 className="fm-mod__title">{selectedSlot === null ? 'Squad · Role' : `Pick a ${previewFormation.slots[selectedSlot].label}`}</h2>
+                <span className="fm-actiondock__spacer" />
+                {selectedSlot === null ? (
+                  <button
+                    type="button"
+                    className="fm-btn fm-btn--secondary fm-btn--small"
+                    onClick={() => {
+                      update({ lineup: autoPickLineup(state, state.userClubId, previewFormation) });
+                      setSelectedSlot(null);
+                    }}
+                  >
+                    Auto-pick
+                  </button>
+                ) : (
+                  <button type="button" className="fm-btn fm-btn--ghost fm-btn--small" onClick={() => setSelectedSlot(null)}>
+                    Cancel
+                  </button>
+                )}
+              </div>
+
+              {selectedSlot !== null ? (
+                <div className="fm-player-list">
+                  {pickableFor(selectedSlot).map((p) => (
+                    <button
+                      key={p.id}
+                      className={`fm-player-row fm-pos-${p.pos} highlight`}
+                      onClick={() => assignToSlot(p.id)}
+                    >
+                      <span className="fm-player-row__badge">{p.pos}</span>
+                      <span className="fm-player-row__name">
+                        {p.name}
+                        <span className="fm-player-row__sub">
+                          {p.age}y{state.lineup.includes(p.id) ? ' · already in the XI, will swap' : ''}
+                        </span>
+                      </span>
+                      <span />
+                      <span className="fm-player-row__rating">{p.rating}</span>
+                    </button>
+                  ))}
+                  {pickableFor(selectedSlot).length === 0 && (
+                    <p className="fm-hint">Nobody available for this slot — everyone eligible is injured or out on loan.</p>
+                  )}
+                </div>
+              ) : (
               <div className="fm-player-list">
-                {xi.length === 0 && <p className="fm-hint">Pick your XI on the Squad screen first.</p>}
+                {xi.length === 0 && <p className="fm-hint">No XI named yet — tap a slot on the pitch, or hit Auto-pick.</p>}
                 {xi.map((p) => (
                   <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`}>
                     <span className="fm-player-row__badge">{p.pos}</span>
@@ -329,6 +432,12 @@ export default function TacticsScreen({
                   </div>
                 ))}
               </div>
+              )}
+              <p className="fm-hint" style={{ textAlign: 'left', marginBottom: 0 }}>
+                {selectedSlot === null
+                  ? 'Tap a slot on the pitch to change who plays there.'
+                  : 'Picking someone already in the XI swaps the two slots.'}
+              </p>
             </div>
           </div>
 

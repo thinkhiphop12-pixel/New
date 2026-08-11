@@ -15,7 +15,7 @@ import PressConferenceModal from './PressConferenceModal';
 import { Icon, type IconName } from './Icon';
 import type { ScreenId } from './hubNav';
 import { getAssistant } from '@/engine/assistant';
-import { assistantTips } from './assistant/tips';
+import { assistantTopics } from './assistant/tips';
 
 function ord(n: number): string {
   if (n % 100 >= 11 && n % 100 <= 13) return 'th';
@@ -210,7 +210,7 @@ export default function Dashboard({
           {attention.length === 0 ? (
             <p className="fm-hint" style={{ margin: 0 }}>
               {getAssistant(state)
-                ? `"${assistantTips(state, 'overview')[0]?.text ?? "All quiet, boss — I'd get to the next match."}"`
+                ? `"${assistantTopics(state, 'overview')[0]?.line ?? "All quiet, boss — I'd get to the next match."}"`
                 : "Nothing urgent — you're all caught up."}
             </p>
           ) : (

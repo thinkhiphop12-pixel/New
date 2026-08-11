@@ -51,9 +51,15 @@
      zone colours must stay on the fixed tokens (--green/--red/--gold) —
      their meaning must never depend on which club is being managed. */
   --brand: var(--green);
+  /* Far stop of the brand gradient, and the ink that sits on both stops.
+     Overridden per-club together with --brand (lib/brandTheme.ts derives all
+     three at once so the ink is guaranteed ≥4.5:1 on the fill it lands on). */
+  --brand-2: color-mix(in srgb, var(--green) 70%, var(--green-600));
   --brand-text: #04140d;
+  /* The brand used as *text* on a dark panel rather than as a fill. */
+  --brand-on-dark: var(--brand);
   --brand-dim: color-mix(in srgb, var(--brand) 16%, transparent);
-  --brand-gradient: linear-gradient(135deg, var(--brand) 0%, color-mix(in srgb, var(--brand) 70%, #00d68f) 100%);
+  --brand-gradient: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
 
   /* Attribute chip ramp — five bands rather than good/mid/bad, so the
      difference between a 78 and a 92 is legible at a glance. */
@@ -173,6 +179,17 @@ body {
 
 /* ── App shell ── */
 .fm-app { display: flex; flex-direction: column; min-height: 100dvh; }
+/* The club theme lands as inline `--brand`/`--brand-2`/… on this element, and
+   a custom property containing var() is substituted where it is DECLARED, not
+   where it is used. Declared on :root above, --brand-gradient and --brand-dim
+   would resolve against :root's default lime and never see the club's colour —
+   which is what left every dark-kitted club with a lime button wearing the
+   white ink picked for its own (dark) colour. Re-declaring them here, on the
+   same element the override lands on, is what makes them track it. */
+.fm-app {
+  --brand-gradient: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+  --brand-dim: color-mix(in srgb, var(--brand) 16%, transparent);
+}
 
 .fm-header {
   display: flex; align-items: center; gap: 10px;
@@ -881,6 +898,52 @@ body {
 
 /* ── Player rows ── */
 .fm-player-list { display: flex; flex-direction: column; gap: 5px; }
+
+/* ── Squad screen: one list, first team / youth, sortable ──
+   The roster tab is a list now (the pitch and the tactics accordion it used
+   to open with both live on Tactics). These are the controls above it and the
+   youth row's promote action beside it. */
+.fm-squadbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.fm-squadbar__tabs { flex: 0 0 auto; }
+.fm-segmented__count {
+  display: inline-block; margin-left: 5px; padding: 1px 6px; border-radius: var(--r-full);
+  font-size: 10px; font-weight: 900; background: var(--panel-3); color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.fm-segmented__opt.active .fm-segmented__count { background: var(--brand); color: var(--brand-text); }
+.fm-squadbar__sorts { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.fm-sortchip {
+  background: transparent; border: 1px solid var(--border-soft); color: var(--muted);
+  border-radius: var(--r-full); padding: 6px 12px; font-size: 11.5px; font-weight: 700;
+  font-family: inherit; cursor: pointer; transition: all 0.14s; min-height: 32px;
+}
+.fm-sortchip:hover { color: var(--text); border-color: var(--border-bright); }
+.fm-sortchip.active { color: var(--green); border-color: rgba(184,255,60,0.45); background: var(--green-dim); }
+/* Position headers only appear while the list is in position order. */
+.fm-grouphead {
+  display: flex; align-items: center; gap: 9px; margin: 14px 0 2px;
+  font-size: 10px; font-weight: 900; letter-spacing: 1.3px; text-transform: uppercase;
+  color: var(--muted-dim);
+}
+.fm-grouphead:first-child { margin-top: 0; }
+.fm-grouphead::after { content: ""; flex: 1; height: 1px; background: var(--border-soft); }
+/* A youth row is the player row plus the one action that screen exists for. */
+.fm-squadrow { display: flex; align-items: stretch; gap: 6px; }
+.fm-squadrow > .fm-player-row { flex: 1; min-width: 0; }
+.fm-squadrow__promote {
+  flex: 0 0 auto; border: 1px solid rgba(184,255,60,0.4); background: var(--green-dim);
+  color: var(--green); border-radius: var(--r-sm); font-size: 11px; font-weight: 800;
+  padding: 0 12px; font-family: inherit; cursor: pointer; white-space: nowrap;
+  transition: all 0.14s;
+}
+.fm-squadrow__promote:hover:not(:disabled) { background: rgba(184,255,60,0.2); }
+.fm-squadrow__promote:disabled { opacity: 0.35; cursor: not-allowed; }
+@media (max-width: 560px) {
+  .fm-squadbar__sorts { margin-left: 0; width: 100%; }
+  .fm-squadbar__tabs { width: 100%; }
+}
 .fm-player-row {
   display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 8px;
   background: var(--panel); border: 1px solid var(--border-soft);
@@ -894,9 +957,17 @@ button.fm-player-row { cursor: pointer; font-family: inherit; }
 button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); background: var(--panel-2); }
 .fm-player-row:disabled { opacity: 0.4; cursor: not-allowed; }
 .fm-player-row.highlight { border-color: var(--green); background: var(--green-dim); }
-.fm-player-row.in-lineup { border-color: var(--green-600); }
-/* Squad list rows lead with a player avatar; other player lists don't. */
-.fm-player-row--faced { grid-template-columns: 26px 40px 1fr auto auto; }
+/* Starting XI: a club-coloured rail down the row rather than a full green
+   outline — in a single list most rows are starters, and eleven glowing
+   borders is noise rather than a signal. */
+.fm-player-row.in-lineup { box-shadow: inset 2px 0 0 var(--brand); }
+/* Squad list rows lead with a player avatar; other player lists don't.
+   Six children — face, shirt number, position badge, name, tag, rating — so
+   six tracks. This declared five, which sent the rating chip onto an implicit
+   second row and stretched the badge across the leftover space; invisible
+   while the list sat in a narrow two-column split, obvious once it went
+   full-width. */
+.fm-player-row--faced { grid-template-columns: 26px 22px 42px minmax(0, 1fr) auto auto; }
 .fm-player-row__badge {
   display: flex; align-items: center; justify-content: center;
   font-size: 9.5px; font-weight: 900; border-radius: 6px;
@@ -907,7 +978,20 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-pos-MID .fm-player-row__badge { background: rgba(184,255,60,0.14); color: var(--green); }
 .fm-pos-FWD .fm-player-row__badge { background: rgba(242,102,122,0.14); color: var(--red); }
 .fm-player-row__name { font-weight: 700; font-size: 13px; }
-.fm-player-row__sub { display: block; font-size: 11px; color: var(--muted-dim); font-weight: 400; }
+.fm-player-row__sub {
+  display: block; font-size: 11px; color: var(--muted-dim); font-weight: 400;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Tailwind's preflight sets `svg { display: block }`, which would break the
+   sub-line onto a third row wherever it carries an inline warning icon. */
+.fm-player-row__sub svg { display: inline; vertical-align: -1px; }
+/* Morale sits next to the rating chip, so it needs to not read as a second
+   rating: a coloured dot and a dimmer weight separate the two. */
+.fm-morale {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 11px;
+  font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.fm-morale::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .fm-player-row__tag { font-size: 10.5px; color: var(--muted); text-align: right; }
 .fm-player-row__tag .inj { color: var(--red); font-weight: 700; }
 .fm-player-row__tag .hot { color: var(--green); font-weight: 700; }
@@ -2391,7 +2475,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .pm-pot-tag { font-size: 11px; font-weight: 900; }
 .ovr-badge {
   display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 20px;
-  padding: 0 5px; border-radius: 5px; background: var(--brand); color: #0a0a0a; font-weight: 900; font-size: 12px;
+  padding: 0 5px; border-radius: 5px; background: var(--brand); color: var(--brand-text); font-weight: 900; font-size: 12px;
 }
 .pm-tab-row { display: flex; gap: 6px; margin: 4px 0 10px; }
 .pm-tab-btn {
@@ -3093,7 +3177,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-jump__icon {
   display: flex;
-  color: var(--brand);
+  color: var(--brand-on-dark);
   margin-bottom: 4px;
 }
 .fm-jump__label { font-size: 14px; font-weight: 800; }
@@ -3155,7 +3239,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-hubcard__head--static { cursor: default; }
 .fm-hubcard__head span:first-of-type { flex: 1; text-align: left; }
-.fm-hubcard__head:not(.fm-hubcard__head--static):hover { color: var(--brand); }
+.fm-hubcard__head:not(.fm-hubcard__head--static):hover { color: var(--brand-on-dark); }
 .fm-hubcard__body { padding-top: 2px; }
 .fm-hubcard__empty {
   margin: 10px 0;
@@ -3199,7 +3283,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--brand);
+  background: var(--brand-on-dark);
   display: block;
 }
 /* Adjust Budget: the two pools side by side, then the shift controls. */
@@ -3299,6 +3383,50 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-drill:hover { border-color: var(--border-bright); }
 .fm-drill.active { border-color: var(--green-600); background: var(--green-dim); color: var(--text); }
 .fm-drill__label { font-size: 10.5px; font-weight: 700; text-align: center; }
+
+/* Drill cards: what the session does, not just what it is called.
+   Six drills read best as a 3x2 block — the old row of six icon tiles fit,
+   but left no room for any of the numbers the drill table already holds. */
+.fm-drillgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 900px) { .fm-drillgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .fm-drillgrid { grid-template-columns: 1fr; } }
+.fm-drillcard {
+  display: flex; flex-direction: column; gap: 3px; text-align: left;
+  padding: 12px; border-radius: var(--r-md);
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+  color: var(--text); cursor: pointer; font-family: inherit;
+  transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+}
+.fm-drillcard:hover { transform: translateY(-2px); border-color: var(--border-bright); }
+.fm-drillcard.active {
+  border-color: var(--green-600);
+  background: linear-gradient(160deg, rgba(184,255,60,0.09), transparent);
+}
+.fm-drillcard__head { display: flex; align-items: center; gap: 7px; color: var(--green); }
+.fm-drillcard__name { font-size: 13.5px; font-weight: 800; color: var(--text); }
+.fm-drillcard__does {
+  font-size: 11.5px; color: var(--muted); line-height: 1.4;
+  margin-bottom: 6px; min-height: 32px;
+}
+.fm-drillcard__fx { display: flex; flex-wrap: wrap; gap: 5px; }
+.fm-fx {
+  font-size: 10px; font-weight: 800; font-style: normal;
+  border-radius: 4px; padding: 2px 6px; font-variant-numeric: tabular-nums;
+}
+.fm-fx--up { background: rgba(184,255,60,0.13); color: var(--green); }
+.fm-fx--down { background: rgba(242,102,122,0.13); color: var(--red); }
+.fm-fx--flat { background: rgba(255,255,255,0.06); color: var(--muted); }
+
+/* Week load: one meter for how hard the plan is, with a verdict. */
+.fm-loadverdict { font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.fm-loadtrack {
+  height: 9px; border-radius: 5px; background: var(--panel-3);
+  overflow: hidden; margin: 4px 0 10px;
+}
+.fm-loadtrack__fill {
+  display: block; height: 100%;
+  transition: width 0.45s cubic-bezier(0.2,0.8,0.2,1), background 0.45s ease;
+}
 
 .fm-dayrow { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 10px; }
 .fm-day {
@@ -3473,4 +3601,271 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 
 @media (max-width: 899px) {
   .fm-about-foot { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* Session selector above the drill grid: which of the week's two sessions
+   the cards below are setting, with each one's current drill on the tab. */
+.fm-sessionpick { width: 100%; margin-bottom: 10px; }
+.fm-sessionpick .fm-segmented__opt { flex-direction: column; gap: 2px; padding: 8px 6px; }
+.fm-sessionpick__now { display: block; font-size: 10.5px; font-weight: 800; color: var(--green); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Assistant Manager
+   A character screen, not a settings panel: portrait, one line at a time,
+   things you can ask him, and jobs you can hand over.
+   ══════════════════════════════════════════════════════════════════════ */
+.fm-assistant-overlay {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(0,0,0,0.72); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  animation: fmAssistantIn 0.18s ease;
+}
+@keyframes fmAssistantIn { from { opacity: 0 } to { opacity: 1 } }
+.fm-assistant {
+  position: relative; width: min(720px, 100%); max-height: min(88dvh, 760px);
+  overflow-y: auto; border-radius: var(--r-xl);
+  background:
+    radial-gradient(620px 340px at 10% 0%, rgba(0,214,143,0.13), transparent 68%),
+    linear-gradient(165deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+}
+.fm-assistant__close {
+  position: absolute; top: 12px; right: 12px; z-index: 2;
+  width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--muted);
+  cursor: pointer; font-family: inherit;
+}
+.fm-assistant__close:hover { color: var(--text); border-color: var(--border-bright); }
+.fm-assistant__body {
+  display: grid; grid-template-columns: 172px minmax(0, 1fr); gap: 18px; padding: 20px;
+}
+@media (max-width: 620px) { .fm-assistant__body { grid-template-columns: 1fr; } }
+
+.fm-assistant__who { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.fm-assistant__frame {
+  width: 132px; height: 132px; border-radius: 20px; overflow: hidden;
+  background: linear-gradient(170deg, #1b2a1e, #0b0f0c);
+  border: 1px solid rgba(184,255,60,0.22);
+  box-shadow: inset 0 -30px 50px rgba(0,0,0,0.5);
+  display: grid; place-items: center;
+}
+/* A slow idle bob, so he isn't a still image staring at you. */
+.fm-coach-portrait { animation: fmCoachBob 4.2s ease-in-out infinite; }
+@keyframes fmCoachBob { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-2.5px) } }
+.fm-assistant__vacant { color: var(--muted-dim); }
+.fm-assistant__name { margin: 0; font-size: 14px; font-weight: 900; text-align: center; line-height: 1.25; }
+.fm-assistant__role {
+  margin: 0; font-size: 10px; font-weight: 800; letter-spacing: 1.1px;
+  text-transform: uppercase; color: var(--muted-dim); text-align: center;
+}
+
+.fm-trust { width: 100%; margin-top: 2px; }
+.fm-trust__head {
+  display: flex; justify-content: space-between; margin-bottom: 4px;
+  font-size: 10px; font-weight: 800; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted-dim);
+}
+.fm-trust__head b { color: var(--green); font-variant-numeric: tabular-nums; }
+.fm-trust__track { height: 6px; border-radius: 3px; background: var(--panel-3); overflow: hidden; }
+.fm-trust__fill {
+  display: block; height: 100%;
+  background: linear-gradient(90deg, var(--green-600), var(--green));
+  transition: width 0.6s cubic-bezier(0.2,0.8,0.2,1);
+}
+.fm-trust__label {
+  margin: 5px 0 0; font-size: 10.5px; color: var(--muted-dim); text-align: center;
+}
+
+.fm-assistant__talk { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.fm-bubble {
+  position: relative; background: var(--panel-3); border: 1px solid var(--border-soft);
+  border-radius: 14px; padding: 14px 16px; min-height: 84px;
+  font-size: 14.5px; line-height: 1.55; color: var(--text);
+}
+.fm-bubble--urgent { color: var(--red); font-weight: 700; }
+.fm-bubble::before {
+  content: ""; position: absolute; left: -7px; top: 26px; width: 12px; height: 12px;
+  background: var(--panel-3); border-left: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft); transform: rotate(45deg);
+}
+@media (max-width: 620px) {
+  .fm-bubble::before { left: 26px; top: -7px; transform: rotate(135deg); }
+}
+.fm-bubble__caret {
+  display: inline-block; width: 7px; height: 1em; vertical-align: -2px;
+  background: var(--green); margin-left: 2px; animation: fmCaret 1s steps(2) infinite;
+}
+@keyframes fmCaret { 0%, 49% { opacity: 1 } 50%, 100% { opacity: 0 } }
+
+.fm-asks { display: flex; flex-wrap: wrap; gap: 8px; }
+.fm-ask {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--panel-3); border: 1px solid var(--border); color: var(--text-2);
+  border-radius: var(--r-full); padding: 8px 15px; font-size: 13px; font-weight: 700;
+  font-family: inherit; cursor: pointer; transition: all 0.14s ease; min-height: var(--tap-min);
+}
+.fm-ask:hover { border-color: var(--green); color: var(--text); transform: translateY(-1px); }
+.fm-ask[aria-pressed="true"] { border-color: var(--green); background: var(--green-dim); color: var(--text); }
+.fm-ask__key {
+  width: 17px; height: 17px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 9px; font-weight: 900; background: var(--green); color: #04140d; flex: none;
+}
+.fm-ask--urgent .fm-ask__key { background: var(--red); color: #2a0008; }
+.fm-assistant__goto { align-self: flex-start; }
+.fm-assistant__seclabel { margin: 6px 0 0; }
+
+/* Jobs you can hand him: each one visibly runs, then stamps itself done. */
+.fm-jobs { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 9px; }
+.fm-job {
+  position: relative; overflow: hidden; text-align: left;
+  background: var(--card-gradient); border: 1px solid var(--border-soft);
+  border-radius: var(--r-md); padding: 13px 14px; cursor: pointer;
+  font-family: inherit; color: var(--text);
+  transition: transform 0.14s ease, border-color 0.14s ease;
+}
+.fm-job:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--border-bright); }
+.fm-job:disabled { cursor: not-allowed; }
+.fm-job:disabled:not(.done):not(.running) { opacity: 0.38; }
+.fm-job__top { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+.fm-job__led {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: var(--gold); box-shadow: 0 0 7px var(--gold);
+}
+.fm-job:disabled:not(.done):not(.running) .fm-job__led { background: var(--muted-dim); box-shadow: none; }
+.fm-job.done .fm-job__led { background: var(--green-600); box-shadow: 0 0 7px var(--green-600); }
+.fm-job__label { font-size: 13.5px; font-weight: 800; }
+.fm-job__sub { font-size: 11.5px; color: var(--muted); }
+.fm-job__bar {
+  position: absolute; left: 0; bottom: 0; height: 2px; width: 0;
+  background: var(--green); transition-property: width; transition-timing-function: linear;
+}
+.fm-job.running .fm-job__bar { width: 100%; }
+.fm-job__stamp {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: rgba(5,5,5,0.82); opacity: 0; pointer-events: none;
+}
+.fm-job.done .fm-job__stamp { opacity: 1; animation: fmStamp 0.45s cubic-bezier(0.2,1.5,0.4,1); }
+@keyframes fmStamp {
+  0% { transform: scale(1.5); opacity: 0 }
+  60% { opacity: 1 }
+  100% { transform: scale(1); opacity: 1 }
+}
+.fm-job__stamp span {
+  border: 2.5px solid var(--green-600); color: var(--green-600); border-radius: 6px;
+  font-size: 13px; font-weight: 900; letter-spacing: 2px; padding: 4px 12px;
+  transform: rotate(-7deg);
+}
+.fm-jobreport {
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-left: 2px solid var(--green-600); border-radius: var(--r-sm);
+  padding: 11px 13px;
+}
+.fm-jobreport p { margin: 0 0 3px; font-size: 12.5px; color: var(--text-2); }
+.fm-jobreport p:last-child { margin: 0; }
+.fm-jobreport__title { color: var(--green-600) !important; font-weight: 800; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fm-coach-portrait, .fm-bubble__caret, .fm-job.done .fm-job__stamp { animation: none; }
+  .fm-job__bar { transition: none; }
+}
+
+/* ── Training session replay ──
+   A retelling of what applyWeeklyTraining already decided (the report lives
+   on GameState.lastTrainingReport), not a second simulation. */
+.fm-session { max-width: 780px; width: 100%; }
+.fm-session__body { display: grid; grid-template-columns: minmax(0, 1fr) 236px; gap: 14px; }
+@media (max-width: 700px) { .fm-session__body { grid-template-columns: 1fr; } }
+.fm-session__pitch {
+  position: relative; aspect-ratio: 16 / 10; border-radius: var(--r-md); overflow: hidden;
+  background: linear-gradient(170deg, #0d2415, #071409);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+.fm-session__pitch canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fm-session__hud {
+  position: absolute; left: 10px; right: 10px; top: 9px;
+  display: flex; align-items: center; gap: 9px;
+  font-size: 10px; font-weight: 900; letter-spacing: 1.1px; text-transform: uppercase;
+}
+.fm-session__who { color: var(--green); }
+.fm-session__clock {
+  margin-left: auto; color: rgba(255,255,255,0.65);
+  font-variant-numeric: tabular-nums; letter-spacing: 0.5px;
+}
+.fm-session__prog { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(0,0,0,0.4); }
+.fm-session__prog i { display: block; height: 100%; background: var(--green); }
+.fm-session__side { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.fm-session__feed {
+  flex: 1; min-height: 130px; max-height: 260px; overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-radius: var(--r-sm); padding: 10px 11px;
+}
+.fm-session__waiting { margin: 0; font-size: 12px; color: var(--muted-dim); font-style: italic; }
+.fm-session__event {
+  margin: 0; padding: 4px 0; font-size: 12px; color: var(--text-2);
+  border-bottom: 1px dashed rgba(255,255,255,0.05);
+}
+.fm-session__event:last-of-type { border-bottom: none; }
+.fm-session__event--good { color: var(--green); }
+.fm-session__event--bad { color: var(--red); }
+.fm-session__totals { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--border-soft); }
+.fm-session__totals p { margin: 0 0 2px; font-size: 12.5px; color: var(--text-2); }
+.fm-session__totals b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ── Training mini-games ──
+   Four games across the six drills, all scored the same way so none is the
+   "good" drill to pick. Optional: an unplayed week resolves at the neutral
+   baseline (engine/training.ts SESSION_BASE_QUALITY). */
+.fm-mini { max-width: 460px; width: 100%; }
+.fm-mini__pips { display: flex; gap: 6px; justify-content: center; margin: 4px 0 12px; }
+.fm-mini__pip {
+  width: 26px; height: 4px; border-radius: 2px; background: var(--panel-3);
+  transition: background 0.2s ease;
+}
+.fm-mini__pip.good { background: var(--green); }
+.fm-mini__pip.bad { background: var(--red); }
+.fm-mini__stage {
+  position: relative; display: grid; place-items: center;
+  min-height: 210px; padding: 10px 0;
+}
+.fm-mini__svg { width: 210px; height: 210px; }
+.fm-mini__result {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+  background: rgba(5,5,5,0.9); border-radius: var(--r-md); padding: 12px;
+}
+.fm-mini__result b { font-size: 44px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.fm-mini__result span {
+  font-size: 10px; font-weight: 800; letter-spacing: 1.3px;
+  text-transform: uppercase; color: var(--muted-dim); margin-top: 4px;
+}
+.fm-mini__flash {
+  margin: 0 0 10px; min-height: 18px; text-align: center;
+  font-size: 12.5px; font-weight: 800; color: var(--muted);
+}
+.fm-mini__flash.good { color: var(--green); }
+.fm-mini__flash.bad { color: var(--red); }
+
+/* The sweeping-bar stage shared by finishing, shuttle runs and set pieces. */
+/* The sweep games need far less height than the rondo's square ring. */
+.fm-mini__stage--sweep { min-height: 120px; }
+.fm-sweep-wrap { width: 100%; }
+.fm-sweep {
+  position: relative; width: 100%; height: 52px; border-radius: var(--r-sm);
+  background: linear-gradient(180deg, #0d2415, #071409);
+  border: 1px solid var(--border-soft); overflow: hidden;
+}
+.fm-sweep__ends {
+  display: flex; justify-content: space-between; margin-top: 6px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--muted-dim);
+}
+.fm-sweep__band { position: absolute; top: 0; bottom: 0; background: var(--green-dim); }
+.fm-sweep__perfect {
+  position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px;
+  background: var(--green); opacity: 0.55;
+}
+.fm-sweep__marker {
+  position: absolute; top: 0; bottom: 0; width: 4px; margin-left: -2px;
+  background: var(--gold); border-radius: 2px;
 }
