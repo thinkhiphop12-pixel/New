@@ -18,7 +18,7 @@
   </script>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-YK8TS0NPNG"></script>
   <script defer src="/_vercel/insights/script.js"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b120d">
 
   <!-- SEO: Title & Meta for Arsenal Transfer News -->
@@ -142,7 +142,12 @@
     }
     .bento-card .card-tag {
       display: inline-block;
-      background: #EF0107; /* Arsenal red */
+      /* Arsenal red, darkened from #EF0107. This chip is the only place the
+         red sits behind text, and at 10px it counts as small text, which WCAG
+         AA wants at 4.5:1 — #EF0107 on white lands at 4.49:1. #DD0007 reaches
+         5.15:1 and is indistinguishable at this size. The decorative borders
+         below keep the exact brand red, since they carry no text. */
+      background: #DD0007;
       color: #fff;
       font-size: 10px;
       font-weight: 700;
