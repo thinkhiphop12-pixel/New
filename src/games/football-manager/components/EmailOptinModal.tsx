@@ -13,7 +13,7 @@ import { Icon } from './Icon';
 
 interface EmailOptinModalProps {
   onClose: () => void;
-  gameName: 'scout' | 'gaffer';
+  gameName: 'gaffer';
   score?: number;
   streak?: number;
 }
@@ -29,11 +29,9 @@ export function EmailOptinModal({
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
-  const gameTitle = gameName === 'scout' ? 'Scout' : 'Gaffa';
+  const gameTitle = 'Gaffa';
   const subscriptionMessage =
-    gameName === 'scout'
-      ? 'Get email alerts when a new daily puzzle goes live!'
-      : 'Stay updated with new features, tips, and exclusive content!';
+    'Stay updated with new features, tips, and exclusive content!';
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

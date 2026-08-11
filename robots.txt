@@ -1,42 +1,15 @@
 # robots.txt — BALLKNW crawling rules
-# Updated 2026-07-08
 
+# Everything is crawlable by default. The per-page Allow list that used to live
+# here was hand-maintained and had fallen ~60 pages behind the site, which made
+# it look like an allowlist rather than the no-op it actually was.
 User-agent: *
 Allow: /
-Allow: /index.html
-Allow: /about.html
-Allow: /privacy.html
-Allow: /terms.html
-Allow: /scout-guide.html
-Allow: /gaffer-guide.html
-Allow: /draft-xi-guide.html
-Allow: /free-football-manager.html
-Allow: /what-is-a-gaffer-in-football.html
-Allow: /football-terms.html
-Allow: /what-is-a-false-9.html
-Allow: /what-is-a-low-block-in-football.html
-Allow: /best-football-manager-games-pc.html
-Allow: /best-football-manager-games-android.html
-Allow: /best-football-manager-games-iphone.html
-Allow: /scout/
-Allow: /perfect-cup/
-Allow: /gaffa/
-Allow: /assets/
-
 Disallow: /footygames/
 Disallow: /admin/
 Disallow: /api/
-
-Crawl-delay: 1
-
-# Search engines — allow faster crawling
-User-agent: Googlebot
-Allow: /
-Crawl-delay: 0
-
-User-agent: Bingbot
-Allow: /
-Crawl-delay: 0
+# seo-plan-50.html is kept out of the index with a noindex meta tag rather than
+# a Disallow here — blocking the crawl would stop Google reading that tag.
 
 # AI crawlers — generous allowance for content indexing
 User-agent: GPTBot
@@ -52,4 +25,3 @@ User-agent: anthropic-ai
 Allow: /
 
 Sitemap: https://www.ballknw.com/sitemap.xml
-Sitemap: https://www.ballknw.com/llms.txt
