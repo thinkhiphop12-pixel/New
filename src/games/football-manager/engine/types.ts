@@ -107,6 +107,9 @@ export interface TrainingEvent {
 export interface TrainingReport {
   /** Absolute tick the session belongs to, so a stale report is detectable. */
   tick: number;
+  /** How well the session was run, 0-100 — the mini-game score, or the
+   *  neutral baseline if it was never played. */
+  quality: number;
   /** The two drills that were worked on. */
   drills: [TeamDrill, TeamDrill];
   events: TrainingEvent[];
@@ -1332,6 +1335,14 @@ export interface GameState {
   /** Absolute tick (`seasonYear * 100 + week`) the one-to-one slots were
    *  last resolved, so a week's individual work can only ever pay out once. */
   oneToOneResolved?: number;
+
+  /** How well this week's session was run, 0-100, when the manager played the
+   *  drill's mini-game. Absent means unplayed, which scores the neutral
+   *  `SESSION_BASE_QUALITY`. Cleared each week once it has been paid out. */
+  sessionQuality?: number;
+  /** Absolute tick the session mini-game was played on, so one week buys one
+   *  attempt and a good score cannot be farmed by replaying. */
+  sessionPlayedTick?: number;
 
   /** What the most recent week of training actually did, kept so the Training
    *  screen can replay it. Cleared by nothing — it is simply overwritten each

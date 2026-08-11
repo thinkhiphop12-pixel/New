@@ -8,10 +8,10 @@ import { pushInbox } from './inbox';
  * Training, in two halves.
  *
  * **Team sessions** — the club trains together twice a week and the manager
- * picks what each session works on. The six drills are the categories the
- * FIFA-style training mini-games will eventually sit behind; until those are
- * built, choosing a drill *is* the interaction, and it resolves in the
- * weekly tick rather than in a mini-game.
+ * picks what each session works on. Choosing a drill is the decision; the
+ * week resolves in the weekly tick either way. A drill can additionally be
+ * *played* — see the mini-game section below — which scales that week's
+ * output but is never required.
  *
  * **One-to-one** — four individual slots a week, one per position group
  * (GK / DEF / MID / ATT). Booking a player in gives him guaranteed, visible
@@ -222,6 +222,9 @@ export function applyWeeklyTraining(state: GameState): TrainingReport | null {
   s.oneToOneResolved = absTick(s);
 
   const sessions = getSessions(s);
+  // How well the manager ran the session, if he played it at all. Unplayed
+  // weeks sit at SESSION_BASE_QUALITY, which is exactly neutral.
+  const mult = sessionMultiplier(sessionQuality(s));
   const booked = getOneToOne(s);
   const bookedIds = new Set(Object.values(booked).filter((v): v is number => typeof v === 'number'));
 
@@ -239,7 +242,7 @@ export function applyWeeklyTraining(state: GameState): TrainingReport | null {
       const p = s.players[id];
       if (!p || p.injuryWeeks > 0) continue;
       const focused = d.focusPositions.includes(p.pos);
-      const weight = focused ? 1 : 0.4;
+      const weight = (focused ? 1 : 0.4) * mult;
       p.sharpness = clamp(p.sharpness + d.sharpness * weight, 0, 100);
       p.fitness = clamp(p.fitness + d.fitness * weight, 15, 100);
       if (d.chemistry) p.chem = clamp(p.chem + d.chemistry * weight * 0.4, 0, 100);
@@ -251,7 +254,7 @@ export function applyWeeklyTraining(state: GameState): TrainingReport | null {
       if (!focused || !d.stats.length || p.devPlan || bookedIds.has(p.id)) continue;
       if (p.rating >= (p.potential ?? p.rating)) continue;
       const coach = coachForPosition(s, p.pos);
-      const chance = 0.012 * (1 + (coach ? coach.quality / 200 : 0)) * (p.age <= 24 ? 1.5 : p.age <= 28 ? 1 : 0.35);
+      const chance = 0.012 * mult * (1 + (coach ? coach.quality / 200 : 0)) * (p.age <= 24 ? 1.5 : p.age <= 28 ? 1 : 0.35);
       if (Math.random() < chance) {
         const key = d.stats[Math.floor(Math.random() * d.stats.length)];
         p[key] = clamp(p[key] + 1, 1, 99);
@@ -350,7 +353,13 @@ export function applyWeeklyTraining(state: GameState): TrainingReport | null {
 
   events.sort((a, b) => a.at - b.at);
 
+  // Next week starts neutral: a session's score buys that week's output and
+  // nothing beyond it.
+  const playedQuality = sessionQuality(s);
+  s.sessionQuality = undefined;
+
   return {
+    quality: playedQuality,
     tick: absTick(s),
     drills: sessions,
     events,
@@ -364,6 +373,74 @@ export function applyWeeklyTraining(state: GameState): TrainingReport | null {
 /** Attribute keys as the manager reads them, for report lines. */
 const STAT_NAME: Record<StatKey, string> = {
   pac: 'Pace', sho: 'Shooting', pas: 'Passing', dri: 'Dribbling', def: 'Defending', phy: 'Physical',
+};
+
+/* --------------------------------------------------- session mini-games */
+
+/**
+ * Playing the session, rather than only choosing it.
+ *
+ * A mini-game is entirely optional. If it is never opened the week resolves
+ * exactly as before, at `SESSION_BASE_QUALITY`. Playing one replaces that
+ * default with what the manager actually managed on the training pitch, which
+ * scales the session's output between `SESSION_MIN_MULT` and
+ * `SESSION_MAX_MULT` — so a good session is worth having and a bad one costs
+ * a little, but neither is worth more than about a quarter either way. This
+ * is a football management game; the drills are seasoning.
+ *
+ * One session may be played per week, tracked the same way the individual
+ * drills are (`drillsUsedThisWeek`), so it cannot be farmed by replaying.
+ */
+
+/** What an unplayed session is worth, on the same 0-100 scale a played one
+ *  scores. Deliberately a decent-but-not-great session. */
+export const SESSION_BASE_QUALITY = 55;
+export const SESSION_MIN_MULT = 0.75;
+export const SESSION_MAX_MULT = 1.25;
+
+/** Score 0-100 → output multiplier. Linear, and centred so that scoring
+ *  `SESSION_BASE_QUALITY` is exactly neutral. */
+export function sessionMultiplier(score: number): number {
+  const q = clamp(score, 0, 100);
+  const span = q >= SESSION_BASE_QUALITY
+    ? (q - SESSION_BASE_QUALITY) / (100 - SESSION_BASE_QUALITY) * (SESSION_MAX_MULT - 1)
+    : (q - SESSION_BASE_QUALITY) / SESSION_BASE_QUALITY * (1 - SESSION_MIN_MULT);
+  return 1 + span;
+}
+
+export function sessionQuality(state: GameState): number {
+  return state.sessionQuality ?? SESSION_BASE_QUALITY;
+}
+
+/** Whether this week's session is still available to play. */
+export function canPlaySession(state: GameState): boolean {
+  return state.sessionPlayedTick !== absTick(state);
+}
+
+/**
+ * Record a played session. Idempotent within a week — a second call in the
+ * same tick is ignored, so the score that counts is the first one earned.
+ */
+export function applySessionResult(state: GameState, score: number): GameState {
+  if (!canPlaySession(state)) return state;
+  return {
+    ...state,
+    sessionQuality: clamp(Math.round(score), 0, 100),
+    sessionPlayedTick: absTick(state),
+  };
+}
+
+/** The mini-game a drill is played as. Six drills, four games — the pairings
+ *  are by what the drill physically *is*, not by name. */
+export type MiniGameId = 'rondo' | 'finishing' | 'shuttle' | 'setpiece';
+
+export const DRILL_MINIGAME: Record<TeamDrill, MiniGameId> = {
+  possession: 'rondo',
+  'match-prep': 'rondo',
+  attacking: 'finishing',
+  defending: 'shuttle',
+  fitness: 'shuttle',
+  'set-pieces': 'setpiece',
 };
 
 /** Squad-wide read on how the week's plan is pitched, for the screen's

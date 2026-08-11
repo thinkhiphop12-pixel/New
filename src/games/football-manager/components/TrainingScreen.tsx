@@ -5,7 +5,8 @@ import type { GameState, TeamDrill } from '@/engine/types';
 import { getSquad } from '@/engine/teamManagement';
 import { nextUserFixture } from '@/engine/seasonProgression';
 import {
-  SESSION_LABELS, TEAM_DRILLS, drillDef, getSessions, projectTeamSessions, setSession,
+  SESSION_LABELS, TEAM_DRILLS, applySessionResult, canPlaySession, drillDef, getSessions,
+  projectTeamSessions, sessionQuality, setSession,
 } from '@/engine/training';
 import {
   WEEK_DAY_LABELS, getSchedule, projectWeeklySchedule, setScheduleDay, setWholeSchedule,
@@ -13,6 +14,7 @@ import {
 import { assistantScheduleAdvice } from '@/engine/assistant';
 import { Icon, type IconName } from './Icon';
 import TrainingSessionModal from './TrainingSessionModal';
+import TrainingMiniGame from './TrainingMiniGame';
 
 /**
  * Team training.
@@ -22,11 +24,16 @@ import TrainingSessionModal from './TrainingSessionModal';
  * half of training that applies to everybody — individual work has its own
  * screen next door.
  *
- * The drills are deliberately the categories the FIFA-style training
- * mini-games will sit behind. Those aren't built yet, so a session resolves
- * in the weekly tick (engine/training.ts `applyWeeklyTraining`) rather than
- * being played; picking the drill is the decision either way, and the
- * mini-game will slot in underneath without this screen changing shape.
+ * Each drill card states what the session does — the deltas and focus group
+ * off TEAM_DRILLS — so the choice can be made without knowing the formulas,
+ * and a load meter says how hard the resulting week is.
+ *
+ * The drill can also be *played*: "Run the drill" opens the mini-game behind
+ * that category (components/TrainingMiniGame.tsx), once a week, and the score
+ * scales that week's output. It is optional in both directions — an unplayed
+ * week resolves at the neutral baseline, and the session still resolves in
+ * the weekly tick either way. Once a week has run, "Watch last session"
+ * replays what the tick recorded.
  *
  * The seven-day intensity strip underneath used to be its own screen
  * (Weekly Schedule) that no tab pointed at. It is the same engine
@@ -77,6 +84,8 @@ export default function TrainingScreen({
   const [editing, setEditing] = useState<0 | 1>(0);
   /** Whether the last session's replay is open. */
   const [watching, setWatching] = useState(false);
+  /** Whether the drill mini-game is open. */
+  const [playing, setPlaying] = useState(false);
 
   const sessions = getSessions(state);
   const squad = getSquad(state, state.userClubId);
@@ -84,6 +93,8 @@ export default function TrainingScreen({
   // been played, which is why the Watch button only appears once there is
   // something real to replay.
   const lastReport = state.lastTrainingReport ?? null;
+  const canPlay = canPlaySession(state);
+  const playedQuality = state.sessionQuality;
   const days = getSchedule(state);
   const advice = assistantScheduleAdvice(state);
   const intensity = projectWeeklySchedule(state);
@@ -127,7 +138,7 @@ export default function TrainingScreen({
         <div className="fm-mod__head">
           <h2 className="fm-mod__title">Team training</h2>
           <span className="fm-actiondock__spacer" />
-          {lastReport ? (
+          {lastReport && (
             <button
               type="button"
               className="fm-btn fm-btn--secondary fm-btn--small"
@@ -135,8 +146,21 @@ export default function TrainingScreen({
             >
               <Icon name="play" size={13} /> Watch last session
             </button>
+          )}
+          {/* Optional. An unplayed week resolves at the neutral baseline, so
+              this is worth doing rather than something you owe the game. */}
+          {canPlay ? (
+            <button
+              type="button"
+              className="fm-btn fm-btn--primary fm-btn--small"
+              onClick={() => setPlaying(true)}
+            >
+              <Icon name="play" size={13} /> Run the drill
+            </button>
           ) : (
-            <span className="fm-hint" style={{ margin: 0 }}>Two sessions a week</span>
+            <span className="fm-hint" style={{ margin: 0 }}>
+              Session run · scored <b style={{ color: 'var(--green)' }}>{playedQuality ?? sessionQuality(state)}</b>
+            </span>
           )}
         </div>
 
@@ -293,6 +317,17 @@ export default function TrainingScreen({
 
       {watching && lastReport && (
         <TrainingSessionModal report={lastReport} onClose={() => setWatching(false)} />
+      )}
+
+      {playing && (
+        <TrainingMiniGame
+          drill={sessions[editing]}
+          onFinish={(score) => {
+            onChange(applySessionResult(state, score));
+            setPlaying(false);
+          }}
+          onClose={() => setPlaying(false)}
+        />
       )}
     </>
   );

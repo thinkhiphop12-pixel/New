@@ -3811,3 +3811,61 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-session__totals { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--border-soft); }
 .fm-session__totals p { margin: 0 0 2px; font-size: 12.5px; color: var(--text-2); }
 .fm-session__totals b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ── Training mini-games ──
+   Four games across the six drills, all scored the same way so none is the
+   "good" drill to pick. Optional: an unplayed week resolves at the neutral
+   baseline (engine/training.ts SESSION_BASE_QUALITY). */
+.fm-mini { max-width: 460px; width: 100%; }
+.fm-mini__pips { display: flex; gap: 6px; justify-content: center; margin: 4px 0 12px; }
+.fm-mini__pip {
+  width: 26px; height: 4px; border-radius: 2px; background: var(--panel-3);
+  transition: background 0.2s ease;
+}
+.fm-mini__pip.good { background: var(--green); }
+.fm-mini__pip.bad { background: var(--red); }
+.fm-mini__stage {
+  position: relative; display: grid; place-items: center;
+  min-height: 210px; padding: 10px 0;
+}
+.fm-mini__svg { width: 210px; height: 210px; }
+.fm-mini__result {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+  background: rgba(5,5,5,0.9); border-radius: var(--r-md); padding: 12px;
+}
+.fm-mini__result b { font-size: 44px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.fm-mini__result span {
+  font-size: 10px; font-weight: 800; letter-spacing: 1.3px;
+  text-transform: uppercase; color: var(--muted-dim); margin-top: 4px;
+}
+.fm-mini__flash {
+  margin: 0 0 10px; min-height: 18px; text-align: center;
+  font-size: 12.5px; font-weight: 800; color: var(--muted);
+}
+.fm-mini__flash.good { color: var(--green); }
+.fm-mini__flash.bad { color: var(--red); }
+
+/* The sweeping-bar stage shared by finishing, shuttle runs and set pieces. */
+/* The sweep games need far less height than the rondo's square ring. */
+.fm-mini__stage--sweep { min-height: 120px; }
+.fm-sweep-wrap { width: 100%; }
+.fm-sweep {
+  position: relative; width: 100%; height: 52px; border-radius: var(--r-sm);
+  background: linear-gradient(180deg, #0d2415, #071409);
+  border: 1px solid var(--border-soft); overflow: hidden;
+}
+.fm-sweep__ends {
+  display: flex; justify-content: space-between; margin-top: 6px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--muted-dim);
+}
+.fm-sweep__band { position: absolute; top: 0; bottom: 0; background: var(--green-dim); }
+.fm-sweep__perfect {
+  position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px;
+  background: var(--green); opacity: 0.55;
+}
+.fm-sweep__marker {
+  position: absolute; top: 0; bottom: 0; width: 4px; margin-left: -2px;
+  background: var(--gold); border-radius: 2px;
+}
