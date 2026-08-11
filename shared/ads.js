@@ -96,8 +96,8 @@ function canShowPopunder() {
 function canShowSmartlink() {
   try {
     const sessionTime = getSessionTime();
-    // Show 32 mins into session (2 + 30), then every 30 mins
-    if (sessionTime < 32 * 60 * 1000) return false;
+    // Show 4 mins into session, then every 30 mins
+    if (sessionTime < 4 * 60 * 1000) return false;
     const lastTime = parseInt(localStorage.getItem(LAST_SMARTLINK_TIME_KEY), 10) || 0;
     return Date.now() - lastTime >= CONFIG.FREQUENCY_LIMIT_MS;
   } catch (e) { return false; }
