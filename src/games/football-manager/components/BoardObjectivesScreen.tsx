@@ -32,9 +32,14 @@ import AssistantLine from './assistant/AssistantLine';
  *  reads first, and it carries the same information as the bar underneath —
  *  neither is decoration for the other. */
 function MoodFace({ value, size = 44 }: { value: number; size?: number }) {
-  // Mouth control point: well below the corners when happy (a smile), well
-  // above them when miserable (a frown), flat in the middle.
-  const curve = ((value - 50) / 50) * 7;
+  // Mouth control point: below the corners when happy (a smile), above them
+  // when miserable (a frown).
+  //
+  // Banded rather than linear, and banded on the same thresholds as the
+  // verdict text and the bar's colour. A straight `(value - 50) / 50` reading
+  // put a dead-flat mouth on a card that said "Happy enough" — most values
+  // sit near the middle, so the face never actually expressed anything.
+  const curve = value >= 75 ? 8 : value >= 55 ? 4.5 : value >= 45 ? 0 : value >= 30 ? -4.5 : -8;
   const tone = value >= 65 ? 'var(--green)' : value >= 35 ? 'var(--gold)' : 'var(--red)';
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" className="fm-mood">

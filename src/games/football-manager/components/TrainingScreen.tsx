@@ -5,8 +5,8 @@ import type { GameState, TeamDrill } from '@/engine/types';
 import { getSquad } from '@/engine/teamManagement';
 import { nextUserFixture } from '@/engine/seasonProgression';
 import {
-  SESSION_LABELS, TEAM_DRILLS, applySessionResult, canPlaySession, drillDef, getSessions,
-  projectTeamSessions, sessionQuality, setSession,
+  DRILL_MINIGAME, MINIGAME_LABEL, SESSION_LABELS, TEAM_DRILLS, applySessionResult, canPlaySession,
+  drillDef, getSessions, projectTeamSessions, sessionQuality, setSession,
 } from '@/engine/training';
 import {
   WEEK_DAY_LABELS, getSchedule, projectWeeklySchedule, setScheduleDay, setWholeSchedule,
@@ -82,9 +82,24 @@ function arrowOf(n: number): IconName {
 }
 
 /** A condition percentage in words. `74%` doesn't say whether that's a
- *  problem; "Fresh" does. */
+ *  problem; "Good" does. */
 function conditionWord(pct: number, good: number, ok: number): string {
   return pct >= good ? 'Good' : pct >= ok ? 'Okay' : 'Poor';
+}
+
+/**
+ * Injury risk in words.
+ *
+ * Three bands, not two. The per-player weekly chance is
+ * `0.008 * (trainingDays - 4)` (engine/schedule.ts), so a five-on/two-off
+ * week — the one the screen calls "Comfortable" — is 0.8%, and reporting any
+ * non-zero figure as "Raised" put a red warning next to a green verdict on
+ * the same card. A slightly-up week now says so.
+ */
+function riskRead(risk: number): { word: string; tone: string; icon: IconName } {
+  if (risk <= 0) return { word: 'Normal', tone: 'var(--green)', icon: 'check' };
+  if (risk < 0.015) return { word: 'Slightly up', tone: 'var(--gold)', icon: 'injury' };
+  return { word: 'High', tone: 'var(--red)', icon: 'warning' };
 }
 
 export default function TrainingScreen({
@@ -113,6 +128,7 @@ export default function TrainingScreen({
   const advice = assistantScheduleAdvice(state);
   const intensity = projectWeeklySchedule(state);
   const drills = projectTeamSessions(state);
+  const risk = riskRead(intensity.overtrainRisk);
 
   const avgFitness = squad.length ? Math.round(squad.reduce((s, p) => s + p.fitness, 0) / squad.length) : 0;
   const avgSharpness = squad.length ? Math.round(squad.reduce((s, p) => s + p.sharpness, 0) / squad.length) : 0;
@@ -163,22 +179,38 @@ export default function TrainingScreen({
               <Icon name="play" size={13} /> Watch last session
             </button>
           )}
-          {/* Optional. An unplayed week resolves at the neutral baseline, so
-              this is worth doing rather than something you owe the game. */}
-          {canPlay ? (
-            <button
-              type="button"
-              className="fm-btn fm-btn--primary fm-btn--small"
-              onClick={() => setPlaying(true)}
-            >
-              <Icon name="play" size={13} /> Run the drill
-            </button>
-          ) : (
-            <span className="fm-hint" style={{ margin: 0 }}>
-              Session run · scored <b style={{ color: 'var(--green)' }}>{playedQuality ?? sessionQuality(state)}</b>
-            </span>
-          )}
         </div>
+
+        {/* --- Take the session yourself ---------------------------------
+            This was a small secondary button in the header, which is the
+            quietest place on the screen — and it is the only thing here you
+            actually get to *play*. It leads now, says which game it is, and
+            says what it's worth.
+            Still optional in both directions: an unplayed week resolves at
+            the neutral baseline, so this is worth doing rather than something
+            you owe the game. */}
+        {canPlay ? (
+          <button type="button" className="fm-runsession" onClick={() => setPlaying(true)}>
+            <span className="fm-runsession__badge"><Icon name="play" size={22} /></span>
+            <span className="fm-runsession__text">
+              <span className="fm-runsession__title">Take the session yourself</span>
+              <span className="fm-runsession__sub">
+                Play {MINIGAME_LABEL[DRILL_MINIGAME[sessions[editing]]]} — do well and the squad gets more out of the week
+              </span>
+            </span>
+            <Icon name="chevron" size={18} />
+          </button>
+        ) : (
+          <div className="fm-runsession is-done">
+            <span className="fm-runsession__badge"><Icon name="check" size={22} /></span>
+            <span className="fm-runsession__text">
+              <span className="fm-runsession__title">Session done for this week</span>
+              <span className="fm-runsession__sub">
+                You scored {playedQuality ?? sessionQuality(state)} out of 100. Next one after the week ticks over.
+              </span>
+            </span>
+          </div>
+        )}
 
         <div className="fm-segmented fm-sessionpick" role="tablist" aria-label="Which session to set">
           {([0, 1] as const).map((slot) => (
@@ -218,6 +250,12 @@ export default function TrainingScreen({
                 )}
                 <i className="fm-fx fm-fx--flat">
                   {d.focusPositions.length === 4 ? 'Whole squad' : `Best for ${d.focusPositions.join('/')}`}
+                </i>
+                {/* Which mini-game this drill plays, named before you commit
+                    to opening it — picking a drill and finding out afterwards
+                    is the wrong order. */}
+                <i className="fm-fx fm-fx--game">
+                  <Icon name="play" size={10} /> {MINIGAME_LABEL[DRILL_MINIGAME[d.id]]}
                 </i>
               </span>
             </button>
@@ -284,9 +322,8 @@ export default function TrainingScreen({
           </span>
           <span>
             Injury risk{' '}
-            <b style={{ color: intensity.overtrainRisk > 0 ? 'var(--red)' : 'var(--green)' }}>
-              <Icon name={intensity.overtrainRisk > 0 ? 'warning' : 'check'} size={11} />{' '}
-              {intensity.overtrainRisk > 0 ? 'Raised' : 'Normal'}
+            <b style={{ color: risk.tone }}>
+              <Icon name={risk.icon} size={11} /> {risk.word}
             </b>
           </span>
         </div>

@@ -3328,17 +3328,23 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-staffcard__head { display: flex; flex-direction: column; }
 .fm-staffcard__role { font-weight: 800; font-size: 13px; }
 .fm-staffcard__effect { font-size: 11px; color: var(--muted-dim); }
+/* Portrait on the left, name and rating on the right — the card leads with a
+   face now, so the identity block sits beside it rather than stacking. */
 .fm-staffcard__person {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  display: flex; flex-direction: row; align-items: center; gap: 10px;
   background: none; border: none; padding: 0; cursor: pointer; text-align: left;
-  font-family: inherit;
+  font-family: inherit; width: 100%;
 }
+.fm-staffcard__id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .fm-staffcard__name { font-weight: 700; font-size: 12.5px; }
 .fm-staffcard__meta { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .fm-staffcard__wage { font-variant-numeric: tabular-nums; }
 /* The wage sits on its own line inside the hire button so the sentence
-   ("Hire a very good coach") reads first and the price second. */
-.fm-staffcard__price { display: block; width: 100%; font-weight: 600; opacity: 0.85; }
+   ("Hire a very good coach") reads first and the price second.
+   `.fm-btn` is a centred flex row, so the break has to come from wrapping the
+   button and giving the price a full-width basis — `width: 100%` alone leaves
+   it as a third flex item and squeezes the label into three wrapped words. */
+.fm-staffcard__price { flex-basis: 100%; font-weight: 600; opacity: 0.85; }
 
 /* Stars plus the word they stand for. The two together are the point — the
    stars give the scale at a glance, the word says what it means. */
@@ -3350,7 +3356,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   line-height: 1.4;
 }
 .fm-staffcard__quote--cold { color: var(--muted-dim); }
-.fm-staffcard__action { align-self: flex-start; margin-top: 2px; }
+.fm-staffcard__action { align-self: flex-start; margin-top: 2px; flex-wrap: wrap; justify-content: center; row-gap: 2px; }
 
 /* --- Facilities cards ------------------------------------------------------ */
 .fm-buildrow { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
@@ -3896,7 +3902,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   width: 38px; height: 38px; border-radius: 50%; flex: none;
 }
 .fm-objective__badge.is-good { background: var(--green-dim); color: var(--green); }
-.fm-objective__badge.is-bad { background: var(--red-dim, rgba(220, 70, 70, 0.16)); color: var(--red); }
+.fm-objective__badge.is-bad { background: var(--red-soft); color: var(--red); }
 .fm-objective__task { margin: 0; font-size: 16px; font-weight: 800; color: var(--text); }
 .fm-objective__where { margin: 2px 0 0; font-size: 11.5px; color: var(--muted); }
 .fm-objective__now { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
@@ -3961,3 +3967,35 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   color: var(--red); text-transform: none; letter-spacing: 0;
 }
 .fm-assistline__quote { margin: 3px 0 0; font-size: 13px; line-height: 1.45; color: var(--text); }
+
+/* Which mini-game a drill plays, on the drill card. Reads as a thing you can
+   do rather than another stat, so it gets the accent rather than the flat
+   treatment the effect chips carry. */
+.fm-fx--game {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--green); border-color: var(--green-600);
+}
+
+/* --------------------------------------------------- run the session CTA */
+/* The one thing on the Training screen you actually play, sized like it. */
+.fm-runsession {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  margin: 12px 0; padding: 12px 14px;
+  background: var(--green-dim); border: 1px solid var(--green-600);
+  border-radius: var(--r-md); color: var(--text);
+  font-family: inherit; text-align: left; cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.fm-runsession:hover { border-color: var(--green); }
+.fm-runsession.is-done {
+  background: var(--panel-2); border-color: var(--border-soft); cursor: default;
+}
+.fm-runsession__badge {
+  display: flex; align-items: center; justify-content: center; flex: none;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--green); color: var(--bg, #04140d);
+}
+.fm-runsession.is-done .fm-runsession__badge { background: var(--panel-3); color: var(--green); }
+.fm-runsession__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.fm-runsession__title { font-size: 14.5px; font-weight: 800; }
+.fm-runsession__sub { font-size: 11.5px; color: var(--muted); line-height: 1.4; }

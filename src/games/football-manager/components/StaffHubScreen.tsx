@@ -14,6 +14,7 @@ import StaffProfileModal from './StaffProfileModal';
 import { Pulse, toneFor } from './SectionHub';
 import { QualityRating, qualityGrade } from './visuals';
 import AssistantLine from './assistant/AssistantLine';
+import CoachPortrait from './assistant/CoachPortrait';
 
 /**
  * Backroom staff.
@@ -37,14 +38,14 @@ type RoleDef = { id: Coach['role']; effect: string; icon: IconName };
 /** Three or four words each. What the coach *does*, not a description of the
  *  system he plugs into. */
 const ROLES: RoleDef[] = [
-  { id: 'assistant', effect: 'Advises on training & the academy', icon: 'mic' },
-  { id: 'attack', effect: 'Develops forwards', icon: 'attack' },
-  { id: 'midfield', effect: 'Develops midfielders', icon: 'balanced' },
-  { id: 'defense', effect: 'Develops defenders', icon: 'defense' },
-  { id: 'goalkeeping', effect: 'Develops keepers', icon: 'net' },
-  { id: 'fitness', effect: 'Faster recovery, fewer strains', icon: 'fitness' },
-  { id: 'analyst', effect: 'More sharpness per session', icon: 'stat' },
-  { id: 'head', effect: 'Faster tactical drilling', icon: 'tactics' },
+  { id: 'assistant', effect: 'Tells you what needs doing', icon: 'mic' },
+  { id: 'attack', effect: 'Makes your strikers better', icon: 'attack' },
+  { id: 'midfield', effect: 'Makes your midfielders better', icon: 'balanced' },
+  { id: 'defense', effect: 'Makes your defenders better', icon: 'defense' },
+  { id: 'goalkeeping', effect: 'Makes your keepers better', icon: 'net' },
+  { id: 'fitness', effect: 'Fewer injuries, quicker recovery', icon: 'fitness' },
+  { id: 'analyst', effect: 'Training sessions count for more', icon: 'stat' },
+  { id: 'head', effect: 'Players learn tactics quicker', icon: 'tactics' },
 ];
 
 export default function StaffHubScreen({
@@ -105,15 +106,21 @@ export default function StaffHubScreen({
 
               {coach ? (
                 <>
+                  {/* A hired coach is a person on the card, not a name and a
+                      wage. Same procedural portrait the Assistant panel uses,
+                      so it costs no art and stays stable across saves. */}
                   <button
                     type="button"
                     className="fm-staffcard__person"
                     onClick={() => setProfileCoachId(coach.id)}
                   >
-                    <span className="fm-staffcard__name">{coach.name}</span>
-                    <span className="fm-staffcard__meta">
-                      <QualityRating quality={coach.quality} />
-                      <span className="fm-staffcard__wage">{formatMoney(coach.wage)}/wk</span>
+                    <CoachPortrait coachId={coach.id} size={40} />
+                    <span className="fm-staffcard__id">
+                      <span className="fm-staffcard__name">{coach.name}</span>
+                      <span className="fm-staffcard__meta">
+                        <QualityRating quality={coach.quality} />
+                        <span className="fm-staffcard__wage">{formatMoney(coach.wage)}/wk</span>
+                      </span>
                     </span>
                   </button>
                   <button
@@ -139,7 +146,7 @@ export default function StaffHubScreen({
               ) : blocked > 0 ? (
                 <>
                   <p className="fm-staffcard__quote fm-staffcard__quote--cold">
-                    The board turned this down. They&rsquo;ll hear it again in {blocked} week{blocked === 1 ? '' : 's'}.
+                    The board said no. Ask again in {blocked} week{blocked === 1 ? '' : 's'}.
                   </p>
                   <button type="button" className="fm-btn fm-btn--ghost fm-btn--small fm-staffcard__action" disabled>
                     Refused
@@ -147,13 +154,13 @@ export default function StaffHubScreen({
                 </>
               ) : (
                 <>
-                  <p className="fm-staffcard__quote fm-staffcard__quote--empty">Vacant.</p>
+                  <p className="fm-staffcard__quote fm-staffcard__quote--empty">Nobody in this job.</p>
                   <button
                     type="button"
                     className="fm-btn fm-btn--secondary fm-btn--small fm-staffcard__action"
                     onClick={() => onChange(requestStaffSanction(state, role.id))}
                   >
-                    <Icon name="target" size={12} /> Ask the board
+                    <Icon name="target" size={12} /> Ask the board for one
                   </button>
                 </>
               )}
@@ -163,8 +170,8 @@ export default function StaffHubScreen({
       </div>
 
       <p className="fm-hint">
-        Every appointment needs board approval first. A confident board funds a better coach; one that has
-        already signed off on spending this season, or is watching the club lose money, funds less.
+        You cannot hire anyone until the board says yes. Ask them, and they will name the sort of coach they
+        will pay for — a happy board pays for a better one.
       </p>
 
       {profileCoachId !== null && fs.coaches.find((c) => c.id === profileCoachId) && (
