@@ -788,7 +788,7 @@ export default [
     keywords: 'how to load tactics fm26, how to import tactics fm26, how to go on holiday fm26, fm26 in game editor, how to update fm26, can my pc run fm26, how to clear cache fm26',
     standfirst: 'The things people actually get stuck on in Football Manager 26 — loading tactics, going on holiday, the editor, updates, and whether your machine can handle it.',
     cardBlurb: 'Tactics files, holiday, the editors, updates and system requirements.',
-    answer: 'Most <span class="term">FM26</span> friction comes down to four things: tactic files go in <strong>Documents/Sports Interactive/Football Manager 26/tactics</strong>, holiday sits on your <strong>manager profile</strong> rather than the continue button, the <strong>in-game editor is a paid add-on</strong>, and updates apply <strong>automatically</strong> through Steam, Epic or Game Pass.',
+    answer: 'Most FM26 friction comes down to four things: tactic files go in Documents/Sports Interactive/Football Manager 26/tactics, holiday sits on your manager profile rather than the continue button, the in-game editor is a paid add-on, and updates apply automatically through Steam, Epic or Game Pass.',
     sections: [
       {
         id: 'tactics',
