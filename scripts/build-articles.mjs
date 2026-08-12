@@ -416,7 +416,7 @@ const STATIC_URLS = [
 
 // lastmod for the hand-written pages, preserved from the previous sitemap so
 // regenerating it doesn't falsely bump their freshness dates.
-const STATIC_LASTMOD = {
+const STATIC_LASTMOD = new Map(Object.entries({
   '/': '2026-07-08',
   '/gaffa/': '2026-07-08',
   '/privacy.html': '2026-07-08',
@@ -435,13 +435,32 @@ const STATIC_LASTMOD = {
   '/what-does-a-football-manager-do.html': '2026-08-10',
   '/how-to-become-a-football-manager.html': '2026-08-10',
   '/football-manager-pa-ca-explained.html': '2026-08-10',
-};
+  '/soccer-positions-explained.html': '2026-08-11',
+  '/how-many-players-on-a-soccer-team.html': '2026-08-11',
+  '/arsenal-transfer-round-up.html': '2026-08-11',
+}));
+
+// Adding a URL to STATIC_URLS without a matching STATIC_LASTMOD entry used to
+// emit <lastmod>undefined</lastmod>, which Google rejects as an invalid date
+// while still accepting the rest of the file — so the sitemap looked fine
+// locally and failed only once submitted. Fail the build instead.
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/u;
+const missingLastmod = [];
+for (const entry of STATIC_URLS) {
+  const loc = entry[0];
+  if (!ISO_DATE.test(String(STATIC_LASTMOD.get(loc) || ''))) missingLastmod.push(loc);
+}
+if (missingLastmod.length > 0) {
+  throw new Error(
+    `STATIC_LASTMOD is missing a YYYY-MM-DD date for: ${missingLastmod.join(', ')}`,
+  );
+}
 
 function renderSitemap() {
   const hubDate = articles[0].updated || articles[0].published;
   const entries = [
     ...STATIC_URLS.map(([loc, priority, changefreq]) => ({
-      loc, priority, changefreq, lastmod: STATIC_LASTMOD[loc],
+      loc, priority, changefreq, lastmod: STATIC_LASTMOD.get(loc),
     })),
     { loc: `/${HUB}`, priority: '0.9', changefreq: 'weekly', lastmod: hubDate },
     ...articles.map((a) => ({
