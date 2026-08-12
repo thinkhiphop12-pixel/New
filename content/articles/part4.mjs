@@ -777,4 +777,94 @@ export default [
     ],
     related: ['football-manager-26-how-to-develop-youth-players', 'football-manager-26-board-expectations', 'football-manager-26-how-to-make-money'],
   },
+  {
+    slug: 'football-manager-26-how-to',
+    title: 'FM26 How-To: Load Tactics, Go on Holiday, Editor & More',
+    h1: 'FM26 How-To Guide',
+    linkText: 'FM26 how-to guide',
+    category: 'fm',
+    published: '2026-08-12',
+    description: 'How to load tactics in FM26, go on holiday, use the in-game editor, update the game, clear the cache, and whether your PC can run it.',
+    keywords: 'how to load tactics fm26, how to import tactics fm26, how to go on holiday fm26, fm26 in game editor, how to update fm26, can my pc run fm26, how to clear cache fm26',
+    standfirst: 'The things people actually get stuck on in Football Manager 26 — loading tactics, going on holiday, the editor, updates, and whether your machine can handle it.',
+    cardBlurb: 'Tactics files, holiday, the editors, updates and system requirements.',
+    answer: 'Most <span class="term">FM26</span> friction comes down to four things: tactic files go in <strong>Documents/Sports Interactive/Football Manager 26/tactics</strong>, holiday sits on your <strong>manager profile</strong> rather than the continue button, the <strong>in-game editor is a paid add-on</strong>, and updates apply <strong>automatically</strong> through Steam, Epic or Game Pass.',
+    sections: [
+      {
+        id: 'tactics',
+        h2: 'Loading and importing tactics',
+        tocLabel: 'Loading and importing tactics',
+        html: `<p>Downloaded tactics are <code>.fmf</code> files, and FM only sees them if they are in the right folder. The steps:</p>
+<ol>
+  <li>Find <strong>Documents/Sports Interactive/Football Manager 26/tactics</strong>. If there is no <code>tactics</code> folder inside the Football Manager 26 folder, create one with exactly that name.</li>
+  <li>If your download is a <code>.rar</code> or <code>.zip</code>, extract it first. The <code>.fmf</code> file itself has to sit in the folder — an archive will not be read.</li>
+  <li>If the game was already running, quit and restart it. FM reads that folder at launch.</li>
+  <li>In your save, open the <strong>Tactics</strong> screen, press the <strong>+</strong> icon, and choose <strong>Load Tactic</strong>.</li>
+</ol>
+<p>If it still does not appear, the usual cause is a nested folder — a <code>tactics/my-tactic/tactic.fmf</code> path instead of <code>tactics/tactic.fmf</code>. The file has to be directly inside <code>tactics</code>.</p>
+<p>Worth saying: a downloaded tactic is built around someone else's squad, and stops working the moment your players do not fit it. Building your own takes an afternoon and survives contact with your actual team.</p>`,
+      },
+      {
+        id: 'holiday',
+        h2: 'Going on holiday',
+        html: `<p>Holiday is not on the continue button, which is why people hunt for it. It lives on <strong>your own manager profile</strong> — open your profile and look for the holiday action there.</p>
+<p>You then set two things:</p>
+<ul>
+  <li><strong>How long</strong> — a few days, until a fixture, or a whole season</li>
+  <li><strong>What your assistant handles</strong> — team selection, transfers, contracts, press</li>
+</ul>
+<p>The game simulates that period and applies your delegation settings to anything that comes up. It is the fastest way to skip pre-season or run out a season you have already lost, but note that anything you have delegated genuinely gets decided without you — including transfers, if you leave that on.</p>
+<p class="note">FM26 rebuilt its interface on a new engine, and the exact placement of this option has shifted between patches. If it is not where you expect, check your manager profile screen first, then the calendar.</p>`,
+      },
+      {
+        id: 'editor',
+        h2: 'The in-game and pre-game editors',
+        html: `<p>These are two different tools and only one of them costs money.</p>
+<div class="tbl-wrap">
+  <table class="data nowrap-first">
+    <thead><tr><th scope="col">Editor</th><th scope="col">Cost</th><th scope="col">What it does</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Pre-game editor</th><td>Free download</td><td>Edits the database before you start a save — clubs, players, competition rules</td></tr>
+      <tr><th scope="row">In-game editor</th><td>Paid add-on</td><td>Changes things live inside a running save — attributes, morale, finances, moving players between clubs</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>The in-game editor is bought separately on Steam or the Epic Games Store. It is <strong>not</strong> included with the base game, and not included with Game Pass — which catches out a lot of people playing through the subscription.</p>`,
+      },
+      {
+        id: 'updates',
+        h2: 'Updating the game and clearing the cache',
+        html: `<p>There is nothing to do manually for updates. Steam, Epic, Game Pass and the console stores all patch FM26 automatically. If you think you are stuck on an old build, quit fully so the launcher can finish, then check the version number on the main menu.</p>
+<p>FM26 has been patched heavily since launch — one update alone carried over 300 fixes, and later ones reworked international management. If you stopped playing early on, you are almost certainly several versions behind.</p>
+<p>As for the cache: FM26 does not have the <strong>Clear Cache</strong> button that older versions kept in Preferences. If new graphics, faces or a skin are not showing up, fully quit and restart the game — that is effectively what the old button forced. Reloading the skin from Preferences is worth trying first for skin-only problems.</p>`,
+      },
+      {
+        id: 'specs',
+        h2: 'Can your PC or laptop run FM26?',
+        html: `<p>FM26 is heavier than the versions before it. The headline numbers:</p>
+<div class="tbl-wrap">
+  <table class="data nowrap-first">
+    <thead><tr><th scope="col">Requirement</th><th scope="col">Detail</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Operating system</th><td>64-bit Windows 10 (22H2) or Windows 11 (23H2)</td></tr>
+      <tr><th scope="row">Processor</th><td>64-bit required — 32-bit systems cannot run it at all</td></tr>
+      <tr><th scope="row">Storage</th><td>Around 20 GB, roughly three times what FM24 needed</td></tr>
+      <tr><th scope="row">RAM</th><td>Runs on less, but 16 GB is the practical target for large databases</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>The honest version: FM is limited by <strong>processor and memory, not graphics</strong>. A modest laptop will run it perfectly well with two or three playable leagues. What kills performance is loading a dozen nations with a large database — that is a RAM and CPU problem, and no graphics card fixes it.</p>
+<p>If your machine is borderline, load fewer leagues before you consider new hardware. Requirements are occasionally revised, so check the current official figures before buying.</p>`,
+      },
+    ],
+    faq: [
+      { q: 'How do you load tactics in FM26?', a: 'Put the .fmf file in Documents/Sports Interactive/Football Manager 26/tactics, creating the folder if needed, extract any archive first, restart the game, then Tactics screen → + → Load Tactic.' },
+      { q: 'How do you go on holiday in FM26?', a: 'It is on your manager profile, not the continue button. Set the duration and what your assistant handles while you are away.' },
+      { q: 'Is the FM26 in-game editor free?', a: 'No — it is a paid add-on on Steam or Epic, and it is not included with Game Pass. The pre-game editor is a separate free download.' },
+      { q: 'How do you update FM26?', a: 'You do not. Steam, Epic, Game Pass and the console stores patch it automatically. Quit fully and let the launcher finish if it seems stuck.' },
+      { q: 'How do you clear the cache in FM26?', a: 'There is no Clear Cache button any more. Fully quit and restart the game, which does the same job.' },
+      { q: 'Can my PC run FM26?', a: 'You need 64-bit Windows 10 22H2 or Windows 11 23H2 and about 20 GB of storage. Performance depends on CPU and RAM rather than graphics — load fewer leagues before you consider upgrading.' },
+    ],
+    related: ['football-manager-26-best-tactics', 'football-manager-26-first-season-guide', 'football-manager-26-player-roles-explained'],
+  },
 ];

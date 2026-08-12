@@ -412,7 +412,6 @@ const STATIC_URLS = [
   ['/soccer-positions-explained.html', '0.9', 'monthly'],
   ['/how-many-players-on-a-soccer-team.html', '0.9', 'monthly'],
   ['/arsenal-transfer-round-up.html', '0.5', 'weekly'],
-  ['/football-manager-26-how-to.html', '0.9', 'monthly'],
 ];
 
 // lastmod for the hand-written pages, preserved from the previous sitemap so
@@ -439,7 +438,6 @@ const STATIC_LASTMOD = new Map(Object.entries({
   '/soccer-positions-explained.html': '2026-08-11',
   '/how-many-players-on-a-soccer-team.html': '2026-08-11',
   '/arsenal-transfer-round-up.html': '2026-08-11',
-  '/football-manager-26-how-to.html': '2026-08-12',
 }));
 
 // Adding a URL to STATIC_URLS without a matching STATIC_LASTMOD entry used to
