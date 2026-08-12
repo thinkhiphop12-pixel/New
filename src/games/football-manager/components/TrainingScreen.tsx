@@ -13,6 +13,7 @@ import {
 } from '@/engine/schedule';
 import { assistantScheduleAdvice } from '@/engine/assistant';
 import { Icon, type IconName } from './Icon';
+import AssistantLine from './assistant/AssistantLine';
 import TrainingSessionModal from './TrainingSessionModal';
 import TrainingMiniGame from './TrainingMiniGame';
 
@@ -73,6 +74,19 @@ function toneOf(n: number): string {
   return n > 0.05 ? 'var(--green)' : n < -0.05 ? 'var(--red)' : 'var(--muted)';
 }
 
+/** The arrow that goes with `toneOf`. Every coloured number on this screen
+ *  carries one, so nothing on it depends on telling green from red — which
+ *  matters for colour-blind players and for anyone reading it quickly. */
+function arrowOf(n: number): IconName {
+  return n > 0.05 ? 'arrow-up' : n < -0.05 ? 'arrow-down' : 'dash';
+}
+
+/** A condition percentage in words. `74%` doesn't say whether that's a
+ *  problem; "Fresh" does. */
+function conditionWord(pct: number, good: number, ok: number): string {
+  return pct >= good ? 'Good' : pct >= ok ? 'Okay' : 'Poor';
+}
+
 export default function TrainingScreen({
   state,
   onChange,
@@ -125,6 +139,8 @@ export default function TrainingScreen({
 
   return (
     <>
+      <AssistantLine state={state} route="training" />
+
       {/* --- The two sessions ------------------------------------------- */}
       {/* Each drill states what it does rather than only what it is called;
           every number on these cards already existed in TEAM_DRILLS and was
@@ -217,7 +233,12 @@ export default function TrainingScreen({
         <div className="fm-mod__head">
           <h2 className="fm-mod__title">Week load</h2>
           <span className="fm-actiondock__spacer" />
-          <span className="fm-loadverdict" style={{ color: loadTone }}>{loadVerdict} · {weekLoad}</span>
+          {/* Word first, icon second, number last — the number is the least
+              useful of the three and used to be doing all the work. */}
+          <span className="fm-loadverdict" style={{ color: loadTone }}>
+            <Icon name={weekLoad > 78 ? 'warning' : weekLoad > 62 ? 'flame' : 'check'} size={13} />
+            {loadVerdict}
+          </span>
         </div>
         <div className="fm-loadtrack">
           <i className="fm-loadtrack__fill" style={{ width: `${weekLoad}%`, background: loadTone }} />
@@ -247,12 +268,25 @@ export default function TrainingScreen({
         </div>
 
         <div className="fm-projrow">
-          <span>Sharpness <b style={{ color: toneOf(weekSharpness) }}>{signed(weekSharpness)}</b>/wk</span>
-          <span>Fitness <b style={{ color: toneOf(weekFitness) }}>{signed(weekFitness)}</b>/wk</span>
+          <span>
+            Sharpness{' '}
+            <b style={{ color: toneOf(weekSharpness) }}>
+              <Icon name={arrowOf(weekSharpness)} size={11} /> {signed(weekSharpness)}
+            </b>
+            /wk
+          </span>
+          <span>
+            Fitness{' '}
+            <b style={{ color: toneOf(weekFitness) }}>
+              <Icon name={arrowOf(weekFitness)} size={11} /> {signed(weekFitness)}
+            </b>
+            /wk
+          </span>
           <span>
             Injury risk{' '}
             <b style={{ color: intensity.overtrainRisk > 0 ? 'var(--red)' : 'var(--green)' }}>
-              {intensity.overtrainRisk > 0 ? `${(intensity.overtrainRisk * 100).toFixed(1)}%` : 'normal'}
+              <Icon name={intensity.overtrainRisk > 0 ? 'warning' : 'check'} size={11} />{' '}
+              {intensity.overtrainRisk > 0 ? 'Raised' : 'Normal'}
             </b>
           </span>
         </div>
@@ -280,17 +314,19 @@ export default function TrainingScreen({
       <div className="fm-mod">
         <div className="fm-mod__head"><h2 className="fm-mod__title">Condition</h2></div>
         <div className="fm-condgrid">
+          {/* Each tile says the number, then what the number means. The word
+              is the part that survives being glanced at. */}
           <div className="fm-condgrid__cell">
             <span className="fm-condgrid__val" style={{ color: avgFitness >= 75 ? 'var(--green)' : avgFitness >= 55 ? 'var(--gold)' : 'var(--red)' }}>{avgFitness}%</span>
-            <span className="fm-condgrid__lbl">Average fitness</span>
+            <span className="fm-condgrid__lbl">Fitness — {conditionWord(avgFitness, 75, 55)}</span>
           </div>
           <div className="fm-condgrid__cell">
             <span className="fm-condgrid__val" style={{ color: avgSharpness >= 70 ? 'var(--green)' : avgSharpness >= 50 ? 'var(--gold)' : 'var(--red)' }}>{avgSharpness}%</span>
-            <span className="fm-condgrid__lbl">Average sharpness</span>
+            <span className="fm-condgrid__lbl">Sharpness — {conditionWord(avgSharpness, 70, 50)}</span>
           </div>
           <div className="fm-condgrid__cell">
             <span className="fm-condgrid__val" style={{ color: injured > 2 ? 'var(--red)' : 'var(--text)' }}>{injured}</span>
-            <span className="fm-condgrid__lbl">In the treatment room</span>
+            <span className="fm-condgrid__lbl">{injured === 0 ? 'Nobody injured' : `Injured — ${injured > 2 ? 'a problem' : 'manageable'}`}</span>
           </div>
         </div>
         {[...squad]
@@ -302,7 +338,7 @@ export default function TrainingScreen({
               <div className="fm-meter-row__head">
                 <span>{p.name}</span>
                 <span className="fm-meter-row__value" style={{ color: p.fitness >= 75 ? 'var(--green)' : p.fitness >= 50 ? 'var(--gold)' : 'var(--red)' }}>
-                  {Math.round(p.fitness)}%
+                  {conditionWord(p.fitness, 75, 50)} · {Math.round(p.fitness)}%
                 </span>
               </div>
               <div className="fm-meter-row__track">

@@ -961,13 +961,16 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
    outline — in a single list most rows are starters, and eleven glowing
    borders is noise rather than a signal. */
 .fm-player-row.in-lineup { box-shadow: inset 2px 0 0 var(--brand); }
-/* Squad list rows lead with a player avatar; other player lists don't.
-   Six children — face, shirt number, position badge, name, tag, rating — so
-   six tracks. This declared five, which sent the rating chip onto an implicit
-   second row and stretched the badge across the leftover space; invisible
-   while the list sat in a narrow two-column split, obvious once it went
-   full-width. */
-.fm-player-row--faced { grid-template-columns: 26px 22px 42px minmax(0, 1fr) auto auto; }
+/* Player lists used to lead with a generated avatar. The faces read as
+   featureless blobs at 26px and told you nothing the row didn't already say,
+   so they're gone and each list declares tracks for the children it actually
+   has — a wrong count pushes the rating chip onto an implicit second row.
+   Squad: shirt number, position badge, name, form/morale tag, rating. */
+.fm-player-row--squad { grid-template-columns: 22px 42px minmax(0, 1fr) auto auto; }
+/* Youth: position badge, name, rating, Promote. */
+.fm-player-row--youth { grid-template-columns: 42px minmax(0, 1fr) auto auto; }
+/* One-to-one picker: name, rating. */
+.fm-player-row--pick { grid-template-columns: minmax(0, 1fr) auto; }
 .fm-player-row__badge {
   display: flex; align-items: center; justify-content: center;
   font-size: 9.5px; font-weight: 900; border-radius: 6px;
@@ -1709,10 +1712,13 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-card__fixture { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; margin-bottom: 8px; }
 .fm-card__team { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .fm-card__team-name { display: block; font-weight: 800; font-size: 12.5px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; }
-.fm-card__team-name--home { color: #000000; }
-.fm-card__team-name--away { color: #000000; }
-.fm-card__team-label { display: block; font-size: 9.5px; color: #000000; margin-top: 1px; }
-.fm-card__vs { font-weight: 900; color: #000000; font-size: 11px; }
+/* These four were hard-coded #000000, which is invisible on the dark fixture
+   card — the team names, HOME/AWAY and VS all read as blank space. They follow
+   the theme now, like every other piece of text on the card. */
+.fm-card__team-name--home { color: var(--text); }
+.fm-card__team-name--away { color: var(--text); }
+.fm-card__team-label { display: block; font-size: 9.5px; color: var(--muted); margin-top: 1px; }
+.fm-card__vs { font-weight: 900; color: var(--muted); font-size: 11px; }
 .fm-card__note { font-size: 10.5px; color: var(--gold); margin: 0; }
 .fm-card__action { margin-top: 8px; }
 .fm-card__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
@@ -3328,7 +3334,17 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   font-family: inherit;
 }
 .fm-staffcard__name { font-weight: 700; font-size: 12.5px; }
-.fm-staffcard__meta { font-size: 11px; color: var(--muted); }
+.fm-staffcard__meta { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fm-staffcard__wage { font-variant-numeric: tabular-nums; }
+/* The wage sits on its own line inside the hire button so the sentence
+   ("Hire a very good coach") reads first and the price second. */
+.fm-staffcard__price { display: block; width: 100%; font-weight: 600; opacity: 0.85; }
+
+/* Stars plus the word they stand for. The two together are the point — the
+   stars give the scale at a glance, the word says what it means. */
+.fm-grade { display: inline-flex; align-items: center; gap: 6px; }
+.fm-grade .fm-rep-stars { margin-left: 0; }
+.fm-grade__word { font-weight: 700; color: var(--text); font-size: 11.5px; }
 .fm-staffcard__quote {
   margin: 0; font-size: 11.5px; font-style: italic; color: var(--muted);
   line-height: 1.4;
@@ -3418,7 +3434,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-fx--flat { background: rgba(255,255,255,0.06); color: var(--muted); }
 
 /* Week load: one meter for how hard the plan is, with a verdict. */
-.fm-loadverdict { font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.fm-loadverdict { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 800; }
 .fm-loadtrack {
   height: 9px; border-radius: 5px; background: var(--panel-3);
   overflow: hidden; margin: 4px 0 10px;
@@ -3443,7 +3459,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px;
   font-size: 12px; color: var(--muted);
 }
-.fm-projrow b { font-variant-numeric: tabular-nums; }
+.fm-projrow b { display: inline-flex; align-items: center; gap: 3px; font-variant-numeric: tabular-nums; }
 
 .fm-advice {
   display: flex; align-items: flex-start; gap: 8px;
@@ -3869,3 +3885,79 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   position: absolute; top: 0; bottom: 0; width: 4px; margin-left: -2px;
   background: var(--gold); border-radius: 2px;
 }
+
+/* ------------------------------------------------------- board objectives */
+/* One card for the objective, replacing three panels that each restated it.
+   The position is the biggest thing on it because it is the answer to the
+   question the screen exists to answer. */
+.fm-objective__head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.fm-objective__badge {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 50%; flex: none;
+}
+.fm-objective__badge.is-good { background: var(--green-dim); color: var(--green); }
+.fm-objective__badge.is-bad { background: var(--red-dim, rgba(220, 70, 70, 0.16)); color: var(--red); }
+.fm-objective__task { margin: 0; font-size: 16px; font-weight: 800; color: var(--text); }
+.fm-objective__where { margin: 2px 0 0; font-size: 11.5px; color: var(--muted); }
+.fm-objective__now { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.fm-objective__pos { font-size: 40px; font-weight: 900; line-height: 1; color: var(--text); }
+.fm-objective__verdict {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12.5px; font-weight: 800;
+}
+.fm-objective__verdict.is-good { color: var(--green); }
+.fm-objective__verdict.is-bad { color: var(--red); }
+.fm-objective__stake { margin: 10px 0 0; font-size: 12.5px; color: var(--muted); }
+.fm-objective__stake.is-bad { color: var(--red); font-weight: 700; }
+
+/* Faction cards: face, bar, verdict, and the paragraph folded behind Why?. */
+.fm-factions { display: flex; flex-direction: column; gap: 10px; }
+.fm-faction {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center; gap: 12px;
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-radius: var(--r-md); padding: 10px 12px;
+}
+.fm-mood { flex: none; }
+.fm-faction__body { min-width: 0; }
+.fm-faction__label {
+  display: flex; align-items: center; gap: 5px;
+  margin: 0; font-size: 11px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.fm-faction__verdict { margin: 2px 0 6px; font-size: 14px; font-weight: 800; }
+.fm-faction__track {
+  height: 6px; border-radius: 3px; background: var(--panel-2); overflow: hidden;
+}
+.fm-faction__fill { display: block; height: 100%; border-radius: 3px; }
+.fm-faction__why {
+  background: none; border: 1px solid var(--border-soft); border-radius: var(--r-sm, 6px);
+  color: var(--muted); font-size: 11px; font-weight: 700; padding: 5px 9px; cursor: pointer;
+}
+.fm-faction__why:hover { color: var(--text); border-color: var(--border-bright); }
+/* Full width under the other three tracks once opened. */
+.fm-faction__reason {
+  grid-column: 1 / -1; margin: 8px 0 0;
+  font-size: 12px; line-height: 1.5; color: var(--muted);
+}
+
+/* ---------------------------------------------------- inline assistant line */
+.fm-assistline {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--muted-dim);
+  border-radius: var(--r-md); padding: 10px 12px; margin-bottom: 12px;
+}
+.fm-assistline.is-urgent { border-left-color: var(--red); }
+.fm-assistline.is-good { border-left-color: var(--green); }
+.fm-assistline__body { min-width: 0; flex: 1; }
+.fm-assistline__who {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0; font-size: 11px; font-weight: 800; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.fm-assistline__flag {
+  display: inline-flex; align-items: center; gap: 3px;
+  color: var(--red); text-transform: none; letter-spacing: 0;
+}
+.fm-assistline__quote { margin: 3px 0 0; font-size: 13px; line-height: 1.45; color: var(--text); }

@@ -5,6 +5,7 @@ import { Icon } from './Icon';
 import { formatMoney } from '@/engine/utils';
 import type { GameState, Coach } from '@/engine/types';
 import { fireCoach } from '@/engine/facilities';
+import { QualityRating, qualityGrade } from './visuals';
 
 export default function StaffProfileModal({
   state,
@@ -45,11 +46,11 @@ export default function StaffProfileModal({
                 width: 32,
                 height: 32,
                 fontSize: 12,
-                background: `conic-gradient(var(--green) ${Math.round((coach.quality / 99) * 100)}%, var(--panel-2) 0)`,
+                background: `conic-gradient(var(--green) ${qualityGrade(coach.quality).stars * 20}%, var(--panel-2) 0)`,
                 color: 'var(--text)',
               }}
             >
-              {coach.quality}
+              {qualityGrade(coach.quality).stars}
             </span>
             <div>
               <h2 id="staff-profile-title" style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{coach.name}</h2>
@@ -71,8 +72,8 @@ export default function StaffProfileModal({
             <span>{coach.role.replace(/_/g, ' ')}</span>
           </div>
           <div className="fm-stat-dot">
-            <span className="fm-hint">Quality</span>
-            <span>{coach.quality}/99</span>
+            <span className="fm-hint">How good</span>
+            <QualityRating quality={coach.quality} />
           </div>
           <div className="fm-stat-dot">
             <span className="fm-hint">Wage</span>

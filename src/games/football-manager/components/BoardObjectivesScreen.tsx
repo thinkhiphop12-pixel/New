@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import type { GameState } from '@/engine/types';
 import { userLeagueId, userPosition, userLeague } from '@/engine/seasonProgression';
 import { leagueName } from '@/engine/gameRules';
 import { CHAIRMAN_BLURB, CHAIRMAN_LABEL, chairmanFor } from '@/engine/jobMarket';
-import { ReputationStars, Bar } from './visuals';
-import { Icon } from './Icon';
+import { Icon, type IconName } from './Icon';
+import { ordinalSuffix } from './visuals';
+import AssistantLine from './assistant/AssistantLine';
 
 /**
  * Job security in one screen: the three factions who can each make your job
@@ -16,8 +18,55 @@ import { Icon } from './Icon';
  * squad morale don't carry a firing threshold of their own, but they're what
  * a manager watches in practice, so they get the same verdict treatment
  * rather than reading as decoration next to the number that "really" counts.
+ *
+ * The screen used to say all of that in four stacked panels of prose, with
+ * the sacking rule explained three separate times and every value expressed
+ * as a bare `34/100`. Now each faction is one card: a face you can read
+ * without reading, a bar, and a three-word verdict. The explanations still
+ * exist — they moved behind each card's "Why?" toggle, which is where text
+ * that long belongs when it isn't the answer to the question you opened the
+ * screen with.
  */
+
+/** A face whose mouth is drawn from the value. This is the part an eight-year-old
+ *  reads first, and it carries the same information as the bar underneath —
+ *  neither is decoration for the other. */
+function MoodFace({ value, size = 44 }: { value: number; size?: number }) {
+  // Mouth control point: well below the corners when happy (a smile), well
+  // above them when miserable (a frown), flat in the middle.
+  const curve = ((value - 50) / 50) * 7;
+  const tone = value >= 65 ? 'var(--green)' : value >= 35 ? 'var(--gold)' : 'var(--red)';
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" className="fm-mood">
+      <circle cx="20" cy="20" r="18" fill="none" stroke={tone} strokeWidth="2.5" />
+      <circle cx="14" cy="16" r="2.2" fill={tone} />
+      <circle cx="26" cy="16" r="2.2" fill={tone} />
+      <path
+        d={`M 12 26 Q 20 ${26 + curve} 28 26`}
+        fill="none"
+        stroke={tone}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+interface Faction {
+  label: string;
+  value: number;
+  icon: IconName;
+  /** Three or four words. The whole verdict, not the start of one. */
+  verdict: string;
+  /** What moves this number, in a sentence the manager can act on. */
+  why: string;
+}
+
 export default function BoardObjectivesScreen({ state }: { state: GameState }) {
+  /** Which faction has its explanation open. One at a time — the point of
+   *  folding the prose away is that it isn't all on screen at once. */
+  const [openWhy, setOpenWhy] = useState<string | null>(null);
+
   const board = state.board;
   const leagueId = userLeagueId(state);
   const league = userLeague(state);
@@ -26,102 +75,121 @@ export default function BoardObjectivesScreen({ state }: { state: GameState }) {
   const onTrack = ranked && pos <= board.minPosition;
   const chairman = chairmanFor(state.userClubId);
 
-  const factions: {
-    label: string;
-    value: number;
-    priority: string;
-    verdict: (v: number) => string;
-  }[] = [
+  const factions: Faction[] = [
     {
-      label: 'Board',
+      label: 'The board',
       value: board.confidence,
-      priority: `${CHAIRMAN_LABEL[chairman]} chairman — ${CHAIRMAN_BLURB[chairman].toLowerCase()} Moved by league position against the objective, and by finances staying out of the red.`,
-      verdict: (v) => (v < 20 ? 'Sacked at season end if this holds' : v < 30 ? 'On the hot seat' : v < 50 ? 'Under pressure' : 'Secure'),
+      icon: 'club',
+      verdict:
+        board.confidence < 20 ? 'Ready to sack you'
+          : board.confidence < 30 ? 'Losing patience'
+            : board.confidence < 50 ? 'Not happy'
+              : board.confidence < 75 ? 'Happy enough'
+                : 'Delighted with you',
+      why: `${CHAIRMAN_LABEL[chairman]} chairman — ${CHAIRMAN_BLURB[chairman].toLowerCase()} Moved by where you finish against the objective, and by the club staying out of the red. This is the only one that can cost you your job.`,
     },
     {
-      label: 'Fans',
+      label: 'The fans',
       value: state.fanConfidence,
-      priority: 'Want to see the team win, in the league and in cup competitions, regardless of what the board asked for. Slower to move than the board, but a long run without a win turns the stands.',
-      verdict: (v) => (v <= 25 ? 'Protests in the stands' : v < 45 ? 'Grumbling' : v >= 85 ? 'Singing your name' : 'Content'),
+      icon: 'stadium',
+      verdict:
+        state.fanConfidence <= 25 ? 'Booing you'
+          : state.fanConfidence < 45 ? 'Getting restless'
+            : state.fanConfidence >= 85 ? 'Singing your name'
+              : 'Behind the team',
+      why: 'They want wins — league or cup, they are not fussy which. Slower to turn than the board, but a long run without a win empties the stands.',
     },
     {
-      label: 'Squad Morale',
+      label: 'The players',
       value: state.morale,
-      priority: 'Wants results and playing time. Match outcomes, cup runs, and your press-conference tone all feed it directly — a squad that stops believing in you plays worse, which feeds the other two.',
-      verdict: (v) => (v < 40 ? 'Dressing room is restless' : v < 60 ? 'Steady' : 'Fully behind you'),
+      icon: 'squad',
+      verdict:
+        state.morale < 40 ? 'Unhappy in training'
+          : state.morale < 60 ? 'Getting on with it'
+            : 'Playing for you',
+      why: 'Results, playing time and what you say in press conferences all feed this. A squad that stops believing plays worse — which drags the board down with it.',
     },
   ];
 
+  const safe = board.confidence >= 50;
+  const sackRisk = board.confidence < 20;
+
   return (
     <>
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>Primary Objective</p>
-        <p className="fm-club-line">{board.objective}</p>
-        <p className="fm-hint">
-          Finish in the top {board.minPosition} of {leagueName(leagueId)} — currently position {pos ? `P${pos}` : '—'}
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
-          <ReputationStars value={Math.min(5, Math.max(1, Math.round(board.confidence / 20)))} />
-          <span className="fm-club-line" style={{ margin: 0 }}>{board.confidence}/100</span>
-        </div>
-        <Bar value={board.confidence} label="Board" />
-        <div className="fm-bar-row">
-          <span className="fm-bar-row__label">Objective</span>
-          <div className="fm-bar">
-            <div
-              className="fm-bar__fill"
-              style={{
-                width: ranked ? `${Math.max(2, Math.min(100, ((league.clubCount - pos + 1) / league.clubCount) * 100))}%` : '2%',
-                background: onTrack ? 'var(--green)' : 'var(--red)',
-              }}
-            />
+      {/* --- The one thing you have to do -------------------------------
+          This was the "Primary Objective" panel plus a "League Context"
+          panel plus a "Dismissal Risk" panel, all restating the same
+          sentence. It is one sentence, so it is one card. */}
+      <div className="fm-mod fm-objective">
+        <div className="fm-objective__head">
+          <span className={`fm-objective__badge${onTrack ? ' is-good' : ' is-bad'}`}>
+            <Icon name={onTrack ? 'check' : 'warning'} size={18} />
+          </span>
+          <div>
+            <p className="fm-objective__task">Finish in the top {board.minPosition}</p>
+            <p className="fm-objective__where">{leagueName(leagueId)} · {league.clubCount} teams</p>
           </div>
-          <span className="fm-bar-row__value">{ranked ? (onTrack ? 'On track' : 'Needs improvement') : 'Not yet ranked'}</span>
         </div>
-      </div>
 
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>Who You Answer To</p>
-        <p className="fm-hint" style={{ marginTop: 0 }}>
-          Three factions, three priorities. Keeping the board happy is what keeps your job — the other two are what
-          make the club worth managing.
-        </p>
-        {factions.map((f) => {
-          const tone = f.value >= 65 ? 'var(--green)' : f.value >= 35 ? 'var(--gold)' : 'var(--red)';
-          return (
-            <div key={f.label} style={{ marginBottom: 14 }}>
-              <Bar value={f.value} label={f.label} />
-              <p className="fm-club-line" style={{ margin: '2px 0 2px', color: tone, fontSize: 13 }}>
-                {f.verdict(f.value)}
-              </p>
-              <p className="fm-hint" style={{ margin: 0 }}>{f.priority}</p>
-            </div>
-          );
-        })}
-      </div>
+        <div className="fm-objective__now">
+          <span className="fm-objective__pos">{ranked ? `${pos}${ordinalSuffix(pos)}` : '—'}</span>
+          <span className={`fm-objective__verdict${onTrack ? ' is-good' : ' is-bad'}`}>
+            <Icon name={onTrack ? 'arrow-up' : 'arrow-down'} size={13} />
+            {ranked ? (onTrack ? 'Good enough' : 'Not good enough') : 'No games played yet'}
+          </span>
+        </div>
 
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>League Context</p>
-        <p className="fm-club-line">{leagueName(leagueId)} — {league.clubCount} teams, finish {board.minPosition}+ required</p>
-        <p className="fm-hint">
-          Current position: {pos ? `P${pos}` : 'Not yet ranked'} · Progress: {pos ? `${Math.round(((league.clubCount - pos + 1) / league.clubCount) * 100)}%` : '0%'}
+        <p className={`fm-objective__stake${sackRisk ? ' is-bad' : ''}`}>
+          {sackRisk
+            ? 'Miss it and you are sacked at the end of the season.'
+            : safe
+              ? 'Miss it and the board will think hard about your future.'
+              : 'Miss it with the board this unhappy and you lose the job.'}
         </p>
       </div>
 
-      <div className="fm-panel">
-        <p className="fm-label" style={{ marginTop: 0 }}>Dismissal Risk</p>
-        <p
-          className="fm-club-line"
-          style={{ display: 'flex', alignItems: 'center', gap: 6, color: board.confidence < 30 ? 'var(--red)' : board.confidence < 50 ? 'var(--gold)' : 'var(--green)' }}
-        >
-          {board.confidence < 30 && <Icon name="warning" size={14} />}
-          Board confidence is {board.confidence}/100 — {board.confidence < 20 ? 'you will be sacked at season end' : board.confidence < 30 ? 'on the hot seat' : board.confidence < 50 ? 'under pressure' : 'secure'}
-        </p>
-        <p className="fm-hint">
-          Only board confidence carries a firing threshold. Fan and squad sentiment don&apos;t end your job on their
-          own, but a squad that stops believing plays worse — which is exactly what drags board confidence down.
-        </p>
+      <AssistantLine state={state} route="board" />
+
+      {/* --- Who you answer to ------------------------------------------
+          Three cards, three faces, three verdicts. The paragraph that used
+          to sit under each one is behind its Why? button. */}
+      <div className="fm-mod">
+        <div className="fm-mod__head"><h2 className="fm-mod__title">Who you keep happy</h2></div>
+
+        <div className="fm-factions">
+          {factions.map((f) => {
+            const tone = f.value >= 65 ? 'var(--green)' : f.value >= 35 ? 'var(--gold)' : 'var(--red)';
+            const open = openWhy === f.label;
+            return (
+              <div key={f.label} className="fm-faction">
+                <MoodFace value={f.value} />
+                <div className="fm-faction__body">
+                  <p className="fm-faction__label">
+                    <Icon name={f.icon} size={13} /> {f.label}
+                  </p>
+                  {/* Colour never says it alone: the word is the verdict and
+                      the face repeats it, so the bar's tone is the third
+                      copy rather than the only one. */}
+                  <p className="fm-faction__verdict" style={{ color: tone }}>{f.verdict}</p>
+                  <div className="fm-faction__track">
+                    <i className="fm-faction__fill" style={{ width: `${Math.max(2, f.value)}%`, background: tone }} />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="fm-faction__why"
+                  aria-expanded={open}
+                  onClick={() => setOpenWhy(open ? null : f.label)}
+                >
+                  {open ? 'Close' : 'Why?'}
+                </button>
+                {open && <p className="fm-faction__reason">{f.why}</p>}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </>
   );
 }
+

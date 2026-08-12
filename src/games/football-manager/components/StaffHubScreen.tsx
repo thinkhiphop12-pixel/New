@@ -12,6 +12,8 @@ import { formatMoney } from '@/engine/utils';
 import { Icon, type IconName } from './Icon';
 import StaffProfileModal from './StaffProfileModal';
 import { Pulse, toneFor } from './SectionHub';
+import { QualityRating, qualityGrade } from './visuals';
+import AssistantLine from './assistant/AssistantLine';
 
 /**
  * Backroom staff.
@@ -45,10 +47,6 @@ const ROLES: RoleDef[] = [
   { id: 'head', effect: 'Faster tactical drilling', icon: 'tactics' },
 ];
 
-function qualityTone(q: number): string {
-  return q >= 75 ? 'var(--green)' : q >= 50 ? 'var(--gold)' : 'var(--muted)';
-}
-
 export default function StaffHubScreen({
   state,
   onChange,
@@ -81,10 +79,12 @@ export default function StaffHubScreen({
         items={[
           { icon: 'staff', label: 'Appointed', value: `${filled}/${ROLES.length}`, tone: toneFor(filled, 2, ROLES.length - 1), meter: filled / ROLES.length },
           { icon: 'money-out', label: 'Wage bill', value: `${formatMoney(wageBill)}/wk` },
-          { icon: 'star', label: 'Avg quality', value: filled ? String(avgQuality) : '—', tone: filled ? toneFor(avgQuality, 45, 70) : 'plain' },
-          { icon: 'check', label: 'Sanctioned', value: String(sanctioned), tone: sanctioned > 0 ? 'green' : 'plain' },
+          { icon: 'star', label: 'Coaching', value: filled ? qualityGrade(avgQuality).word : 'None yet', tone: filled ? toneFor(avgQuality, 45, 70) : 'plain' },
+          { icon: 'check', label: 'Board says yes', value: sanctioned > 0 ? `${sanctioned} to hire` : 'Nothing yet', tone: sanctioned > 0 ? 'green' : 'plain' },
         ]}
       />
+
+      <AssistantLine state={state} route="staff" />
 
       <div className="fm-staffgrid">
         {ROLES.map((role) => {
@@ -112,8 +112,8 @@ export default function StaffHubScreen({
                   >
                     <span className="fm-staffcard__name">{coach.name}</span>
                     <span className="fm-staffcard__meta">
-                      <b style={{ color: qualityTone(coach.quality) }}>Q{coach.quality}</b>
-                      {' · '}{formatMoney(coach.wage)}/wk
+                      <QualityRating quality={coach.quality} />
+                      <span className="fm-staffcard__wage">{formatMoney(coach.wage)}/wk</span>
                     </span>
                   </button>
                   <button
@@ -132,7 +132,8 @@ export default function StaffHubScreen({
                     className="fm-btn fm-btn--primary fm-btn--small fm-staffcard__action"
                     onClick={() => appoint(role.id, approval.tier ?? 40)}
                   >
-                    Appoint Q{approval.tier} — {formatMoney(coachWageFor(approval.tier ?? 40))}/wk
+                    <Icon name="check" size={12} /> Hire a {qualityGrade(approval.tier ?? 40).word.toLowerCase()} coach
+                    <span className="fm-staffcard__price">{formatMoney(coachWageFor(approval.tier ?? 40))}/wk</span>
                   </button>
                 </>
               ) : blocked > 0 ? (
