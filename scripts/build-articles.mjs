@@ -435,7 +435,23 @@ const STATIC_LASTMOD = {
   '/what-does-a-football-manager-do.html': '2026-08-10',
   '/how-to-become-a-football-manager.html': '2026-08-10',
   '/football-manager-pa-ca-explained.html': '2026-08-10',
+  '/soccer-positions-explained.html': '2026-08-11',
+  '/how-many-players-on-a-soccer-team.html': '2026-08-11',
+  '/arsenal-transfer-round-up.html': '2026-08-11',
 };
+
+// Adding a URL to STATIC_URLS without a matching STATIC_LASTMOD entry used to
+// emit <lastmod>undefined</lastmod>, which Google rejects as an invalid date
+// while still accepting the rest of the file — so the sitemap looked fine
+// locally and failed only once submitted. Fail the build instead.
+const missingLastmod = STATIC_URLS
+  .map(([loc]) => loc)
+  .filter((loc) => !/^\d{4}-\d{2}-\d{2}$/.test(STATIC_LASTMOD[loc] ?? ''));
+if (missingLastmod.length) {
+  throw new Error(
+    `STATIC_LASTMOD is missing a YYYY-MM-DD date for: ${missingLastmod.join(', ')}`,
+  );
+}
 
 function renderSitemap() {
   const hubDate = articles[0].updated || articles[0].published;
