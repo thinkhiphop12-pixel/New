@@ -444,10 +444,13 @@ const STATIC_LASTMOD = {
 // emit <lastmod>undefined</lastmod>, which Google rejects as an invalid date
 // while still accepting the rest of the file — so the sitemap looked fine
 // locally and failed only once submitted. Fail the build instead.
-const missingLastmod = STATIC_URLS
-  .map(([loc]) => loc)
-  .filter((loc) => !/^\d{4}-\d{2}-\d{2}$/.test(STATIC_LASTMOD[loc] ?? ''));
-if (missingLastmod.length) {
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/u;
+const missingLastmod = [];
+for (const entry of STATIC_URLS) {
+  const loc = entry[0];
+  if (!ISO_DATE.test(String(STATIC_LASTMOD[loc] || ''))) missingLastmod.push(loc);
+}
+if (missingLastmod.length > 0) {
   throw new Error(
     `STATIC_LASTMOD is missing a YYYY-MM-DD date for: ${missingLastmod.join(', ')}`,
   );
