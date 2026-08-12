@@ -78,12 +78,39 @@ export default function StaffHubScreen({
     <>
       <Pulse
         items={[
-          { icon: 'staff', label: 'Appointed', value: `${filled}/${ROLES.length}`, tone: toneFor(filled, 2, ROLES.length - 1), meter: filled / ROLES.length },
-          { icon: 'money-out', label: 'Wage bill', value: `${formatMoney(wageBill)}/wk` },
-          { icon: 'star', label: 'Coaching', value: filled ? qualityGrade(avgQuality).word : 'None yet', tone: filled ? toneFor(avgQuality, 45, 70) : 'plain' },
-          { icon: 'check', label: 'Board says yes', value: sanctioned > 0 ? `${sanctioned} to hire` : 'Nothing yet', tone: sanctioned > 0 ? 'green' : 'plain' },
+          { icon: 'staff', label: 'Coaches you have', value: `${filled} of ${ROLES.length}`, tone: toneFor(filled, 2, ROLES.length - 1), meter: filled / ROLES.length },
+          { icon: 'money-out', label: 'They cost', value: `${formatMoney(wageBill)} a week` },
+          { icon: 'star', label: 'How good they are', value: filled ? qualityGrade(avgQuality).word : 'No coaches yet', tone: filled ? toneFor(avgQuality, 45, 70) : 'plain' },
+          { icon: 'check', label: 'Ready to hire', value: sanctioned > 0 ? `${sanctioned} ${sanctioned === 1 ? 'job' : 'jobs'}` : 'None', tone: sanctioned > 0 ? 'green' : 'plain' },
         ]}
       />
+
+      {/* --- How this screen works --------------------------------------
+          This was a paragraph at the bottom of the screen explaining board
+          sanction in one long sentence, below eight cards nobody could use
+          until they'd read it. It is two steps, so it is two numbered steps,
+          and they go above the thing they explain. */}
+      <div className="fm-howto">
+        <p className="fm-howto__lead">
+          Coaches make your players better. You need two steps to get one:
+        </p>
+        <ol className="fm-howto__steps">
+          <li>
+            <span className="fm-howto__num">1</span>
+            <span>
+              <b>Ask the board.</b>{' '}
+              They say yes or no, and if it&rsquo;s yes they tell you how good a coach they&rsquo;ll pay for.
+            </span>
+          </li>
+          <li>
+            <span className="fm-howto__num">2</span>
+            <span>
+              <b>Hire your coach.</b>{' '}
+              One coach per job. A happy board pays for a better one.
+            </span>
+          </li>
+        </ol>
+      </div>
 
       <AssistantLine state={state} route="staff" />
 
@@ -94,13 +121,27 @@ export default function StaffHubScreen({
           const blocked = cooldownWeeksLeft(state, 'staff', role.id);
           const label = COACH_ROLE_LABEL[role.id];
 
+          // Eight vacant cards look identical and nothing says which to do
+          // first. The assistant is the one that pays off immediately — he's
+          // the voice on every screen — so on an empty backroom he's marked
+          // as the place to start, and the mark disappears once you've hired
+          // anyone at all.
+          const startHere = role.id === 'assistant' && filled === 0;
+
           return (
-            <div key={role.id} className={`fm-staffcard${coach ? ' is-filled' : ''}`}>
+            <div
+              key={role.id}
+              className={`fm-staffcard${coach ? ' is-filled' : ''}${approval ? ' is-ready' : ''}${startHere ? ' is-start' : ''}`}
+            >
               <span className="fm-staffcard__icon">
                 <Icon name={role.icon} size={18} />
               </span>
               <div className="fm-staffcard__head">
-                <span className="fm-staffcard__role">{label}</span>
+                <span className="fm-staffcard__role">
+                  {label}
+                  {startHere && <span className="fm-staffcard__flag">Start here</span>}
+                  {approval && <span className="fm-staffcard__flag fm-staffcard__flag--go">Board said yes</span>}
+                </span>
                 <span className="fm-staffcard__effect">{role.effect}</span>
               </div>
 
@@ -128,28 +169,32 @@ export default function StaffHubScreen({
                     className="fm-btn fm-btn--ghost fm-btn--small fm-staffcard__action"
                     onClick={() => onChange(fireCoach({ ...state, facilities: fs }, coach.id))}
                   >
-                    Release
+                    Let him go
                   </button>
                 </>
               ) : approval ? (
                 <>
-                  <p className="fm-staffcard__quote">&ldquo;{approval.reason}&rdquo;</p>
+                  <p className="fm-staffcard__quote">
+                    <span className="fm-staffcard__who">The board says</span>
+                    &ldquo;{approval.reason}&rdquo;
+                  </p>
                   <button
                     type="button"
                     className="fm-btn fm-btn--primary fm-btn--small fm-staffcard__action"
                     onClick={() => appoint(role.id, approval.tier ?? 40)}
                   >
-                    <Icon name="check" size={12} /> Hire a {qualityGrade(approval.tier ?? 40).word.toLowerCase()} coach
+                    <Icon name="check" size={12} /> Step 2 — hire a {qualityGrade(approval.tier ?? 40).word.toLowerCase()} coach
                     <span className="fm-staffcard__price">{formatMoney(coachWageFor(approval.tier ?? 40))}/wk</span>
                   </button>
                 </>
               ) : blocked > 0 ? (
                 <>
                   <p className="fm-staffcard__quote fm-staffcard__quote--cold">
-                    The board said no. Ask again in {blocked} week{blocked === 1 ? '' : 's'}.
+                    <span className="fm-staffcard__who">The board says</span>
+                    &ldquo;No.&rdquo; You can ask again in {blocked} week{blocked === 1 ? '' : 's'}.
                   </p>
                   <button type="button" className="fm-btn fm-btn--ghost fm-btn--small fm-staffcard__action" disabled>
-                    Refused
+                    Waiting
                   </button>
                 </>
               ) : (
@@ -160,7 +205,7 @@ export default function StaffHubScreen({
                     className="fm-btn fm-btn--secondary fm-btn--small fm-staffcard__action"
                     onClick={() => onChange(requestStaffSanction(state, role.id))}
                   >
-                    <Icon name="target" size={12} /> Ask the board for one
+                    <Icon name="target" size={12} /> Step 1 — ask the board
                   </button>
                 </>
               )}
@@ -169,12 +214,7 @@ export default function StaffHubScreen({
         })}
       </div>
 
-      <p className="fm-hint">
-        You cannot hire anyone until the board says yes. Ask them, and they will name the sort of coach they
-        will pay for — a happy board pays for a better one.
-      </p>
-
-      {profileCoachId !== null && fs.coaches.find((c) => c.id === profileCoachId) && (
+       {profileCoachId !== null && fs.coaches.find((c) => c.id === profileCoachId) && (
         <StaffProfileModal
           state={state}
           coach={fs.coaches.find((c) => c.id === profileCoachId)!}

@@ -3999,3 +3999,43 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-runsession__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .fm-runsession__title { font-size: 14.5px; font-weight: 800; }
 .fm-runsession__sub { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+
+/* ---------------------------------------------------------- how-to strip */
+/* Two numbered steps above the cards they explain, replacing the paragraph
+   that used to sit underneath them. */
+.fm-howto {
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 12px;
+}
+.fm-howto__lead { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--text); }
+.fm-howto__steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.fm-howto__steps li {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start;
+  font-size: 12.5px; line-height: 1.45; color: var(--muted);
+}
+.fm-howto__steps b { color: var(--text); }
+.fm-howto__num {
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--green-dim); color: var(--green);
+  font-size: 11.5px; font-weight: 900;
+}
+
+/* A card the board has already approved is the one to act on, so it is the
+   one that looks different. "Start here" does the same job on a backroom
+   with nobody in it at all. */
+.fm-staffcard.is-ready { border-color: var(--green-600); background: var(--green-dim); }
+.fm-staffcard.is-start { border-color: var(--gold); }
+.fm-staffcard__role { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fm-staffcard__flag {
+  font-size: 9.5px; font-weight: 900; letter-spacing: 0.4px; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 999px;
+  background: var(--gold-soft); color: var(--gold-2);
+}
+.fm-staffcard__flag--go { background: var(--green-dim); color: var(--green); }
+/* "The board says" above the quote — without it the sentence in quotes has
+   no speaker, which is most of why it read as system text. */
+.fm-staffcard__who {
+  display: block; font-size: 9.5px; font-weight: 800; letter-spacing: 0.4px;
+  text-transform: uppercase; color: var(--muted-dim); font-style: normal; margin-bottom: 2px;
+}
