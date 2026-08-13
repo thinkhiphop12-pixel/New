@@ -11,7 +11,8 @@ import {
   type MarketEntry, type MarketFilters,
 } from '@/engine/transferMarket';
 import {
-  LOAN_PLAYTIME, SELL_ON_MAX, effectiveBid, statusLabel, STATUS_ORDER, suggestBuyBack,
+  LOAN_PLAYTIME, SELL_ON_MAX, effectiveBid, newSigningWageDemand, statusLabel, STATUS_ORDER,
+  suggestBuyBack,
 } from '@/engine/negotiation';
 import { financesView } from '@/engine/finances';
 import { getSquad, isOnLoan, squadAvgRating, wageCeiling } from '@/engine/teamManagement';
@@ -164,11 +165,18 @@ export default function TransfersScreen({
   const [affordableOnly, setAffordableOnly] = useState(false);
   // The payoff. Signing a player used to change the squad list silently.
   const [celebrate, setCelebrate] = useState<Player | null>(null);
-  // Listing your own player is destructive and was one unguarded tap away.
-  const [confirmSell, setConfirmSell] = useState<Player | null>(null);
   // Extra loan routes are hidden per row until asked for — three buttons on
   // every loan row is one decision too many.
   const [loanOptionsFor, setLoanOptionsFor] = useState<number | null>(null);
+  const [sort, setSort] = useState<'rating' | 'price' | 'age' | 'fit'>('rating');
+  // Any tap that spends real money asks first. One dialog serves both the
+  // sell-listing and the buy-out clause.
+  const [confirm, setConfirm] = useState<{
+    kicker: string; name: string; body: string; go: string; keep: string; run: () => void;
+  } | null>(null);
+  // The two-step shape of a deal is explained once, up front, rather than
+  // only from inside a negotiation you have already opened.
+  const [showHow, setShowHow] = useState(false);
 
   const sc = state.scouting ?? newScouting();
   const shortlist = sc.shortlist;
@@ -180,6 +188,15 @@ export default function TransfersScreen({
     if (!state.scouting) { onChange({ ...state, scouting: sc }); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Shown until it is dismissed once, then never again on this device.
+  useEffect(() => {
+    try { setShowHow(localStorage.getItem('gaffa.transfers.how') !== 'seen'); } catch { /* private mode */ }
+  }, []);
+  const dismissHow = () => {
+    setShowHow(false);
+    try { localStorage.setItem('gaffa.transfers.how', 'seen'); } catch { /* private mode */ }
+  };
 
   const detail = detailId !== null ? state.players[detailId] : null;
   const negotiations = state.negotiations ?? [];
@@ -213,13 +230,29 @@ export default function TransfersScreen({
   // Championship club's search on fee grounds alone. The rating gap against
   // the manager's own squad is what actually reads as "unrealistic" to a
   // player, so both signals count.
+  // The board's second ceiling. `canBuy` and the negotiation both reject on
+  // it, but nothing said so until after a deal had been worked up — you
+  // could pick an affordable player, haggle for two weeks and only then be
+  // told his wages never fitted.
+  const wageRoom = Math.max(0, wageCeiling(state) - weeklyWageBill(state));
+  const wageFitsFor = (clubId: number, wage: number, p: Player) =>
+    (clubId === 0 ? newSigningWageDemand(p, 1) : wage) <= wageRoom;
+  const projectedWage = (p: Player) => (p.clubId === 0 ? newSigningWageDemand(p, 1) : p.wage);
+  const wageFits = (p: Player) => projectedWage(p) <= wageRoom;
+
   const REACH_MULTIPLIER = 4;
   const REACH_RATING_GAP = 10;
   const mySquadAvgRating = squadAvgRating(state, state.userClubId);
   const marketCost = (p: MarketEntry) => (p.clubId === 0 ? askingPrice(p) : p.askingGuide);
+  // Wages are the second ceiling and, for a small club, the one that
+  // actually bites: a League Two side can meet the fee for half the Premier
+  // League and pay none of their salaries. A player it could never pay
+  // belongs in the same bucket as one it could never afford — findable, but
+  // not sorted above the players it can really sign.
   const isReach = (p: MarketEntry) =>
     marketCost(p) > Math.max(state.budget, 1) * REACH_MULTIPLIER ||
-    p.rating - mySquadAvgRating > REACH_RATING_GAP;
+    p.rating - mySquadAvgRating > REACH_RATING_GAP ||
+    !wageFitsFor(p.clubId, p.wage, p);
   const market = useMemo(
     () => {
       const filtered = marketRaw.filter((p) =>
@@ -228,10 +261,22 @@ export default function TransfersScreen({
         && (!affordableOnly || marketCost(p) <= Math.max(state.budget, 1)));
       const realistic = filtered.filter((p) => !isReach(p));
       const reach = filtered.filter((p) => isReach(p));
-      return [...realistic, ...reach].slice(0, 80);
+      // "Who's cheapest?" and "who's youngest?" are the two questions asked
+      // most and neither was answerable — the list only ever came back in
+      // rating order. Reach players stay pinned below whatever the sort is,
+      // so a cheap sort can't fill the top with players who'd never sign.
+      const by = (list: MarketEntry[]) => {
+        const s = [...list];
+        if (sort === 'price') s.sort((a, b) => marketCost(a) - marketCost(b));
+        else if (sort === 'age') s.sort((a, b) => a.age - b.age || b.rating - a.rating);
+        else if (sort === 'fit') s.sort((a, b) => (b.rating - mySquadAvgRating) - (a.rating - mySquadAvgRating));
+        else s.sort((a, b) => b.rating - a.rating);
+        return s;
+      };
+      return [...by(realistic), ...by(reach)].slice(0, 80);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [marketRaw, maxAge, natFilter, affordableOnly, state.budget, mySquadAvgRating],
+    [marketRaw, maxAge, natFilter, affordableOnly, sort, state.budget, mySquadAvgRating],
   );
   const nations = useMemo(
     () => Array.from(new Set(marketRaw.map((p) => p.nat))).sort().slice(0, 60),
@@ -314,6 +359,22 @@ export default function TransfersScreen({
   // have to say so up front — otherwise the buttons just fail on click.
   const win = transferWindow(state.week);
 
+  // Player rows are divs carrying an onClick, so keyboard users could never
+  // open a player. The row itself can't take the button role — it contains
+  // buttons of its own, and a role="button" ancestor swallows their
+  // accessible names into one giant label — so the row keeps a plain mouse
+  // click and the player's *name* becomes the real, focusable button.
+  const rowProps = (playerId: number) => ({ onClick: () => setDetailId(playerId) });
+  const nameButton = (playerId: number, name: string) => (
+    <button
+      type="button"
+      className="fm-rowname"
+      onClick={(e) => { e.stopPropagation(); setDetailId(playerId); }}
+    >
+      {name}
+    </button>
+  );
+
   const clubName = (id: number) => (id === 0 ? 'Free agent' : state.clubs.find((c) => c.id === id)?.name ?? '—');
 
   // A club with almost nothing it can buy is a club that should be looking at
@@ -345,27 +406,58 @@ export default function TransfersScreen({
         title="Players you could buy"
         text="Their club would listen to an offer. The price on the button is roughly what they want for him."
       />
+      <div className="fm-sortrow">
+        <span className="fm-sortrow__label">Show me</span>
+        {([
+          ['rating', 'Best players'],
+          ['price', 'Cheapest first'],
+          ['age', 'Youngest first'],
+          ['fit', 'Best for my team'],
+        ] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            className={`fm-sortchip${sort === id ? ' active' : ''}`}
+            aria-pressed={sort === id}
+            onClick={() => setSort(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <div className="fm-player-list">
         {market.map((p) => {
           const banned = isTransferBanned(state, p.id);
           const alreadyTalking = outgoing.some((n) => n.playerId === p.id);
           const fit = squadFit(p, mySquad);
           const money = affordability(marketCost(p), state.budget);
+          const payable = wageFits(p);
           return (
-            <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
+            <div key={p.id} {...rowProps(p.id)} className={`fm-player-row fm-pos-${p.pos}`}>
               <span className="fm-player-row__badge" title={roleFull(p.role)}>{p.role}</span>
               <span className="fm-player-row__name">
-                {p.name}
+                {nameButton(p.id, p.name)}
                 <span className="fm-player-row__sub">
                   {roleFull(p.role)} · {p.age}y · {p.clubName}
                   {p.status.listed && ' · his club want to sell him'}
                   {p.status.unsettled && ' · he wants to leave'}
-                  {p.status.expiring && ` · contract ends in ${p.status.monthsLeft} months`}
+                  {/* `monthsLeft` is a raw float off the contract date — it
+                      used to render as "10.74961673236969mo left". */}
+                  {p.status.expiring && ` · contract ends in ${Math.max(1, Math.round(p.status.monthsLeft))} months`}
                   {p.releaseClauseFee != null && ` · buy-out price ${formatMoney(p.releaseClauseFee)}`}
                 </span>
                 <span className="fm-chiprow">
                   <span className={`fm-chip fm-chip--${fit.tone}`}>{fit.text}</span>
-                  <span className={`fm-chip fm-chip--${money.tone}`}>{money.text}</span>
+                  {/* One money verdict per row. "Cheap for you" next to
+                      "wages too high" reads as a contradiction, and the wage
+                      is the one that stops the deal. */}
+                  {payable ? (
+                    <span className={`fm-chip fm-chip--${money.tone}`}>{money.text}</span>
+                  ) : (
+                    <span className="fm-chip fm-chip--meh" title={`He earns ${formatMoney(projectedWage(p))} a week and you only have ${formatMoney(wageRoom)} a week spare`}>
+                      Wages too high for us
+                    </span>
+                  )}
                   {isReach(p) && (
                     <span className="fm-chip fm-chip--meh" title="He plays for a far bigger club than yours — he would never sign for you right now">
                       Way out of your league
@@ -373,6 +465,7 @@ export default function TransfersScreen({
                   )}
                 </span>
               </span>
+              <span className="fm-rowactions" onClick={(e) => e.stopPropagation()}>
               <button
                 className={`fm-btn fm-btn--small${shortlist.includes(p.id) ? ' fm-btn--secondary' : ' fm-btn--ghost'}`}
                 title="Keep an eye on him — your scouts will report back"
@@ -384,7 +477,18 @@ export default function TransfersScreen({
                 <button
                   className="fm-btn fm-btn--small fm-btn--ghost"
                   title="His contract lets you buy him at this exact price — his club cannot say no"
-                  onClick={(e) => { e.stopPropagation(); apply(triggerReleaseClause(state, p.id)); setTab('sent'); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // One tap can spend most of the budget, so it asks first.
+                    setConfirm({
+                      kicker: 'Spend the money?',
+                      name: p.name,
+                      body: `His contract says any club paying ${formatMoney(p.releaseClauseFee!)} can talk to him, and his club cannot refuse. That is ${formatMoney(p.releaseClauseFee!)} out of your ${formatMoney(state.budget)} budget.`,
+                      go: 'Pay it',
+                      keep: 'Not now',
+                      run: () => { apply(triggerReleaseClause(state, p.id)); setTab('sent'); },
+                    });
+                  }}
                 >
                   Pay buy-out price
                 </button>
@@ -398,8 +502,10 @@ export default function TransfersScreen({
               {p.clubId === 0 ? (
                 <button
                   className="fm-btn fm-btn--small fm-btn--primary"
-                  disabled={askingPrice(p) > state.budget}
-                  title="He has no club, so there is nobody to haggle with — you can sign him on the spot"
+                  disabled={askingPrice(p) > state.budget || !payable}
+                  title={!payable
+                    ? `You can't fit his ${formatMoney(projectedWage(p))} a week into the wage budget`
+                    : 'He has no club, so there is nobody to haggle with — you can sign him on the spot'}
                   onClick={(e) => { e.stopPropagation(); doSign(p.id); }}
                 >
                   Sign him now · {formatMoney(askingPrice(p))}
@@ -422,6 +528,7 @@ export default function TransfersScreen({
                         : `Make an offer · about ${formatMoney(p.askingGuide)}`}
                 </button>
               )}
+              </span>
               <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`} title="Overall rating out of 100">
                 {p.rating}
               </span>
@@ -444,35 +551,15 @@ export default function TransfersScreen({
           const fit = squadFit(p, mySquad);
           const open = loanOptionsFor === p.id;
           return (
-            <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
+            <div key={p.id} {...rowProps(p.id)} className={`fm-player-row fm-pos-${p.pos}`}>
               <span className="fm-player-row__badge" title={roleFull(p.role)}>{p.role}</span>
               <span className="fm-player-row__name">
-                {p.name}
+                {nameButton(p.id, p.name)}
                 <span className="fm-player-row__sub">
                   {roleFull(p.role)} · {p.age}y · {p.clubName}{p.devLoan ? ' · his club want him playing games' : ''}
                 </span>
                 <span className="fm-chiprow">
                   <span className={`fm-chip fm-chip--${fit.tone}`}>{fit.text}</span>
-                  {open && (
-                    <>
-                      <button
-                        className="fm-btn fm-btn--small fm-btn--secondary"
-                        disabled={!win.open}
-                        title="Haggle over how much of his wages you pay and how often he plays"
-                        onClick={(e) => { e.stopPropagation(); openLoanTalks(p, 'loan'); }}
-                      >
-                        Haggle over the loan
-                      </button>
-                      <button
-                        className="fm-btn fm-btn--small fm-btn--ghost"
-                        disabled={!win.open}
-                        title="Borrow him now, with the right to buy him at the end"
-                        onClick={(e) => { e.stopPropagation(); openLoanTalks(p, 'loan_to_buy'); }}
-                      >
-                        Loan, then buy later
-                      </button>
-                    </>
-                  )}
                 </span>
               </span>
               {/* `requestLoanIn` refuses outright while the window is shut, so
@@ -480,6 +567,7 @@ export default function TransfersScreen({
                   and the rejection only surfaces as an error after the click.
                   Same treatment as the Sign button above. Loans are a club-to-club
                   deal, so unlike free agents there is no shut-window exemption. */}
+              <span className="fm-rowactions" onClick={(e) => e.stopPropagation()}>
               <button
                 className="fm-btn fm-btn--small fm-btn--primary"
                 disabled={p.fee > state.budget || !win.open}
@@ -497,6 +585,27 @@ export default function TransfersScreen({
               >
                 {open ? 'Fewer options' : 'Other ways'}
               </button>
+              {open && (
+                <>
+                  <button
+                    className="fm-btn fm-btn--small fm-btn--secondary"
+                    disabled={!win.open}
+                    title="Haggle over how much of his wages you pay and how often he plays"
+                    onClick={(e) => { e.stopPropagation(); openLoanTalks(p, 'loan'); }}
+                  >
+                    Haggle over the loan
+                  </button>
+                  <button
+                    className="fm-btn fm-btn--small fm-btn--ghost"
+                    disabled={!win.open}
+                    title="Borrow him now, with the right to buy him at the end"
+                    onClick={(e) => { e.stopPropagation(); openLoanTalks(p, 'loan_to_buy'); }}
+                  >
+                    Loan, then buy later
+                  </button>
+                </>
+              )}
+              </span>
               <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`} title="Overall rating out of 100">
                 {p.rating}
               </span>
@@ -530,6 +639,41 @@ export default function TransfersScreen({
           );
         })}
       </div>
+
+      {/* What you have to spend, on every tab. It used to live only inside a
+          negotiation and in a hub panel that was never rendered, so the
+          screen asked you to shop without showing you your money. */}
+      <div className="fm-moneybar">
+        <div className="fm-moneybar__item">
+          <span className="fm-moneybar__label">Money to spend</span>
+          <span className="fm-moneybar__value">{formatMoney(state.budget)}</span>
+        </div>
+        <div className="fm-moneybar__item">
+          <span className="fm-moneybar__label">Wages left each week</span>
+          <span className={`fm-moneybar__value${wageRoom <= 0 ? ' is-out' : ''}`}>{formatMoney(wageRoom)}</span>
+        </div>
+        <div className="fm-moneybar__item">
+          <span className="fm-moneybar__label">{win.open ? 'Window shuts in' : 'Window opens in'}</span>
+          <span className={`fm-moneybar__value${win.open && win.weeksLeft <= 1 ? ' is-out' : ''}`}>
+            {win.weeksLeft === 0 && win.open ? 'This week!' : `${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}`}
+          </span>
+        </div>
+      </div>
+
+      {showHow && tab === 'search' && (
+        <div className="fm-howto">
+          <button className="fm-howto__close" onClick={dismissHow} aria-label="Close">
+            <Icon name="cross" size={14} />
+          </button>
+          <p className="fm-howto__title">How signing a player works</p>
+          <ol className="fm-howto__steps">
+            <li><strong>Find someone.</strong> Use a shortcut below, then check the green tags — they say if he&apos;s better than what you have and if you can afford him.</li>
+            <li><strong>Agree a price</strong> with his club. They usually say no the first time. Offer a bit more.</li>
+            <li><strong>Agree his wages.</strong> Once the clubs agree, you talk to the player. Then he&apos;s yours.</li>
+          </ol>
+          <p className="fm-howto__foot">Short of money? Borrowing a player on loan costs far less.</p>
+        </div>
+      )}
 
       {error && <p className="fm-error-text">{error}</p>}
       {notice && !error && <p className="fm-hint" style={{ color: 'var(--green-600)' }}>{notice}</p>}
@@ -629,16 +773,17 @@ export default function TransfersScreen({
           />
           <div className="fm-player-list">
             {mySquad.map((p) => (
-              <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
+              <div key={p.id} {...rowProps(p.id)} className={`fm-player-row fm-pos-${p.pos}`}>
                 <span className="fm-player-row__badge" title={roleFull(p.role)}>{p.role}</span>
                 <span className="fm-player-row__name">
-                  {p.name}
+                  {nameButton(p.id, p.name)}
                   <span className="fm-player-row__sub">
                     {roleFull(p.role)} · {p.age}y · worth about {formatMoney(p.value)}
                     {p.transferListed && ` · for sale at ${formatMoney(p.listingPrice ?? p.value)}`}
                     {p.loanListed && ' · available on loan'}
                   </span>
                 </span>
+                <span className="fm-rowactions" onClick={(e) => e.stopPropagation()}>
                 {p.transferListed ? (
                   <button className="fm-btn fm-btn--small fm-btn--ghost" onClick={(e) => { e.stopPropagation(); apply(delistPlayer(state, p.id)); }}>
                     Take off the list
@@ -646,7 +791,17 @@ export default function TransfersScreen({
                 ) : (
                   <button
                     className="fm-btn fm-btn--small fm-btn--danger"
-                    onClick={(e) => { e.stopPropagation(); setConfirmSell(p); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirm({
+                        kicker: 'Are you sure?',
+                        name: p.name,
+                        body: `You're putting him up for sale at ${formatMoney(Math.round(p.value * 1.05))}. Other clubs will start bidding, and you can still say no to every bid.`,
+                        go: 'Put him up for sale',
+                        keep: 'Keep him',
+                        run: () => apply(listForSale(state, p.id, Math.round(p.value * 1.05))),
+                      });
+                    }}
                   >
                     Sell for {formatMoney(Math.round(p.value * 1.05))}
                   </button>
@@ -654,6 +809,7 @@ export default function TransfersScreen({
                 <button className="fm-btn fm-btn--small fm-btn--ghost" onClick={(e) => { e.stopPropagation(); apply(toggleLoanList(state, p.id)); }}>
                   {p.loanListed ? 'Cancel loan' : 'Loan him out'}
                 </button>
+                </span>
                 <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
                   {p.rating}
                 </span>
@@ -676,7 +832,7 @@ export default function TransfersScreen({
             const assignment = sc.assignments.find((a) => a.kind === 'player-search' && a.foundPlayerIds?.includes(p.id));
             const known = assignment?.complete ?? false;
             return (
-              <div key={p.id} className={`fm-player-row fm-pos-${p.pos}`} onClick={() => setDetailId(p.id)}>
+              <div key={p.id} {...rowProps(p.id)} className={`fm-player-row fm-pos-${p.pos}`}>
                 <span
                   aria-hidden
                   style={{
@@ -686,7 +842,7 @@ export default function TransfersScreen({
                 />
                 <span className="fm-player-row__badge" title={roleFull(p.role)}>{p.role}</span>
                 <span className="fm-player-row__name">
-                  {p.name}
+                  {nameButton(p.id, p.name)}
                   <span className="fm-player-row__sub">
                     {roleFull(p.role)} · {p.age}y · {clubName(p.clubId)} · {known ? 'scouts have seen him' : 'scouts still watching'}
                   </span>
@@ -698,14 +854,35 @@ export default function TransfersScreen({
                   <button className="fm-btn fm-btn--small fm-btn--ghost" onClick={() => toggleScout(p.id)}>
                     Remove
                   </button>
-                  <button
-                    className="fm-btn fm-btn--small fm-btn--primary"
-                    disabled={askingPrice(p) > state.budget || (!win.open && p.clubId !== 0)}
-                    title={!win.open && p.clubId !== 0 ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}` : undefined}
-                    onClick={() => doSign(p.id)}
-                  >
-                    {!win.open && p.clubId !== 0 ? 'Window shut' : `Sign him · ${formatMoney(askingPrice(p))}`}
-                  </button>
+                  {/* A player under contract has to be negotiated for, the
+                      same as he is in Search. This button used to call
+                      `buyPlayer` on him directly — same player, a different
+                      price and a different mechanic depending on which tab
+                      you happened to be looking at. Free agents keep the
+                      instant path, because for them there is nobody to
+                      negotiate with. */}
+                  {p.clubId === 0 ? (
+                    <button
+                      className="fm-btn fm-btn--small fm-btn--primary"
+                      disabled={askingPrice(p) > state.budget || !wageFits(p)}
+                      onClick={() => doSign(p.id)}
+                    >
+                      Sign him now · {formatMoney(askingPrice(p))}
+                    </button>
+                  ) : (
+                    <button
+                      className="fm-btn fm-btn--small fm-btn--primary"
+                      disabled={!win.open || outgoing.some((n) => n.playerId === p.id) || isTransferBanned(state, p.id)}
+                      title={!win.open ? `${win.name} window opens in ${win.weeksLeft} week${win.weeksLeft === 1 ? '' : 's'}` : undefined}
+                      onClick={() => openTalks(p)}
+                    >
+                      {!win.open
+                        ? 'Window shut'
+                        : outgoing.some((n) => n.playerId === p.id)
+                          ? 'Talks going on'
+                          : `Make an offer · about ${formatMoney(askingPrice(p))}`}
+                    </button>
+                  )}
                 </span>
                 <span className={`fm-player-row__rating${p.rating >= 85 ? ' fm-player-row__rating--elite' : ''}`}>
                   {p.rating}
@@ -848,15 +1025,11 @@ export default function TransfersScreen({
         />
       )}
 
-      {confirmSell && (
-        <ConfirmSell
-          player={confirmSell}
-          price={Math.round(confirmSell.value * 1.05)}
-          onCancel={() => setConfirmSell(null)}
-          onConfirm={() => {
-            apply(listForSale(state, confirmSell.id, Math.round(confirmSell.value * 1.05)));
-            setConfirmSell(null);
-          }}
+      {confirm && (
+        <ConfirmDialog
+          {...confirm}
+          onCancel={() => setConfirm(null)}
+          onConfirm={() => { confirm.run(); setConfirm(null); }}
         />
       )}
     </>
@@ -920,28 +1093,29 @@ function SigningCelebration({
   );
 }
 
-/** Listing your own player used to be a single unguarded tap on a red button
- *  sitting in a list you were only scrolling through. */
-function ConfirmSell({
-  player, price, onCancel, onConfirm,
+/** Every tap that spends money or puts one of your own players on the market
+ *  goes through here first. Both used to be a single unguarded tap on a red
+ *  button in a list you were only scrolling through. */
+function ConfirmDialog({
+  kicker, name, body, go, keep, onCancel, onConfirm,
 }: {
-  player: Player;
-  price: number;
+  kicker: string;
+  name: string;
+  body: string;
+  go: string;
+  keep: string;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
   return (
-    <div className="fm-celebrate" role="dialog" aria-modal="true" aria-label={`Sell ${player.name}?`} onClick={onCancel}>
+    <div className="fm-celebrate" role="dialog" aria-modal="true" aria-label={`${kicker} ${name}`} onClick={onCancel}>
       <div className="fm-celebrate__card" onClick={(e) => e.stopPropagation()}>
-        <p className="fm-celebrate__kicker">Are you sure?</p>
-        <p className="fm-celebrate__name">{player.name}</p>
-        <p className="fm-celebrate__club">
-          You&apos;re putting him up for sale at {formatMoney(price)}. Other clubs will start bidding, and
-          you can still say no to every bid.
-        </p>
+        <p className="fm-celebrate__kicker">{kicker}</p>
+        <p className="fm-celebrate__name">{name}</p>
+        <p className="fm-celebrate__club">{body}</p>
         <div className="fm-celebrate__actions">
-          <button className="fm-btn fm-btn--ghost" onClick={onCancel}>Keep him</button>
-          <button className="fm-btn fm-btn--danger" onClick={onConfirm}>Put him up for sale</button>
+          <button className="fm-btn fm-btn--ghost" onClick={onCancel}>{keep}</button>
+          <button className="fm-btn fm-btn--danger" onClick={onConfirm}>{go}</button>
         </div>
       </div>
     </div>

@@ -82,6 +82,44 @@ const GK_ATTRS: [string, keyof PlayerWithFuture][] = [
   ['PAC', 'pac'],
 ];
 
+/** The six attribute codes, spelled out — "PAC" means nothing until it says
+ *  pace. Used by the written verdict and by the attribute rows' tooltips. */
+const ATTR_FULL: Record<string, string> = {
+  PAC: 'pace', SHO: 'shooting', PAS: 'passing', DRI: 'dribbling',
+  DEF: 'defending', PHY: 'strength', REF: 'reflexes', POS: 'positioning',
+};
+
+/**
+ * A scout's read on a player in one sentence: what he's best and worst at,
+ * how good he is overall, and whether there's growth left in him. Everything
+ * here comes off the same attribute numbers the bars below are drawing — it
+ * just says them out loud.
+ */
+function scoutVerdict(
+  p: PlayerWithFuture,
+  attrDefs: [string, keyof PlayerWithFuture][] | [string, keyof Player][],
+  values: number[],
+): string {
+  const named = attrDefs.map(([name], i) => ({ name, v: values[i] })).filter((a) => a.v > 0);
+  const grade = p.rating >= 82 ? 'a superstar'
+    : p.rating >= 75 ? 'a really good player'
+    : p.rating >= 68 ? 'a solid player'
+    : p.rating >= 60 ? 'a decent squad player'
+    : 'still rough around the edges';
+  const parts = [`${p.name.split(' ').pop()} is ${grade}.`];
+  if (named.length >= 2) {
+    const sorted = [...named].sort((a, b) => b.v - a.v);
+    const best = ATTR_FULL[sorted[0].name] ?? sorted[0].name.toLowerCase();
+    const worst = ATTR_FULL[sorted[sorted.length - 1].name] ?? sorted[sorted.length - 1].name.toLowerCase();
+    parts.push(`His ${best} is his best weapon, and his ${worst} is the weak spot.`);
+  }
+  const gap = p.potential != null ? p.potential - p.rating : 0;
+  if (p.age <= 21 && gap >= 8) parts.push('He’s young with a lot of growing left — he could get much better.');
+  else if (gap >= 8) parts.push('There’s still improvement in him.');
+  else if (p.age >= 32) parts.push('He’s near the end of his career, so he won’t improve much now.');
+  return parts.join(' ');
+}
+
 /** Player detail overlay — club-coloured initials avatar, position/OVR/pot
  *  badges, Ratings (attribute bars + spider chart) / Stats pill tabs.
  *  Ported from the competitor's `showPlayerModal`; degrades gracefully
@@ -166,6 +204,11 @@ export default function PlayerModal({
           </div>
         </div>
 
+        {/* The modal is where the buy/don't-buy decision actually gets made,
+            and everything below this point is abbreviations and charts. One
+            paragraph, in words, saying what kind of player this is. */}
+        <p className="pm-verdict">{scoutVerdict(p, attrDefs, values)}</p>
+
         <div className="pm-tab-row">
           <button className={`pm-tab-btn${tab === 'ratings' ? ' active' : ''}`} onClick={() => setTab('ratings')}>
             Ratings
@@ -182,7 +225,7 @@ export default function PlayerModal({
                 const v = values[i];
                 const pv = potentials?.[i];
                 return (
-                  <div className="pm-attr-row" key={name}>
+                  <div className="pm-attr-row" key={name} title={ATTR_FULL[name] ?? name}>
                     <span className="pm-attr-label">{name}</span>
                     <div className="pm-attr-track">
                       {pv != null && <div className="pm-attr-pot-fill" style={{ width: `${pv}%` }} />}
