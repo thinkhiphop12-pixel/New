@@ -696,6 +696,9 @@ export default function FootballManagerGame() {
             onOpenTransfers={() => handleResolveStop('transfers')}
             onPrepareMatch={handlePrepareFromSummary}
             onContinue={handleContinueFromSummary}
+            assistantSlot={
+              <AssistantFab state={gs} route={hubRoute ?? 'overview'} onOpen={() => setShowAssistant(true)} />
+            }
           />
         ) : gs ? (
           <HubScreen
@@ -767,6 +770,9 @@ export default function FootballManagerGame() {
               </button>
             )}
             <span className="fm-actiondock__spacer" />
+            {/* The assistant lives in the dock on the Hub rather than floating
+                over the content — see AssistantFab for why. */}
+            <AssistantFab state={gs} route={hubRoute ?? 'overview'} onOpen={() => setShowAssistant(true)} />
             {(matchdayPending ? otherPending > 0 : pending) && (
               <button type="button" className="fm-actiondock__pending" onClick={() => setView('daysummary')}>
                 <Icon name="warning" size={13} /> {matchdayPending ? otherPending : dayStops.length} waiting
@@ -804,7 +810,6 @@ export default function FootballManagerGame() {
 
       {gs && (view === 'hub' || view === 'daysummary') && (
         <>
-          <AssistantFab state={gs} route={hubRoute ?? 'overview'} onOpen={() => setShowAssistant(true)} />
           {showAssistant && (
             <AssistantPanel
               state={gs}
