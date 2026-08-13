@@ -57,7 +57,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
   {
     id: 'attacking',
     label: 'Attacking',
-    blurb: 'Finishing and final-third movement.',
+    blurb: 'Shooting practice, and getting into good spots.',
     focusPositions: ['MID', 'FWD'],
     stats: ['sho', 'dri'],
     sharpness: 1.4, fitness: -1.0, chemistry: 0, load: 64,
@@ -65,7 +65,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
   {
     id: 'defending',
     label: 'Defending',
-    blurb: 'Shape, pressing triggers and one-v-ones.',
+    blurb: 'Holding your shape and winning the ball back.',
     focusPositions: ['GK', 'DEF'],
     stats: ['def', 'phy'],
     sharpness: 1.4, fitness: -1.0, chemistry: 0, load: 64,
@@ -73,7 +73,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
   {
     id: 'possession',
     label: 'Possession',
-    blurb: 'Rondos and circulation — passing, and a tighter side.',
+    blurb: 'Keeping the ball. Better passing, tighter team.',
     focusPositions: ['DEF', 'MID', 'FWD'],
     stats: ['pas', 'dri'],
     sharpness: 1.0, fitness: -0.6, chemistry: 1.6, load: 52,
@@ -81,7 +81,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
   {
     id: 'set-pieces',
     label: 'Set pieces',
-    blurb: 'Dead balls at both ends. Cheap goals, cheap clean sheets.',
+    blurb: 'Corners and free kicks. Easy goals, at both ends.',
     focusPositions: ['DEF', 'MID', 'FWD'],
     stats: ['sho', 'def'],
     sharpness: 0.7, fitness: -0.3, chemistry: 1.0, load: 36,
@@ -89,7 +89,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
   {
     id: 'fitness',
     label: 'Fitness',
-    blurb: 'Running and recovery. Legs back, edge off.',
+    blurb: 'Running. Builds the legs, takes the edge off.',
     focusPositions: ['GK', 'DEF', 'MID', 'FWD'],
     stats: ['phy', 'pac'],
     sharpness: -0.6, fitness: 2.6, chemistry: 0, load: 88,
@@ -97,7 +97,7 @@ export const TEAM_DRILLS: TeamDrillDef[] = [
   {
     id: 'match-prep',
     label: 'Match prep',
-    blurb: 'Shadow play against the weekend opponent. Sharpness, nothing else.',
+    blurb: 'Practising for the next game. Sharpness only.',
     focusPositions: ['GK', 'DEF', 'MID', 'FWD'],
     stats: [],
     sharpness: 2.2, fitness: -0.7, chemistry: 0.6, load: 44,
@@ -433,6 +433,16 @@ export function applySessionResult(state: GameState, score: number): GameState {
 /** The mini-game a drill is played as. Six drills, four games — the pairings
  *  are by what the drill physically *is*, not by name. */
 export type MiniGameId = 'rondo' | 'finishing' | 'shuttle' | 'setpiece';
+
+/** What each mini-game is called, so a drill card can say which one it plays
+ *  before you commit to opening it. Mirrors `GAME_COPY` in
+ *  components/TrainingMiniGame.tsx, which owns the rules text. */
+export const MINIGAME_LABEL: Record<MiniGameId, string> = {
+  rondo: 'Rondo',
+  finishing: 'Finishing',
+  shuttle: 'Shuttle runs',
+  setpiece: 'Set pieces',
+};
 
 export const DRILL_MINIGAME: Record<TeamDrill, MiniGameId> = {
   possession: 'rondo',

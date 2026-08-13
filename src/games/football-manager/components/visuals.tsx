@@ -262,3 +262,34 @@ export function clubForm(state: GameState, clubId: number, count = 5): FormResul
 export function FormChip({ result }: { result: FormResult }) {
   return <span className={`fm-form-chip fm-form-chip--${result.toLowerCase()}`}>{result}</span>;
 }
+
+/* --------------------------------------------------------- plain grades */
+
+/**
+ * A 0-99 quality figure as stars and a word.
+ *
+ * `Q40` / `Q60` / `Q80` were the whole vocabulary of the Staff screen, and
+ * they only mean anything once you've seen all three — there's nothing on
+ * the card that says whether 60 is good. Stars carry the scale on their
+ * face (four of five is obviously better than two) and the word says the
+ * rest, so the number stops being the thing you have to decode.
+ */
+export function qualityGrade(quality: number): { stars: number; word: string } {
+  if (quality >= 80) return { stars: 5, word: 'Top class' };
+  if (quality >= 65) return { stars: 4, word: 'Very good' };
+  if (quality >= 50) return { stars: 3, word: 'Solid' };
+  if (quality >= 35) return { stars: 2, word: 'Decent' };
+  return { stars: 1, word: 'Learning' };
+}
+
+/** Stars + word for a coach's quality. The raw number stays as the tooltip
+ *  rather than on screen — it's still there for anyone who wants it. */
+export function QualityRating({ quality, className = '' }: { quality: number; className?: string }) {
+  const { stars, word } = qualityGrade(quality);
+  return (
+    <span className={`fm-grade ${className}`} title={`Quality ${quality}/99`}>
+      <ReputationStars value={stars} title={`${word} — ${stars} of 5`} />
+      <span className="fm-grade__word">{word}</span>
+    </span>
+  );
+}
