@@ -302,11 +302,10 @@ body {
 
 /* Summonable Assistant Manager FAB. */
 .fm-assistant-fab {
-  position: fixed; right: 16px; bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-  z-index: 46; width: 52px; height: 52px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center; position: relative;
+  width: 34px; height: 34px; border-radius: 50%; flex: none;
   background: var(--cta-gradient); color: #02100a; border: none;
-  box-shadow: var(--shadow-lg); cursor: pointer; font-weight: 900; font-size: 18px;
+  cursor: pointer; font-weight: 900; font-size: 14px;
   transition: transform 0.15s ease;
 }
 .fm-assistant-fab:active { transform: scale(0.94); }
@@ -315,10 +314,6 @@ body {
   position: absolute; top: 2px; right: 2px; width: 12px; height: 12px;
   border-radius: 50%; background: var(--red); border: 2px solid var(--panel);
 }
-@media (max-width: 899px) {
-  .fm-assistant-fab { right: 12px; bottom: calc(132px + env(safe-area-inset-bottom, 0px)); }
-}
-
 /* Progressive disclosure card (dense tables — ledger, objectives, squad by
    position) collapsed by default. */
 .fm-disclose__head { cursor: pointer; }
@@ -792,6 +787,10 @@ body {
 .fm-daysummary__match-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .fm-daysummary__match-title { font-weight: 800; font-size: 15px; }
 .fm-daysummary__actions { display: flex; justify-content: center; padding: 6px 0 0; }
+/* The assistant sits in this screen's header rather than floating over the
+   stop list, where it covered a row's chevron and stole its tap. */
+.fm-daysummary__head { position: relative; }
+.fm-daysummary__assistant { position: absolute; top: 0; right: 0; }
 
 /* ── Pre-match warnings modal (FM21-style kickoff gate) ──
    Reuses `.fm-matchx-modal` for the overlay/panel shell — same chrome as
