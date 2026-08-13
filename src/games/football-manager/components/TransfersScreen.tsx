@@ -6,7 +6,7 @@ import {
   acceptIncomingOffer, askingPrice, buyPlayer, canBuy, counterIncomingOffer, delistPlayer,
   dismissNegotiation, getLoanMarket, getTransferMarket, isTransferBanned, listForSale,
   openLoanNegotiation, openNegotiation, rejectIncomingOffer, requestLoanIn, saleValue,
-  scoutRecommendations, submitFeeOffer, submitLoanTermsOffer, submitTermsOffer, toggleLoanList,
+  submitFeeOffer, submitLoanTermsOffer, submitTermsOffer, toggleLoanList,
   transferTargets, triggerReleaseClause, walkAwayNegotiation,
   type MarketEntry, type MarketFilters,
 } from '@/engine/transferMarket';
@@ -15,8 +15,8 @@ import {
 } from '@/engine/negotiation';
 import { financesView } from '@/engine/finances';
 import { getSquad, isOnLoan, squadAvgRating, wageCeiling } from '@/engine/teamManagement';
-import { assignScout, newScouting, tickFacilitiesWeek, toggleShortlist } from '@/engine/facilities';
-import { MIN_SQUAD_SIZE, TRANSFER_WINDOWS, transferWindow } from '@/engine/gameRules';
+import { newScouting, toggleShortlist } from '@/engine/facilities';
+import { MIN_SQUAD_SIZE, transferWindow } from '@/engine/gameRules';
 import { weeklyWageBill } from '@/engine/seasonProgression';
 import { clamp, formatMoney } from '@/engine/utils';
 import { traitNames } from '@/engine/traits';
@@ -239,7 +239,6 @@ export default function TransfersScreen({
   );
   const loanMarket = useMemo(() => getLoanMarket(state).slice(0, 60), [state]);
   const mySquad = getSquad(state, state.userClubId).sort((a, b) => b.rating - a.rating);
-  const reports = useMemo(() => scoutRecommendations(state), [state]);
 
   const shortlisted = useMemo(() => {
     const targets = transferTargets(state);
@@ -316,8 +315,6 @@ export default function TransfersScreen({
   const win = transferWindow(state.week);
 
   const clubName = (id: number) => (id === 0 ? 'Free agent' : state.clubs.find((c) => c.id === id)?.name ?? '—');
-  const opponentClubs = state.clubs.filter((c) => c.id !== state.userClubId && !c.dormant).slice(0, 30);
-  const activeAssignments = sc.assignments.filter((a) => !a.complete);
 
   // A club with almost nothing it can buy is a club that should be looking at
   // loans first. Counted off the unfiltered market so the current filters
@@ -402,10 +399,10 @@ export default function TransfersScreen({
                 <button
                   className="fm-btn fm-btn--small fm-btn--primary"
                   disabled={askingPrice(p) > state.budget}
-                  title="He has no club, so you can sign him on the spot"
+                  title="He has no club, so there is nobody to haggle with — you can sign him on the spot"
                   onClick={(e) => { e.stopPropagation(); doSign(p.id); }}
                 >
-                  Sign him free · {formatMoney(askingPrice(p))} wages
+                  Sign him now · {formatMoney(askingPrice(p))}
                 </button>
               ) : (
                 <button
