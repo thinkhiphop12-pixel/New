@@ -7,7 +7,6 @@ import { getSquad, isOnLoan } from '@/engine/teamManagement';
 import { getYouthSquad, promoteYouthPlayer, starsForPotential } from '@/engine/youthAcademy';
 import { MAX_SQUAD_SIZE } from '@/engine/gameRules';
 import { getRole } from '@/lib/playerRoles';
-import { PlayerFace } from './PlayerFace';
 import PlayerModal from './PlayerModal';
 import { pushToast } from './ToastQueue';
 
@@ -108,10 +107,9 @@ export default function SquadScreen({
     return (
       <div key={p.id} className="fm-squadrow">
         <button
-          className={`fm-player-row fm-player-row--faced fm-pos-${p.pos}${inLineup ? ' in-lineup' : ''}`}
+          className={`fm-player-row fm-player-row--squad fm-pos-${p.pos}${inLineup ? ' in-lineup' : ''}`}
           onClick={() => setDetailId(detailId === p.id ? null : p.id)}
         >
-          <PlayerFace playerId={p.id} size={26} />
           {p.squadNumber !== undefined && (
             <span className="fm-player-row__num" aria-label={`Shirt number ${p.squadNumber}`}>
               {p.squadNumber}

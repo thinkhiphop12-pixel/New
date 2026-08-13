@@ -1,6 +1,6 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { GameState, InboxCategory } from '@/engine/types';
 import type { DayStop } from '@/engine/dailyTick';
 import { formatGameDateLong } from '@/engine/calendar';
@@ -46,6 +46,7 @@ export default function DaySummaryScreen({
   onOpenTransfers,
   onPrepareMatch,
   onContinue,
+  assistantSlot,
 }: {
   state: GameState;
   stops: DayStop[];
@@ -54,6 +55,13 @@ export default function DaySummaryScreen({
   onOpenTransfers: () => void;
   onPrepareMatch: () => void;
   onContinue: () => void;
+  /** The Assistant Manager's button, rendered into this screen's header.
+   *  It used to float over the bottom-right of the page, which on a day
+   *  with a long list of stops sat on top of a row's own chevron — so the
+   *  tap that looked like "open this item" opened the assistant instead.
+   *  Day Summary has no action dock to put him in, but it does have a
+   *  header with room to spare. */
+  assistantSlot?: ReactNode;
 }) {
   const matchStop = stops.find((s) => s.category === 'matchday');
   const otherStops = stops.filter((s) => s.category !== 'matchday');
@@ -67,6 +75,7 @@ export default function DaySummaryScreen({
   return (
     <div className="fm-daysummary">
       <div className="fm-daysummary__head">
+        {assistantSlot && <span className="fm-daysummary__assistant">{assistantSlot}</span>}
         <p className="fm-hint" style={{ margin: 0 }}>Sim Next Day</p>
         <h2 className="fm-daysummary__date">{formatGameDateLong(state)}</h2>
         {stops.length > 0 && (

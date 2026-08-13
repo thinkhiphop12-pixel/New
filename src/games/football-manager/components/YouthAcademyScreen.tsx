@@ -6,7 +6,6 @@ import { getIntake, getYouthSquad, promoteYouthPlayer, releaseTrialist, signTria
 import { getAssistant } from '@/engine/assistant';
 import { MAX_SQUAD_SIZE } from '@/engine/gameRules';
 import { Icon } from './Icon';
-import { PlayerFace } from './PlayerFace';
 import PlayerModal from './PlayerModal';
 import { Pulse, toneFor } from './SectionHub';
 
@@ -90,7 +89,6 @@ export default function YouthAcademyScreen({
             {intake.map(({ trialist: t, player: p }) => (
               <div key={p.id} className={`fm-trialist fm-trialist--${t.verdict}`}>
                 <button type="button" className="fm-trialist__id" onClick={() => setDetailId(p.id)}>
-                  <PlayerFace playerId={p.id} size={38} />
                   <span>
                     <span className="fm-trialist__name">{p.name}</span>
                     <span className="fm-trialist__meta">{p.role} · {p.age}y · {p.rating} now</span>
@@ -161,10 +159,9 @@ export default function YouthAcademyScreen({
             <button
               key={p.id}
               type="button"
-              className={`fm-player-row fm-player-row--faced fm-pos-${p.pos}`}
+              className={`fm-player-row fm-player-row--youth fm-pos-${p.pos}`}
               onClick={() => setDetailId(detailId === p.id ? null : p.id)}
             >
-              <PlayerFace playerId={p.id} size={26} />
               <span className="fm-player-row__badge">{p.role}</span>
               <span className="fm-player-row__name">
                 {p.name}

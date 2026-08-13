@@ -160,28 +160,30 @@ export function requestStaffSanction(
   else tier = 40;
 
   if (tier === null) {
+    // Plain words. This is the only sentence on the Staff card that changes
+    // anything, so it is the one sentence that has to land first time.
     const reason = brokeClub
-      ? 'The club is in the red. We are not adding to the wage bill until that is fixed.'
-      : 'We are not convinced another salary is what this club needs right now.';
+      ? 'No. The club is losing money — we cannot pay anyone else right now.'
+      : 'No. We do not think you need another coach at the moment.';
     record(s, { kind: 'staff', key: role, label: `${label} — appointment`, status: 'rejected', reason });
     pushInbox(s, {
       category: 'board',
       title: `Board turns down your ${label.toLowerCase()} request`,
-      body: `${reason}\n\nThe board will not revisit a ${label.toLowerCase()} appointment for another ${REJECTION_COOLDOWN_WEEKS} weeks.`,
+      body: `${reason}\n\nYou can ask about a ${label.toLowerCase()} again in ${REJECTION_COOLDOWN_WEEKS} weeks.`,
     });
     return s;
   }
 
   const wage = coachWageFor(tier);
   const reason =
-    tier >= 80 ? 'Take your pick — we will fund a coach of real standing.'
-      : tier >= 60 ? 'Agreed, within reason. We will fund an established name, not a marquee one.'
-        : 'We will fund an appointment, but it has to be someone on the way up rather than a big salary.';
+    tier >= 80 ? 'Yes — pick whoever you like. We will pay for a top coach.'
+      : tier >= 60 ? 'Yes. We will pay for a good coach, but not the very best.'
+        : 'Yes, but keep it cheap. Find someone young who is still learning.';
   record(s, { kind: 'staff', key: role, label: `${label} — appointment`, status: 'approved', tier, reason });
   pushInbox(s, {
     category: 'board',
     title: `Board sanctions a ${label.toLowerCase()}`,
-    body: `${reason}\n\nApproved up to quality ${tier}, roughly ${formatMoney(wage)} a week. Make the appointment from the Staff screen.`,
+    body: `${reason}\n\nWe will pay up to about ${formatMoney(wage)} a week. Go to the Staff screen to hire them.`,
   });
   return s;
 }

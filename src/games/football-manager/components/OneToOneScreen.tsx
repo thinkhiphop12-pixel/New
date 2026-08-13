@@ -6,7 +6,6 @@ import { getSquad, isOnLoan } from '@/engine/teamManagement';
 import { ONE_TO_ONE_SLOTS, SLOT_LABEL, getOneToOne, oneToOneRate, setOneToOne } from '@/engine/training';
 import { DRILLS_PER_WEEK } from '@/engine/development';
 import { Icon, type IconName } from './Icon';
-import { PlayerFace } from './PlayerFace';
 import TrainingDrillModal from './TrainingDrillModal';
 import { Pulse } from './SectionHub';
 
@@ -93,7 +92,6 @@ export default function OneToOneScreen({
               {p ? (
                 <>
                   <div className="fm-o2o__player">
-                    <PlayerFace playerId={p.id} size={34} />
                     <div>
                       <span className="fm-o2o__name">{p.name}</span>
                       <span className="fm-o2o__meta">
@@ -179,13 +177,12 @@ export default function OneToOneScreen({
                   <button
                     key={p.id}
                     type="button"
-                    className={`fm-player-row fm-player-row--faced fm-pos-${p.pos}${booked[pickingSlot] === p.id ? ' is-active' : ''}`}
+                    className={`fm-player-row fm-player-row--pick fm-pos-${p.pos}${booked[pickingSlot] === p.id ? ' is-active' : ''}`}
                     onClick={() => {
                       onChange(setOneToOne(state, pickingSlot, p.id));
                       setPickingSlot(null);
                     }}
                   >
-                    <PlayerFace playerId={p.id} size={26} />
                     <span className="fm-player-row__name">
                       {p.name}
                       <span className="fm-player-row__sub">

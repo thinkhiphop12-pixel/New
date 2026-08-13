@@ -13,7 +13,6 @@ import { CONVERTIBLE_ROLES, estimateConversionWeeks, setDevPlan } from '@/engine
 import type { DevPlan } from '@/engine/types';
 import { attrBand, initials, ratingRingColor } from './visuals';
 import { SpiderChart } from './SpiderChart';
-import { PlayerFace } from './PlayerFace';
 import ContractOfferPanel from './ContractOfferPanel';
 
 /** Fields Phase 1 (concurrent) is adding to `Player` but that may not have
