@@ -2692,6 +2692,202 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-received-row__actions .fm-btn { flex: 1; }
 
 /* =====================================================================
+   Transfer screen — plain-English layer.
+   Everything below exists so the screen can explain itself to someone who
+   knows football but has never met a transfer UI: a sentence above every
+   list, a named assistant, verdict chips on each row, and a celebration
+   when a signing actually lands.
+   ===================================================================== */
+
+/* ── Section intro: the sentence above every list ── */
+.fm-sectionintro { margin: 14px 0 8px; }
+.fm-sectionintro__title {
+  font-size: 13px; font-weight: 900; color: var(--text); margin: 0 0 2px;
+}
+.fm-sectionintro__text {
+  font-size: 11.5px; line-height: 1.45; color: var(--muted); margin: 0; max-width: 62ch;
+}
+
+/* ── Assistant tip: one voice, one instruction ── */
+.fm-assistant-tip {
+  display: flex; align-items: center; gap: 10px; margin: 0 0 12px;
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--brand); border-radius: var(--r-md); padding: 10px 12px;
+}
+.fm-assistant-tip__face {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--panel-3); color: var(--brand);
+}
+.fm-assistant-tip__who {
+  display: block; font-size: 9.5px; font-weight: 900; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--muted-dim);
+}
+.fm-assistant-tip__what { display: block; font-size: 12.5px; font-weight: 600; color: var(--text); }
+
+/* ── Preset shortcuts: the three questions people actually arrive with ── */
+.fm-presets { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 10px; }
+@media (min-width: 620px) { .fm-presets { grid-template-columns: repeat(3, 1fr); } }
+.fm-preset {
+  text-align: left; font-family: inherit; cursor: pointer;
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-radius: var(--r-lg); padding: 10px 12px; transition: all 0.14s;
+}
+.fm-preset:hover { border-color: var(--border-bright); transform: translateY(-1px); }
+.fm-preset--on { border-color: var(--green); background: var(--green-dim); }
+.fm-preset__label { display: block; font-size: 13px; font-weight: 900; color: var(--text); }
+.fm-preset__hint { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.fm-searchbar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.fm-searchbar .fm-search { flex: 1; margin: 0; }
+
+/* ── Verdict chips: is he better than what I have, and can I pay? ── */
+.fm-chiprow { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; align-items: center; }
+.fm-chip {
+  display: inline-flex; align-items: center; border-radius: 6px;
+  padding: 2px 7px; font-size: 10px; font-weight: 800; white-space: nowrap;
+}
+.fm-chip--good { background: var(--green-dim); color: var(--green); }
+.fm-chip--ok { background: var(--panel-3); color: var(--muted); }
+.fm-chip--meh { background: rgba(242,102,122,0.13); color: var(--red); }
+
+/* ── Negotiation: what step am I on, and who else is bidding ── */
+.fm-negotiation__stage {
+  font-size: 12.5px; font-weight: 700; color: var(--text-2); margin: 10px 0 0;
+}
+.fm-rival-banner {
+  margin: 8px 0 0; padding: 8px 10px; border-radius: var(--r-md);
+  background: rgba(242,102,122,0.12); border: 1px solid rgba(242,102,122,0.3);
+  color: var(--red); font-size: 12px; font-weight: 700;
+}
+
+/* ── Signing celebration / sell confirmation ── */
+.fm-celebrate {
+  position: fixed; inset: 0; z-index: 90; display: flex;
+  align-items: center; justify-content: center; padding: 20px;
+  background: rgba(0,0,0,0.62); backdrop-filter: blur(2px);
+}
+.fm-celebrate__card {
+  position: relative; overflow: hidden; text-align: center; max-width: 360px; width: 100%;
+  background: var(--panel); border: 1px solid var(--border-bright);
+  border-radius: var(--r-lg); padding: 26px 22px 20px;
+  animation: fm-pop 0.28s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+@keyframes fm-pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.fm-celebrate__kicker {
+  font-size: 11px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--green); margin: 0 0 6px;
+}
+.fm-celebrate__name { font-size: 24px; font-weight: 900; margin: 0; line-height: 1.15; }
+.fm-celebrate__club { font-size: 12.5px; color: var(--muted); margin: 4px 0 16px; line-height: 1.45; }
+.fm-celebrate__stats { display: flex; justify-content: center; gap: 18px; margin-bottom: 14px; }
+.fm-celebrate__stats span {
+  display: flex; flex-direction: column; gap: 2px;
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--muted-dim);
+}
+.fm-celebrate__stats strong { font-size: 15px; color: var(--text); letter-spacing: 0; text-transform: none; }
+.fm-celebrate__verdict { font-size: 12.5px; font-weight: 800; color: var(--green); margin: 0 0 16px; }
+.fm-celebrate__actions { display: flex; gap: 8px; }
+.fm-celebrate__actions .fm-btn { flex: 1; }
+/* Confetti: fourteen slivers falling on staggered delays. Pure CSS, no
+   library, and it respects a reduced-motion preference below. */
+.fm-celebrate__confetti { position: absolute; inset: 0; pointer-events: none; }
+.fm-celebrate__confetti span {
+  position: absolute; top: -12px; width: 7px; height: 12px; border-radius: 1px;
+  left: calc(var(--i) * 7.4% + 2%);
+  background: var(--green);
+  animation: fm-confetti 1.5s ease-in forwards;
+  animation-delay: calc(var(--i) * 60ms);
+}
+.fm-celebrate__confetti span:nth-child(3n) { background: var(--gold); }
+.fm-celebrate__confetti span:nth-child(3n + 1) { background: var(--blue); }
+@keyframes fm-confetti {
+  to { transform: translateY(320px) rotate(540deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-celebrate__card { animation: none; }
+  .fm-celebrate__confetti { display: none; }
+}
+
+/* ── Money bar: what you have to spend, on every tab ── */
+.fm-moneybar {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-radius: var(--r-lg); padding: 10px 12px; margin-bottom: 12px;
+}
+.fm-moneybar__item { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fm-moneybar__label {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.7px;
+  text-transform: uppercase; color: var(--muted-dim);
+}
+.fm-moneybar__value {
+  font-size: 16px; font-weight: 900; color: var(--text);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.fm-moneybar__value.is-out { color: var(--red); }
+
+/* ── How-it-works card: shown once, then dismissed for good ── */
+.fm-howto {
+  position: relative; background: var(--panel); border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--gold); border-radius: var(--r-lg);
+  padding: 12px 40px 12px 14px; margin-bottom: 12px;
+}
+.fm-howto__close {
+  position: absolute; top: 8px; right: 8px; display: flex; padding: 6px;
+  background: transparent; border: none; color: var(--muted); cursor: pointer;
+}
+.fm-howto__close:hover { color: var(--text); }
+.fm-howto__title { font-size: 13px; font-weight: 900; margin: 0 0 6px; }
+.fm-howto__steps { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.fm-howto__steps li { font-size: 11.5px; line-height: 1.45; color: var(--muted); }
+.fm-howto__steps strong { color: var(--text); }
+.fm-howto__foot { font-size: 11.5px; color: var(--muted); margin: 8px 0 0; }
+
+/* ── Sort row above the market list ── */
+.fm-sortrow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.fm-sortrow__label {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.7px;
+  text-transform: uppercase; color: var(--muted-dim); margin-right: 2px;
+}
+
+/* ── Row actions: one grid cell, however many buttons are in it.
+   `.fm-player-row` is a four-track grid; a market row can carry three
+   actions plus a rating, which overflowed the tracks and threw the rating
+   chip onto its own line. Grouping the buttons keeps the row at four
+   children whatever combination of actions a player qualifies for. ── */
+.fm-rowactions {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.fm-rowactions .fm-btn { white-space: nowrap; }
+
+/* ── The player's name is the keyboard route into his details ── */
+.fm-rowname {
+  display: block; background: none; border: none; padding: 0; margin: 0;
+  font: inherit; font-weight: 700; color: inherit; text-align: left; cursor: pointer;
+}
+.fm-rowname:hover { text-decoration: underline; }
+.fm-rowname:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 3px; }
+
+/* ── Written verdict at the top of the player modal ── */
+.pm-verdict {
+  font-size: 12.5px; line-height: 1.5; color: var(--text-2); margin: 10px 0 0;
+  background: var(--panel-2); border-radius: var(--r-md); padding: 10px 12px;
+}
+
+/* ── Narrow screens: the rows carry chips and up to four buttons now ── */
+@media (max-width: 560px) {
+  .fm-moneybar { grid-template-columns: 1fr 1fr; }
+  .fm-moneybar__item:last-child { grid-column: 1 / -1; }
+  .fm-moneybar__value { font-size: 14px; }
+  .fm-chip { font-size: 9.5px; padding: 2px 6px; }
+  .fm-searchbar { flex-wrap: wrap; }
+  .fm-searchbar .fm-search { flex: 1 1 100%; }
+}
+
+/* =====================================================================
    Gaffa restyle — Phase 4 shared component classes
    Club screens (Overview / Finances / Facilities / Stadium / Objectives).
    ===================================================================== */
