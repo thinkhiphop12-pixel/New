@@ -13,6 +13,7 @@ import { ReputationStars, tint } from './visuals';
 import { Crest } from './Crest';
 import PressConferenceModal from './PressConferenceModal';
 import { Icon, type IconName } from './Icon';
+import StatValue from './StatValue';
 import type { ScreenId } from './hubNav';
 import { getAssistant } from '@/engine/assistant';
 import { assistantTopics } from './assistant/tips';
@@ -113,7 +114,7 @@ export default function Dashboard({
         </div>
       </div>
 
-      <div className="fm-hub-grid">
+      <div className="fm-hub-grid fm-stagger">
         {/* Next match — the hero module, the reason most players open Home. */}
         {fixture && (
           <div className="fm-mod fm-hub-grid__hero" style={{ background: tint(club.color, '0a'), borderColor: tint(club.color, '30') }}>
@@ -214,7 +215,7 @@ export default function Dashboard({
                 : "Nothing urgent — you're all caught up."}
             </p>
           ) : (
-            <div className="fm-msg-list">
+            <div className="fm-msg-list fm-stagger">
               {attention.map((row, i) => (
                 <button key={i} type="button" className="fm-msg-row unread" onClick={row.onClick}>
                   <span className="fm-icon-tile fm-icon-tile--sm" style={{ '--tile-tint': row.warn ? 'var(--red)' : 'var(--blue)' } as CSSProperties}>
@@ -234,21 +235,25 @@ export default function Dashboard({
         <div className="fm-mod">
           <div className="fm-mod__head"><h2 className="fm-mod__title">Squad status</h2></div>
           <div className="fm-stats-strip">
+            {/* These four are the squad's vital signs and they used to change
+                silently between visits. StatValue rolls them and holds a
+                signed badge until the next change, so a week of training is
+                visible as movement rather than as a different number. */}
             <div className="fm-stat">
               <span className="fm-stat__label">Sharpness</span>
-              <span className="fm-stat__value">{avgSharpness}</span>
+              <StatValue className="fm-stat__value" value={avgSharpness} />
             </div>
             <div className="fm-stat">
               <span className="fm-stat__label">Fitness</span>
-              <span className="fm-stat__value">{avgFitness}</span>
+              <StatValue className="fm-stat__value" value={avgFitness} />
             </div>
             <div className="fm-stat">
               <span className="fm-stat__label">Injured</span>
-              <span className="fm-stat__value" style={{ color: injured.length > 0 ? 'var(--red)' : undefined }}>{injured.length}</span>
+              <StatValue className="fm-stat__value" value={injured.length} style={{ color: injured.length > 0 ? 'var(--red)' : undefined }} />
             </div>
             <div className="fm-stat">
               <span className="fm-stat__label">Unhappy</span>
-              <span className="fm-stat__value" style={{ color: unhappy.length > 0 ? 'var(--gold)' : undefined }}>{unhappy.length}</span>
+              <StatValue className="fm-stat__value" value={unhappy.length} style={{ color: unhappy.length > 0 ? 'var(--gold)' : undefined }} />
             </div>
           </div>
           {injured.length > 0 && (

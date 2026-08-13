@@ -1,4 +1,8 @@
 @import "tailwindcss";
+/* Shared motion vocabulary — easing/duration tokens, staggered entrances,
+   press feedback, View Transition choreography. Imported first so the tokens
+   it defines (--ease-*, --d-*) are available to the declarations below. */
+@import "./motion.css";
 
 /* =====================================================================
    GAFFER — FM26-style Dark Theme
@@ -94,7 +98,10 @@
   --r-xl: 20px;
   --r-full: 9999px;
 
-  --transition: 0.16s ease;
+  /* Repointed onto the motion layer's curve (app/motion.css). Every
+     `transition: ... var(--transition)` below picks up the new easing
+     without being touched individually. */
+  --transition: var(--d-2) var(--ease-out-quart);
   color-scheme: dark;
 
   /* Phase 14: per-league identity colours (gap — "per-league brand
@@ -190,6 +197,37 @@ body {
   --brand-gradient: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
   --brand-dim: color-mix(in srgb, var(--brand) 16%, transparent);
 }
+
+/* Club-tinted ambient glow.
+   `body`'s `--bg-grad` is a fixed green wash and cannot be club-coloured:
+   `--brand` lands inline on `.fm-app`, and body is its ancestor, so the
+   value can never reach it. This is the same wash re-hung on `.fm-app`
+   itself, where the override does apply — so the whole game takes on the
+   colour of the club being managed instead of every save looking identical.
+   Fixed, so it does not scroll; `z-index: -1` puts it above body's own
+   background and below every bit of UI; `.fm-app` sets no z-index of its
+   own, so this stays in the root stacking context rather than being trapped.
+   The transition means taking a new job cross-fades the room rather than
+   cutting to it. */
+.fm-app::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* The tint lives on `opacity`, not in the colour. Expressed as
+     `color-mix(… 15%, transparent)` the build emits a plain `var(--brand)`
+     fallback for engines without color-mix — i.e. the glow lands at FULL
+     club colour there, washing the whole app. Scaling the layer instead
+     gives every engine the same subtle result with nothing to downlevel. */
+  background: radial-gradient(1200px 700px at 50% -8%, var(--brand) 0%, transparent 62%);
+  opacity: 0.15;
+  transition: opacity 600ms var(--ease-out-quart), background 600ms var(--ease-out-quart);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-app::before { transition: none; }
+}
+
 
 .fm-header {
   display: flex; align-items: center; gap: 10px;
@@ -361,7 +399,11 @@ body {
 }
 .fm-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important; }
 .fm-btn:not(:disabled):hover { transform: translateY(-1px); }
-.fm-btn:not(:disabled):active { transform: translateY(0); }
+/* NOTE: the `:active` state is owned by app/motion.css (the press squash +
+   ripple). It used to be re-declared here as `transform: translateY(0)`,
+   which — same specificity, later in the file — silently cancelled the
+   `scale(0.97)` press feedback declared ~70 lines above, so pressing any
+   button in the shipped build did nothing. Do not re-add a transform here. */
 .fm-btn--primary {
   /* Chrome, not semantic — uses the per-club brand gradient (gap 82), unlike
      .fm-banner--green/.fm-progress below which stay on the fixed
@@ -1905,6 +1947,83 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 @media (prefers-reduced-motion: reduce) {
   .fm-confetti { display: none; }
 }
+
+/* ── Goal celebration, staged ──
+   The old celebration was one word and one pop. A goal is the emotional peak
+   of the whole game and the cheapest place to spend design effort, so it now
+   runs as a sequence: strobe → slammed wordmark → scorer slab → minute chip,
+   each entering on its own delay. Colour comes from the scoring club, not a
+   fixed green, so it reads as *your* goal.
+   All four layers sit inside .fm-goal2 with pointer-events:none — the match
+   controls underneath stay live throughout. */
+.fm-goal2 {
+  position: absolute; inset: 0; z-index: 6;
+  display: grid; place-items: center;
+  pointer-events: none; overflow: hidden;
+}
+.fm-goal2__wash {
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 45%, var(--goal-color, var(--green)) 0%, transparent 62%);
+  opacity: 0; animation: fm-goal-fade 2.2s ease forwards;
+}
+/* The white hit. Very short — a strobe that outstays its welcome reads as a
+   rendering fault rather than an impact. */
+.fm-goal2__flash {
+  position: absolute; inset: 0; background: #fff;
+  opacity: 0; animation: fm-goal-strobe 0.45s ease-out forwards;
+}
+.fm-goal2__inner { position: relative; text-align: center; padding: 0 16px; }
+.fm-goal2__word {
+  display: block;
+  font-size: clamp(38px, 13vw, 96px); font-weight: 900;
+  letter-spacing: -0.03em; line-height: 0.92;
+  background: linear-gradient(180deg, #ffffff 28%, var(--goal-color, var(--green)) 128%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 4px 26px rgba(0,0,0,0.55));
+  animation: fm-goal-slam 0.72s var(--ease-out-expo) backwards;
+}
+.fm-goal2__scorer {
+  display: inline-block; margin-top: 10px;
+  padding: 7px 16px; border-radius: var(--r-full);
+  background: rgba(8,10,14,0.62); border: 1px solid rgba(255,255,255,0.16);
+  backdrop-filter: blur(10px);
+  font-size: clamp(14px, 3.6vw, 20px); font-weight: 800; letter-spacing: 0.01em; color: #fff;
+  animation: fm-goal-rise 0.6s var(--ease-out-expo) 0.18s backwards;
+}
+.fm-goal2__minute {
+  display: block; margin-top: 8px;
+  font-size: var(--fs-sm); font-weight: 800; letter-spacing: 0.14em;
+  color: rgba(255,255,255,0.72); text-transform: uppercase;
+  animation: fm-goal-rise 0.6s var(--ease-out-expo) 0.3s backwards;
+}
+@keyframes fm-goal-strobe {
+  0% { opacity: 0.82; }
+  100% { opacity: 0; }
+}
+@keyframes fm-goal-slam {
+  0% { opacity: 0; transform: scale(1.75); filter: blur(9px) drop-shadow(0 4px 26px rgba(0,0,0,0.55)); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0) drop-shadow(0 4px 26px rgba(0,0,0,0.55)); }
+}
+@keyframes fm-goal-rise {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Still announce the goal — just hold it still. The strobe goes entirely:
+     a full-screen white flash is the one element here that is genuinely
+     unsafe to show someone who asked for reduced motion. */
+  .fm-goal2__flash { display: none; }
+  .fm-goal2__wash,
+  .fm-goal2__word,
+  .fm-goal2__scorer,
+  .fm-goal2__minute {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
 .fm-live2d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
 /* ── Match screen (FM Mobile-style landscape replay) ── */

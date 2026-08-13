@@ -6,6 +6,12 @@ import type { MinuteSnapshot, TeamSide } from '@/engine/tickEngine/types';
 import { getFormation } from '@/engine/gameRules';
 import { matchKits } from '@/lib/clubColors';
 
+/** Frames of ball history kept for the trail. Tuned against the easing rate
+ *  (0.14/frame toward target): ~14 frames is roughly a quarter-second of
+ *  travel, long enough to show direction and short enough that the trail
+ *  never lags far enough behind to read as a second ball. */
+const TRAIL_LEN = 14;
+
 /** Deterministic per-player-per-minute jitter so replays look identical. */
 function noise(seed: number): number {
   const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
@@ -276,11 +282,16 @@ export default function PitchCanvas({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const bgRef = useRef<HTMLCanvasElement | null>(null);
   const positions = useRef<Map<string, { along: number; across: number }>>(new Map());
+  /** Recent ball positions in pitch-relative units, newest last. Painted as a
+   *  fading taper so the eye can follow a switch of play across the pitch —
+   *  a 6px white dot moving between 22 tokens is genuinely hard to track. */
+  const trail = useRef<{ along: number; across: number }[]>([]);
   const frame = useRef<{ snapshots: MinuteSnapshot[]; minute: number }>({ snapshots, minute });
   frame.current = { snapshots, minute };
 
   useEffect(() => {
     positions.current.clear();
+    trail.current.length = 0;
   }, [resetKey]);
 
   useEffect(() => {
@@ -289,6 +300,11 @@ export default function PitchCanvas({
     let raf = 0;
     let bgW = 0;
     let bgH = 0;
+    // Read once per mount rather than per frame — the trail is decorative
+    // motion, so it is the part that goes when the player asks for less.
+    const reduceMotion =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const draw = () => {
       raf = requestAnimationFrame(draw);
@@ -338,7 +354,10 @@ export default function PitchCanvas({
       const kits = kitColors(homeClub, awayClub);
       const r = Math.max(8, Math.min(13, pw * 0.016));
 
-      // Ease every token toward its target, then paint.
+      // Ease every token toward its target. Painting is a second pass so the
+      // ball trail and the carrier glow can go *under* the tokens — drawn
+      // inline they would sit on top of the players they belong to.
+      const painted: { t: Token; x: number; y: number }[] = [];
       for (const t of targets) {
         let p = positions.current.get(t.key);
         if (!p) {
@@ -348,9 +367,46 @@ export default function PitchCanvas({
         const k = t.kind === 'ball' ? 0.14 : 0.075;
         p.along += (t.along - p.along) * k;
         p.across += (t.across - p.across) * k;
-        const x = px + p.along * pw;
-        const y = py + p.across * ph;
+        painted.push({ t, x: px + p.along * pw, y: py + p.across * ph });
+        if (t.kind === 'ball') {
+          trail.current.push({ along: p.along, across: p.across });
+          if (trail.current.length > TRAIL_LEN) trail.current.shift();
+        }
+      }
 
+      // Ball trail: oldest → newest, widening and brightening as it goes.
+      if (!reduceMotion && trail.current.length > 1) {
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        for (let i = 1; i < trail.current.length; i++) {
+          const a = trail.current[i - 1];
+          const b = trail.current[i];
+          const f = i / trail.current.length; // 0 oldest → 1 newest
+          ctx.beginPath();
+          ctx.moveTo(px + a.along * pw, py + a.across * ph - r * 0.9);
+          ctx.lineTo(px + b.along * pw, py + b.across * ph - r * 0.9);
+          ctx.strokeStyle = `rgba(255,255,255,${(0.28 * f).toFixed(3)})`;
+          ctx.lineWidth = Math.max(0.6, r * 0.34 * f);
+          ctx.stroke();
+        }
+      }
+
+      // Carrier glow: a soft pool of the kit colour under whoever has the
+      // ball, so possession is readable without hunting for the yellow ring.
+      const carrier = painted.find((q) => q.t.onBall);
+      if (carrier) {
+        const glow = carrier.t.side === 'home' ? kits.home : kits.away;
+        const [gr, gg, gb] = hexToRgb(glow);
+        const rad = ctx.createRadialGradient(carrier.x, carrier.y, 0, carrier.x, carrier.y, r * 3.2);
+        rad.addColorStop(0, `rgba(${gr},${gg},${gb},0.38)`);
+        rad.addColorStop(1, `rgba(${gr},${gg},${gb},0)`);
+        ctx.fillStyle = rad;
+        ctx.beginPath();
+        ctx.arc(carrier.x, carrier.y, r * 3.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      for (const { t, x, y } of painted) {
         if (t.kind === 'ball') {
           ctx.beginPath();
           ctx.arc(x, y - r * 0.9, r * 0.42, 0, Math.PI * 2);

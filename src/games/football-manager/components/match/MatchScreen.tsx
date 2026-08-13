@@ -175,6 +175,7 @@ export default function MatchScreen({
   // goal or a goal for either side both trigger it.
   const [scoreFlash, setScoreFlash] = useState(false);
   const [celebrationScorer, setCelebrationScorer] = useState<string | null>(null);
+  const [celebrationMinute, setCelebrationMinute] = useState<number>(0);
   const prevGoalsRef = useRef(0);
   const prevScoreRef = useRef({ home: 0, away: 0 });
   useEffect(() => {
@@ -194,6 +195,9 @@ export default function MatchScreen({
         const lastGoal = [...(timeline?.events ?? [])].reverse().find((e) => e.type === 'goal' && e.minute <= minute);
         const scorerName = lastGoal?.playerId != null ? state.players[lastGoal.playerId]?.name : undefined;
         setCelebrationScorer(scorerName ?? '');
+        // The goal's own minute, not the clock's — at 4× speed the replay has
+        // usually ticked past by the time this runs.
+        setCelebrationMinute(lastGoal?.minute ?? minute);
         celebrationTimer = setTimeout(() => setCelebrationScorer(null), 2200);
       }
 
@@ -217,6 +221,19 @@ export default function MatchScreen({
     }
     prevEventCountRef.current = shownEvents.length;
   }, [shownEvents]);
+
+  // Crowd bed follows momentum. `crowd.setLevel` shipped in lib/sound.ts with
+  // no caller, so the ambience was a flat drone for the full 90 minutes —
+  // present, but carrying no information. Driving it from the snapshot's
+  // momentum (-1..1, positive favours home) makes the stadium lift while the
+  // player's side is on top and fall away when they are pinned back, which is
+  // the single cheapest source of match tension available.
+  useEffect(() => {
+    if (!kickedOff || finished) return;
+    const m = snap?.momentum ?? 0;
+    const userMomentum = userIsHome ? m : -m;
+    crowd.setLevel((userMomentum + 1) / 2);
+  }, [snap?.momentum, userIsHome, kickedOff, finished]);
 
   useKeyboardShortcuts(
     {
@@ -569,7 +586,13 @@ export default function MatchScreen({
         ) : (
           <PitchCanvas snapshots={timeline.snapshots} minute={minute} homeClub={home} awayClub={away} resetKey={0} />
         )}
-        {celebrationScorer !== null && <GoalCelebration scorer={celebrationScorer || undefined} />}
+        {celebrationScorer !== null && (
+          <GoalCelebration
+            scorer={celebrationScorer || undefined}
+            minute={celebrationMinute}
+            clubColor={(userIsHome ? home : away)?.color ?? 'var(--green)'}
+          />
+        )}
         {showStats && (
           <StatsOverlay
             homeClub={home}

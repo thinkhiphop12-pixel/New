@@ -1,0 +1,338 @@
+/* =====================================================================
+   GAFFA — Motion layer
+   ---------------------------------------------------------------------
+   The app had 15 keyframes and almost no transitions: screens cut, numbers
+   snapped, lists appeared all at once. This file is the shared vocabulary
+   for movement — easing, durations, entrances, press feedback and the
+   View Transition choreography — so individual screens opt in with a class
+   instead of hand-rolling an animation each.
+
+   Rules for anything added here:
+     1. Every animation has a `prefers-reduced-motion: reduce` fallback that
+        lands on the SAME final state, never a hidden one. A reveal that
+        starts at `opacity: 0` and is then told `animation: none` leaves the
+        content invisible — so reduced-motion blocks reset opacity/transform
+        explicitly rather than just cancelling the animation.
+     2. Entrances use `animation-fill-mode: backwards` so a staggered child
+        holds its start frame during its delay instead of flashing in at
+        full opacity and then jumping back.
+     3. Nothing here animates `width`/`height`/`top`/`left` on a hot path —
+        the match canvas runs its own setInterval and must not contend with
+        layout-triggering animation on the compositor.
+   ===================================================================== */
+
+:root {
+  /* ── Easing ──
+     `--ease-out-expo` is the workhorse: fast departure, long settle, which
+     is what makes a UI feel responsive rather than floaty.
+     `--ease-spring` is a real spring sampled into CSS `linear()` — it
+     overshoots ~4% and settles, and unlike a cubic-bezier overshoot it can
+     be tuned without breaking monotonicity. */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: linear(
+    0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%,
+    0.937 38.1%, 0.968 41.8%, 0.991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 63.9%,
+    1.001 84.2%, 1
+  );
+
+  /* ── Durations ──
+     Four steps, deliberately short. Anything above --d-4 in an interface
+     this dense reads as lag, not polish. */
+  --d-1: 120ms;
+  --d-2: 180ms;
+  --d-3: 260ms;
+  --d-4: 420ms;
+
+  /* Stagger step between siblings in a revealed list. 28ms is under the
+     ~40ms where a list stops reading as one gesture and starts reading as
+     items arriving one by one. */
+  --stagger-step: 28ms;
+
+  /* Repointed from the old flat `0.16s ease`. Every existing
+     `transition: ... var(--transition)` in globals.css inherits the new
+     curve for free. */
+  --transition: var(--d-2) var(--ease-out-quart);
+}
+
+/* =====================================================================
+   1. Entrances
+   ===================================================================== */
+
+@keyframes fm-rise {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fm-rise-sm {
+  from { opacity: 0; transform: translate3d(0, 4px, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes fm-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Single-element entrance. */
+.fm-rise { animation: fm-rise var(--d-3) var(--ease-out-expo) backwards; }
+
+/* =====================================================================
+   2. Staggered list reveal
+   ---------------------------------------------------------------------
+   Applied to a container; every direct child rises in sequence. The delay
+   is driven by :nth-child rather than an inline `--i`, so a list opts in by
+   adding ONE class to its wrapper and needs no per-row changes — which is
+   what makes this affordable across ~20 screens.
+
+   Capped at 14 children: past that the list is being scrolled, not read as
+   an entrance, and a 20th row waiting 560ms to appear reads as jank. Row 15
+   onward shares the final delay.
+   ===================================================================== */
+
+.fm-stagger > * {
+  animation: fm-rise-sm var(--d-3) var(--ease-out-expo) backwards;
+  animation-delay: calc(14 * var(--stagger-step));
+}
+.fm-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.fm-stagger > *:nth-child(2) { animation-delay: calc(1 * var(--stagger-step)); }
+.fm-stagger > *:nth-child(3) { animation-delay: calc(2 * var(--stagger-step)); }
+.fm-stagger > *:nth-child(4) { animation-delay: calc(3 * var(--stagger-step)); }
+.fm-stagger > *:nth-child(5) { animation-delay: calc(4 * var(--stagger-step)); }
+.fm-stagger > *:nth-child(6) { animation-delay: calc(5 * var(--stagger-step)); }
+.fm-stagger > *:nth-child(7) { animation-delay: calc(6 * var(--stagger-step)); }
+.fm-stagger > *:nth-child(8) { animation-delay: calc(7 * var(--stagger-step)); }
+.fm-stagger > *:nth-child(9) { animation-delay: calc(8 * var(--stagger-step)); }
+.fm-stagger > *:nth-child(10) { animation-delay: calc(9 * var(--stagger-step)); }
+.fm-stagger > *:nth-child(11) { animation-delay: calc(10 * var(--stagger-step)); }
+.fm-stagger > *:nth-child(12) { animation-delay: calc(11 * var(--stagger-step)); }
+.fm-stagger > *:nth-child(13) { animation-delay: calc(12 * var(--stagger-step)); }
+.fm-stagger > *:nth-child(14) { animation-delay: calc(13 * var(--stagger-step)); }
+
+/* =====================================================================
+   3. Press feedback
+   ---------------------------------------------------------------------
+   Fixes a live bug rather than adding a new effect: globals.css sets
+   `.fm-btn:not(:disabled):active { transform: scale(0.97) }` and then, 70
+   lines later, `.fm-btn:not(:disabled):active { transform: translateY(0) }`.
+   Same specificity, later rule wins — so pressing a button in the shipped
+   build does nothing at all. This file loads after globals' declaration and
+   restores the intended squash, plus a brand-tinted sheen so the press is
+   visible on a dark panel where a 3% scale change alone is not.
+   ===================================================================== */
+
+.fm-btn { position: relative; overflow: hidden; }
+
+.fm-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--press-x, 50%) var(--press-y, 50%), rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 62%);
+  opacity: 0;
+  transform: scale(0.35);
+  pointer-events: none;
+  transition: opacity var(--d-4) var(--ease-out-quart), transform var(--d-4) var(--ease-out-quart);
+}
+
+.fm-btn:not(:disabled):active::after {
+  opacity: 0.22;
+  transform: scale(1);
+  /* Instant on the way in, slow on the way out — a ripple that eases in
+     feels laggy because the finger is already down. */
+  transition-duration: 0s;
+}
+
+.fm-btn:not(:disabled):active,
+.fm-jump:active,
+.fm-todo:active,
+.fm-tab:active,
+.fm-slot-card__actions .fm-btn:active {
+  transform: scale(0.97);
+}
+
+/* Hover lift, restored on a spring so it settles rather than snapping. */
+.fm-btn:not(:disabled) {
+  transition: transform var(--d-2) var(--ease-spring), opacity var(--d-1) linear,
+              box-shadow var(--d-3) var(--ease-out-quart), background var(--d-2) var(--ease-out-quart);
+}
+.fm-btn:not(:disabled):hover { transform: translateY(-1px); }
+
+/* Cards answer the pointer too — currently most are inert rectangles. */
+.fm-panel--interactive,
+.fm-slot-card,
+.fm-todo,
+.fm-jump {
+  transition: transform var(--d-2) var(--ease-spring),
+              border-color var(--d-2) var(--ease-out-quart),
+              box-shadow var(--d-3) var(--ease-out-quart);
+}
+.fm-panel--interactive:hover,
+.fm-slot-card:hover,
+.fm-todo:hover,
+.fm-jump:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-bright);
+  box-shadow: var(--shadow-md);
+}
+
+/* =====================================================================
+   4. Value changes
+   ---------------------------------------------------------------------
+   Paired with lib/useCountUp.ts. The hook rolls the digits; these classes
+   carry the colour cue, so a stat that moved is legible even to a player
+   who looked away during the roll.
+   ===================================================================== */
+
+@keyframes fm-num-up {
+  0% { color: var(--chip-vhigh); transform: translate3d(0, 2px, 0); }
+  100% { color: inherit; transform: none; }
+}
+@keyframes fm-num-down {
+  0% { color: var(--red); transform: translate3d(0, -2px, 0); }
+  100% { color: inherit; transform: none; }
+}
+
+.fm-num--up { animation: fm-num-up var(--d-4) var(--ease-out-expo); }
+.fm-num--down { animation: fm-num-down var(--d-4) var(--ease-out-expo); }
+
+/* The delta badge that rides alongside a rolled number (+5, −4). */
+.fm-delta {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  animation: fm-delta-in var(--d-4) var(--ease-out-expo) backwards;
+}
+.fm-delta--up { color: var(--chip-vhigh); }
+.fm-delta--down { color: var(--red); }
+@keyframes fm-delta-in {
+  from { opacity: 0; transform: translate3d(-3px, 0, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Tabular figures everywhere a number animates, so a rolling counter does
+   not reflow the row it sits in on every frame. */
+.fm-count { font-variant-numeric: tabular-nums; }
+
+/* =====================================================================
+   5. View Transitions
+   ---------------------------------------------------------------------
+   Driven by lib/viewTransition.ts. Only the content region is named, so the
+   nav rail and header stay put while the screen under them moves — a full
+   `root` cross-fade would dip the entire chrome on every tab click, which
+   reads as a page load rather than a tab change.
+
+   Root is explicitly pinned to no animation for that reason. Without this,
+   the browser's default root cross-fade still runs underneath the named
+   element and double-fades the background.
+   ===================================================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  ::view-transition-old(fm-content) {
+    animation: fm-vt-out var(--d-2) var(--ease-out-quart) both;
+  }
+  ::view-transition-new(fm-content) {
+    animation: fm-vt-in var(--d-3) var(--ease-out-expo) both;
+  }
+}
+
+/* Whole-view swaps (menu → hub → match) are NOT view transitions: that
+   wrapper is keyed on `view` in FootballManagerGame.tsx and genuinely
+   remounts, so it keeps its own `.fm-view-fade` entrance. Running both would
+   double-animate the same swap. */
+
+/* The hub screen panel is the transition's subject. It carries
+   `key={activeRoute}` in HubScreen.tsx, so exactly one instance exists at
+   capture time on either side of the swap — which is what a
+   `view-transition-name` requires to pair old with new. */
+.fm-hub-panel { view-transition-name: fm-content; }
+
+/* `.fm-screen-slide` is the fallback entrance for browsers without View
+   Transitions. Where the API exists, the cross-fade above replaces it —
+   otherwise the incoming panel would animate twice, once as a snapshot and
+   again as live DOM the moment the transition finished. */
+@supports (view-transition-name: none) {
+  .fm-screen-slide { animation: none; }
+}
+
+@keyframes fm-vt-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translate3d(0, -6px, 0); }
+}
+@keyframes fm-vt-in {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fm-vt-view-in {
+  from { opacity: 0; transform: translate3d(0, 16px, 0) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+/* =====================================================================
+   6. Ambient texture
+   ---------------------------------------------------------------------
+   A single tiled SVG noise field over the app background. Flat dark panels
+   band visibly on OLED phones; ~3% grain breaks the gradient up and is the
+   cheapest "this was designed" signal available — one data URI, no request,
+   no layout cost, and it never repaints because it does not move.
+   ===================================================================== */
+
+.fm-grain::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* =====================================================================
+   7. Reduced motion
+   ---------------------------------------------------------------------
+   One block, at the end, so it outranks everything above. Each rule lands
+   on the visible end state — see rule 1 in the header comment.
+   ===================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .fm-rise,
+  .fm-stagger > *,
+  .fm-delta {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .fm-num--up,
+  .fm-num--down {
+    animation: none;
+    color: inherit;
+  }
+
+  .fm-btn:not(:disabled):hover,
+  .fm-btn:not(:disabled):active,
+  .fm-panel--interactive:hover,
+  .fm-slot-card:hover,
+  .fm-todo:hover,
+  .fm-jump:hover,
+  .fm-jump:active,
+  .fm-todo:active,
+  .fm-tab:active {
+    transform: none;
+  }
+
+  .fm-btn::after { display: none; }
+
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none;
+  }
+}

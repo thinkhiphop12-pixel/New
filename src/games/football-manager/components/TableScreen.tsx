@@ -89,7 +89,7 @@ export default function TableScreen({ state }: { state: GameState }) {
               <th>Pts</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="fm-stagger">
             {table.map((row, i) => {
               const pos = i + 1;
               const promo = pos <= autoUp || (pos > autoUp && pos <= playoffEnd);

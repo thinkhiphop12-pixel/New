@@ -13,6 +13,7 @@ import { simulateTickMatch } from '@/engine/tickEngine/sim';
 import { normalizeMentality } from '@/engine/tickEngine/tacticsData';
 import { runPreMatchChecks, hasPreMatchWarnings, type PreMatchCheck } from '@/engine/preMatch';
 import { loadGameData } from '@/lib/gamedata';
+import { withViewTransition } from '@/lib/viewTransition';
 import {
   clearSave, emergencySave, listSaves, loadGame, migrateLegacySaves, saveGame,
   SAVE_SLOTS, type SaveMeta,
@@ -405,6 +406,18 @@ export default function FootballManagerGame() {
     runToNextEvent(untilDay);
   };
 
+  /** Hub tab navigation, wrapped in a View Transition so the outgoing screen
+   *  cross-fades into the incoming one instead of blinking through empty
+   *  space. Only for moves that stay *within* the hub: the calls below that
+   *  also `setView('hub')` are whole-view swaps, and that wrapper is keyed on
+   *  `view` and runs its own `.fm-view-fade` entrance — animating both would
+   *  double up on the same swap.
+   *  `withViewTransition` degrades to a plain `setHubRoute` where the API is
+   *  missing or reduced motion is set, so navigation never depends on it. */
+  const navigateHub = useCallback((next: ScreenId | null) => {
+    withViewTransition(() => setHubRoute(next));
+  }, []);
+
   /** A stop's "resolve" action for anything that isn't matchday — send the
    *  player to the screen that can actually act on it, leaving `dayStops` in
    *  place so the pending pill can bring them back to finish reviewing. */
@@ -701,7 +714,7 @@ export default function FootballManagerGame() {
           <HubScreen
             state={gs}
             route={hubRoute}
-            onRoute={setHubRoute}
+            onRoute={navigateHub}
             onChange={apply}
             onAbandon={handleAbandon}
             onSimulate={handleSimulate}
@@ -760,7 +773,7 @@ export default function FootballManagerGame() {
               <button
                 type="button"
                 className="fm-actiondock__pending"
-                onClick={() => setHubRoute('tactics')}
+                onClick={() => navigateHub('tactics')}
                 title="Lineup needs 11 fit players before your next match"
               >
                 <Icon name="warning" size={13} /> Lineup

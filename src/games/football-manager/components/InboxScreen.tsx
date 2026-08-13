@@ -277,12 +277,12 @@ export default function InboxScreen({
                         <p className="fm-label" style={{ margin: '0 0 6px' }}>
                           Needs a decision <span className="fm-badge fm-badge--alert">{actionItems.length}</span>
                         </p>
-                        <div className="fm-msg-list" style={{ marginBottom: 14 }}>
+                        <div className="fm-msg-list fm-stagger" style={{ marginBottom: 14 }}>
                           {actionItems.map(row)}
                         </div>
                       </>
                     )}
-                    <div className="fm-msg-list">{otherItems.map(row)}</div>
+                    <div className="fm-msg-list fm-stagger">{otherItems.map(row)}</div>
                   </>
                 );
               })()}

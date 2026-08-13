@@ -286,7 +286,62 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   .trust{grid-template-columns:1fr 1fr}
   .stat{padding:14px 8px}
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   MOTION
+   The page was entirely static: every section was simply present on
+   load, and the game's own UI had just gained a motion layer, so the
+   landing read as older than the thing it was selling. Same easing
+   curve and same stagger step as src/games/football-manager/app/
+   motion.css, so the two surfaces move as one product.
+
+   Everything here is gated on `html.js`, set by an inline script the
+   moment this stylesheet ends. With JS unavailable the reveal styles
+   never apply and the content is simply visible — the failure mode of
+   a scroll animation must never be a blank page.
+   ══════════════════════════════════════════════════════════════════ */
+:root{--ease-out-expo:cubic-bezier(.16,1,.3,1)}
+
+@media (prefers-reduced-motion:no-preference){
+  /* Hero: runs on load rather than on scroll — it is already in view. */
+  .js .hero .live-pill,
+  .js .hero h1,
+  .js .hero .lead,
+  .js .hero-ctas,
+  .js .hero .subline{animation:bkRise .7s var(--ease-out-expo) backwards}
+  .js .hero h1{animation-delay:.06s}
+  .js .hero .lead{animation-delay:.12s}
+  .js .hero-ctas{animation-delay:.18s}
+  .js .hero .subline{animation-delay:.24s}
+  @keyframes bkRise{from{opacity:0;transform:translate3d(0,14px,0)}to{opacity:1;transform:none}}
+
+  /* Scroll reveal. `.is-in` is added by the observer below. */
+  .js .reveal{opacity:0;transform:translate3d(0,16px,0);
+    transition:opacity .6s var(--ease-out-expo),transform .6s var(--ease-out-expo)}
+  .js .reveal.is-in{opacity:1;transform:none}
+
+  /* Staggered children, capped at 8 — past that the delay outlives the
+     scroll that triggered it. */
+  .js .reveal-stagger>*{opacity:0;transform:translate3d(0,12px,0);
+    transition:opacity .5s var(--ease-out-expo),transform .5s var(--ease-out-expo)}
+  .js .reveal-stagger.is-in>*{opacity:1;transform:none}
+  .js .reveal-stagger.is-in>*:nth-child(1){transition-delay:0ms}
+  .js .reveal-stagger.is-in>*:nth-child(2){transition-delay:60ms}
+  .js .reveal-stagger.is-in>*:nth-child(3){transition-delay:120ms}
+  .js .reveal-stagger.is-in>*:nth-child(4){transition-delay:180ms}
+  .js .reveal-stagger.is-in>*:nth-child(5){transition-delay:240ms}
+  .js .reveal-stagger.is-in>*:nth-child(6){transition-delay:300ms}
+  .js .reveal-stagger.is-in>*:nth-child(7){transition-delay:360ms}
+  .js .reveal-stagger.is-in>*:nth-child(8){transition-delay:420ms}
+
+  /* Press feedback, matching the game's buttons. */
+  .btn:active{transform:scale(.97)}
+}
+
+/* Rolled figures must not reflow the strip on every frame. */
+.trust .num{font-variant-numeric:tabular-nums}
 </style>
+<script>document.documentElement.classList.add('js');</script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -400,10 +455,10 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 <!-- TRUST STRIP -->
 <section class="section" style="padding-top:0;padding-bottom:0">
   <div class="wrap">
-    <div class="trust">
-      <div class="stat"><div class="num lime">12,600+</div><div class="lbl">Players rated</div></div>
-      <div class="stat"><div class="num em">28</div><div class="lbl">Leagues</div></div>
-      <div class="stat"><div class="num">490</div><div class="lbl">Real clubs</div></div>
+    <div class="trust reveal reveal-stagger">
+      <div class="stat"><div class="num lime" data-count="12600" data-suffix="+">12,600+</div><div class="lbl">Players rated</div></div>
+      <div class="stat"><div class="num em" data-count="28">28</div><div class="lbl">Leagues</div></div>
+      <div class="stat"><div class="num" data-count="490">490</div><div class="lbl">Real clubs</div></div>
       <div class="stat"><div class="num">Free</div><div class="lbl">No login</div></div>
     </div>
   </div>
@@ -412,7 +467,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 <!-- GAME EMBED -->
 <section id="play" class="section" style="padding-top:24px">
   <div class="wrap">
-    <div class="game-embed">
+    <div class="game-embed reveal">
       <iframe src="/gaffa/" title="BALLKNW Gaffa" loading="lazy" allow="fullscreen"></iframe>
     </div>
     <div class="embed-actions">
@@ -425,11 +480,11 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 <!-- HOW IT WORKS -->
 <section class="section" style="padding-top:10px">
   <div class="wrap">
-    <div class="section-head" style="text-align:center">
+    <div class="section-head reveal" style="text-align:center">
       <div class="eyebrow">How it works</div>
       <h2>Four steps to kickoff</h2>
     </div>
-    <div class="steps-grid">
+    <div class="steps-grid reveal reveal-stagger">
       <div class="step-card">
         <div class="step-num">1</div>
         <div class="step-body">
@@ -466,7 +521,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
      rather than buried in the footer list. See content/keyword-audit-2026-08.md -->
 <section class="section" style="padding-top:10px">
   <div class="wrap">
-    <div class="section-head" style="text-align:center">
+    <div class="section-head reveal" style="text-align:center">
       <div class="eyebrow">Guides</div>
       <h2>Start here</h2>
     </div>
@@ -485,7 +540,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 <!-- FAQ -->
 <section id="faq" class="section">
   <div class="wrap">
-    <div class="section-head" style="text-align:center">
+    <div class="section-head reveal" style="text-align:center">
       <div class="eyebrow">FAQ</div>
       <h2>Quick answers</h2>
     </div>
@@ -596,6 +651,61 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   }
   update();
   setInterval(update, 60000);
+})();
+</script>
+
+
+<script>
+/* Scroll reveal + figure roll-up.
+   Both are progressive enhancement: the markup is complete and readable
+   without this file running, and `html.js` (set in <head>) is what arms the
+   hiding styles in the first place. Anything that fails here leaves the page
+   in its plain, fully visible state. */
+(function () {
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var revealables = document.querySelectorAll('.reveal');
+
+  /* Roll a figure from 0 to its final value. Reads the target off
+     data-count so the markup keeps the real number as its fallback text. */
+  function roll(el) {
+    var target = parseInt(el.getAttribute('data-count'), 10);
+    if (isNaN(target)) return;
+    var suffix = el.getAttribute('data-suffix') || '';
+    if (reduce) { el.textContent = target.toLocaleString() + suffix; return; }
+    var start = null;
+    var DUR = 900;
+    function frame(now) {
+      if (start === null) start = now;
+      var t = Math.min(1, (now - start) / DUR);
+      var eased = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+      el.textContent = Math.round(target * eased).toLocaleString() + suffix;
+      if (t < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function activate(el) {
+    el.classList.add('is-in');
+    var nums = el.querySelectorAll('[data-count]');
+    for (var i = 0; i < nums.length; i++) roll(nums[i]);
+  }
+
+  /* No IntersectionObserver (or reduced motion): show everything at once
+     rather than leaving it mid-transition. */
+  if (!('IntersectionObserver' in window) || reduce) {
+    for (var i = 0; i < revealables.length; i++) activate(revealables[i]);
+    return;
+  }
+
+  var io = new IntersectionObserver(function (entries) {
+    for (var i = 0; i < entries.length; i++) {
+      if (!entries[i].isIntersecting) continue;
+      activate(entries[i].target);
+      io.unobserve(entries[i].target); /* one-shot — re-animating on scroll-back is noise */
+    }
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+
+  for (var j = 0; j < revealables.length; j++) io.observe(revealables[j]);
 })();
 </script>
 

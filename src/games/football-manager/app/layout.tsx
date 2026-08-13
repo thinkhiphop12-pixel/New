@@ -73,7 +73,11 @@ gtag('config', '${GA_ID}');`;
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={inter.className}>
-      <body>
+      {/* `fm-grain` lays a fixed ~3.5% noise field over the app background
+          (app/motion.css). Flat dark panels band visibly on OLED phones;
+          the grain breaks the gradient up for one inline data URI and no
+          request. */}
+      <body className="fm-grain">
         {children}
         <SpeedInsights />
         <Analytics />
