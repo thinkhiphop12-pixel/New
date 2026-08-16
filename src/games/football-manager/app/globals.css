@@ -4379,3 +4379,32 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   .fm-intro__quote { min-height: 0; font-size: 13px; padding: 9px 11px; }
   .fm-intro__answers { flex-direction: row; }
 }
+
+/* ── Player card: best/worst/mood strip ──
+   components/PlayerModal.tsx "About him". Three words that answer the three
+   questions somebody actually opens a player for, above the abbreviations. */
+.pm-bestworst {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+  border-radius: var(--r-md); padding: 10px 12px;
+}
+.pm-bestworst__cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pm-bestworst__lbl {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.6px;
+  text-transform: uppercase; color: var(--muted-dim);
+}
+.pm-bestworst__val { font-size: 13.5px; font-weight: 900; }
+/* The player card is the one dialog you open from inside another dialog, so
+   it needs the short-viewport treatment of its own. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .fm-matchx-modal__panel { max-height: calc(100dvh - 16px); overflow: auto; }
+  .pm-bestworst { padding: 7px 10px; }
+}
+
+/* The guided tour's header, once it became somebody rather than a manual. */
+.fm-onboard-who { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.fm-onboard-who__title { margin: 0; font-size: 15px; font-weight: 900; line-height: 1.2; }
+.fm-onboard-who__step {
+  display: block; margin-top: 2px; font-size: 10px; font-weight: 800;
+  letter-spacing: 0.6px; text-transform: uppercase; color: var(--muted-dim);
+}

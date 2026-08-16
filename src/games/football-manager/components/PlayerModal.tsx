@@ -44,6 +44,16 @@ function textOn(hex: string): string {
   return luminance(hex) > 0.45 ? '#111' : '#fff';
 }
 
+/** Morale as a word. "Morale 63" tells a new manager nothing; "Content"
+ *  does, and it is the same number. */
+function moraleWord(v: number): string {
+  if (v >= 80) return 'Loving it';
+  if (v >= 60) return 'Happy';
+  if (v >= 40) return 'Content';
+  if (v >= 25) return 'Fed up';
+  return 'Miserable';
+}
+
 function moraleColor(v: number): string {
   if (v >= 70) return 'var(--green)';
   if (v >= 45) return 'var(--gold)';
@@ -110,7 +120,10 @@ function scoutVerdict(
     const sorted = [...named].sort((a, b) => b.v - a.v);
     const best = ATTR_FULL[sorted[0].name] ?? sorted[0].name.toLowerCase();
     const worst = ATTR_FULL[sorted[sorted.length - 1].name] ?? sorted[sorted.length - 1].name.toLowerCase();
-    parts.push(`His ${best} is his best weapon, and his ${worst} is the weak spot.`);
+    // "His reflexes is his best weapon" — the two goalkeeper attributes are
+    // plural nouns and the rest are not, so the verb has to follow the word.
+    const be = (w: string) => (w.endsWith('s') ? 'are' : 'is');
+    parts.push(`His ${best} ${be(best)} his best weapon, and his ${worst} ${be(worst)} the weak spot.`);
   }
   const gap = p.potential != null ? p.potential - p.rating : 0;
   if (p.age <= 21 && gap >= 8) parts.push('He’s young with a lot of growing left — he could get much better.');
@@ -136,7 +149,17 @@ export default function PlayerModal({
   onChange: (next: GameState) => void;
   onClose: () => void;
 }) {
-  const [tab, setTab] = useState<'ratings' | 'stats'>('ratings');
+  /**
+   * Three tabs, not two.
+   *
+   * "Ratings" used to carry the attribute bars, the radar, his traits, his
+   * tactical role AND his development plan — a single scroll that went from
+   * six three-letter abbreviations to two grids of decisions, with the
+   * things you *read* and the things you *set* interleaved. They are
+   * different jobs, so they are different tabs, and each one is named after
+   * what a person would call it.
+   */
+  const [tab, setTab] = useState<'him' | 'ratings' | 'plan'>('him');
   const [showContract, setShowContract] = useState(false);
   const p = player as PlayerWithFuture;
 
@@ -157,6 +180,17 @@ export default function PlayerModal({
 
   const clubColor = club?.color || '#333333';
   const clubText = textOn(clubColor);
+
+  // Best and worst attribute, spelled out. Same values the Ability tab
+  // draws — this is only the reading of them.
+  const namedAttrs = labels
+    .map((name, i) => ({ name, v: values[i] }))
+    .filter((a) => a.v > 0)
+    .sort((a, b) => b.v - a.v);
+  const attrWord = (n?: { name: string }) =>
+    n ? (ATTR_FULL[n.name] ?? n.name.toLowerCase()).replace(/^./, (c) => c.toUpperCase()) : '—';
+  const bestAttr = attrWord(namedAttrs[0]);
+  const worstAttr = attrWord(namedAttrs[namedAttrs.length - 1]);
 
   const posLabel = p.role || p.pos;
   const altPos = p.altPos && p.altPos.length > 0 ? p.altPos.join('·') : null;
@@ -209,13 +243,97 @@ export default function PlayerModal({
         <p className="pm-verdict">{scoutVerdict(p, attrDefs, values)}</p>
 
         <div className="pm-tab-row">
-          <button className={`pm-tab-btn${tab === 'ratings' ? ' active' : ''}`} onClick={() => setTab('ratings')}>
-            Ratings
+          <button className={`pm-tab-btn${tab === 'him' ? ' active' : ''}`} onClick={() => setTab('him')}>
+            About him
           </button>
-          <button className={`pm-tab-btn${tab === 'stats' ? ' active' : ''}`} onClick={() => setTab('stats')}>
-            Stats
+          <button className={`pm-tab-btn${tab === 'ratings' ? ' active' : ''}`} onClick={() => setTab('ratings')}>
+            Ability
+          </button>
+          <button className={`pm-tab-btn${tab === 'plan' ? ' active' : ''}`} onClick={() => setTab('plan')}>
+            His plan
           </button>
         </div>
+
+        {tab === 'him' && (
+          <>
+            {/* What he's best and worst at, as two words rather than six
+                abbreviations — the same numbers the Ability tab draws. */}
+            <div className="pm-bestworst">
+              <div className="pm-bestworst__cell">
+                <span className="pm-bestworst__lbl">Best at</span>
+                <b className="pm-bestworst__val" style={{ color: 'var(--green)' }}>{bestAttr}</b>
+              </div>
+              <div className="pm-bestworst__cell">
+                <span className="pm-bestworst__lbl">Weakest at</span>
+                <b className="pm-bestworst__val" style={{ color: 'var(--red)' }}>{worstAttr}</b>
+              </div>
+              <div className="pm-bestworst__cell">
+                <span className="pm-bestworst__lbl">Happiness</span>
+                <b className="pm-bestworst__val" style={{ color: moraleColor(p.morale) }}>{moraleWord(p.morale)}</b>
+              </div>
+            </div>
+
+            {traitNames(p).length > 0 && (
+              <div className="fm-pills" style={{ marginTop: 8 }}>
+                {traitNames(p).map((t) => (
+                  <span key={t} className="fm-trait">{t}</span>
+                ))}
+              </div>
+            )}
+
+            <div className="pm-stats-grid" style={{ marginTop: 10 }}>
+              <div className="pm-stat">
+                <span className="pm-stat-name">He&rsquo;s worth</span>
+                <span className="pm-stat-val text-gold">{formatMoney(p.value)}</span>
+              </div>
+              <div className="pm-stat">
+                <span className="pm-stat-name">We pay him</span>
+                <span className="pm-stat-val">{formatMoney(p.wage)}/wk</span>
+              </div>
+              <div className="pm-stat">
+                <span className="pm-stat-name">Signed until</span>
+                <span className="pm-stat-val" style={{ color: p.contractYears <= 1 ? 'var(--red)' : undefined }}>
+                  {p.contractYears <= 0 ? 'This summer' : `${p.contractYears}y`}
+                </span>
+              </div>
+            </div>
+
+            <p className="fm-label" style={{ marginTop: 10 }}>This season</p>
+            <div className="pm-stats-grid">
+              <div className="pm-stat">
+                <span className="pm-stat-name">Games</span>
+                <span className="pm-stat-val">{p.apps}</span>
+              </div>
+              <div className="pm-stat">
+                <span className="pm-stat-name">Goals</span>
+                <span className="pm-stat-val">{p.goals}</span>
+              </div>
+              <div className="pm-stat">
+                <span className="pm-stat-name">Assists</span>
+                <span className="pm-stat-val">{p.assists}</span>
+              </div>
+              {avgRating(p) !== null && (
+                <div className="pm-stat">
+                  <span className="pm-stat-name">Average mark</span>
+                  <span className="pm-stat-val">{avgRating(p)}</span>
+                </div>
+              )}
+            </div>
+
+            {p.career.length > 0 && (
+              <>
+                <p className="fm-label" style={{ marginTop: 10 }}>Where he&rsquo;s played</p>
+                <ul className="fm-news">
+                  {[...p.career].reverse().slice(0, 6).map((c, i) => (
+                    <li key={i}>
+                      {c.year}/{(c.year + 1) % 100} {c.club}: {c.apps} games, {c.goals} goals
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </>
+        )}
 
         {tab === 'ratings' && (
           <>
@@ -249,15 +367,11 @@ export default function PlayerModal({
                 </div>
               )}
             </div>
-            {traitNames(p).length > 0 && (
-              <div className="fm-pills" style={{ marginTop: 8 }}>
-                {traitNames(p).map((t) => (
-                  <span key={t} className="fm-trait">
-                    {t}
-                  </span>
-                ))}
-              </div>
-            )}
+          </>
+        )}
+
+        {tab === 'plan' && (
+          <>
             <p className="fm-label" style={{ marginTop: 10 }}>
               Tactical role
             </p>
@@ -383,76 +497,6 @@ export default function PlayerModal({
                     </div>
                   );
                 })()}
-              </>
-            )}
-          </>
-        )}
-
-        {tab === 'stats' && (
-          <>
-            <div className="pm-stats-grid">
-              <div className="pm-stat">
-                <span className="pm-stat-name">Market Value</span>
-                <span className="pm-stat-val text-gold">{formatMoney(p.value)}</span>
-              </div>
-              <div className="pm-stat">
-                <span className="pm-stat-name">Wage</span>
-                <span className="pm-stat-val">{formatMoney(p.wage)}/w</span>
-              </div>
-              <div className="pm-stat">
-                <span className="pm-stat-name">Contract</span>
-                <span className="pm-stat-val">{p.contractYears}y</span>
-              </div>
-              {hasPot && (
-                <div className="pm-stat">
-                  <span className="pm-stat-name">Potential</span>
-                  <span className="pm-stat-val" style={{ color: potColor }}>
-                    {p.potential}
-                  </span>
-                </div>
-              )}
-              {p.height != null && (
-                <div className="pm-stat">
-                  <span className="pm-stat-name">Height</span>
-                  <span className="pm-stat-val">{p.height}cm</span>
-                </div>
-              )}
-              {avgRating(p) !== null && (
-                <div className="pm-stat">
-                  <span className="pm-stat-name">Avg Rating</span>
-                  <span className="pm-stat-val">{avgRating(p)}</span>
-                </div>
-              )}
-            </div>
-            <p className="fm-label" style={{ marginTop: 10 }}>
-              This season
-            </p>
-            <div className="pm-stats-grid">
-              <div className="pm-stat">
-                <span className="pm-stat-name">Apps</span>
-                <span className="pm-stat-val">{p.apps}</span>
-              </div>
-              <div className="pm-stat">
-                <span className="pm-stat-name">Goals</span>
-                <span className="pm-stat-val">{p.goals}</span>
-              </div>
-              <div className="pm-stat">
-                <span className="pm-stat-name">Assists</span>
-                <span className="pm-stat-val">{p.assists}</span>
-              </div>
-            </div>
-            {p.career.length > 0 && (
-              <>
-                <p className="fm-label" style={{ marginTop: 10 }}>
-                  Career history
-                </p>
-                <ul className="fm-news">
-                  {[...p.career].reverse().slice(0, 6).map((c, i) => (
-                    <li key={i}>
-                      {c.year}/{(c.year + 1) % 100} {c.club}: {c.apps} apps, {c.goals} goals
-                    </li>
-                  ))}
-                </ul>
               </>
             )}
           </>

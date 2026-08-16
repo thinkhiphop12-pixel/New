@@ -824,6 +824,7 @@ export default function FootballManagerGame() {
       {showOnboarding && (
         <OnboardingOverlay
           slot={slot}
+          state={gs ?? undefined}
           onClose={() => setShowOnboarding(false)}
           onGoTo={(r) => {
             setHubRoute(r);
