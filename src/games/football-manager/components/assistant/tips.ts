@@ -2,6 +2,8 @@ import type { GameState } from '@/engine/types';
 import { getSquad, isLineupValid } from '@/engine/teamManagement';
 import { getAssistant } from '@/engine/assistant';
 import { contractMonthsLeft } from '@/engine/negotiation';
+import { transferWindow } from '@/engine/gameRules';
+import { formatMoney } from '@/engine/utils';
 import type { ScreenId } from '../hubNav';
 import { STEPS } from '../OnboardingOverlay';
 
@@ -87,6 +89,32 @@ function noAssistant(route: ScreenId): AssistantTopic[] {
     },
     ...(explainer ? [{ id: 'screen', ask: 'What is this screen?', key: 'S', line: explainer }] : []),
   ];
+}
+
+/**
+ * His read on the screen you're actually looking at, where that beats a
+ * description of it. Transfers used to carry this itself, as a second
+ * assistant voice inline — one screen with two of him on it, saying
+ * different things. Same lines, moved to where the rest of him lives.
+ */
+function screenAdvice(state: GameState, route: ScreenId): AssistantTopic | null {
+  if (route === 'transfers') {
+    const win = transferWindow(state.week);
+    const negotiations = state.negotiations ?? [];
+    const line = !win.open
+      ? 'Market\u2019s shut, boss. Free agents are still fair game \u2014 everyone else has to wait.'
+      : negotiations.some((n) => n.type === 'incoming' && n.awaiting === 'user')
+        ? 'Someone\u2019s bidding for one of our players. Have a look at \u201cBids for my players\u201d.'
+        : negotiations.some((n) => n.type === 'outgoing' && n.awaiting === 'user')
+          ? 'One of our deals needs your answer \u2014 check \u201cMy offers\u201d.'
+          : state.budget <= 0
+            ? 'No money left, boss. Loans cost far less, or sell someone first.'
+            : win.weeksLeft <= 1
+              ? 'Last week of the window \u2014 if we want someone, it has to be now.'
+              : `We\u2019ve got ${formatMoney(state.budget)} to spend. Try one of the shortcuts below to see who fits.`;
+    return { id: 'here', ask: 'What should I do here?', key: 'H', line, route: 'transfers' };
+  }
+  return null;
 }
 
 export function assistantTopics(state: GameState, route: ScreenId): AssistantTopic[] {
@@ -196,6 +224,9 @@ export function assistantTopics(state: GameState, route: ScreenId): AssistantTop
       route: 'inbox',
     });
   }
+
+  const here = screenAdvice(state, route);
+  if (here) topics.push(here);
 
   const explainer = screenExplainer(route);
   if (explainer) {

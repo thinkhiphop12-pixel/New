@@ -378,16 +378,6 @@ export default function TransfersScreen({
 
   // Your assistant, in a voice rather than a table. He reads the same numbers
   // the screen already has and says the one thing worth doing next.
-  const tip = (() => {
-    if (!win.open) return 'Market’s shut, boss. Free agents are still fair game — everyone else has to wait.';
-    if (incoming.some((n) => n.awaiting === 'user')) return 'Someone’s bidding for one of our players. Have a look at “Bids for my players”.';
-    if (outgoing.some((n) => n.awaiting === 'user')) return 'One of our deals needs your answer — check “My offers”.';
-    if (state.budget <= 0) return 'No money left, boss. Loans cost far less, or sell someone first.';
-    if (loansFirstBudget) return 'We can’t match the big clubs on fees. A loan gets us a good player for almost nothing.';
-    if (win.weeksLeft <= 1) return 'Last week of the window — if we want someone, it has to be now.';
-    return `We’ve got ${formatMoney(state.budget)} to spend. Try one of the shortcuts below to see who fits.`;
-  })();
-
   const buySection = (
     <>
       <SectionIntro
@@ -654,7 +644,6 @@ export default function TransfersScreen({
       {tab === 'search' && (
         <div role="tabpanel">
           <WindowNotice win={win} />
-          <AssistantTip text={tip} />
 
           <div className="fm-presets">
             {PRESETS.map((p) => (
@@ -1016,20 +1005,6 @@ function SectionIntro({ title, text }: { title: string; text: string }) {
     <div className="fm-sectionintro">
       <p className="fm-sectionintro__title">{title}</p>
       <p className="fm-sectionintro__text">{text}</p>
-    </div>
-  );
-}
-
-/** The assistant manager, with a voice. He says one thing, and it is the thing
- *  worth doing next. */
-function AssistantTip({ text }: { text: string }) {
-  return (
-    <div className="fm-assistant-tip">
-      <span className="fm-assistant-tip__face" aria-hidden><Icon name="staff" size={18} /></span>
-      <span>
-        <span className="fm-assistant-tip__who">Your assistant</span>
-        <span className="fm-assistant-tip__what">{text}</span>
-      </span>
     </div>
   );
 }

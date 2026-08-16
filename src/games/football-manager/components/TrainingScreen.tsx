@@ -176,6 +176,17 @@ export default function TrainingScreen({
           )}
         </div>
 
+        {/* Two sentences of plain English before anything else on the
+            screen. Everything below assumes you already know that a week
+            has two sessions and that a drill is a choice — which is the
+            one thing a first-time manager doesn't. */}
+        <p className="fm-mod__note">
+          Your squad trains twice a week and you decide what each session works on.
+          Drills make players better at what they drill; the harder the week, the more
+          they improve and the more tired they get. Check <b>Fitness</b> next door to see
+          the damage.
+        </p>
+
         {/* --- Take the session yourself ---------------------------------
             This was a small secondary button in the header, which is the
             quietest place on the screen — and it is the only thing here you

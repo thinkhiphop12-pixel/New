@@ -45,7 +45,11 @@ export default function AssistantLine({
   // being on it. `tips.ts` pushes the explainer last, since the panel reads
   // that list as a menu; inline, it is the answer to "where am I".
   const topics = assistantTopics(state, route);
-  const topic = topics.find((t) => t.urgent) ?? topics.find((t) => t.id === 'screen') ?? topics[0];
+  const topic =
+    topics.find((t) => t.urgent)
+    ?? topics.find((t) => t.id === 'here')
+    ?? topics.find((t) => t.id === 'screen')
+    ?? topics[0];
   if (!topic) return null;
 
   const mood = topic.urgent ? 'concerned' : topic.good ? 'happy' : 'neutral';

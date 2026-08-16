@@ -33,7 +33,7 @@ import {
 import { pushInbox } from './inbox';
 import { affordableWageBill, calibrateClubWages, calibrateWages, clubWageScale, tickFinances, weeklyMatchdayIncome } from './finances';
 import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
-import { tickFacilitiesWeek } from './facilities';
+import { newFacilities, newScouting, tickFacilitiesWeek } from './facilities';
 import { applyScheduleDay, applyWeeklySchedule, getSchedule } from './schedule';
 import { tickScoutNetwork } from './scouting';
 import { applyDevPlans } from './development';
@@ -528,6 +528,13 @@ export function newGame(
   // Needs club reputation, so it runs after seedClubIdentities.
   calibrateWages(state);
   ensureSquadNumbers(state);
+  // Facilities, including the assistant every career starts with. Built here
+  // rather than left to the save migration: `newGame` returns a state the UI
+  // renders immediately, and without this the assistant does not exist for
+  // the manager's first session — which is the one session his explanations
+  // are written for.
+  state.facilities = newFacilities(state);
+  state.scouting = newScouting();
   // Sanctioned wage bill: what the inherited squad costs, plus headroom.
   state.wageBudget = Math.round(weeklyWageBill(state) * WAGE_BUDGET_HEADROOM);
   state.playStyle = state.playStyle ?? state.clubs.find((c) => c.id === userClubId)?.playStyle ?? 'balanced';
