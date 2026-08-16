@@ -33,7 +33,8 @@ import { brandTheme } from '@/lib/brandTheme';
 import { ToastHost, pushToast } from './ToastQueue';
 import { Icon, IconSprite } from './Icon';
 import type { ScreenId } from './hubNav';
-import OnboardingOverlay, { hasSeenOnboarding } from './OnboardingOverlay';
+import OnboardingOverlay, { hasSeenOnboarding, markOnboardingSeen } from './OnboardingOverlay';
+import AssistantIntro from './assistant/AssistantIntro';
 import { setVolume, setMuted } from '@/lib/sound';
 import { setHaptics } from '@/lib/haptics';
 import { useKeyboardShortcuts } from '@/lib/useKeyboardShortcuts';
@@ -80,6 +81,8 @@ export default function FootballManagerGame() {
   // synchronous engine job is being run in yielded chunks; see `handlePickClub`.
   const [busy, setBusy] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  /** The assistant's hello, shown once per career ahead of the tour. */
+  const [showIntro, setShowIntro] = useState(false);
   // The FM21-style kickoff gate: non-null while the pre-match check has
   // something worth showing the manager before the match actually starts.
   const [preMatchCheck, setPreMatchCheck] = useState<PreMatchCheck | null>(null);
@@ -337,10 +340,23 @@ export default function FootballManagerGame() {
   // RotatePrompt's sessionStorage-dismiss pattern) so it never reappears once
   // seen for that career.
   useEffect(() => {
+    // The assistant asks first (AssistantIntro); the checklist only opens
+    // for a manager who says he hasn't played one of these before. Both are
+    // gated on the same per-slot flag, so answering either way retires them
+    // together for this career.
     if (view === 'hub' && gs && !hasSeenOnboarding(slot)) {
-      setShowOnboarding(true);
+      setShowIntro(true);
     }
   }, [view, gs, slot]);
+
+  // Every inline assistant line carries an "Ask him" button; this is what it
+  // reaches. A window event rather than a prop chain because the line renders
+  // deep inside individual screens, none of which own the panel.
+  useEffect(() => {
+    const open = () => setShowAssistant(true);
+    window.addEventListener('gaffa:open-assistant', open);
+    return () => window.removeEventListener('gaffa:open-assistant', open);
+  }, []);
 
   /** One tick of the daily loop. Runs the day, applies the result, and — if
    *  it produced a stop — opens the Day Summary and reports back `true` so a
@@ -796,6 +812,14 @@ export default function FootballManagerGame() {
           </div>
         );
       })()}
+
+      {showIntro && gs && (
+        <AssistantIntro
+          state={gs}
+          onTour={() => { setShowIntro(false); setShowOnboarding(true); }}
+          onSkip={() => { setShowIntro(false); markOnboardingSeen(slot); }}
+        />
+      )}
 
       {showOnboarding && (
         <OnboardingOverlay

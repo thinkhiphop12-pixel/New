@@ -4,7 +4,7 @@ import {
 } from './negotiation';
 import { clubWageBill, getSquad, squadAvgRating, wageCeiling } from './teamManagement';
 import { contractEndFor, formatMoney, clamp } from './utils';
-import { pushInbox } from './inbox';
+import { pushInbox, clearInboxAction } from './inbox';
 
 /**
  * Contract renegotiation, as a conversation.
@@ -278,6 +278,7 @@ export function submitRenewalOffer(
     sp.contractYears = offer.years;
     sp.contractEnd = contractEndFor(s.seasonYear, offer.years);
     sp.contractWarned = false;
+    clearInboxAction(s, sp.id, 'contractExpiring');
     if (offer.status !== undefined) sp.promisedStatus = offer.status;
     // A new deal settles a man who was agitating about his future.
     sp.unhappy = false;

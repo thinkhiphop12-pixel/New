@@ -13,7 +13,6 @@ import {
 } from '@/engine/schedule';
 import { assistantScheduleAdvice } from '@/engine/assistant';
 import { Icon, type IconName } from './Icon';
-import AssistantLine from './assistant/AssistantLine';
 import TrainingSessionModal from './TrainingSessionModal';
 import TrainingMiniGame from './TrainingMiniGame';
 
@@ -35,6 +34,12 @@ import TrainingMiniGame from './TrainingMiniGame';
  * week resolves at the neutral baseline, and the session still resolves in
  * the weekly tick either way. Once a week has run, "Watch last session"
  * replays what the tick recorded.
+ *
+ * Where the squad *is* — fitness, sharpness, the treatment room — used to
+ * sit at the bottom of this screen under a heading called "Condition". It
+ * is now the Fitness tab next door: the plan and its consequence are two
+ * places you can flick between rather than two ends of one scroll, and the
+ * list there is the whole squad instead of the worst five.
  *
  * The seven-day intensity strip underneath used to be its own screen
  * (Weekly Schedule) that no tab pointed at. It is the same engine
@@ -81,12 +86,6 @@ function arrowOf(n: number): IconName {
   return n > 0.05 ? 'arrow-up' : n < -0.05 ? 'arrow-down' : 'dash';
 }
 
-/** A condition percentage in words. `74%` doesn't say whether that's a
- *  problem; "Good" does. */
-function conditionWord(pct: number, good: number, ok: number): string {
-  return pct >= good ? 'Good' : pct >= ok ? 'Okay' : 'Poor';
-}
-
 /**
  * Injury risk in words.
  *
@@ -130,9 +129,6 @@ export default function TrainingScreen({
   const drills = projectTeamSessions(state);
   const risk = riskRead(intensity.overtrainRisk);
 
-  const avgFitness = squad.length ? Math.round(squad.reduce((s, p) => s + p.fitness, 0) / squad.length) : 0;
-  const avgSharpness = squad.length ? Math.round(squad.reduce((s, p) => s + p.sharpness, 0) / squad.length) : 0;
-  const injured = squad.filter((p) => p.injuryWeeks > 0).length;
   const hasMatch = nextUserFixture(state) !== null;
 
   // What a full week of the current plan does, both halves combined.
@@ -155,7 +151,6 @@ export default function TrainingScreen({
 
   return (
     <>
-      <AssistantLine state={state} route="training" />
 
       {/* --- The two sessions ------------------------------------------- */}
       {/* Each drill states what it does rather than only what it is called;
@@ -345,47 +340,6 @@ export default function TrainingScreen({
             </button>
           </div>
         )}
-      </div>
-
-      {/* --- Where the squad is ----------------------------------------- */}
-      <div className="fm-mod">
-        <div className="fm-mod__head"><h2 className="fm-mod__title">Condition</h2></div>
-        <div className="fm-condgrid">
-          {/* Each tile says the number, then what the number means. The word
-              is the part that survives being glanced at. */}
-          <div className="fm-condgrid__cell">
-            <span className="fm-condgrid__val" style={{ color: avgFitness >= 75 ? 'var(--green)' : avgFitness >= 55 ? 'var(--gold)' : 'var(--red)' }}>{avgFitness}%</span>
-            <span className="fm-condgrid__lbl">Fitness — {conditionWord(avgFitness, 75, 55)}</span>
-          </div>
-          <div className="fm-condgrid__cell">
-            <span className="fm-condgrid__val" style={{ color: avgSharpness >= 70 ? 'var(--green)' : avgSharpness >= 50 ? 'var(--gold)' : 'var(--red)' }}>{avgSharpness}%</span>
-            <span className="fm-condgrid__lbl">Sharpness — {conditionWord(avgSharpness, 70, 50)}</span>
-          </div>
-          <div className="fm-condgrid__cell">
-            <span className="fm-condgrid__val" style={{ color: injured > 2 ? 'var(--red)' : 'var(--text)' }}>{injured}</span>
-            <span className="fm-condgrid__lbl">{injured === 0 ? 'Nobody injured' : `Injured — ${injured > 2 ? 'a problem' : 'manageable'}`}</span>
-          </div>
-        </div>
-        {[...squad]
-          .filter((p) => p.injuryWeeks === 0)
-          .sort((a, b) => a.fitness - b.fitness)
-          .slice(0, 5)
-          .map((p) => (
-            <div key={p.id} className="fm-meter-row">
-              <div className="fm-meter-row__head">
-                <span>{p.name}</span>
-                <span className="fm-meter-row__value" style={{ color: p.fitness >= 75 ? 'var(--green)' : p.fitness >= 50 ? 'var(--gold)' : 'var(--red)' }}>
-                  {conditionWord(p.fitness, 75, 50)} · {Math.round(p.fitness)}%
-                </span>
-              </div>
-              <div className="fm-meter-row__track">
-                <div
-                  className="fm-meter-row__fill"
-                  style={{ width: `${Math.round(p.fitness)}%`, background: p.fitness >= 75 ? 'var(--green)' : p.fitness >= 50 ? 'var(--gold)' : 'var(--red)' }}
-                />
-              </div>
-            </div>
-          ))}
       </div>
 
       {watching && lastReport && (

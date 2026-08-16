@@ -7,7 +7,7 @@ import {
   availableSquad, clubWageBill, ensureSquadNumbers, getSquad, isOnLoan, squadAvgRating, wageCeiling,
 } from './teamManagement';
 import { clamp, contractEndFor, weeklyWage, MONEY_SCALE } from './utils';
-import { pushInbox } from './inbox';
+import { pushInbox, clearInboxAction } from './inbox';
 import { recordScenarioSale } from './scenarios';
 import type { DealClauses } from './negotiation';
 import {
@@ -220,6 +220,10 @@ export function renewContract(
   sp.wage = newWage;
   sp.contractYears += 3;
   sp.contractEnd = contractEndFor(s.seasonYear, sp.contractYears);
+  sp.contractWarned = false;
+  // The question this answers — "his deal runs out in the summer" — is now
+  // settled, so the item asking it goes with it.
+  clearInboxAction(s, sp.id, 'contractExpiring');
   if (offeredStatus !== undefined) sp.promisedStatus = offeredStatus;
   s.budget -= bonus;
   s.ledger.unshift({ week: s.week, desc: `${sp.name} contract bonus`, amount: -bonus });

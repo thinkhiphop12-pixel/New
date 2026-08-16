@@ -7,7 +7,6 @@ import { leagueName } from '@/engine/gameRules';
 import { CHAIRMAN_BLURB, CHAIRMAN_LABEL, chairmanFor } from '@/engine/jobMarket';
 import { Icon, type IconName } from './Icon';
 import { ordinalSuffix } from './visuals';
-import AssistantLine from './assistant/AssistantLine';
 
 /**
  * Job security in one screen: the three factions who can each make your job
@@ -152,8 +151,6 @@ export default function BoardObjectivesScreen({ state }: { state: GameState }) {
               : 'Miss it with the board this unhappy and you lose the job.'}
         </p>
       </div>
-
-      <AssistantLine state={state} route="board" />
 
       {/* --- Who you answer to ------------------------------------------
           Three cards, three faces, three verdicts. The paragraph that used

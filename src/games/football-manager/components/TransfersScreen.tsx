@@ -174,9 +174,6 @@ export default function TransfersScreen({
   const [confirm, setConfirm] = useState<{
     kicker: string; name: string; body: string; go: string; keep: string; run: () => void;
   } | null>(null);
-  // The two-step shape of a deal is explained once, up front, rather than
-  // only from inside a negotiation you have already opened.
-  const [showHow, setShowHow] = useState(false);
 
   const sc = state.scouting ?? newScouting();
   const shortlist = sc.shortlist;
@@ -188,15 +185,6 @@ export default function TransfersScreen({
     if (!state.scouting) { onChange({ ...state, scouting: sc }); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Shown until it is dismissed once, then never again on this device.
-  useEffect(() => {
-    try { setShowHow(localStorage.getItem('gaffa.transfers.how') !== 'seen'); } catch { /* private mode */ }
-  }, []);
-  const dismissHow = () => {
-    setShowHow(false);
-    try { localStorage.setItem('gaffa.transfers.how', 'seen'); } catch { /* private mode */ }
-  };
 
   const detail = detailId !== null ? state.players[detailId] : null;
   const negotiations = state.negotiations ?? [];
@@ -659,21 +647,6 @@ export default function TransfersScreen({
           </span>
         </div>
       </div>
-
-      {showHow && tab === 'search' && (
-        <div className="fm-howto">
-          <button className="fm-howto__close" onClick={dismissHow} aria-label="Close">
-            <Icon name="cross" size={14} />
-          </button>
-          <p className="fm-howto__title">How signing a player works</p>
-          <ol className="fm-howto__steps">
-            <li><strong>Find someone.</strong> Use a shortcut below, then check the green tags — they say if he&apos;s better than what you have and if you can afford him.</li>
-            <li><strong>Agree a price</strong> with his club. They usually say no the first time. Offer a bit more.</li>
-            <li><strong>Agree his wages.</strong> Once the clubs agree, you talk to the player. Then he&apos;s yours.</li>
-          </ol>
-          <p className="fm-howto__foot">Short of money? Borrowing a player on loan costs far less.</p>
-        </div>
-      )}
 
       {error && <p className="fm-error-text">{error}</p>}
       {notice && !error && <p className="fm-hint" style={{ color: 'var(--green-600)' }}>{notice}</p>}

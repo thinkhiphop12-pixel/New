@@ -13,7 +13,8 @@ import type { ScreenId } from '../hubNav';
 import CoachPortrait, { type CoachMood } from './CoachPortrait';
 import { assistantTopics, type AssistantTopic } from './tips';
 import {
-  answerIncomingBids, renewExpiringContracts, setLineupAndTactics, sortYouthIntake, type DelegateResult,
+  answerIncomingBids, renewalBrief, renewExpiringContracts, setLineupAndTactics, sortYouthIntake,
+  type DelegateResult,
 } from './delegate';
 
 /**
@@ -40,8 +41,16 @@ const TASKS: {
   sub: string;
   category: InboxCategory;
   run: (s: GameState) => DelegateResult;
+  /** What he says before he starts, when the job spends money. Handing him
+   *  a task used to be a single tap that committed the club to whatever he
+   *  decided; where there's a bill at the end of it he now states his limit
+   *  and waits to be told to go ahead. */
+  brief?: (s: GameState) => string;
 }[] = [
-  { id: 'renew', label: 'Renew contracts', sub: 'expiring deals', category: 'contract', run: renewExpiringContracts },
+  {
+    id: 'renew', label: 'Renew contracts', sub: 'expiring deals', category: 'contract',
+    run: renewExpiringContracts, brief: (s) => renewalBrief(s).line,
+  },
   { id: 'lineup', label: 'Set lineup & tactics', sub: 'strongest available XI', category: 'club', run: setLineupAndTactics },
   { id: 'youth', label: 'Sort youth intake', sub: 'this year’s trialists', category: 'youth', run: sortYouthIntake },
   { id: 'bids', label: 'Answer incoming bids', sub: 'offers on the table', category: 'transfer', run: answerIncomingBids },
@@ -74,6 +83,8 @@ export default function AssistantPanel({
   const [topicId, setTopicId] = useState<string>(topics[0]?.id ?? '');
   const [taskStates, setTaskStates] = useState<Partial<Record<TaskId, TaskState>>>({});
   const [report, setReport] = useState<{ title: string; lines: string[] } | null>(null);
+  /** The job he's waiting to be told to go ahead with, if any. */
+  const [pendingBrief, setPendingBrief] = useState<{ task: (typeof TASKS)[number]; line: string } | null>(null);
   const [typed, setTyped] = useState('');
   const [asked, setAsked] = useState<Set<string>>(new Set());
 
@@ -124,9 +135,18 @@ export default function AssistantPanel({
   };
 
   /* --- Handing him a job ------------------------------------------------- */
-  const runTask = (task: (typeof TASKS)[number]) => {
+  /** Tapping a job with a brief opens his terms first; everything else runs
+   *  straight away, since there's nothing to approve. */
+  const startTask = (task: (typeof TASKS)[number]) => {
     if (taskStates[task.id]) return;
     sfx.click();
+    if (task.brief) { setPendingBrief({ task, line: task.brief(state) }); return; }
+    runTask(task);
+  };
+
+  const runTask = (task: (typeof TASKS)[number]) => {
+    if (taskStates[task.id] === 'running' || taskStates[task.id] === 'done') return;
+    setPendingBrief(null);
     setTaskStates((s) => ({ ...s, [task.id]: 'running' }));
 
     window.setTimeout(() => {
@@ -244,7 +264,7 @@ export default function AssistantPanel({
                         key={task.id}
                         type="button"
                         className={`fm-job${st === 'running' ? ' running' : ''}${st === 'done' ? ' done' : ''}`}
-                        onClick={() => runTask(task)}
+                        onClick={() => startTask(task)}
                         disabled={off || st !== 'idle'}
                       >
                         <span className="fm-job__top">
@@ -259,6 +279,30 @@ export default function AssistantPanel({
                   })}
                 </div>
               </>
+            )}
+
+            {/* His terms, waiting on a yes. Deliberately the same voice as
+                the bubble above — this is him talking, not a dialog. */}
+            {pendingBrief && (
+              <div className="fm-brief">
+                <p className="fm-brief__quote">&ldquo;{pendingBrief.line}&rdquo;</p>
+                <div className="fm-brief__actions">
+                  <button
+                    type="button"
+                    className="fm-btn fm-btn--primary fm-btn--small"
+                    onClick={() => runTask(pendingBrief.task)}
+                  >
+                    Yes, go ahead
+                  </button>
+                  <button
+                    type="button"
+                    className="fm-btn fm-btn--ghost fm-btn--small"
+                    onClick={() => setPendingBrief(null)}
+                  >
+                    Leave it
+                  </button>
+                </div>
+              </div>
             )}
 
             {report && (

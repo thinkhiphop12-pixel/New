@@ -819,6 +819,15 @@ body {
   color: var(--green); margin: 0;
 }
 .fm-mod--gold .fm-mod__title { color: var(--gold); }
+/* Right-aligned counter/qualifier beside a module title ("12 out",
+   "Tiredest first") — says what the list below is, without a second row. */
+.fm-mod__hint { margin-left: auto; font-size: 10.5px; font-weight: 700; color: var(--muted-dim); }
+/* One or two sentences of plain-English explanation under a module's
+   numbers. Deliberately not muted to the point of being skippable — on the
+   screens that teach something, this is the part being taught. */
+.fm-mod__note { margin: 8px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.fm-mod__note b { color: var(--text); }
+.fm-empty { margin: 10px 0 2px; font-size: 12.5px; color: var(--muted-dim); font-style: italic; }
 
 /* ── Bottom ad slot (site-wide ads.js fills `.ad-slot` at runtime) ──
    In-flow, never fixed, so it can never sit on top of `.fm-matchx`'s own
@@ -2828,22 +2837,12 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-moneybar__value.is-out { color: var(--red); }
 
-/* ── How-it-works card: shown once, then dismissed for good ── */
-.fm-howto {
-  position: relative; background: var(--panel); border: 1px solid var(--border-soft);
-  border-left: 3px solid var(--gold); border-radius: var(--r-lg);
-  padding: 12px 40px 12px 14px; margin-bottom: 12px;
-}
-.fm-howto__close {
-  position: absolute; top: 8px; right: 8px; display: flex; padding: 6px;
-  background: transparent; border: none; color: var(--muted); cursor: pointer;
-}
-.fm-howto__close:hover { color: var(--text); }
-.fm-howto__title { font-size: 13px; font-weight: 900; margin: 0 0 6px; }
-.fm-howto__steps { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
-.fm-howto__steps li { font-size: 11.5px; line-height: 1.45; color: var(--muted); }
-.fm-howto__steps strong { color: var(--text); }
-.fm-howto__foot { font-size: 11.5px; color: var(--muted); margin: 8px 0 0; }
+/* The Transfers "How signing a player works" card is gone — it collided
+   with the two other `.fm-howto` definitions in this file (a numbered-step
+   card at the bottom of the sheet, a plain list near the top), and the
+   winning mix rendered its `<ol>` markers on top of its own bold lead-ins.
+   The screen explains itself through the assistant's line and the preset
+   shortcuts instead. */
 
 /* ── Sort row above the market list ── */
 .fm-sortrow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -3982,6 +3981,16 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-jobreport p:last-child { margin: 0; }
 .fm-jobreport__title { color: var(--green-600) !important; font-weight: 800; }
 
+/* His terms before he starts a job that spends money — the gold rule marks
+   it as a question rather than the green of a finished report. */
+.fm-brief {
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-left: 2px solid var(--gold); border-radius: var(--r-sm);
+  padding: 11px 13px; margin-top: 8px;
+}
+.fm-brief__quote { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--text-2); font-style: italic; }
+.fm-brief__actions { display: flex; gap: 8px; margin-top: 10px; }
+
 @media (prefers-reduced-motion: reduce) {
   .fm-coach-portrait, .fm-bubble__caret, .fm-job.done .fm-job__stamp { animation: none; }
   .fm-job__bar { transition: none; }
@@ -4152,6 +4161,11 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-assistline.is-urgent { border-left-color: var(--red); }
 .fm-assistline.is-good { border-left-color: var(--green); }
 .fm-assistline__body { min-width: 0; flex: 1; }
+/* Jump + "Ask him", stacked on a phone and side by side once there's room.
+   `flex-shrink: 0` so the buttons keep their labels while the sentence
+   beside them wraps. */
+.fm-assistline__actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+@media (min-width: 560px) { .fm-assistline__actions { flex-direction: row; align-items: center; } }
 .fm-assistline__who {
   display: flex; align-items: center; gap: 8px;
   margin: 0; font-size: 11px; font-weight: 800; color: var(--muted);
@@ -4233,4 +4247,147 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-staffcard__who {
   display: block; font-size: 9.5px; font-weight: 800; letter-spacing: 0.4px;
   text-transform: uppercase; color: var(--muted-dim); font-style: normal; margin-bottom: 2px;
+}
+
+/* =====================================================================
+   Landscape phone — short viewport
+   =====================================================================
+   A phone turned sideways is ~900–960px wide and ~390–440px tall. Every
+   breakpoint in this file above is a *width* query, so that device picks
+   up the desktop tier: 1100px-wide cards, a 52px header, 14px module
+   padding and 18–24px headings, all sized for a screen with 900px of
+   height to spend. On a landscape phone that means the club header and
+   the Next Match card alone fill the viewport, and everything else —
+   including the tabs a player is looking for — is below the fold.
+
+   So this block keys off `max-height` instead. It changes no layout
+   structure and no interaction: it only compresses the vertical rhythm
+   (header, sticky offsets, card padding, gaps, type) and trims the wide
+   tier's page width back to something readable at arm's length. Tap
+   targets stay at their real size — `--tap-min` is deliberately untouched,
+   because a cramped screen is exactly where a 32px button starts getting
+   missed.
+
+   Placed last in the file so it wins over the width tiers at equal
+   specificity. `max-height: 560px` catches every phone in landscape and
+   no tablet; the `orientation` half keeps it away from a short, wide
+   desktop window where the width tiers are still the right answer. */
+@media (orientation: landscape) and (max-height: 560px) {
+  /* Page width: the 1100/1200px tiers assume a desktop viewing distance.
+     Back to the reading-width cap, which also shortens every wrapped line
+     and so buys back height. */
+  .fm-screen, .fm-view-fade, .fm-bottom-ad, .fm-actiondock { max-width: 900px; }
+  .fm-main { padding: 8px 12px 64px; }
+  .fm-screen, .fm-hub-panel { gap: 8px; }
+
+  /* Chrome. The header and both sticky offsets move together — they are
+     one measurement in three places, and a mismatch leaves either a gap of
+     background above the tabs or the tabs tucked under the header. */
+  .fm-header { height: 40px; padding-left: 12px; padding-right: 12px; }
+  .fm-subnav { top: 40px; padding: 5px 0 4px; margin-top: -5px; }
+  .fm-rail { top: 48px; padding: 6px 4px; gap: 1px; }
+  .fm-rail__item { padding: 5px 2px; gap: 1px; }
+  .fm-rail__icon { width: 16px; height: 16px; }
+  .fm-rail__label { font-size: 8.5px; }
+  .fm-subtab { padding: 5px 11px; font-size: 11.5px; min-height: 34px; }
+
+  /* Cards and modules. */
+  .fm-mod { padding: 8px 11px; border-radius: var(--r-lg); }
+  .fm-mod__head { margin-bottom: 5px; }
+  .fm-hub-grid, .fm-hubcards, .fm-hub-top, .fm-hub-top__main { gap: 8px; }
+  .fm-hubnews, .fm-hubtable, .fm-hubcal { padding: 8px 11px; }
+
+  /* Club header strip — the single biggest block of height on Home. */
+  .fm-portal { gap: 8px; }
+  .fm-portal__header { padding: 8px 11px; }
+  .fm-portal__club-badge { flex: 0 0 38px; height: 38px; padding: 6px; font-size: 9.5px; }
+  .fm-portal__club-name { font-size: 14px; }
+  .fm-portal__club-meta { font-size: 10.5px; }
+  .fm-portal__week-badge { padding: 4px 8px; }
+  .fm-portal__week-badge .week-num { font-size: 14px; }
+
+  /* Next match: the crests and the two names are the content; the padding
+     around them was most of the card. */
+  .fm-card__fixture { gap: 10px; margin-bottom: 6px !important; }
+  .fm-card__team { gap: 4px; }
+  .fm-card__team-name { font-size: 12px !important; }
+  .fm-card__team-label { font-size: 8.5px; }
+  .fm-portal__actions, .fm-actions { gap: 6px; }
+
+  /* Buttons keep a thumb-sized target; only the padding around the label
+     comes off, so a row of them stops being 60px tall. */
+  .fm-btn { padding: 8px 14px; font-size: 12.5px; min-height: var(--tap-min); }
+  .fm-btn--small { padding: 5px 10px; font-size: 11px; min-height: 34px; }
+
+  /* Stat blocks: the number stays legible, the label tightens. */
+  .fm-condgrid { gap: 6px; margin-bottom: 8px; }
+  .fm-condgrid__val { font-size: 16px; }
+  .fm-stat-tile__value, .fm-pulse__val { font-size: 16px; }
+  .fm-meter-row { padding: 5px 0; }
+  .fm-meter-row__head { font-size: 12px; margin-bottom: 3px; }
+
+  /* The assistant's line is on nearly every screen, so its portrait is a
+     fixed cost on all of them. */
+  .fm-assistline { padding: 7px 10px; gap: 8px; }
+  .fm-assistline__quote { font-size: 12px; }
+
+  /* A 132px reservation for the phone dock is portrait-only maths; in
+     landscape the rail is the sticky column again and nothing is fixed to
+     the bottom but the action dock. */
+  .fm-bottom-ad { margin: 10px auto 16px; }
+
+  /* Contract editor. Its own breakpoint is `max-width: 1023px`, which a
+     landscape phone satisfies — so it collapsed the three columns into one
+     tall stack and then asked a 440px-high viewport to scroll it, which is
+     what made a screen that reads perfectly in portrait unusable turned
+     sideways. Sideways there is width and no height, so the columns go
+     back and the panel fills the viewport with the decision buttons
+     pinned to the bottom of it rather than at the end of a scroll. */
+  .fm-contract-overlay { align-items: stretch; padding: 8px; }
+  .fm-contract-overlay .fm-contract-panel {
+    max-height: calc(100dvh - 16px); padding: 10px 12px;
+    display: flex; flex-direction: column;
+  }
+  .fm-contract-grid { grid-template-columns: 1fr 1.3fr 1fr; gap: 10px; margin-top: 10px; flex: 1; min-height: 0; overflow: auto; }
+  .fm-contract-card { padding: 10px; }
+  .fm-contract-card h3 { margin-bottom: 8px; }
+  .fm-contract-header { padding-bottom: 10px; gap: 10px; }
+  .fm-contract-header h2 { font-size: 15px; }
+  .fm-contract-avatar { width: 34px; height: 34px; font-size: 15px; }
+  .fm-contract-header__rating strong { font-size: 17px; }
+  .fm-contract-stat { margin-bottom: 10px; }
+  .fm-contract-field { margin-bottom: 8px; }
+  .fm-contract-control { height: 34px; }
+  .fm-contract-mood { margin-top: 10px; padding: 8px; }
+  .fm-contract-footer { margin-top: 10px; flex-wrap: nowrap; }
+  .fm-contract-footer .fm-btn { min-width: 96px; }
+
+  /* Same story for every other centred sheet: fill the height and scroll
+     inside, instead of overflowing a viewport shorter than the dialog. */
+  .fm-modal, .fm-renewal-panel { max-height: calc(100dvh - 16px); }
+}
+
+/* ── The assistant's hello, first run of a career ──
+   components/assistant/AssistantIntro.tsx. Deliberately not styled like the
+   old "How to play" modal: a face, a name, one question and two plain
+   answers, so the first interaction in the game is a conversation. */
+.fm-intro { max-width: 440px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.fm-intro__who { display: flex; align-items: center; gap: 12px; }
+.fm-intro__name { margin: 0; font-size: 16px; font-weight: 900; }
+.fm-intro__role { margin: 2px 0 0; font-size: 11.5px; color: var(--muted); }
+.fm-intro__quote {
+  margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-2);
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+  border-left: 2px solid var(--brand); border-radius: var(--r-md); padding: 11px 13px;
+  min-height: 96px;
+}
+.fm-intro__answers { display: flex; flex-direction: column; gap: 8px; }
+.fm-intro__answers .fm-btn { width: 100%; justify-content: center; }
+.fm-intro__foot { margin: 0; font-size: 11px; color: var(--muted-dim); text-align: center; }
+/* Sideways, the two answers sit next to the quote rather than under it —
+   stacked, they land below the fold of a 440px-high viewport. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .fm-intro { max-width: 620px; gap: 8px; padding: 12px; }
+  .fm-intro__quote { min-height: 0; font-size: 13px; padding: 9px 11px; }
+  .fm-intro__answers { flex-direction: row; }
 }

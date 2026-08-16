@@ -44,6 +44,12 @@ export function groundCapacityCap(state: GameState, clubId: number): number {
   return Math.max(9000, Math.min(90_000, Math.round((seatsBase / 10) / 100) * 100));
 }
 
+/** The assistant every save begins with. Named here rather than drawn from
+ *  COACH_NAMES so he is the same man in every career — he introduces
+ *  himself by name on the first screen, and a manager who restarts should
+ *  meet the same person. */
+export const STARTING_ASSISTANT_NAME = 'Karl Voss';
+
 function emptyStand(id: StandId): Stand {
   return { id, tier: 0, type: 'seating', capacity: 0 };
 }
@@ -63,10 +69,22 @@ export function newFacilities(state: GameState): FacilitiesState {
     trainingLevel: 1,
     medicalLevel: 1,
     academyReputation: 20,
-    coaches: [],
+    // Every club starts with an assistant already on the staff.
+    //
+    // He was previously a hire like any other: sanction from the board,
+    // then a coach from the market. Which meant a new manager's first
+    // hours — exactly the hours where his line on each screen is the
+    // difference between understanding a screen and bouncing off it — were
+    // the hours he did not exist for. `AssistantLine` renders nothing
+    // without one, so the tutorial voice was missing from the tutorial.
+    //
+    // He is inherited, not chosen: a serviceable club man on a small wage,
+    // and the manager is free to replace him from Club → Staff like any
+    // other role. `nextCoachId` starts at 2 because he is coach 1.
+    coaches: [{ id: 1, name: STARTING_ASSISTANT_NAME, role: 'assistant', quality: 48, wage: Math.round((400 + 48 * 45) * MONEY_SCALE) }],
     projects: [],
     nextProjectId: 1,
-    nextCoachId: 1,
+    nextCoachId: 2,
   };
 }
 

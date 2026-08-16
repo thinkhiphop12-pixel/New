@@ -39,7 +39,13 @@ export default function AssistantLine({
   const assistant = getAssistant(state);
   if (!assistant) return null;
 
-  const topic = assistantTopics(state, route)[0];
+  // What he leads with here. Anything urgent still wins — a broken lineup
+  // is more use than a description of the screen you're looking at — but on
+  // a quiet screen he explains the screen, which is the whole point of him
+  // being on it. `tips.ts` pushes the explainer last, since the panel reads
+  // that list as a menu; inline, it is the answer to "where am I".
+  const topics = assistantTopics(state, route);
+  const topic = topics.find((t) => t.urgent) ?? topics.find((t) => t.id === 'screen') ?? topics[0];
   if (!topic) return null;
 
   const mood = topic.urgent ? 'concerned' : topic.good ? 'happy' : 'neutral';
@@ -60,15 +66,28 @@ export default function AssistantLine({
         </p>
         <p className="fm-assistline__quote">&ldquo;{topic.line}&rdquo;</p>
       </div>
-      {jump && (
+      <div className="fm-assistline__actions">
+        {jump && (
+          <button
+            type="button"
+            className="fm-btn fm-btn--secondary fm-btn--small"
+            onClick={() => onRoute!(jump)}
+          >
+            Show me
+          </button>
+        )}
+        {/* Everything he knows is one tap from wherever you are. The event
+            is caught by FootballManagerGame, which owns the panel — the
+            alternative was threading an opener through HubScreen and every
+            screen component that renders this line. */}
         <button
           type="button"
-          className="fm-btn fm-btn--secondary fm-btn--small"
-          onClick={() => onRoute!(jump)}
+          className="fm-btn fm-btn--ghost fm-btn--small"
+          onClick={() => window.dispatchEvent(new Event('gaffa:open-assistant'))}
         >
-          Show me
+          Ask {assistant.name.split(' ')[0]}
         </button>
-      )}
+      </div>
     </div>
   );
 }

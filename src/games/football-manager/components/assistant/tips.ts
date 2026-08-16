@@ -33,10 +33,46 @@ export interface AssistantTopic {
   good?: boolean;
 }
 
-/** What this screen is for, reusing the guided tour's own copy rather than a
- *  second set of explainer lines that would drift from it. */
+/**
+ * What each screen is for, in his voice.
+ *
+ * Every screen in the game gets a line here — the guided tour only covers
+ * five of them, so anywhere else "What is this screen?" either fell back to
+ * nothing or was missing from the chip list entirely, which is precisely
+ * the screen a new manager is most likely to be lost on.
+ *
+ * The register is fixed: what the screen is for, what you do on it, and
+ * what happens if you ignore it. No jargon that isn't explained in the same
+ * sentence — a ten-year-old who watches football should be able to read any
+ * one of these and know what to press.
+ */
+const SCREEN_HELP: Record<ScreenId, string> = {
+  overview: "Your home page. The next match, anything waiting on a decision, and how the league looks. If you only check one screen a week, check this one.",
+  inbox: "Your messages. Anything the club needs you to answer ends up here — contracts running out, players sulking, bids from other clubs.",
+  calendar: "Every date that matters — matches, the transfer window, the end of the season. You can skip forward to any day on it.",
+  squad: "Your players, and what each one is good at. Tap a name for his full card: how good he is, how happy he is, how long he's signed for.",
+  tactics: "Where you pick your eleven and how you want to play. Get this wrong and we can't play at all — the game won't let you start a match a man short.",
+  training: "What the lads work on each week. Two sessions: pick what each one drills. Hard weeks make them better but tire them out; easy weeks freshen them up.",
+  fitness: "How fresh everybody is. Fitness is what's left in the legs, sharpness is match rhythm. Anyone in the red shouldn't be starting on Saturday.",
+  'one-to-one': "Four players a week get extra work one-to-one with a coach. It's free improvement — leaving the slots empty is throwing it away.",
+  academy: "The club's own kids. Once a year a handful turn up on trial, I give you my verdict on each, and you decide who we keep.",
+  transfers: "Buying and selling. Agree a fee with his club first, then agree wages with him. They almost always say no the first time — go again.",
+  scouting: "Send scouts to watch players before you spend money on them. A scouted player's numbers are the real ones; an unscouted player's are a guess.",
+  jobs: "Other clubs' vacancies. Worth a look if our board has run out of patience with you — better to jump than be pushed.",
+  board: "What the people upstairs expect from you this season, and how happy they are. Fall behind on this and the job stops being yours.",
+  staff: "Your backroom. Better coaches mean faster improvement in training; a better physio gets injured players back sooner. The board pays, so ask them first.",
+  facilities: "The ground and the training pitches. Upgrades cost money now and pay you back over years — bigger crowds, better young players.",
+  finances: "Money in, money out. Wages are the bill that never stops, so watch that one first.",
+  table: "The league. Top of it is where the promotions are, bottom of it is where the sackings are.",
+  fixtures: "Who we play next, and who we've already played. Handy for spotting a hard run coming up so you can rest people before it.",
+  cups: "The cup. One bad afternoon and you're out, which is what makes it worth winning.",
+  european: "Europe. Midweek games against clubs from other countries — big money, and a squad stretched thin.",
+};
+
+/** What this screen is for. The guided tour's own copy wins where it exists,
+ *  so the tour and the assistant can never drift apart on those screens. */
 function screenExplainer(route: ScreenId): string | undefined {
-  return STEPS.find((s) => s.route === route)?.body;
+  return STEPS.find((s) => s.route === route)?.body ?? SCREEN_HELP[route];
 }
 
 function noAssistant(route: ScreenId): AssistantTopic[] {

@@ -3,9 +3,9 @@ import {
   continentalEntrants, makeBoardObjective, makeContinental, makeDomesticCup, refillPhantomPools,
 } from '@/engine/seasonProgression';
 import { LEAGUES, getLeague, leagueIdForDivision } from '@/engine/gameRules';
-import { contractEndFor, rollRetireAge, weeklyWage } from '@/engine/utils';
+import { contractEndFor, MONEY_SCALE, rollRetireAge, weeklyWage } from '@/engine/utils';
 import { seedClubIdentities } from '@/engine/clubIdentity';
-import { newFacilities, newScouting } from '@/engine/facilities';
+import { newFacilities, newScouting, STARTING_ASSISTANT_NAME } from '@/engine/facilities';
 import { clubKit } from '@/lib/clubColors';
 import { compressToUTF16, decompressFromUTF16, WORKER_SOURCE } from '@/lib/lz';
 import { idbDelete, idbGet, idbPut } from '@/lib/idb';
@@ -226,6 +226,18 @@ function migrate(raw: RawSave): GameState {
   // there is nothing lossy about back-filling this way.
   if (!s.facilities) s.facilities = newFacilities(s);
   if (!s.scouting) s.scouting = newScouting();
+  // Every career now begins with an assistant on the staff (engine/
+  // facilities.ts). A save made before that has a facilities block already,
+  // so the line above won't fire — back-fill him, or the assistant's
+  // on-screen advice stays invisible for the rest of that career.
+  if (!s.facilities.coaches.some((c) => c.role === 'assistant')) {
+    const id = s.facilities.nextCoachId;
+    s.facilities.coaches = [
+      ...s.facilities.coaches,
+      { id, name: STARTING_ASSISTANT_NAME, role: 'assistant', quality: 48, wage: Math.round((400 + 48 * 45) * MONEY_SCALE) },
+    ];
+    s.facilities.nextCoachId = id + 1;
+  }
   if (staleV7) s.version = 7;
   return s;
 }

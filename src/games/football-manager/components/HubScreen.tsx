@@ -17,11 +17,13 @@ import BoardObjectivesScreen from './BoardObjectivesScreen';
 import JobMarketScreen from './JobMarketScreen';
 import EuropeanScreen from './EuropeanScreen';
 import TrainingScreen from './TrainingScreen';
+import FitnessScreen from './FitnessScreen';
 import OneToOneScreen from './OneToOneScreen';
 import StaffHubScreen from './StaffHubScreen';
 import ScoutingScreen from './ScoutingScreen';
 import YouthAcademyScreen from './YouthAcademyScreen';
 import { Icon } from './Icon';
+import AssistantLine from './assistant/AssistantLine';
 import {
   GROUPS,
   firstScreenOf,
@@ -135,6 +137,7 @@ export default function HubScreen({
       case 'squad': return <SquadScreen state={state} onChange={onChange} />;
       case 'tactics': return <TacticsScreen state={state} onChange={onChange} />;
       case 'training': return <TrainingScreen state={state} onChange={onChange} />;
+      case 'fitness': return <FitnessScreen state={state} />;
       case 'one-to-one': return <OneToOneScreen state={state} onChange={onChange} />;
       case 'transfers': return <TransfersScreen state={state} onChange={onChange} />;
       case 'scouting': return <ScoutingScreen state={state} onChange={onChange} />;
@@ -229,6 +232,13 @@ export default function HubScreen({
           aria-labelledby={`fm-subtab-${activeRoute}`}
           tabIndex={-1}
         >
+          {/* The assistant's line, once, for every screen in the hub.
+              Four screens used to render it themselves and the other
+              fifteen went without — including the ones a new manager is
+              most likely to be lost on. It lives here so "every screen is
+              explained" is a property of the shell rather than something
+              each screen has to remember to opt into. */}
+          <AssistantLine state={state} route={activeRoute} onRoute={onRoute} />
           {screen()}
         </div>
       </div>
