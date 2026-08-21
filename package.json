@@ -9,7 +9,11 @@
     "dev": "node scripts/preview-server.mjs",
     "build": "npm -w src/games/football-manager run export:static",
     "export": "npm -w src/games/football-manager run export:static",
-    "dev:game": "npm -w src/games/football-manager run dev"
+    "dev:game": "npm -w src/games/football-manager run dev",
+    "seo": "node scripts/seo-bot/index.mjs",
+    "seo:fix": "node scripts/seo-bot/index.mjs --fix",
+    "seo:live": "node scripts/seo-bot/index.mjs --live",
+    "seo:test": "node --test scripts/seo-bot/test.mjs"
   },
   "devDependencies": {
     "playwright": "^1.62.0"

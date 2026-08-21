@@ -1,0 +1,189 @@
+# BALLKNW SEO bot.
+#
+# Three things happen here:
+#
+#   * on a pull request that touches the site, the bot audits the result and
+#     fails the check if the change would ship an SEO error;
+#   * every Monday it re-audits the repo *and* the deployed site, applies the
+#     fixes it can derive, and opens a pull request with them;
+#   * either way the full report lands in the run's job summary.
+#
+# The weekly run fails when it finds errors it cannot fix. That is deliberate:
+# a failed scheduled workflow emails the repo owner, which is the notification
+# channel we get without wiring up anything else.
+
+name: SEO bot
+
+on:
+  pull_request:
+    paths:
+      - '**.html'
+      - 'sitemap.xml'
+      - 'robots.txt'
+      - 'llms.txt'
+      - 'vercel.json'
+      - 'content/**'
+      - 'scripts/seo-bot/**'
+  push:
+    branches: [claude/build-vnqqbp]
+    paths:
+      - '**.html'
+      - 'sitemap.xml'
+      - 'robots.txt'
+      - 'scripts/seo-bot/**'
+  schedule:
+    # Mondays, 07:00 UTC.
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+    inputs:
+      live:
+        description: 'Also check the deployed URLs'
+        type: boolean
+        default: true
+      fix:
+        description: 'Apply fixes and open a pull request'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seo-bot-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The bot rewrites committed files, so its own tests gate everything else.
+  test:
+    name: Bot self-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test scripts/seo-bot/test.mjs
+
+  # On a pull request: report, and fail on errors. Never writes to the branch.
+  audit:
+    name: Audit
+    needs: test
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The sitemap fixer reads lastmod from commit dates.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Audit the site
+        id: audit
+        run: |
+          set +e
+          node scripts/seo-bot/index.mjs --format=markdown --out=seo-report.md --quiet
+          echo "status=$?" >> "$GITHUB_OUTPUT"
+          node scripts/seo-bot/index.mjs --format=console --severity=warn
+
+      - name: Publish the report
+        if: always()
+        run: cat seo-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail on SEO errors
+        if: steps.audit.outputs.status != '0'
+        run: |
+          echo "::error::The SEO bot found errors. See the job summary for the full report."
+          exit 1
+
+  # Weekly (and on demand): fix what is derivable, open a pull request.
+  maintain:
+    name: Fix and report
+    needs: test
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run the bot
+        id: run
+        env:
+          # Live checks on the schedule and when asked for; never on a push,
+          # where the deploy has not landed yet and would report stale state.
+          LIVE: ${{ (github.event_name == 'schedule' || inputs.live) && '--live' || '' }}
+          FIX: ${{ (github.event_name != 'workflow_dispatch' || inputs.fix) && '--fix' || '' }}
+        run: |
+          set +e
+          node scripts/seo-bot/index.mjs $FIX $LIVE --format=markdown --out=seo-report.md --quiet
+          echo "status=$?" >> "$GITHUB_OUTPUT"
+          node scripts/seo-bot/index.mjs --format=console --severity=warn
+          if [ -n "$(git status --porcelain -- ':!seo-report.md')" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish the report
+        if: always()
+        run: cat seo-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open a pull request with the fixes
+        if: steps.run.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          BRANCH="seo-bot/auto-fix"
+
+          git config user.name  "seo-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # One long-lived branch, reset to base each run, so repeated runs
+          # update a single pull request instead of stacking new ones.
+          git checkout -B "$BRANCH"
+          rm -f seo-report.md
+          git add -A
+          git commit -m "Apply automated SEO fixes
+
+          Generated by the SEO bot (.github/workflows/seo-bot.yml).
+          Canonical URLs, the robots.txt sitemap declaration and sitemap.xml
+          are derived from the pages in the repo; no copy was rewritten."
+          git push --force-with-lease -u origin "$BRANCH"
+
+          if gh pr view "$BRANCH" --json number --jq .number >/dev/null 2>&1; then
+            echo "Pull request already open; the push updated it."
+          else
+            gh pr create \
+              --base "$BASE" \
+              --head "$BRANCH" \
+              --title "Automated SEO fixes" \
+              --body "$(cat <<'BODY'
+          The SEO bot found issues it could fix safely and applied them.
+
+          It only writes values that are derivable from a page's own location —
+          canonical URLs, `og:url`, the `url` inside Article JSON-LD, the
+          `Sitemap:` line in `robots.txt`, and `sitemap.xml`. It never rewrites
+          titles, descriptions or body copy; those are reported for a human.
+
+          Run the same audit locally with `npm run seo`.
+
+          ---
+          _Generated by [Claude Code](https://claude.ai/code)_
+          BODY
+          )"
+          fi
+
+      - name: Fail if errors remain
+        if: steps.run.outputs.status != '0'
+        run: |
+          echo "::error::The SEO bot found errors it cannot fix automatically. See the job summary."
+          exit 1
