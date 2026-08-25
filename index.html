@@ -202,6 +202,13 @@ body::before{
 
 /* ── SECTIONS ── */
 .section{position:relative;z-index:1;padding:44px 0 52px}
+/* Section rhythm variants, replacing what were per-element inline overrides. */
+.section-flush{padding-top:0;padding-bottom:0}
+.section-play{padding-top:24px}
+.section-stacked{padding-top:10px}
+.section-foot{margin-top:14px;text-align:center}
+/* On this page every section header is centred. */
+.section-head{text-align:center}
 
 /* "Start here" guide links. A six-item list with a dash after every title read
    as filler; as a two-column card grid each guide gets its own target. */
@@ -341,7 +348,10 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 .foot-links a{color:var(--muted);font-size:12.5px;padding:9px 7px;display:flex;align-items:center;min-height:40px;transition:color .15s}
 .foot-links a:hover{color:var(--white)}
 .foot-meta{color:var(--muted);font-size:11px;margin-top:12px;line-height:1.6}
+.foot-meta + .foot-meta{margin-top:6px}
 .foot-meta a{color:var(--muted)}
+.foot-meta .foot-cta{color:var(--lime);font-weight:700}
+.foot-meta .foot-cta:hover{color:var(--white)}
 .foot-meta a:hover{color:var(--white)}
 
 /* ── MOBILE 2x2 TRUST ── */
@@ -462,7 +472,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 </section>
 
 <!-- TRUST STRIP -->
-<section class="section" style="padding-top:0;padding-bottom:0">
+<section class="section section-flush">
   <div class="wrap">
     <div class="trust">
       <div class="stat"><div class="num lime">12,600+</div><div class="lbl">Players rated</div></div>
@@ -474,7 +484,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 </section>
 
 <!-- GAME EMBED -->
-<section id="play" class="section" style="padding-top:24px">
+<section id="play" class="section section-play">
   <div class="wrap">
     <div class="game-embed">
       <iframe src="/gaffa/" title="BALLKNW Gaffa" loading="lazy" allow="fullscreen"></iframe>
@@ -487,9 +497,9 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 </section>
 
 <!-- HOW IT WORKS -->
-<section class="section" style="padding-top:10px">
+<section class="section section-stacked">
   <div class="wrap">
-    <div class="section-head" style="text-align:center">
+    <div class="section-head">
       <div class="eyebrow">How it works</div>
       <h2>Four steps to kickoff</h2>
     </div>
@@ -528,9 +538,9 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 
 <!-- MOST-READ GUIDES: the pages with real search demand, linked prominently
      rather than buried in the footer list. See content/keyword-audit-2026-08.md -->
-<section class="section" style="padding-top:10px">
+<section class="section section-stacked">
   <div class="wrap">
-    <div class="section-head" style="text-align:center">
+    <div class="section-head">
       <h2>Start here</h2>
     </div>
     <ul class="start-grid">
@@ -559,14 +569,14 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <span class="sg-desc">Loading tactics, going on holiday, the editor, and system requirements.</span>
       </a></li>
     </ul>
-    <p class="foot-meta" style="margin-top:14px;text-align:center"><a href="/football-guides.html" style="color:var(--lime);font-weight:700">All football guides &amp; explainers →</a></p>
+    <p class="foot-meta section-foot"><a href="/football-guides.html" class="foot-cta">All football guides &amp; explainers →</a></p>
   </div>
 </section>
 
 <!-- FAQ -->
 <section id="faq" class="section">
   <div class="wrap">
-    <div class="section-head" style="text-align:center">
+    <div class="section-head">
       <h2>Quick answers</h2>
     </div>
     <div class="faq-list">
@@ -633,14 +643,14 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <a href="/football-guides.html">Guides</a>
         <a href="/privacy.html">Privacy</a>
         <a href="/terms.html">Terms</a>
-        <a href="#" id="cookieSettingsBtn">Cookie settings</a>
+        <button type="button" class="btn-link cookie-settings-link" id="cookieSettingsBtn">Cookie settings</button>
         <a href="mailto:thinkhiphop12@gmail.com">Contact</a>
       </nav>
     </div>
     <p class="foot-meta">Made for football heads. Data from public sources. © BALLKNW · ballknw.com · Updated July 8, 2026</p>
-    <p class="foot-meta" style="margin-top:6px"><a href="/football-guides.html" style="color:var(--lime);font-weight:700">All 50 football guides &amp; explainers →</a></p>
-    <p class="foot-meta" style="margin-top:6px">Explainers: <a href="/football-terms.html" style="color:var(--muted)">Football terms glossary</a> · <a href="/what-is-a-gaffer-in-football.html" style="color:var(--muted)">What is a gaffer?</a> · <a href="/what-is-a-false-9.html" style="color:var(--muted)">What is a false 9?</a> · <a href="/what-is-a-low-block-in-football.html" style="color:var(--muted)">What is a low block?</a> · <a href="/what-is-a-number-10-in-football.html" style="color:var(--muted)">Number 10</a> · <a href="/what-is-a-regista-in-football.html" style="color:var(--muted)">Regista</a> · <a href="/what-is-a-trequartista-in-football.html" style="color:var(--muted)">Trequartista</a> · <a href="/what-is-a-high-press-in-football.html" style="color:var(--muted)">High press</a> · <a href="/what-is-tiki-taka-in-football.html" style="color:var(--muted)">Tiki-taka</a> · <a href="/what-is-expected-goals-xg-in-football.html" style="color:var(--muted)">What is xG?</a></p>
-    <p class="foot-meta" style="margin-top:6px">Guides: <a href="/free-football-manager.html" style="color:var(--muted)">Best free football manager games</a> · <a href="/gaffer-guide.html" style="color:var(--muted)">Gaffa strategy</a> · <a href="/best-football-manager-games-pc.html" style="color:var(--muted)">Best FM games on PC</a> · <a href="/best-football-manager-games-android.html" style="color:var(--muted)">Android</a> · <a href="/best-football-manager-games-iphone.html" style="color:var(--muted)">iPhone</a> · <a href="/football-manager-26.html" style="color:var(--muted)">Football Manager 26 explained</a> · <a href="/what-does-a-football-manager-do.html" style="color:var(--muted)">What does a football manager do?</a> · <a href="/how-to-become-a-football-manager.html" style="color:var(--muted)">How to become a football manager</a> · <a href="/football-manager-pa-ca-explained.html" style="color:var(--muted)">PA &amp; CA explained</a> · <a href="/best-football-manager-games-steam-deck.html" style="color:var(--muted)">Steam Deck</a> · <a href="/best-football-manager-games-switch.html" style="color:var(--muted)">Switch</a> · <a href="/best-football-manager-games-mac.html" style="color:var(--muted)">Mac</a> · <a href="/football-manager-26-best-tactics.html" style="color:var(--muted)">FM26 best tactics</a> · <a href="/football-manager-26-first-season-guide.html" style="color:var(--muted)">FM26 first season</a></p>
+    <p class="foot-meta"><a href="/football-guides.html" class="foot-cta">All 51 football guides &amp; explainers →</a></p>
+    <p class="foot-meta">Explainers: <a href="/football-terms.html">Football terms glossary</a> · <a href="/what-is-a-gaffer-in-football.html">What is a gaffer?</a> · <a href="/what-is-a-false-9.html">What is a false 9?</a> · <a href="/what-is-a-low-block-in-football.html">What is a low block?</a> · <a href="/what-is-a-number-10-in-football.html">Number 10</a> · <a href="/what-is-a-regista-in-football.html">Regista</a> · <a href="/what-is-a-trequartista-in-football.html">Trequartista</a> · <a href="/what-is-a-high-press-in-football.html">High press</a> · <a href="/what-is-tiki-taka-in-football.html">Tiki-taka</a> · <a href="/what-is-expected-goals-xg-in-football.html">What is xG?</a></p>
+    <p class="foot-meta">Guides: <a href="/free-football-manager.html">Best free football manager games</a> · <a href="/gaffer-guide.html">Gaffa strategy</a> · <a href="/best-football-manager-games-pc.html">Best FM games on PC</a> · <a href="/best-football-manager-games-android.html">Android</a> · <a href="/best-football-manager-games-iphone.html">iPhone</a> · <a href="/football-manager-26.html">Football Manager 26 explained</a> · <a href="/what-does-a-football-manager-do.html">What does a football manager do?</a> · <a href="/how-to-become-a-football-manager.html">How to become a football manager</a> · <a href="/football-manager-pa-ca-explained.html">PA &amp; CA explained</a> · <a href="/best-football-manager-games-steam-deck.html">Steam Deck</a> · <a href="/best-football-manager-games-switch.html">Switch</a> · <a href="/best-football-manager-games-mac.html">Mac</a> · <a href="/football-manager-26-best-tactics.html">FM26 best tactics</a> · <a href="/football-manager-26-first-season-guide.html">FM26 first season</a></p>
   </div>
 </footer>
 

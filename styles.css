@@ -148,11 +148,22 @@
 
 /* ABOUT (content-page variant used by privacy/terms/guides — a simple
    centered article container, distinct from the homepage .about-card) */
-.about-inner{max-width:720px;margin:0 auto;padding:56px 22px;color:rgba(255,255,255,0.85)}
-.about-inner h2{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:900;letter-spacing:-0.02em;margin-bottom:18px}
+.about-inner{max-width:720px;margin:0 auto;padding:56px 22px 64px;color:rgba(255,255,255,0.85)}
+.about-inner h1{
+  font-size:clamp(2rem,5vw,3rem);font-weight:900;letter-spacing:-0.03em;line-height:1.08;
+  margin-bottom:20px;
+}
+/* h2 is a section heading inside these pages, so it needs room above it. */
+.about-inner h2{font-size:clamp(1.35rem,3.4vw,1.75rem);font-weight:800;letter-spacing:-0.02em;margin:40px 0 14px}
+.about-inner h2:first-of-type{margin-top:32px}
+.about-inner ul,.about-inner ol{margin:0 0 20px 0;padding-left:22px;max-width:65ch}
+.about-inner li{margin-bottom:10px}
+.about-inner li::marker{color:var(--lime)}
+.about-inner strong{color:var(--white);font-weight:600}
 .about-inner h3{font-size:1.2rem;font-weight:800;margin:28px 0 10px;color:var(--lime)}
 .about-inner p{margin-bottom:14px;font-size:15px;line-height:1.75;max-width:65ch;color:rgba(255,255,255,0.8)}
 .about-inner a{color:var(--lime)}
+.about-back{margin-top:44px}
 
 /* AMAZON SHOP SECTION */
 .shop-section{position:relative;z-index:1;margin-top:40px;text-align:center}
@@ -173,8 +184,12 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 .foot-brand .mark{width:24px;height:24px;font-size:13px}
 .foot-brand b{color:var(--lime)}
 .foot-links{display:flex;gap:2px;flex-wrap:wrap}
-.foot-links a{color:var(--muted);font-size:12.5px;padding:9px 7px;display:flex;align-items:center;min-height:44px;transition:color .15s}
-.foot-links a:hover{color:var(--white)}
+.foot-links a,.foot-links .btn-link{
+  color:var(--muted);font-size:12.5px;font-weight:400;padding:9px 7px;
+  display:flex;align-items:center;min-height:44px;text-decoration:none;
+  background:none;border:none;cursor:pointer;font-family:inherit;transition:color .15s;
+}
+.foot-links a:hover,.foot-links .btn-link:hover{color:var(--white)}
 .foot-meta{color:var(--muted);font-size:11px;margin-top:12px;line-height:1.6}
 .foot-meta a{color:var(--muted)}
 .foot-meta a:hover{color:var(--white)}
