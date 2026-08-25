@@ -77,28 +77,16 @@
   </script>
   <link rel="stylesheet" href="/theme.min.css">
   <link rel="stylesheet" href="/styles.min.css">
+  <link rel="stylesheet" href="/explainer.css">
   <style>
-    .guide-content { max-width: 800px; margin: 40px auto; line-height: 1.8; }
-    .guide-section { margin: 40px 0; }
-    .guide-section h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 16px; color: var(--lime); }
-    .guide-section h3 { font-size: 1.3rem; font-weight: 700; margin-top: 24px; margin-bottom: 12px; }
     .strategy-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin: 12px 0; display: flex; gap: 14px; align-items: flex-start; }
-    .card-num,.card-dot{flex-shrink:0;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'SFMono-Regular',Consolas,monospace;font-weight:800;font-size:12px;color:#052411;background:linear-gradient(135deg,#2ab248,#12b380);}
+    .card-num,.card-dot{flex-shrink:0;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'SFMono-Regular',Consolas,monospace;font-weight:800;font-size:12px;color:#052411;background:linear-gradient(135deg,var(--lime),var(--emerald));}
     .card-dot{width:10px;height:10px;border-radius:3px;margin:8px 8px 0 0;}
     .strategy-card h4 { color: var(--lime); font-weight: 700; margin-bottom: 4px; }
     .strategy-card p { margin: 0; }
     .strategy-card .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:6px;margin-bottom:6px;background:rgba(224,184,74,0.14);color:var(--gold);}
     .guide-cta-top { text-align: center; margin: -10px 0 30px; }
     .guide-end-cta { text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 30px 20px; margin-top: 40px; }
-    .faq-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:10px 0}
-    .faq-item summary{cursor:pointer;padding:16px 18px;font-weight:700;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
-    .faq-item summary::-webkit-details-marker{display:none}
-    .faq-item summary::after{content:"+";color:var(--lime);font-size:18px;font-weight:800;flex-shrink:0}
-    .faq-item[open] summary::after{content:"−"}
-    .faq-item p{color:var(--muted);font-size:14px;padding:0 18px 16px;line-height:1.6;margin:0}
-    .platform-switch{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 0 30px}
-    .platform-switch a{font-size:13px;font-weight:700;color:var(--muted);background:var(--glass);border:1px solid var(--border);padding:8px 14px;border-radius:10px}
-    .platform-switch a.on{color:#052411;background:linear-gradient(135deg,var(--lime),var(--emerald));border-color:transparent}
   </style>
 </head>
 <body>
@@ -118,7 +106,7 @@
   </header>
 
   <main id="main" class="about guide-content">
-    <h1 style="text-align:center;margin:30px 0 6px">Best Football Manager Games for PC &amp; Desktop</h1>
+    <h1>Best Football Manager games for PC &amp; desktop</h1>
     <p style="text-align:center;color:var(--muted);margin-bottom:20px">Football Manager, OFM, Top Eleven, and Gaffa, compared honestly, not ranked by hype.</p>
     <div class="platform-switch">
       <a href="/free-football-manager.html">All free games</a>
@@ -132,19 +120,19 @@
     <div class="guide-cta-top"><a href="/gaffa/" class="btn btn-primary">Play Gaffa free →</a></div>
     <div class="ad-slot" id="pcArticleTopAd"><span class="ad-slot-label">Advertisement</span></div>
 
-    <div class="guide-section">
-      <h3>The short answer</h3>
+    <section class="guide-section">
+      <h2>The short answer</h2>
       <p>If you want the deepest, most realistic club management sim that exists and don't mind paying for it and installing it, <strong>Football Manager</strong> is still the one everyone else is compared to. If you want to play a full season of club management for free, right now, in whatever browser you already have open, without an install or an account, <strong>Gaffa</strong> is built for exactly that. OFM sits between the two on a browser client of its own, and Top Eleven barely counts as a PC game at all, it's built for phones.</p>
-    </div>
+    </section>
 
-    <div class="guide-section">
-      <h3>The four games</h3>
+    <section class="guide-section">
+      <h2>The four games</h2>
 
       <div class="strategy-card">
         <span class="card-dot"></span>
         <div>
           <span class="tag">Most realistic</span>
-          <h4>Football Manager (Sports Interactive / SEGA)</h4>
+          <h3>Football Manager (Sports Interactive / SEGA)</h3>
           <p>The industry standard. Thousands of real leagues and players, a genuine scouting network, and a full match engine, nothing else on this list is close on depth. It's a real purchase (roughly $40-50 a year on Steam or Epic), a real install, and a real time commitment: a single save can run for dozens of hours. Best fit if club management is a hobby, not a five-minute break.</p>
         </div>
       </div>
@@ -153,7 +141,7 @@
         <span class="card-dot"></span>
         <div>
           <span class="tag">Browser, free-to-play</span>
-          <h4>OFM, Online Football Manager (Gameforge)</h4>
+          <h3>OFM, Online Football Manager (Gameforge)</h3>
           <p>Runs in a PC browser, no install needed, and has been around for over a decade. Free to start, but progress leans on a premium currency, and it's built around persistent competitive leagues against other real players, so it rewards logging in regularly over years, not playing a self-contained season and moving on.</p>
         </div>
       </div>
@@ -162,7 +150,7 @@
         <span class="card-dot"></span>
         <div>
           <span class="tag">Mobile-first</span>
-          <h4>Top Eleven (Nordeus)</h4>
+          <h3>Top Eleven (Nordeus)</h3>
           <p>Genuinely excellent on a phone, and honestly not really a PC game: the desktop route is running it through an Android emulator, which most people looking for "football manager games for PC" aren't going to want to set up. It's live and social: you're managing against real opponents in real time, which is its whole appeal, and its whole friction if you just want to play alone.</p>
         </div>
       </div>
@@ -171,23 +159,23 @@
         <span class="card-dot"></span>
         <div>
           <span class="tag">Free, instant, browser-only</span>
-          <h4>Gaffa (BALLKNW)</h4>
+          <h3>Gaffa (BALLKNW)</h3>
           <p>Pick a club across ten leagues, set your tactics, run the transfer window, and simulate a full season: free, no account, no download, no premium currency, saved locally in your browser. It's not trying to be Football Manager's depth or Top Eleven/OFM's live multiplayer competition. It's the version for "I've got twenty minutes and want to manage a club," not "I'm clearing my evening."</p>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="guide-section">
-      <h3>Which one actually fits you</h3>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Want maximum depth and don't mind paying</h4><p>Football Manager. Nothing else here competes with it on realism.</p></div></div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Want to compete against real people over time</h4><p>OFM or Top Eleven: both are built around persistent leagues against other managers, not a self-contained season.</p></div></div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Want to play a season right now, free, no strings</h4><p>Gaffa. Open the tab, pick a club, start managing.</p></div></div>
-    </div>
+    <section class="guide-section">
+      <h2>Which one actually fits you</h2>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Want maximum depth and don't mind paying</h3><p>Football Manager. Nothing else here competes with it on realism.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Want to compete against real people over time</h3><p>OFM or Top Eleven: both are built around persistent leagues against other managers, not a self-contained season.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Want to play a season right now, free, no strings</h3><p>Gaffa. Open the tab, pick a club, start managing.</p></div></div>
+    </section>
 
     <div class="ad-slot" id="pcArticleEndAd"><span class="ad-slot-label">Advertisement</span></div>
 
-    <div class="guide-section">
-      <h3>Quick answers</h3>
+    <section class="guide-section">
+      <h2>Quick answers</h2>
       <details class="faq-item">
         <summary>Do I need to install anything to play a football manager game on PC?</summary>
         <p>Only if you pick Football Manager, which is a full install through Steam or the Epic Games Store. OFM and Gaffa both run entirely in your browser with nothing to download. Top Eleven is mobile-first and only really works on PC through an Android emulator.</p>
@@ -200,10 +188,10 @@
         <summary>Is there a free football manager game for PC that doesn't need an account?</summary>
         <p>Gaffa is free, requires no account or login, and saves your career locally in the browser. OFM and Top Eleven are free to start but require an account, and progress faster if you spend on premium currency.</p>
       </details>
-    </div>
+    </section>
 
     <div class="guide-end-cta">
-      <h3 style="margin-top:0">Try the free one first</h3>
+      <h2 style="margin-top:0">Try the free one first</h2>
       <p>No install, no account: pick a club and see how your first season goes.</p>
       <p><a href="/gaffa/" class="btn btn-primary" style="display:inline-block;margin-top:14px">Play Gaffa Now →</a></p>
       <p style="margin-top:16px;font-size:13px"><a href="/gaffer-guide.html">Read the full strategy guide →</a> · <a href="/football-manager-26.html">Football Manager 26 explained →</a></p>

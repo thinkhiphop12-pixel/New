@@ -84,22 +84,14 @@
   </script>
   <link rel="stylesheet" href="/theme.min.css">
   <link rel="stylesheet" href="/styles.min.css">
+  <link rel="stylesheet" href="/explainer.css">
   <style>
-    .guide-content { max-width: 800px; margin: 40px auto; line-height: 1.8; }
-    .guide-section { margin: 40px 0; }
-    .guide-section h3 { font-size: 1.3rem; font-weight: 700; margin-top: 24px; margin-bottom: 12px; }
     .strategy-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin: 12px 0; display: flex; gap: 14px; align-items: flex-start; }
-    .card-num{flex-shrink:0;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'SFMono-Regular',Consolas,monospace;font-weight:800;font-size:12px;color:#052411;background:linear-gradient(135deg,#2ab248,#12b380);}
+    .card-num{flex-shrink:0;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'SFMono-Regular',Consolas,monospace;font-weight:800;font-size:12px;color:#052411;background:linear-gradient(135deg,var(--lime),var(--emerald));}
     .strategy-card h4 { color: var(--lime); font-weight: 700; margin-bottom: 4px; }
     .strategy-card p { margin: 0; }
     .guide-cta-top { text-align: center; margin: -10px 0 30px; }
     .guide-end-cta { text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 30px 20px; margin-top: 40px; }
-    .faq-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:10px 0}
-    .faq-item summary{cursor:pointer;padding:16px 18px;font-weight:700;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
-    .faq-item summary::-webkit-details-marker{display:none}
-    .faq-item summary::after{content:"+";color:var(--lime);font-size:18px;font-weight:800;flex-shrink:0}
-    .faq-item[open] summary::after{content:"−"}
-    .faq-item p{color:var(--muted);font-size:14px;padding:0 18px 16px;line-height:1.6;margin:0}
   </style>
 </head>
 <body>
@@ -119,32 +111,32 @@
   </header>
 
   <main id="main" class="about guide-content">
-    <h1 style="text-align:center;margin:30px 0 6px">How to Become a Soccer Manager</h1>
+    <h1>How to become a soccer manager</h1>
     <p style="text-align:center;color:var(--muted);margin-bottom:20px">The real career path: badges, experience, and how long it honestly takes.</p>
     <p class="note"><strong>Soccer or football?</strong> A soccer manager and a football manager are the same job: in the US the title is usually <em>head coach</em>, and the licence ladder runs through US Soccer rather than UEFA.</p>
     <div class="guide-cta-top"><a href="/gaffa/" class="btn btn-primary">Practice the job free in your browser →</a></div>
 
-    <div class="guide-section">
-      <h3>The short answer</h3>
+    <section class="guide-section">
+      <h2>The short answer</h2>
       <p>You become a football manager by <strong>climbing the coaching-qualification ladder while stacking real touchline experience</strong>. In Europe that ladder is UEFA's: introductory grassroots awards, then the C, B and A Licences, and finally the <strong>UEFA Pro Licence</strong>: mandatory for managing in top divisions like the Premier League. In the US the equivalent is the U.S. Soccer licensing pathway. No shortcut skips the ladder; even famous ex-players have to sit the courses.</p>
-    </div>
+    </section>
 
-    <div class="guide-section">
-      <h3>The path, step by step</h3>
-      <div class="strategy-card"><span class="card-num">1</span><div><h4>Start coaching anywhere</h4><p>Grassroots, youth, school or amateur teams. Your first badge (an FA introductory award or equivalent) takes days, not years, and gets you on a real touchline making real decisions.</p></div></div>
-      <div class="strategy-card"><span class="card-num">2</span><div><h4>Work through C and B Licences</h4><p>Each level mixes coursework with a required period of active coaching. This is where most people spend their first three to five years, often coaching part-time alongside another job.</p></div></div>
-      <div class="strategy-card"><span class="card-num">3</span><div><h4>Get inside a club</h4><p>Academy coach, analyst, scout, set-piece coach, any staff role. Nearly every modern manager spent years on someone else's staff first, and assistant-manager roles are the classic final step.</p></div></div>
-      <div class="strategy-card"><span class="card-num">4</span><div><h4>A Licence, then Pro Licence</h4><p>The A Licence opens professional first-team roles; the Pro Licence (typically an 18-month course with strict entry requirements) opens top-flight management.</p></div></div>
-      <div class="strategy-card"><span class="card-num">5</span><div><h4>Take a first job and survive it</h4><p>Lower-league and non-league clubs are where managerial careers actually start. Results there earn the next job: management is the most results-judged career in sport.</p></div></div>
-    </div>
+    <section class="guide-section">
+      <h2>The path, step by step</h2>
+      <div class="strategy-card"><span class="card-num">1</span><div><h3>Start coaching anywhere</h3><p>Grassroots, youth, school or amateur teams. Your first badge (an FA introductory award or equivalent) takes days, not years, and gets you on a real touchline making real decisions.</p></div></div>
+      <div class="strategy-card"><span class="card-num">2</span><div><h3>Work through C and B Licences</h3><p>Each level mixes coursework with a required period of active coaching. This is where most people spend their first three to five years, often coaching part-time alongside another job.</p></div></div>
+      <div class="strategy-card"><span class="card-num">3</span><div><h3>Get inside a club</h3><p>Academy coach, analyst, scout, set-piece coach, any staff role. Nearly every modern manager spent years on someone else's staff first, and assistant-manager roles are the classic final step.</p></div></div>
+      <div class="strategy-card"><span class="card-num">4</span><div><h3>A Licence, then Pro Licence</h3><p>The A Licence opens professional first-team roles; the Pro Licence (typically an 18-month course with strict entry requirements) opens top-flight management.</p></div></div>
+      <div class="strategy-card"><span class="card-num">5</span><div><h3>Take a first job and survive it</h3><p>Lower-league and non-league clubs are where managerial careers actually start. Results there earn the next job: management is the most results-judged career in sport.</p></div></div>
+    </section>
 
-    <div class="guide-section">
-      <h3>What the job actually involves</h3>
+    <section class="guide-section">
+      <h2>What the job actually involves</h2>
       <p>Before committing a decade to the badges, it's worth knowing what you're signing up for: we've broken the role down in <a href="/what-does-a-football-manager-do.html">what does a football manager do?</a> Short version: selection and tactics, training, transfers, man-management and media, judged weekly in public. Understanding tactical ideas like the <a href="/what-is-a-false-9.html">false 9</a> and the <a href="/what-is-a-low-block-in-football.html">low block</a> is table stakes.</p>
-    </div>
+    </section>
 
-    <div class="guide-section">
-      <h3>Quick answers</h3>
+    <section class="guide-section">
+      <h2>Quick answers</h2>
       <details class="faq-item">
         <summary>Do I need to have played professionally?</summary>
         <p>No. It helps (ex-pros get fast-tracked and hired on name) but Mourinho, Sacchi and Nagelsmann all reached the elite without meaningful professional playing careers.</p>
@@ -157,10 +149,10 @@
         <summary>Can playing management sims help?</summary>
         <p>They won't earn you a badge, but they genuinely teach squad-building, tactical trade-offs and resource management: several real analysts and scouts credit management games with starting their interest. You can <a href="/gaffa/">try a full season in Gaffa</a> free, in your browser, right now.</p>
       </details>
-    </div>
+    </section>
 
     <div class="guide-end-cta">
-      <h3 style="margin-top:0">Start your (virtual) managerial career today</h3>
+      <h2 style="margin-top:0">Start your (virtual) managerial career today</h2>
       <p>Gaffa gives you a real club, a transfer budget and a season to prove yourself. Free, no account, no download.</p>
       <p><a href="/gaffa/" class="btn btn-primary" style="display:inline-block;margin-top:14px">Take the job →</a></p>
       <p style="margin-top:16px;font-size:13px"><a href="/football-manager-26.html">Football Manager 26 explained →</a> · <a href="/free-football-manager.html">Best free football manager games →</a></p>

@@ -109,23 +109,14 @@
   </script>
   <link rel="stylesheet" href="/theme.min.css">
   <link rel="stylesheet" href="/styles.min.css">
+  <link rel="stylesheet" href="/explainer.css">
   <style>
-    .guide-content { max-width: 800px; margin: 40px auto; line-height: 1.8; }
-    .guide-section { margin: 40px 0; }
-    .guide-section h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 16px; color: var(--lime); }
-    .guide-section h3 { font-size: 1.3rem; font-weight: 700; margin-top: 24px; margin-bottom: 12px; }
     .strategy-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin: 12px 0; display: flex; gap: 14px; align-items: flex-start; }
-    .card-dot{flex-shrink:0;width:10px;height:10px;border-radius:3px;margin:8px 8px 0 0;background:linear-gradient(135deg,#2ab248,#12b380);}
+    .card-dot{flex-shrink:0;width:10px;height:10px;border-radius:3px;margin:8px 8px 0 0;background:linear-gradient(135deg,var(--lime),var(--emerald));}
     .strategy-card h4 { color: var(--lime); font-weight: 700; margin-bottom: 4px; }
     .strategy-card p { margin: 0; }
     .guide-cta-top { text-align: center; margin: -10px 0 30px; }
     .guide-end-cta { text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 30px 20px; margin-top: 40px; }
-    .faq-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:10px 0}
-    .faq-item summary{cursor:pointer;padding:16px 18px;font-weight:700;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
-    .faq-item summary::-webkit-details-marker{display:none}
-    .faq-item summary::after{content:"+";color:var(--lime);font-size:18px;font-weight:800;flex-shrink:0}
-    .faq-item[open] summary::after{content:"−"}
-    .faq-item p{color:var(--muted);font-size:14px;padding:0 18px 16px;line-height:1.6;margin:0}
   </style>
 </head>
 <body>
@@ -145,34 +136,34 @@
   </header>
 
   <main id="main" class="about guide-content">
-    <h1 style="text-align:center;margin:30px 0 6px">Football Manager 26 (FM26), Explained</h1>
+    <h1>Football Manager 26 (FM26), explained</h1>
     <p style="text-align:center;color:var(--muted);margin-bottom:20px">Release, platforms, what changed, and what to play free in your browser while you decide.</p>
     <div class="guide-cta-top"><a href="/gaffa/" class="btn btn-primary">Play a free football manager now →</a></div>
 
-    <div class="guide-section">
-      <h3>The short version</h3>
+    <section class="guide-section">
+      <h2>The short version</h2>
       <p><strong>Football Manager 26</strong> is Sports Interactive and SEGA's flagship club-management sim, released in November 2025. It's the biggest reset in the series' history: FM25 was cancelled outright, and FM26 arrived as the first game on a new Unity-based engine, with a rebuilt interface, a new match presentation, and (for the first time) playable women's football.</p>
       <p>It's a paid, installed game with a serious time commitment. If that's what you're after, buy it on Steam or Epic. If what you actually want is to <em>manage a club right now, for free, without installing anything</em>, that's what <a href="/gaffa/">Gaffa</a> is for, and it runs in the tab you already have open.</p>
-    </div>
+    </section>
 
-    <div class="guide-section">
-      <h3>What's actually new in FM26</h3>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>New engine</h4><p>The whole game moved to Unity after two decades on in-house tech. That's why FM25 was scrapped: the rebuild took longer than one release cycle.</p></div></div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Women's football</h4><p>Fully playable women's leagues and clubs for the first time in the series, alongside the men's game in the same save.</p></div></div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Rebuilt UI and match engine</h4><p>A redesigned tile-based interface and a new match presentation layer: the most visible change from FM24 for returning players.</p></div></div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Where it runs</h4><p>PC (Steam, Epic), Xbox, FM26 Touch, and FM26 Mobile: the mobile edition is distributed through Netflix Games, so it needs a Netflix subscription rather than a separate purchase.</p></div></div>
-    </div>
+    <section class="guide-section">
+      <h2>What's actually new in FM26</h2>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>New engine</h3><p>The whole game moved to Unity after two decades on in-house tech. That's why FM25 was scrapped: the rebuild took longer than one release cycle.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Women's football</h3><p>Fully playable women's leagues and clubs for the first time in the series, alongside the men's game in the same save.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Rebuilt UI and match engine</h3><p>A redesigned tile-based interface and a new match presentation layer: the most visible change from FM24 for returning players.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Where it runs</h3><p>PC (Steam, Epic), Xbox, FM26 Touch, and FM26 Mobile: the mobile edition is distributed through Netflix Games, so it needs a Netflix subscription rather than a separate purchase.</p></div></div>
+    </section>
 
-    <div class="guide-section">
-      <h3>FM26 vs a free browser manager</h3>
+    <section class="guide-section">
+      <h2>FM26 vs a free browser manager</h2>
       <p>These are honestly different products, and which one you want depends on the evening you're planning:</p>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>FM26, depth first</h4><p>Thousands of real leagues, a full scouting network, and saves that run for dozens of hours. Costs real money, needs a real install, rewards a real commitment.</p></div></div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Gaffa, speed first</h4><p>Free, no download, no account. Pick a club across ten leagues with current-season squads, set tactics, work the transfer window, and simulate a full season in a sitting. Your career saves locally in the browser.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>FM26, depth first</h3><p>Thousands of real leagues, a full scouting network, and saves that run for dozens of hours. Costs real money, needs a real install, rewards a real commitment.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Gaffa, speed first</h3><p>Free, no download, no account. Pick a club across ten leagues with current-season squads, set tactics, work the transfer window, and simulate a full season in a sitting. Your career saves locally in the browser.</p></div></div>
       <p>Plenty of people play both: FM26 for the long save, a browser manager for the twenty-minute itch. Our comparison of every worthwhile option is in the <a href="/free-football-manager.html">best free football manager games</a> guide, with platform-specific picks for <a href="/best-football-manager-games-pc.html">PC</a>, <a href="/best-football-manager-games-android.html">Android</a> and <a href="/best-football-manager-games-iphone.html">iPhone</a>.</p>
-    </div>
+    </section>
 
-    <div class="guide-section">
-      <h3>Quick answers</h3>
+    <section class="guide-section">
+      <h2>Quick answers</h2>
       <details class="faq-item">
         <summary>When did Football Manager 26 come out?</summary>
         <p>November 2025, developed by Sports Interactive and published by SEGA: the first release after FM25 was cancelled, and the first on the new Unity-based engine.</p>
@@ -209,10 +200,10 @@
         <summary>What's a good free alternative to FM26?</summary>
         <p>Gaffa (free, browser, no account), or free-to-start online managers like OFM and Top Eleven if you want persistent leagues against real people. Full comparison in our <a href="/free-football-manager.html">free football manager guide</a>.</p>
       </details>
-    </div>
+    </section>
 
     <div class="guide-end-cta">
-      <h3 style="margin-top:0">Manage a club in the next 30 seconds</h3>
+      <h2 style="margin-top:0">Manage a club in the next 30 seconds</h2>
       <p>No install, no account, no cost: pick a club and see how your first season goes.</p>
       <p><a href="/gaffa/" class="btn btn-primary" style="display:inline-block;margin-top:14px">Play Gaffa Now →</a></p>
       <p style="margin-top:16px;font-size:13px"><a href="/football-manager-26-how-to.html">FM26 how-to guide →</a> · <a href="/football-manager-pa-ca-explained.html">PA &amp; CA explained →</a> · <a href="/is-football-manager-26-worth-buying.html">FM26 review: is it worth buying? →</a></p>

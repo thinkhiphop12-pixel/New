@@ -73,14 +73,16 @@ p,li{text-wrap:pretty}
 /* ambient glow behind hero, matches homepage */
 body::before{
   content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(ellipse 60% 40% at 50% -10%,rgba(18,179,128,0.11) 0%,transparent 70%);
+  background:
+    radial-gradient(ellipse 70% 45% at 15% -8%,rgba(44,185,78,0.13) 0%,transparent 62%),
+    radial-gradient(ellipse 55% 38% at 92% 4%,rgba(18,179,128,0.10) 0%,transparent 60%);
 }
 
 /* Fine grain over the whole page so the flat dark surfaces don't read as
    sterile vector. Fixed, non-interactive, and cheap (one inline SVG). */
 body::after{
   content:"";position:fixed;inset:0;pointer-events:none;z-index:var(--z-overlay);
-  opacity:.035;mix-blend-mode:overlay;
+  opacity:.055;mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
@@ -113,3 +115,22 @@ body::after{
 
 /* The nav is sticky, so an anchor jump must clear it. */
 #main,[id]{scroll-margin-top:64px}
+
+
+/* ── READING PROGRESS ──
+   A scroll-driven bar across the top of long-form pages. CSS-only, so there is
+   no scroll listener; browsers without scroll timelines simply never show it. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    html:has(.guide-content)::before{
+      content:"";position:fixed;top:0;left:0;height:2px;width:100%;
+      transform-origin:0 50%;transform:scaleX(0);
+      background:var(--cta);z-index:var(--z-consent);
+      animation:readProgress linear;
+      animation-timeline:scroll(root block);
+      /* keep the ambient wash as well, on a separate layer */
+      pointer-events:none;
+    }
+  }
+}
+@keyframes readProgress{from{transform:scaleX(0)}to{transform:scaleX(1)}}

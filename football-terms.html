@@ -84,7 +84,8 @@
     .jump a{font-size:12.5px;font-weight:700;color:var(--muted);background:var(--glass);border:1px solid var(--border);padding:8px 13px;border-radius:9px}
     .jump a:hover{color:var(--white);border-color:var(--border-hi)}
     .glossary-section{margin:40px 0;scroll-margin-top:70px}
-    .glossary-section h2{font-size:1.55rem;font-weight:800;letter-spacing:-.02em;margin:0 0 6px;color:var(--lime)}
+    .glossary-section h2{position:relative;font-size:clamp(1.5rem,3.2vw,2rem);font-weight:800;letter-spacing:-.03em;line-height:1.15;margin:0 0 14px;color:var(--white)}
+    .glossary-section h2::before{content:"";display:block;width:34px;height:3px;border-radius:2px;background:var(--cta);margin-bottom:14px}
     .sec-intro{color:var(--muted);font-size:14.5px;margin:0 0 18px}
     dl.terms{margin:0}
     dl.terms dt{background:var(--surface);border:1px solid var(--border);border-bottom:0;border-radius:12px 12px 0 0;padding:15px 18px 0;font-weight:800;font-size:15.5px;color:var(--white);letter-spacing:-.01em;margin:0}
@@ -113,7 +114,7 @@
   </header>
 
   <main id="main" class="about guide-content">
-    <h1>Football Terms, Explained</h1>
+    <h1>Football terms, explained</h1>
     <p class="standfirst">A glossary of the words commentators, coaches and players actually use: what each one means, and when you'll hear it.</p>
     <p class="byline">Updated 7 August 2026 · BALLKNW</p>
 

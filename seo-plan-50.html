@@ -222,7 +222,7 @@
   tbody tr:last-child td { border-bottom: none; }
   .num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .metric { font-weight: 600; }
-  .kw { font-family: var(--mono); font-size: 13.5px; }
+  .kw { font-family: var(--mono); font-size: 13.5px; overflow-wrap:anywhere; }
   .dim { color: var(--ink-3); }
 
   /* verdict chips: color is paired with a word, never alone */
@@ -359,7 +359,15 @@
     color: var(--ink-3);
     line-height: 1.7;
   }
-</style>
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:18px 0}
+  /* Grid items default to min-width:auto, so a long word or wide child stops
+     the content column shrinking and pushes the page sideways. */
+  .phase > *{min-width:0}
+  @media (max-width:720px){
+    .phase{grid-template-columns:1fr;gap:10px 0}
+    .phase-when{position:static}
+  }
+  </style>
 
 <div class="wrap">
 
@@ -402,7 +410,7 @@
   </div>
 
   <div class="scroll">
-    <table>
+    <div class="tbl-wrap"><table>
       <caption>Every organic keyword the domain currently holds</caption>
       <thead>
         <tr><th>Keyword</th><th>Position</th><th>Volume</th><th>Difficulty</th><th>Ranking URL</th></tr>
@@ -414,7 +422,7 @@
         <tr><td class="kw">gaffer' in football</td><td class="num">57</td><td class="num">140</td><td class="num">23</td><td class="kw dim">/gaffer-guide.html</td></tr>
         <tr><td class="kw">gaffer meaning soccer</td><td class="num">57</td><td class="num">40</td><td class="num">18</td><td class="kw dim">/gaffer-guide.html</td></tr>
       </tbody>
-    </table>
+    </table></div>
   </div>
   <p class="col dim" style="font-size:14.5px">Four of the five sit on page 5-6, where they earn no clicks, hence <span class="num">0</span> organic traffic. Only one page has ever been given time to rank, and it did.</p>
 </section>
@@ -424,7 +432,7 @@
   <p class="col" style="margin-bottom:24px">Honest verdict per metric, with what I'd target instead where 50 is the wrong goal.</p>
 
   <div class="scroll">
-    <table>
+    <div class="tbl-wrap"><table>
       <caption>Dashboard metric → realistic trajectory</caption>
       <thead>
         <tr><th>Metric</th><th>Now</th><th>50?</th><th>Realistic target and timing</th></tr>
@@ -476,7 +484,7 @@
           <td>50 paid keywords is one afternoon in Google Ads and an ongoing budget. <strong>Not recommended</strong>: CPC on these terms is $0.00; there's no commercial intent to buy.</td>
         </tr>
       </tbody>
-    </table>
+    </table></div>
   </div>
 </section>
 
@@ -499,7 +507,7 @@
   <p class="col">The actual explanation is simpler, and it's in the file dates:</p>
 
   <div class="scroll">
-    <table>
+    <div class="tbl-wrap"><table>
       <caption>Publication date vs. ranking outcome</caption>
       <thead><tr><th>Page</th><th>Last modified</th><th>Age</th><th>Keywords</th></tr></thead>
       <tbody>
@@ -511,13 +519,13 @@
         <tr><td class="kw dim">how-to-become-a-football-manager.html</td><td class="num">10 Aug 2026</td><td class="num">today</td><td class="num">0</td></tr>
         <tr><td class="kw dim">football-manager-pa-ca-explained.html</td><td class="num">10 Aug 2026</td><td class="num">today</td><td class="num">0</td></tr>
       </tbody>
-    </table>
+    </table></div>
   </div>
 
   <p class="col">The one page old enough to have been crawled, indexed and ranked <em>was</em>. Everything else was published in the last four days. This isn't a defect to fix: it's a queue to wait out, and to accelerate.</p>
 
   <div class="note">
-    <p>There is one real content gap, though, and it's worth money. The US search database (the one your dashboard is set to) puts the volume on <strong>soccer</strong>-worded phrasings: <span class="num">false 9 soccer</span> (1,000/mo), <span class="num">false nine soccer</span> (590), <span class="num">gaffer soccer</span> (480), <span class="num">low block soccer</span> (390). Your pages are written in British English: the false 9 page uses "football" 18 times and "soccer" twice. You already rank #52 for <span class="num">gaffer soccer</span> almost by accident: the demand is proven, the vocabulary just isn't on the page.</p>
+    <p>There is one real content gap, though, and it's worth money. The US search database (the one your dashboard is set to) puts the volume on <strong>soccer</strong>-worded phrasings: <span class="kw">false 9 soccer</span> (1,000/mo), <span class="kw">false nine soccer</span> (590), <span class="kw">gaffer soccer</span> (480), <span class="kw">low block soccer</span> (390). Your pages are written in British English: the false 9 page uses "football" 18 times and "soccer" twice. You already rank #52 for <span class="kw">gaffer soccer</span> almost by accident: the demand is proven, the vocabulary just isn't on the page.</p>
   </div>
 </section>
 
@@ -571,8 +579,8 @@
       <p>This is where the target is actually hit, and it needs no new pages: the four clusters below already have published articles behind them.</p>
       <ul>
         <li><strong>Deepen rather than widen.</strong> Each existing page should cover its cluster's variants explicitly: headings and FAQ entries for "false 9 formation", "433 false 9", "false 9 meaning" on the one page, rather than new thin pages for each.</li>
-        <li><strong>Fix the four page-5 rankings first.</strong> <span class="num">gaffer soccer</span>, <span class="num">gaffer football</span> and the two others sit at #52-57 on a page that already ranks #9 for a sibling term. Moving those to page 2 is the cheapest traffic on the site.</li>
-        <li><strong>Then, and only then, add new content</strong>: the FM26 cluster (<span class="num">fm 26 database</span>, <span class="num">fm26 mods</span>, <span class="num">football manager 2026 system requirements</span>) is KD 7-16 and seasonally hot right now.</li>
+        <li><strong>Fix the four page-5 rankings first.</strong> <span class="kw">gaffer soccer</span>, <span class="kw">gaffer football</span> and the two others sit at #52-57 on a page that already ranks #9 for a sibling term. Moving those to page 2 is the cheapest traffic on the site.</li>
+        <li><strong>Then, and only then, add new content</strong>: the FM26 cluster (<span class="kw">fm 26 database</span>, <span class="kw">fm26 mods</span>, <span class="kw">football manager 2026 system requirements</span>) is KD 7-16 and seasonally hot right now.</li>
       </ul>
       <p class="outcome">Expected: <b>50-65 organic keywords</b> (target met) and first real traffic.</p>
     </div>
@@ -603,7 +611,7 @@
   <details open>
     <summary>Cluster 1: False 9 · 17 keywords · page exists · avg KD 15</summary>
     <div class="scroll">
-      <table>
+      <div class="tbl-wrap"><table>
         <thead><tr><th>Keyword</th><th>Volume</th><th>Difficulty</th></tr></thead>
         <tbody>
           <tr><td class="kw">false 9 soccer</td><td class="num">1,000</td><td class="num">12</td></tr>
@@ -624,14 +632,14 @@
           <tr><td class="kw">4 3 3 false 9</td><td class="num">70</td><td class="num">13</td></tr>
           <tr><td class="kw">433 false 9</td><td class="num">70</td><td class="num">23</td></tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
   </details>
 
   <details>
     <summary>Cluster 2: Gaffer · 22 keywords · page exists · already ranking</summary>
     <div class="scroll">
-      <table>
+      <div class="tbl-wrap"><table>
         <thead><tr><th>Keyword</th><th>Volume</th><th>Difficulty</th></tr></thead>
         <tbody>
           <tr><td class="kw">what is a gaffer</td><td class="num">3,600</td><td class="num">31</td></tr>
@@ -657,14 +665,14 @@
           <tr><td class="kw">gaffer meaning soccer</td><td class="num">40</td><td class="num">18</td></tr>
           <tr><td class="kw">the gaffer meaning</td><td class="num">40</td><td class="num">38</td></tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
   </details>
 
   <details>
     <summary>Cluster 3: Low block · 8 keywords · page exists · lowest difficulty on the site</summary>
     <div class="scroll">
-      <table>
+      <div class="tbl-wrap"><table>
         <thead><tr><th>Keyword</th><th>Volume</th><th>Difficulty</th></tr></thead>
         <tbody>
           <tr><td class="kw">low block soccer</td><td class="num">390</td><td class="num">5</td></tr>
@@ -676,14 +684,14 @@
           <tr><td class="kw">soccer low block</td><td class="num">70</td><td class="num">4</td></tr>
           <tr><td class="kw">low block in soccer</td><td class="num">40</td><td class="num">7</td></tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
   </details>
 
   <details>
     <summary>Cluster 4: Football Manager 26 · 7 keywords · page exists · seasonal peak now</summary>
     <div class="scroll">
-      <table>
+      <div class="tbl-wrap"><table>
         <thead><tr><th>Keyword</th><th>Volume</th><th>Difficulty</th></tr></thead>
         <tbody>
           <tr><td class="kw">fm 26 demo</td><td class="num">590</td><td class="num">25</td></tr>
@@ -694,11 +702,11 @@
           <tr><td class="kw">football manager 2026 system requirements</td><td class="num">320</td><td class="num">13</td></tr>
           <tr><td class="kw">fm26 update</td><td class="num">320</td><td class="num">28</td></tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
   </details>
 
-  <p class="col dim" style="font-size:14.5px">Piracy-intent terms in the FM26 cluster (<span class="num">football manager 26 crack</span>, 880/mo) are excluded deliberately: they'd rank, and they'd poison the site's standing with both Google and any future ad partner.</p>
+  <p class="col dim" style="font-size:14.5px">Piracy-intent terms in the FM26 cluster (<span class="kw">football manager 26 crack</span>, 880/mo) are excluded deliberately: they'd rank, and they'd poison the site's standing with both Google and any future ad partner.</p>
 </section>
 
 <section class="col">
