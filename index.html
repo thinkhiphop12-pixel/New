@@ -47,7 +47,7 @@
 <link rel="apple-touch-icon" href="/assets/favicon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
 /* ── TOKENS ── */
 :root{
@@ -62,19 +62,53 @@
   --muted:#7a9082;
   --cta:linear-gradient(135deg,#2cb94e 0%,#12b380 100%);
   --glow:0 0 28px rgba(44,185,78,0.32);
+  --shadow-md:0 14px 34px -18px rgba(3,12,7,0.85);
+  --font-display:'Outfit','Geist',system-ui,-apple-system,sans-serif;
+  --font-text:'Geist',system-ui,-apple-system,sans-serif;
   --r:14px;
   --maxw:1080px;
+  --z-overlay:90;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
-  font-family:Inter,system-ui,-apple-system,sans-serif;
+  font-family:var(--font-text);
   background:var(--bg);color:var(--white);
   line-height:1.5;-webkit-font-smoothing:antialiased;
   overflow-x:hidden;
 }
+h1,h2,h3,h4,.brand,.foot-brand{font-family:var(--font-display)}
+h1,h2,h3{text-wrap:balance}
+p,li{text-wrap:pretty}
+.stat .num{font-variant-numeric:tabular-nums}
 a{text-decoration:none;color:inherit}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 16px}
+
+/* Keyboard focus was invisible site-wide before this. */
+:focus-visible{outline:2px solid var(--lime);outline-offset:2px;border-radius:4px}
+:focus:not(:focus-visible){outline:none}
+.skip-link{
+  position:absolute;left:12px;top:-64px;z-index:100;
+  background:var(--cta);color:#04200d;font-weight:700;font-size:14px;
+  padding:12px 18px;border-radius:10px;transition:top .18s ease;
+}
+.skip-link:focus{top:12px}
+#main{scroll-margin-top:64px}
+
+/* Fine grain so the flat dark surfaces don't read as sterile vector. */
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:var(--z-overlay);
+  opacity:.035;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
+}
 
 /* subtle radial behind hero */
 body::before{
@@ -94,7 +128,8 @@ body::before{
 .nav .wrap{padding:0 16px}
 
 /* brand */
-.brand{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:15px;letter-spacing:-.01em;cursor:default;line-height:1}
+.brand{display:inline-flex;align-items:center;gap:0;font-weight:800;font-size:15px;letter-spacing:-.01em;line-height:1}
+.brand .mark{margin-right:7px}
 .mark{
   width:28px;height:28px;border-radius:7px;flex-shrink:0;
   background:var(--cta);color:#04200d;
@@ -114,6 +149,7 @@ body::before{
 .btn-primary:hover{transform:translateY(-1px);box-shadow:var(--glow)}
 .btn-ghost{background:var(--glass);border-color:var(--border);color:var(--white)}
 .btn-ghost:hover{border-color:var(--border-hi)}
+.btn:active{transform:translateY(1px) scale(.985)}
 
 /* ── HERO ── */
 .hero{
@@ -165,7 +201,7 @@ body::before{
 .stat .lbl{color:var(--muted);font-size:10.5px;margin-top:2px;line-height:1.3}
 
 /* ── SECTIONS ── */
-.section{position:relative;z-index:1;padding:28px 0}
+.section{position:relative;z-index:1;padding:44px 0 52px}
 .section-head{margin-bottom:16px}
 .eyebrow{font-size:10px;font-weight:700;letter-spacing:.2em;color:var(--lime);text-transform:uppercase}
 .section-head h2{font-size:clamp(1.25rem,5vw,1.8rem);font-weight:800;letter-spacing:-0.025em;line-height:1.15;margin-top:4px}
@@ -201,6 +237,9 @@ body::before{
 .faq-item{background:var(--surface);border:1px solid var(--border);border-radius:11px;overflow:hidden}
 .faq-item summary{cursor:pointer;padding:13px 14px;font-weight:700;font-size:13.5px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;line-height:1.4}
 .faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary:hover{color:var(--lime)}
+.faq-item summary::after{transition:transform .2s}
+.faq-item[open] summary::after{transform:rotate(180deg)}
 .faq-item summary::after{content:"+";color:var(--lime);font-size:16px;font-weight:800;flex-shrink:0}
 .faq-item[open] summary::after{content:"–"}
 .faq-item p{color:var(--muted);font-size:13px;padding:0 14px 13px;line-height:1.65}
@@ -367,6 +406,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 </script>
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
 
 <!-- COLUMN AD RAIL (right side only, desktop ≥1440px) -->
 <aside class="col-ad-rail" aria-label="Advertisement">
@@ -383,7 +423,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </header>
 
-<main>
+<main id="main">
 <!-- HERO -->
 <section class="hero">
   <div class="wrap">

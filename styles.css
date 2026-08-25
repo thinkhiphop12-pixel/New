@@ -13,7 +13,10 @@
   border-bottom:1px solid var(--border);
 }
 .nav-inner{display:flex;align-items:center;justify-content:space-between;height:52px}
-.brand{display:inline-flex;align-items:center;gap:7px;font-weight:800;letter-spacing:-0.01em;font-size:15px;cursor:default;line-height:1}
+/* gap:0 + a margin on the mark, so pages whose markup leaves "BALL" and
+   <b>KNW</b> as separate flex children don't render "BALL KNW" with a gap. */
+.brand{display:inline-flex;align-items:center;gap:0;font-weight:800;letter-spacing:-0.01em;font-size:15px;line-height:1}
+.brand .mark{margin-right:7px}
 .mark{
   width:28px;height:28px;border-radius:7px;flex-shrink:0;
   background:var(--cta);color:#04200d;
@@ -23,6 +26,12 @@
 .nav-links{display:flex;align-items:center;gap:10px}
 .nav-links a:not(.btn){color:var(--muted);font-size:13.5px;font-weight:600;transition:color .15s}
 .nav-links a:not(.btn):hover{color:var(--white)}
+/* Tell the visitor which page they're on — the nav gave no signal before. */
+.nav-links a[aria-current="page"]:not(.btn){color:var(--white);position:relative}
+.nav-links a[aria-current="page"]:not(.btn)::after{
+  content:"";position:absolute;left:0;right:0;bottom:-6px;height:2px;border-radius:2px;background:var(--cta);
+}
+.foot-links a[aria-current="page"],.site-footer a[aria-current="page"]{color:var(--white);font-weight:600}
 @media(max-width:680px){.nav-links a:not(.btn){display:none}}
 
 /* BUTTONS */
@@ -35,6 +44,7 @@
 }
 .btn-primary{background:var(--cta);color:#04200d}
 .btn-primary:hover{transform:translateY(-1px);box-shadow:var(--glow-lime)}
+.btn:active,.btn-primary:active,.btn-ghost:active{transform:translateY(1px) scale(.985)}
 .btn-ghost{background:var(--glass);border-color:var(--border);color:var(--white)}
 .btn-ghost:hover{border-color:var(--border-bright)}
 .btn-link{background:none;border:none;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;padding:4px 0;min-height:auto;display:inline}
@@ -61,7 +71,7 @@
 .subline{margin-top:10px;color:var(--muted);font-size:11.5px;letter-spacing:.03em}
 
 /* SECTIONS */
-.section{position:relative;z-index:1;padding:28px 0}
+.section{position:relative;z-index:1;padding:44px 0 52px}
 .section-head{margin-bottom:16px}
 .eyebrow{font-size:10px;font-weight:700;letter-spacing:.2em;color:var(--lime);text-transform:uppercase}
 .section-head h2{font-size:clamp(1.25rem,5vw,1.8rem);font-weight:800;letter-spacing:-0.025em;line-height:1.15;margin-top:4px}
@@ -74,6 +84,7 @@
   padding:30px;min-height:280px;overflow:hidden;transition:transform .18s,border-color .2s,box-shadow .25s;
 }
 .game-card:hover{transform:translateY(-3px);border-color:var(--border-bright)}
+.game-card:active{transform:translateY(-1px)}
 .game-card.scout:hover{box-shadow:0 18px 50px -20px rgba(42,178,72,0.35)}
 .game-card.draft:hover{box-shadow:0 18px 50px -20px rgba(18,179,128,0.35)}
 .game-card::after{
@@ -92,13 +103,22 @@
 .game-icon{font-size:34px;margin-bottom:14px;position:relative;z-index:1}
 .game-card h3{font-size:1.55rem;font-weight:800;letter-spacing:-0.02em;position:relative;z-index:1}
 .game-card .desc{color:var(--muted);font-size:14.5px;margin-top:10px;position:relative;z-index:1;flex:1}
-.game-card .play{margin-top:22px;position:relative;z-index:1}
+/* CTA sits at the card floor so buttons line up across a row of uneven cards */
+.game-card .play{margin-top:auto;padding-top:22px;position:relative;z-index:1}
 .play .btn{width:100%;justify-content:center;padding:13px}
 
 /* FEATURE TILES */
 .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 @media(max-width:760px){.feat-grid{grid-template-columns:1fr}}
-.feat-tile{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px 22px;text-align:center}
+/* Offset the middle tile so the row reads as a composition rather than three
+   identical boxes. Only above the breakpoint, where the grid is a row. */
+@media(min-width:761px){.feat-grid > :nth-child(2){transform:translateY(18px)}}
+.feat-tile{
+  background:var(--surface);border:1px solid var(--border);border-radius:18px;
+  padding:26px 22px 30px;text-align:left;
+  transition:border-color .2s,transform .2s,box-shadow .25s;
+}
+.feat-tile:hover{border-color:var(--border-bright);box-shadow:var(--shadow-md)}
 .feat-tile .fi{font-size:28px;margin-bottom:12px}
 .feat-tile h3{font-size:15.5px;font-weight:800;letter-spacing:-0.01em}
 
@@ -146,7 +166,7 @@
 .about-inner{max-width:720px;margin:0 auto;padding:56px 22px;color:rgba(255,255,255,0.85)}
 .about-inner h2{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:900;letter-spacing:-0.02em;margin-bottom:18px}
 .about-inner h3{font-size:1.2rem;font-weight:800;margin:28px 0 10px;color:var(--lime)}
-.about-inner p{margin-bottom:14px;font-size:15px;line-height:1.7;color:rgba(255,255,255,0.8)}
+.about-inner p{margin-bottom:14px;font-size:15px;line-height:1.75;max-width:65ch;color:rgba(255,255,255,0.8)}
 .about-inner a{color:var(--lime)}
 
 /* AMAZON SHOP SECTION */
@@ -189,6 +209,9 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 .faq-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
 .faq-item summary{cursor:pointer;padding:16px 18px;font-weight:700;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
 .faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary:hover{color:var(--lime)}
+.faq-item summary::after{transition:transform .2s}
+.faq-item[open] summary::after{transform:rotate(180deg)}
 .faq-item summary::after{content:"+";color:var(--lime);font-size:18px;font-weight:800;flex-shrink:0}
 .faq-item[open] summary::after{content:"–"}
 .faq-item p{color:var(--muted);font-size:14px;padding:0 18px 16px;line-height:1.6}

@@ -1,41 +1,115 @@
 /* theme.css — BALLKNW design tokens + base resets.
-   Extracted from index.html's inline <style> block (the live, correct
-   design system) so about.html, privacy.html, terms.html and gaffer-guide.html
-   render with the same look.
-   index.html itself is untouched and keeps its inline styles. */
+   The token set here is the canonical one: index.html's inline <style> block
+   mirrors it value for value. Every other page (about, privacy, terms, the
+   guides and the explainers) picks it up from this file. */
+
+/* Display face for headings, text face for everything else. Loaded here rather
+   than per-page so all ~60 static pages share one font stack — previously only
+   index.html requested a webfont and the rest fell back to system-ui. */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Geist:wght@400;500;600;700&display=swap');
 
 :root{
-  --bg:#0b120d;
-  --surface:rgba(255,255,255,0.04);
-  --glass:rgba(255,255,255,0.06);
-  --border:rgba(255,255,255,0.10);
-  --border-bright:rgba(255,255,255,0.18);
-  --lime:#2ab248;
+  /* surfaces */
+  --bg:#07100a;
+  --surface:rgba(255,255,255,0.045);
+  --glass:rgba(255,255,255,0.07);
+  --border:rgba(255,255,255,0.09);
+  --border-bright:rgba(255,255,255,0.22);
+  --border-hi:rgba(255,255,255,0.22);
+
+  /* ink */
+  --white:#edeae0;
+  --muted:#7a9082;
+
+  /* accent — one green family, nothing else competes with it */
+  --lime:#2cb94e;
   --emerald:#12b380;
-  --white:#f2efe6;
-  --muted:#93a099;
   --gold:#e0b84a;
-  --cta:linear-gradient(135deg,#2ab248 0%,#12b380 100%);
-  --glow-lime:0 0 44px rgba(42,178,72,0.22);
+  --cta:linear-gradient(135deg,#2cb94e 0%,#12b380 100%);
+
+  /* shadows carry the background hue rather than flat black */
+  --glow:0 0 28px rgba(44,185,78,0.32);
+  --glow-lime:0 0 28px rgba(44,185,78,0.32);
+  --shadow-sm:0 2px 8px -2px rgba(3,12,7,0.55);
+  --shadow-md:0 14px 34px -18px rgba(3,12,7,0.85);
+
+  /* type */
+  --font-display:'Outfit','Geist',system-ui,-apple-system,sans-serif;
+  --font-text:'Geist',system-ui,-apple-system,sans-serif;
+
+  /* geometry */
+  --r:14px;
   --radius:20px;
   --maxw:1080px;
+
+  /* stacking scale — no more ad-hoc 9999s */
+  --z-base:1;
+  --z-rail:5;
+  --z-nav:50;
+  --z-overlay:90;
+  --z-consent:100;
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
-  font-family:Inter,system-ui,-apple-system,sans-serif;
+  font-family:var(--font-text);
   background:var(--bg);color:var(--white);
   line-height:1.5;-webkit-font-smoothing:antialiased;
   overflow-x:hidden;
 }
+h1,h2,h3,h4,.brand,.foot-brand{font-family:var(--font-display)}
 a{text-decoration:none;color:inherit}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
 
+/* Headlines shouldn't strand a single word on the last line; body copy gets the
+   cheaper widow fix. */
+h1,h2,h3{text-wrap:balance}
+p,li{text-wrap:pretty}
+
+/* Figures in stats and tables line up column-wise. */
+.stat .num,table.data td,table.data th,time{font-variant-numeric:tabular-nums}
+
 /* ambient glow behind hero, matches homepage */
 body::before{
-  content:"";position:fixed;top:-280px;left:50%;transform:translateX(-50%);
-  width:900px;height:680px;pointer-events:none;z-index:0;
-  background:radial-gradient(50% 50% at 50% 50%,rgba(18,179,128,0.16) 0%,rgba(42,178,72,0.06) 40%,transparent 72%);
-  filter:blur(8px);
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 60% 40% at 50% -10%,rgba(18,179,128,0.11) 0%,transparent 70%);
 }
+
+/* Fine grain over the whole page so the flat dark surfaces don't read as
+   sterile vector. Fixed, non-interactive, and cheap (one inline SVG). */
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:var(--z-overlay);
+  opacity:.035;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── FOCUS ──
+   Keyboard users had no visible indicator anywhere on the site. */
+:focus-visible{
+  outline:2px solid var(--lime);
+  outline-offset:2px;
+  border-radius:4px;
+}
+:focus:not(:focus-visible){outline:none}
+
+/* ── SKIP LINK ──
+   Visually hidden until focused, then parks itself over the nav. */
+.skip-link{
+  position:absolute;left:12px;top:-64px;z-index:var(--z-consent);
+  background:var(--cta);color:#04200d;font-weight:700;font-size:14px;
+  padding:12px 18px;border-radius:10px;
+  transition:top .18s ease;
+}
+.skip-link:focus{top:12px}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
+}
+
+/* The nav is sticky, so an anchor jump must clear it. */
+#main,[id]{scroll-margin-top:64px}

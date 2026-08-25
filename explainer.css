@@ -102,3 +102,32 @@ blockquote{border-left:3px solid var(--lime);padding:2px 0 2px 16px;margin:18px 
 }
 .end-cta h3{margin:0 0 10px}
 .end-cta a{color:var(--lime)}
+
+/* ── PROSE LINKS ──
+   In-body links were inheriting `color:inherit` from the reset, which left them
+   indistinguishable from surrounding copy. */
+.guide-section p a,.guide-section li a,.standfirst a,.note a,.callout a{
+  color:var(--white);
+  border-bottom:1px solid rgba(44,185,78,.5);
+  transition:color .15s,border-color .15s;
+}
+.guide-section p a:hover,.guide-section li a:hover,.standfirst a:hover,
+.note a:hover,.callout a:hover{color:var(--lime);border-bottom-color:var(--lime)}
+
+/* Comfortable measure for long-form copy — ~65 characters. */
+.guide-section p,.guide-section li{max-width:66ch}
+
+/* Depth on the answer box: a tinted shadow in the page's own hue rather than
+   flat black. */
+.answer-box{box-shadow:0 18px 40px -28px rgba(44,185,78,.55)}
+
+/* Platform switch chips get the same pressed feedback as buttons. */
+.platform-switch a{transition:color .15s,border-color .15s,transform .12s}
+.platform-switch a:hover{color:var(--white);border-color:var(--border-bright)}
+.platform-switch a:active{transform:translateY(1px)}
+
+/* Guide cards keep the same pressed feedback as the rest of the site. */
+.guide-card:active{transform:translateY(0)}
+
+/* Data tables read better with a zebra so the eye tracks across wide rows. */
+table.data tbody tr:nth-child(even){background:rgba(255,255,255,.018)}
