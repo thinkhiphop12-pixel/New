@@ -107,21 +107,6 @@
 .game-card .play{margin-top:auto;padding-top:22px;position:relative;z-index:1}
 .play .btn{width:100%;justify-content:center;padding:13px}
 
-/* FEATURE TILES */
-.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-@media(max-width:760px){.feat-grid{grid-template-columns:1fr}}
-/* Offset the middle tile so the row reads as a composition rather than three
-   identical boxes. Only above the breakpoint, where the grid is a row. */
-@media(min-width:761px){.feat-grid > :nth-child(2){transform:translateY(18px)}}
-.feat-tile{
-  background:var(--surface);border:1px solid var(--border);border-radius:18px;
-  padding:26px 22px 30px;text-align:left;
-  transition:border-color .2s,transform .2s,box-shadow .25s;
-}
-.feat-tile:hover{border-color:var(--border-bright);box-shadow:var(--shadow-md)}
-.feat-tile .fi{font-size:28px;margin-bottom:12px}
-.feat-tile h3{font-size:15.5px;font-weight:800;letter-spacing:-0.01em}
-
 /* COMING SOON */
 .soon-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
 @media(max-width:680px){.soon-grid{grid-template-columns:1fr}}

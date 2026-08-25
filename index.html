@@ -202,6 +202,30 @@ body::before{
 
 /* ── SECTIONS ── */
 .section{position:relative;z-index:1;padding:44px 0 52px}
+
+/* "Start here" guide links. A six-item list with a dash after every title read
+   as filler; as a two-column card grid each guide gets its own target. */
+.start-grid{list-style:none;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(max-width:680px){.start-grid{grid-template-columns:1fr}}
+.start-grid a{
+  display:flex;flex-direction:column;gap:4px;height:100%;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:15px 16px;transition:border-color .18s,transform .18s,background .18s;
+}
+.start-grid a:hover{border-color:var(--border-hi);transform:translateY(-2px)}
+.start-grid a:active{transform:translateY(0)}
+.sg-title{font-weight:700;font-size:14.5px;line-height:1.3}
+.sg-desc{color:var(--muted);font-size:13px;line-height:1.5}
+
+/* The live count is generated in the browser, so reserve its space and show a
+   shimmer until the first value lands instead of a placeholder glyph. */
+.count-loading{display:inline-block;min-width:34px;border-radius:4px}
+.count-loading:empty{
+  height:.85em;vertical-align:-.1em;
+  background:linear-gradient(90deg,rgba(255,255,255,.10),rgba(255,255,255,.22),rgba(255,255,255,.10));
+  background-size:200% 100%;animation:countShimmer 1.4s ease-in-out infinite;
+}
+@keyframes countShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .section-head{margin-bottom:16px}
 .eyebrow{font-size:10px;font-weight:700;letter-spacing:.2em;color:var(--lime);text-transform:uppercase}
 .section-head h2{font-size:clamp(1.25rem,5vw,1.8rem);font-weight:800;letter-spacing:-0.025em;line-height:1.15;margin-top:4px}
@@ -387,12 +411,12 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         {
           "@type": "Question",
           "name": "What can I do in Gaffa?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Pick a real English league club and manage it for a full season — tactics, transfers, contracts, cups and a youth academy. Your save lives in your browser." }
+          "acceptedAnswer": { "@type": "Answer", "text": "Pick a real English league club and manage it for a full season: tactics, transfers, contracts, cups and a youth academy. Your save lives in your browser." }
         },
         {
           "@type": "Question",
           "name": "Where does the player and squad data come from?",
-          "acceptedAnswer": { "@type": "Answer", "text": "BALLKNW builds its squads from public football datasets — current-season club squads and every World Cup squad from 1930 through 2026. In-game ratings are our own stylized approximations for gameplay, not official figures from any ratings provider." }
+          "acceptedAnswer": { "@type": "Answer", "text": "BALLKNW builds its squads from public football datasets: current-season club squads and every World Cup squad from 1930 through 2026. In-game ratings are our own stylized approximations for gameplay, not official figures from any ratings provider." }
         },
         {
           "@type": "Question",
@@ -427,13 +451,13 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 <!-- HERO -->
 <section class="hero">
   <div class="wrap">
-    <div class="live-pill"><span class="dot"></span><b id="liveCount">—</b>&nbsp;playing now</div>
+    <div class="live-pill"><span class="dot"></span><b id="liveCount" class="count-loading"></b>&nbsp;playing now</div>
     <h1>Free Football Manager<br><span class="grad">Play Online, No Download</span></h1>
-    <p class="lead">A football management simulation, free and playable online. Take charge of a real English league club — set your tactics, sign players in the transfer market, and simulate a full season — all in your browser.</p>
+    <p class="lead">Manage a real English league club for a full season. Tactics, transfers and cups, all in your browser.</p>
     <div class="hero-ctas">
       <a href="#play" class="btn btn-primary">Play Gaffa ↓</a>
     </div>
-    <p class="subline">Free &middot; no account &middot; saves automatically</p>
+    <p class="subline">Free. No account. Saves automatically.</p>
   </div>
 </section>
 
@@ -481,14 +505,14 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         <div class="step-num">2</div>
         <div class="step-body">
           <h3>Set your tactics</h3>
-          <p>Formation, instructions, set pieces — build the way your team plays.</p>
+          <p>Formation, instructions and set pieces. Build the way your team plays.</p>
         </div>
       </div>
       <div class="step-card">
         <div class="step-num">3</div>
         <div class="step-body">
           <h3>Work the market</h3>
-          <p>Scout, negotiate and sign — all within a real wage and transfer budget.</p>
+          <p>Scout, negotiate and sign, all within a real wage and transfer budget.</p>
         </div>
       </div>
       <div class="step-card">
@@ -502,22 +526,39 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </section>
 
-<!-- MOST-READ GUIDES — the pages with real search demand, linked prominently
+<!-- MOST-READ GUIDES: the pages with real search demand, linked prominently
      rather than buried in the footer list. See content/keyword-audit-2026-08.md -->
 <section class="section" style="padding-top:10px">
   <div class="wrap">
     <div class="section-head" style="text-align:center">
-      <div class="eyebrow">Guides</div>
       <h2>Start here</h2>
     </div>
-    <div class="faq-list">
-      <p style="margin:0 0 10px"><a href="/football-manager-26-best-wonderkids-on-a-budget.html"><strong>FM26 wonderkids on a budget</strong></a> — the young players worth signing when you have no money.</p>
-      <p style="margin:0 0 10px"><a href="/football-manager-26-best-tactics.html"><strong>FM26 best tactics</strong></a> — the formations that work, and how to build your own.</p>
-      <p style="margin:0 0 10px"><a href="/soccer-positions-explained.html"><strong>Soccer positions explained</strong></a> — every position on the pitch, and what each one actually does.</p>
-      <p style="margin:0 0 10px"><a href="/what-is-a-low-block-in-football.html"><strong>What is a low block?</strong></a> — defending deep, why it works, and how to beat one.</p>
-      <p style="margin:0 0 10px"><a href="/football-manager-26.html"><strong>FM26 explained</strong></a> — platforms, Game Pass, cross-play, price and what's new.</p>
-      <p style="margin:0"><a href="/football-manager-26-how-to.html"><strong>FM26 how-to guide</strong></a> — loading tactics, going on holiday, the editor, and system requirements.</p>
-    </div>
+    <ul class="start-grid">
+      <li><a href="/football-manager-26-best-wonderkids-on-a-budget.html">
+        <span class="sg-title">FM26 wonderkids on a budget</span>
+        <span class="sg-desc">The young players worth signing when you have no money.</span>
+      </a></li>
+      <li><a href="/football-manager-26-best-tactics.html">
+        <span class="sg-title">FM26 best tactics</span>
+        <span class="sg-desc">The formations that work, and how to build your own.</span>
+      </a></li>
+      <li><a href="/soccer-positions-explained.html">
+        <span class="sg-title">Soccer positions explained</span>
+        <span class="sg-desc">Every position on the pitch, and what each one actually does.</span>
+      </a></li>
+      <li><a href="/what-is-a-low-block-in-football.html">
+        <span class="sg-title">What is a low block?</span>
+        <span class="sg-desc">Defending deep, why it works, and how to beat one.</span>
+      </a></li>
+      <li><a href="/football-manager-26.html">
+        <span class="sg-title">FM26 explained</span>
+        <span class="sg-desc">Platforms, Game Pass, cross-play, price and what's new.</span>
+      </a></li>
+      <li><a href="/football-manager-26-how-to.html">
+        <span class="sg-title">FM26 how-to guide</span>
+        <span class="sg-desc">Loading tactics, going on holiday, the editor, and system requirements.</span>
+      </a></li>
+    </ul>
     <p class="foot-meta" style="margin-top:14px;text-align:center"><a href="/football-guides.html" style="color:var(--lime);font-weight:700">All football guides &amp; explainers →</a></p>
   </div>
 </section>
@@ -526,13 +567,12 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 <section id="faq" class="section">
   <div class="wrap">
     <div class="section-head" style="text-align:center">
-      <div class="eyebrow">FAQ</div>
       <h2>Quick answers</h2>
     </div>
     <div class="faq-list">
       <details class="faq-item">
         <summary>Are the BALLKNW football games really free?</summary>
-        <p>Yes — every game on ballknw.com is 100% free to play in your browser. No account, no download, no paywall. The site is supported by light, consent-based advertising.</p>
+        <p>Yes. Every game on ballknw.com is 100% free to play in your browser. No account, no download, no paywall. The site is supported by light, consent-based advertising.</p>
       </details>
       <details class="faq-item">
         <summary>Do I need an account to play or save my progress?</summary>
@@ -540,11 +580,11 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       </details>
       <details class="faq-item">
         <summary>What can I do in Gaffa?</summary>
-        <p>Pick a real English league club and manage it for a full season — tactics, transfers, contracts, cups and a youth academy. Your save lives in your browser.</p>
+        <p>Pick a real English league club and manage it for a full season: tactics, transfers, contracts, cups and a youth academy. Your save lives in your browser.</p>
       </details>
       <details class="faq-item">
         <summary>Where does the player and squad data come from?</summary>
-        <p>BALLKNW builds its squads from public football datasets — current-season club squads and every World Cup squad from 1930 through 2026. In-game ratings are our own stylized approximations for gameplay, not official figures from any ratings provider.</p>
+        <p>BALLKNW builds its squads from public football datasets: current-season club squads and every World Cup squad from 1930 through 2026. In-game ratings are our own stylized approximations for gameplay, not official figures from any ratings provider.</p>
       </details>
       <details class="faq-item">
         <summary>Is BALLKNW affiliated with FIFA, the Premier League or any official sports body?</summary>
@@ -554,19 +594,19 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </section>
 
-<!-- CLOSING SECTION — matchday board, with the banner built into the sponsor bar -->
+<!-- CLOSING SECTION: matchday board, with the banner built into the sponsor bar -->
 <section class="section closer">
   <div class="wrap">
     <div class="board">
       <div class="board-top">
-        <span class="live"><span class="dot"></span><b data-live-count>—</b>&nbsp;playing now</span>
+        <span class="live"><span class="dot"></span><b data-live-count class="count-loading"></b>&nbsp;playing now</span>
         <span class="board-top-meta">Matchday hub</span>
       </div>
       <div class="board-main">
         <div class="board-left">
           <div class="eyebrow">Before you go</div>
           <h2>One game.<br>One tab. Still free.</h2>
-          <p>Your save, streak and squad live in this browser — close the tab, come back, pick the season up where you left it.</p>
+          <p>Your save, streak and squad live in this browser. Close the tab, come back, and pick the season up where you left it.</p>
           <a href="/gaffa/" class="btn btn-primary">Play Gaffa</a>
         </div>
         <div class="board-right">
