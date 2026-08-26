@@ -3767,6 +3767,15 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
    bundle runs. Sits after `.fm-app` (min-height: 100dvh), so it is below the
    fold and never competes with the game for space. The bottom padding clears
    the `.fm-rail` thumb dock, which is position: fixed under 900px. */
+/* Hidden once a career is actually in progress (FootballManagerGame toggles
+   this on <body>) — the copy above still ships in the static HTML for
+   crawlers, it just stops sitting under the hub as dead scroll once there's
+   a real screen to look at. */
+body.fm-in-game .fm-about,
+body.fm-in-game .fm-about-foot {
+  display: none;
+}
+
 .fm-about,
 .fm-about-foot {
   max-width: 760px;

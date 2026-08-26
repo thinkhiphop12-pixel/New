@@ -323,6 +323,17 @@ export default function FootballManagerGame() {
   const settingsRef = useRef<GameSettings | null>(null);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
 
+  // The SEO copy in page.tsx's <AboutGaffa> ships in the static HTML so
+  // crawlers see it before any JS runs, but it's a sibling of this
+  // component, not a child — page.tsx is a server component and can't hold
+  // the view state to gate it. Once a career is actually in progress, ~1600px
+  // of that copy sitting below the hub just adds dead scroll under any
+  // screen shorter than it, so hide it client-side the moment we leave the
+  // menu, and bring it back if the player ever returns to it.
+  useEffect(() => {
+    document.body.classList.toggle('fm-in-game', view !== 'menu');
+  }, [view]);
+
   // Feed the sound/haptics modules whenever settings change (they hold
   // module-level state so every sfx call site doesn't need the settings).
   useEffect(() => {
