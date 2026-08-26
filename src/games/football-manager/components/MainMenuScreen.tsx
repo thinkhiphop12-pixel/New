@@ -43,7 +43,7 @@ export default function MainMenuScreen({
       />
       <div className="fm-screen fm-start" style={{ position: 'relative', zIndex: 1 }}>
       <p className="fm-label">A BALLKNW GAME</p>
-      {/* Wordmark, not an image: the same boxed-initial + Inter-caps lockup
+      {/* Wordmark, not an image: the same boxed-initial + Oswald-caps lockup
           ballknw.com uses for BALLKNW, so the two logos are one mark. Text
           also stays crisp at any density and needs no asset request. */}
       <h2 className="fm-start__title" style={{ margin: '8px 0 0' }}>

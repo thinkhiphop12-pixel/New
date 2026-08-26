@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Oswald } from 'next/font/google';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
 import Script from 'next/script';
@@ -14,7 +14,9 @@ import './globals.css';
 // build loads them.
 const IS_STATIC_EXPORT = !!process.env.NEXT_PUBLIC_BASE_PATH;
 
-const inter = Inter({
+// Condensed sport grotesque — broadcast-scoreboard territory, not the
+// geometric-sans fintech look Inter reads as here.
+const oswald = Oswald({
   subsets: ['latin'],
   preload: true,
   display: 'swap',
@@ -72,7 +74,7 @@ gtag('config', '${GA_ID}');`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.className}>
+    <html lang="en" className={oswald.className}>
       <body>
         {children}
         <SpeedInsights />

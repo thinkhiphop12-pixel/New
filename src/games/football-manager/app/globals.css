@@ -173,7 +173,7 @@ body {
   background-image: var(--bg-grad);
   background-attachment: fixed;
   color: var(--text);
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: Oswald, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -200,6 +200,10 @@ body {
   position: sticky; top: 0; z-index: 40;
 }
 .fm-header__brand {
+  /* Locked to Inter regardless of the app-wide font — this is the same
+     BALLKNW logo as every other ballknw.com page (theme.css), not game UI,
+     so it can't drift when the game's own type changes. */
+  font-family: Inter, system-ui, -apple-system, sans-serif;
   font-weight: 800; letter-spacing: 0.5px; color: white;
   font-size: 14px; text-transform: uppercase;
   display: flex; align-items: center; gap: 8px;
@@ -394,7 +398,7 @@ body {
 }
 
 /* ── Labels / Typography ── */
-/* All text now uses Inter for consistency across the site */
+/* All text now uses Oswald for consistency across the site */
 .fm-label {
   font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase;
   color: var(--muted-dim); font-weight: 800;
@@ -421,7 +425,11 @@ body {
 .fm-brand {
   display: inline-flex; align-items: center; gap: 0.467em;
   font-weight: 800; letter-spacing: -0.01em; line-height: 1;
-  color: #f3f7f4; font-family: inherit; white-space: nowrap;
+  color: #f3f7f4; white-space: nowrap;
+  /* Was `inherit` — fine while the app font was Inter, but once the rest of
+     the game moved to Oswald this wordmark has to stay pinned to Inter
+     itself, or it stops matching the ballknw.com logo it's a direct port of. */
+  font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 .fm-brand__mark {
   width: 1.867em; height: 1.867em; border-radius: 0.467em; flex-shrink: 0;
@@ -3767,6 +3775,15 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
    bundle runs. Sits after `.fm-app` (min-height: 100dvh), so it is below the
    fold and never competes with the game for space. The bottom padding clears
    the `.fm-rail` thumb dock, which is position: fixed under 900px. */
+/* Hidden once a career is actually in progress (FootballManagerGame toggles
+   this on <body>) — the copy above still ships in the static HTML for
+   crawlers, it just stops sitting under the hub as dead scroll once there's
+   a real screen to look at. */
+body.fm-in-game .fm-about,
+body.fm-in-game .fm-about-foot {
+  display: none;
+}
+
 .fm-about,
 .fm-about-foot {
   max-width: 760px;
