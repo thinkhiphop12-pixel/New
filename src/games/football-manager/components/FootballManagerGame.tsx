@@ -36,6 +36,7 @@ import type { ScreenId } from './hubNav';
 import OnboardingOverlay, { hasSeenOnboarding } from './OnboardingOverlay';
 import { setVolume, setMuted } from '@/lib/sound';
 import { setHaptics } from '@/lib/haptics';
+import { onPageHidden } from '@/lib/usePageVisible';
 import { useKeyboardShortcuts } from '@/lib/useKeyboardShortcuts';
 import PreMatchWarningsModal from './PreMatchWarningsModal';
 import AssistantFab from './assistant/AssistantFab';
@@ -372,6 +373,12 @@ export default function FootballManagerGame() {
    *  React effect, so it isn't tied to any component staying mounted. */
   const runToNextEvent = async (untilDay?: number) => {
     while (holdingRef.current) {
+      // A backgrounded tab throttles setTimeout to about a second but does not
+      // stop it, so without this the sim keeps eating days while nobody is
+      // watching. Days advance irreversible state, so hiding the tab cancels
+      // the run outright rather than pausing it — same semantics as a second
+      // click on the dock.
+      if (typeof document !== 'undefined' && document.hidden) break;
       const current = gsRef.current;
       if (untilDay !== undefined && current && dayOfSeason(current) >= untilDay) break;
       const stopped = tickOneDay();
@@ -381,6 +388,15 @@ export default function FootballManagerGame() {
     holdingRef.current = false;
     setHolding(false);
   };
+
+  /** Leaving the tab cancels a run immediately, rather than waiting for the
+   *  loop's next iteration to notice. Keeps the dock button and the sim in
+   *  agreement about whether anything is still running. */
+  useEffect(() => onPageHidden(() => {
+    if (!holdingRef.current) return;
+    holdingRef.current = false;
+    setHolding(false);
+  }), []);
 
   /** The dock's primary button and the Calendar screen's per-day "Simulate
    *  to here" both funnel through this: skip straight to whatever needs the

@@ -11,6 +11,7 @@ import { MENTALITIES, MENTALITY_ORDER, normalizeMentality, type MentalityId } fr
 import { ratingsFromCounts } from '@/engine/tickEngine/ratings';
 import type { MatchTimeline, MinuteSnapshot, ResumeContext, TeamSide, TickMatchEvent } from '@/engine/tickEngine/types';
 import type { TeamTalkOutcome } from '@/engine/teamTalk';
+import { usePageVisible } from '@/lib/usePageVisible';
 import MatchHighlights from '../MatchHighlights';
 import { Crest } from '../Crest';
 import ManagerAvatar from '../ManagerAvatar';
@@ -72,6 +73,7 @@ export default function MatchScreen({
   const [speed, setSpeed] = useState(() => (settings.matchSpeed === 'slow' ? 1 : settings.matchSpeed === 'fast' ? 4 : 2));
   const [kickedOff, setKickedOff] = useState(false);
   const [paused, setPaused] = useState(false);
+  const pageVisible = usePageVisible();
   const [showMenu, setShowMenu] = useState(false);
   const [showEvents, setShowEvents] = useState(false);
   const [showTactics, setShowTactics] = useState(false);
@@ -126,12 +128,15 @@ export default function MatchScreen({
   // Crowd loop always stops when the screen unmounts (e.g. exiting mid-match).
   useEffect(() => () => crowd.stop(), []);
 
-  // Replay clock.
+  // Replay clock. A hidden tab counts as paused: setInterval is only throttled
+  // in the background, not stopped, so without this the match plays itself out
+  // while the player is looking at something else and they come back to a
+  // result they never watched.
   useEffect(() => {
-    if (!timeline || !kickedOff || paused || finished || overlayOpen) return;
+    if (!timeline || !kickedOff || paused || finished || overlayOpen || !pageVisible) return;
     const t = setInterval(() => setMinute((m) => Math.min(matchEnd, m + 1)), MS_PER_MINUTE / speed);
     return () => clearInterval(t);
-  }, [timeline, kickedOff, paused, finished, overlayOpen, speed, matchEnd]);
+  }, [timeline, kickedOff, paused, finished, overlayOpen, pageVisible, speed, matchEnd]);
 
   // Half-time pause, once real added time for the first half has played out.
   useEffect(() => {
