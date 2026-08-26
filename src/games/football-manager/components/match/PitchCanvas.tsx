@@ -161,7 +161,7 @@ function paintStadium(ctx: CanvasRenderingContext2D, w: number, h: number, px: n
       else ctx.fillRect(x + (bw / 8) * i, y, bw / 8, bh);
     }
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.font = '700 6px Inter, sans-serif';
+    ctx.font = '700 6px Oswald, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (let i = 0; i < 8; i++) {
@@ -397,7 +397,7 @@ export default function PitchCanvas({
           ctx.strokeStyle = '#ffe23f';
           ctx.stroke();
         }
-        ctx.font = `800 ${Math.round(r * 1.02)}px Inter, sans-serif`;
+        ctx.font = `800 ${Math.round(r * 1.02)}px Oswald, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = t.kind === 'player' && luminance(fill) > 0.6 ? '#20337a' : '#ffffff';

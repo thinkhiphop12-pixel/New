@@ -173,7 +173,7 @@ body {
   background-image: var(--bg-grad);
   background-attachment: fixed;
   color: var(--text);
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: Oswald, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -394,7 +394,7 @@ body {
 }
 
 /* ── Labels / Typography ── */
-/* All text now uses Inter for consistency across the site */
+/* All text now uses Oswald for consistency across the site */
 .fm-label {
   font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase;
   color: var(--muted-dim); font-weight: 800;

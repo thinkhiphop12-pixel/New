@@ -8,6 +8,7 @@ import {
   MAX_RENEWAL_ROUNDS, abandonRenewalTalks, canOpenTalks, getTalk, renewalDemand,
   submitRenewalOffer, type RenewalOffer, type RenewalResponse,
 } from '@/engine/contractTalks';
+import { clubWageBill, wageCeiling } from '@/engine/teamManagement';
 import { Icon } from './Icon';
 
 /**
@@ -89,7 +90,10 @@ export default function ContractOfferPanel({
     onClose();
   };
 
-  const remaining = state.budget - wage;
+  // Wage budget, not transfer budget: p's current wage is already inside the
+  // club's bill, so swap it out for the wage on the table before comparing
+  // against the board's weekly ceiling.
+  const remaining = wageCeiling(state) - clubWageBill(state, state.userClubId) + p.wage - wage;
   const roundsLeft = Math.max(0, MAX_RENEWAL_ROUNDS - round);
 
   return (

@@ -36,7 +36,7 @@ function Shirt({ color, gk, num }: { color: string; gk?: boolean; num: number })
       <path d="M13 3 L2 9 L6 18 L11 15 L11 8 Z" fill={sleeve} opacity="0.9" />
       <path d="M31 3 L42 9 L38 18 L33 15 L33 8 Z" fill={sleeve} opacity="0.9" />
       <path d="M17 3 A5 5 0 0 0 27 3 L25.5 2 A3.5 3.5 0 0 1 18.5 2 Z" fill={sleeve} />
-      <text x="22" y="26" textAnchor="middle" fontSize="15" fontWeight="800" fill={numColor} fontFamily="Inter, sans-serif">
+      <text x="22" y="26" textAnchor="middle" fontSize="15" fontWeight="800" fill={numColor} fontFamily="Oswald, sans-serif">
         {num}
       </text>
     </svg>
