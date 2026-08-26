@@ -174,8 +174,8 @@ body::before{
 .hero h1{
   /* the two lines are set by <br> in the markup; no max-width, or the longer
      line wraps again and the hero grows past two lines */
-  font-size:clamp(1.9rem,5.6vw,3.8rem);
-  font-weight:900;letter-spacing:-0.045em;line-height:1.04;
+  font-size:clamp(1.85rem,4.9vw,3.25rem);
+  font-weight:900;letter-spacing:-0.04em;line-height:1.06;
   margin-bottom:18px;text-wrap:nowrap;
 }
 @media(max-width:560px){.hero h1{text-wrap:balance;font-size:clamp(1.75rem,8vw,2.4rem)}}
@@ -190,7 +190,6 @@ body::before{
 }
 .hero-ctas{display:flex;gap:10px;justify-content:flex-start;flex-wrap:wrap}
 .hero-ctas .btn{min-height:44px;padding:12px 22px;font-size:15px}
-.subline{margin-top:14px;color:var(--muted);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
 
 /* ── TRUST STRIP ── */
 .trust{
@@ -473,12 +472,11 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 <section class="hero">
   <div class="wrap">
     <div class="live-pill"><span class="dot"></span><b id="liveCount" class="count-loading"></b>&nbsp;playing now</div>
-    <h1>Free Football Manager<br><span class="grad">Play Online, No Download</span></h1>
+    <h1>Free Football Manager<br>Play Online, <span class="grad">No Download</span></h1>
     <p class="lead">Manage a real English league club for a full season. Tactics, transfers and cups, all in your browser.</p>
     <div class="hero-ctas">
       <a href="#play" class="btn btn-primary">Play Gaffa ↓</a>
     </div>
-    <p class="subline">Free. No account. Saves automatically.</p>
   </div>
 </section>
 
