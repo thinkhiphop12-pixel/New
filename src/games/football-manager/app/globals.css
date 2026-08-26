@@ -200,6 +200,10 @@ body {
   position: sticky; top: 0; z-index: 40;
 }
 .fm-header__brand {
+  /* Locked to Inter regardless of the app-wide font — this is the same
+     BALLKNW logo as every other ballknw.com page (theme.css), not game UI,
+     so it can't drift when the game's own type changes. */
+  font-family: Inter, system-ui, -apple-system, sans-serif;
   font-weight: 800; letter-spacing: 0.5px; color: white;
   font-size: 14px; text-transform: uppercase;
   display: flex; align-items: center; gap: 8px;
@@ -421,7 +425,11 @@ body {
 .fm-brand {
   display: inline-flex; align-items: center; gap: 0.467em;
   font-weight: 800; letter-spacing: -0.01em; line-height: 1;
-  color: #f3f7f4; font-family: inherit; white-space: nowrap;
+  color: #f3f7f4; white-space: nowrap;
+  /* Was `inherit` — fine while the app font was Inter, but once the rest of
+     the game moved to Oswald this wordmark has to stay pinned to Inter
+     itself, or it stops matching the ballknw.com logo it's a direct port of. */
+  font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 .fm-brand__mark {
   width: 1.867em; height: 1.867em; border-radius: 0.467em; flex-shrink: 0;

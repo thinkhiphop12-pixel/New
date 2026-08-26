@@ -624,7 +624,7 @@ export default function FootballManagerGame() {
               </linearGradient>
             </defs>
             <rect x="20" y="20" width="472" height="472" rx="123" fill="url(#fmBrandMark)" />
-            <text x="150" y="345" fontFamily="Oswald, system-ui, sans-serif" fontWeight="900" fontSize="286" fill="#052411">B</text>
+            <text x="150" y="345" fontFamily="Inter, system-ui, sans-serif" fontWeight="900" fontSize="286" fill="#052411">B</text>
           </svg>
           <span>{"BALL"}<b>{"KNW"}</b></span>
         </div>
