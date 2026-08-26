@@ -1,4 +1,4 @@
-:HL["/gaffa/_next/static/chunks/1jocdqqd4mijz.css","style"]
-:HL["/gaffa/_next/static/chunks/176t2_7wau5jk.css","style"]
-:HL["/gaffa/_next/static/media/83afe278b6a6bb3c-s.p.2bn3s6zvc0dyp.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}},"staleTime":300,"buildId":"sF8YyakpbjDHSTey7reOY"}
+:HL["/gaffa/_next/static/chunks/3o5_lo4v6gv8-.css","style"]
+:HL["/gaffa/_next/static/chunks/1hyt4cmy-6w6c.css","style"]
+:HL["/gaffa/_next/static/media/9a800f173b8d9e8f-s.p.3nglv5iys3s0a.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}},"staleTime":300,"buildId":"CG4JsF2QmU7XRaW0X0ers"}

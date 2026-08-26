@@ -61,7 +61,7 @@
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.82)}}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
 .hero h1{
-  font-size:clamp(1.55rem,8.5vw,4.2rem);font-weight:900;letter-spacing:-0.04em;line-height:1.06;
+  font-size:clamp(1.55rem,8.5vw,4.2rem);font-weight:600;letter-spacing:-0.01em;line-height:1.06;
   margin-bottom:12px;
 }
 .hero h1 .grad{background:var(--cta);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -74,7 +74,7 @@
 .section{position:relative;z-index:1;padding:44px 0 52px}
 .section-head{margin-bottom:16px}
 .eyebrow{font-size:10px;font-weight:700;letter-spacing:.2em;color:var(--lime);text-transform:uppercase}
-.section-head h2{font-size:clamp(1.25rem,5vw,1.8rem);font-weight:800;letter-spacing:-0.025em;line-height:1.15;margin-top:4px}
+.section-head h2{font-size:clamp(1.25rem,5vw,1.8rem);font-weight:600;letter-spacing:-0.025em;line-height:1.15;margin-top:4px}
 .section-head p{color:var(--muted);margin-top:5px;font-size:14px}
 .games-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
 @media(max-width:760px){.games-grid{grid-template-columns:1fr}}
@@ -150,7 +150,7 @@
    centered article container, distinct from the homepage .about-card) */
 .about-inner{max-width:720px;margin:0 auto;padding:56px 22px 64px;color:rgba(255,255,255,0.85)}
 .about-inner h1{
-  font-size:clamp(2rem,5vw,3rem);font-weight:900;letter-spacing:-0.03em;line-height:1.08;
+  font-size:clamp(2rem,5vw,3rem);font-weight:600;letter-spacing:-0.03em;line-height:1.08;
   margin-bottom:20px;
 }
 /* h2 is a section heading inside these pages, so it needs room above it. */

@@ -6,7 +6,7 @@
 /* Display face for headings, text face for everything else. Loaded here rather
    than per-page so all ~60 static pages share one font stack — previously only
    index.html requested a webfont and the rest fell back to system-ui. */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Geist:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root{
   /* surfaces */
@@ -34,8 +34,13 @@
   --shadow-md:0 14px 34px -18px rgba(3,12,7,0.85);
 
   /* type */
-  --font-display:'Outfit','Geist',system-ui,-apple-system,sans-serif;
-  --font-text:'Geist',system-ui,-apple-system,sans-serif;
+  /* Matches the game (src/games/football-manager/app/layout.tsx): Oswald for
+     display, Inter for reading, and the wordmark pinned to Inter so it stays
+     the same shape whatever the display face is. Oswald is a condensed
+     grotesque — the register of matchday graphics rather than of a startup. */
+  --font-display:'Oswald',system-ui,-apple-system,sans-serif;
+  --font-text:'Inter',system-ui,-apple-system,sans-serif;
+  --font-brand:'Inter',system-ui,-apple-system,sans-serif;
 
   /* geometry */
   --r:14px;
@@ -58,7 +63,11 @@ body{
   line-height:1.5;-webkit-font-smoothing:antialiased;
   overflow-x:hidden;
 }
-h1,h2,h3,h4,.brand,.foot-brand{font-family:var(--font-display)}
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:600;letter-spacing:-.01em}
+/* Oswald tops out at 700 and is already dense; the old 800/900 display weights
+   have no equivalent and render as a fake-bold smear. */
+h1{font-weight:600}
+.brand,.foot-brand{font-family:var(--font-brand)}
 a{text-decoration:none;color:inherit}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
 

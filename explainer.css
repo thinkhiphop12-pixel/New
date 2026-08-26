@@ -29,7 +29,7 @@
 /* Masthead. Left-aligned and set large, so the page opens with a piece of
    typography rather than a centred block of small text. */
 .guide-content h1{
-  font-size:clamp(2.1rem,6vw,3.6rem);font-weight:900;
+  font-size:clamp(2.1rem,6vw,3.6rem);font-weight:600;
   letter-spacing:-.04em;line-height:1.02;margin:48px 0 0;text-align:left;
 }
 .standfirst{
@@ -54,7 +54,7 @@
 .guide-section{margin:56px 0;padding-top:32px;border-top:1px solid var(--border)}
 .guide-section:first-of-type{border-top:none;padding-top:0}
 .guide-section h2,.guide-content > h2{
-  position:relative;font-size:clamp(1.5rem,3.2vw,2rem);font-weight:800;
+  position:relative;font-size:clamp(1.5rem,3.2vw,2rem);font-weight:600;
   letter-spacing:-.03em;line-height:1.15;margin:0 0 16px;color:var(--white);
 }
 .guide-content > h2{margin-top:48px}
