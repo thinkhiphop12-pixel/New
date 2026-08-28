@@ -4251,3 +4251,71 @@ body.fm-in-game .fm-about-foot {
   display: block; font-size: 9.5px; font-weight: 800; letter-spacing: 0.4px;
   text-transform: uppercase; color: var(--muted-dim); font-style: normal; margin-bottom: 2px;
 }
+
+/* ── Desktop app shell: one screen, nav pinned ──
+   At ≥900px the game stops being a scrolling page and becomes a fixed
+   application frame: the header, the section rail, the group sub-tabs and
+   the action dock all hold their position, and the only thing that ever
+   scrolls is the screen content between them. Below 900px nothing here
+   applies — the phone layout is a scrolling page with a fixed thumb dock
+   and stays exactly as it was. */
+@media (min-width: 900px) {
+  html, body { height: 100%; overflow: hidden; }
+  .fm-app { height: 100dvh; min-height: 0; overflow: hidden; }
+  .fm-header { flex: none; }
+
+  /* The one scroll container for views that lay out no scroller of their
+     own (menu, club select, day summary). The hub never reaches it: its
+     shell is exactly this box's height and scrolls inside .fm-hub-panel. */
+  .fm-main { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-bottom: 12px; }
+  .fm-view-fade { display: flex; flex-direction: column; min-height: 0; }
+  .fm-main > .fm-view-fade { flex: 1 1 auto; }
+
+  .fm-hub-shell { flex: 1 1 auto; min-height: 0; align-items: stretch; }
+  /* Full-height column instead of a sticky offset — with the shell itself
+     height-bounded there is nothing left to stick to. */
+  .fm-rail { position: static; top: auto; height: 100%; overflow-y: auto; }
+  .fm-hub-shell__main { min-height: 0; }
+  .fm-subnav { position: static; flex: none; background: none; }
+  .fm-hub-panel {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    padding-right: 4px; padding-bottom: 4px;
+  }
+  /* The dock is a sibling of <main>, so pinning the frame turns it into a
+     permanent footer bar — no fixed positioning needed. */
+  .fm-actiondock { flex: none; margin-bottom: 8px; }
+  .fm-bottom-ad { margin: 8px auto; }
+}
+
+/* Overview at desktop: the whole Home screen is sized to the frame, so it
+   never scrolls at all. The club header, the next-match hero and the abandon
+   row take their natural height; the three status modules share what is left
+   and scroll inside themselves if their own content is long (the league table
+   is the only one that ever does). Before this the modules were stretched to
+   match the tallest of the three by grid's default `stretch`, so the two
+   short ones rendered as columns of empty panel — the hollow look down the
+   middle of the screen — while the table's last rows fell off the bottom. */
+@media (min-width: 900px) {
+  .fm-hub-panel > .fm-portal { height: 100%; }
+  .fm-portal { min-height: 0; }
+  .fm-hub-grid {
+    flex: 1 1 auto; min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  /* Content height, capped at the row — so a short module stays short
+     instead of rendering as a column of empty panel, and a long one (the
+     league table) scrolls inside itself rather than off the frame. */
+  .fm-hub-grid > .fm-mod { align-self: start; min-height: 0; max-height: 100%; overflow-y: auto; }
+  .fm-hub-grid__hero { overflow: visible; }
+  .fm-portal__actions { flex: none; }
+}
+
+/* Short desktop windows (a laptop at 1280×800 and below): trim the Overview
+   chrome so the whole screen still lands inside the frame without scrolling. */
+@media (min-width: 900px) and (max-height: 900px) {
+  .fm-portal { gap: 8px; }
+  .fm-portal__header { padding: 10px 14px; }
+  .fm-hub-grid { gap: 8px; }
+  .fm-mod { padding: 10px 12px; }
+  .fm-portal__actions { margin-top: 0; }
+}

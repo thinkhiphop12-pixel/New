@@ -92,8 +92,13 @@ export default function HubScreen({
   // Same in-place-swap scroll issue as the top-level view switch: reset to
   // the top of the (new, usually shorter) screen whenever the destination
   // changes, so the nav doesn't start out scrolled off-screen.
+  const panelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     window.scrollTo(0, 0);
+    // On desktop the page itself no longer scrolls — the panel below is the
+    // scroll container (globals.css, "Desktop app shell") — so resetting the
+    // window alone would leave the new screen opening mid-way down.
+    panelRef.current?.scrollTo(0, 0);
   }, [route]);
 
   // Entering a group moves focus onto its active sub-tab, so the arrow keys
@@ -223,6 +228,7 @@ export default function HubScreen({
 
         <div
           key={activeRoute}
+          ref={panelRef}
           className="fm-hub-panel fm-screen-slide"
           id="fm-screen-panel"
           role="tabpanel"
