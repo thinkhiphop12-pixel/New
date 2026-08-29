@@ -38,7 +38,7 @@ import OnboardingOverlay, { hasSeenOnboarding, markOnboardingSeen } from './Onbo
 import { setVolume, setMuted } from '@/lib/sound';
 import { setHaptics } from '@/lib/haptics';
 import { onPageHidden } from '@/lib/usePageVisible';
-import { useKeyboardShortcuts } from '@/lib/useKeyboardShortcuts';
+import { useKeyboardShortcuts, isOverlayOpen } from '@/lib/useKeyboardShortcuts';
 import PreMatchWarningsModal from './PreMatchWarningsModal';
 import AssistantFab from './assistant/AssistantFab';
 import AssistantPanel from './assistant/AssistantPanel';
@@ -556,6 +556,12 @@ export default function FootballManagerGame() {
       },
       Space: (e) => {
         if (view !== 'hub' || !gs || showSettings || showMore) return;
+        // Anything covering the screen owns the keyboard. The two named
+        // flags above only cover the two sheets this component happens to
+        // hold state for; a modal opened by a child screen — the training
+        // minigame, which binds Space itself — was invisible here, so
+        // playing a drill also advanced the day and closed the drill.
+        if (isOverlayOpen()) return;
         e.preventDefault();
         const matchdayPending = dayStops.some((s) => s.category === 'matchday');
         if (matchdayPending) handleProceedToMatch();
