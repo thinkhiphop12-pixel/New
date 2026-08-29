@@ -451,8 +451,16 @@ export default function TransfersScreen({
                   {/* One money verdict per row. "Cheap for you" next to
                       "wages too high" reads as a contradiction, and the wage
                       is the one that stops the deal. */}
+                  {/* "You can afford this" was true of nearly every row on
+                      the default sort, so it told you nothing and did it in
+                      green, eight times down the screen. The money chip now
+                      shows only when the money is actually news — free,
+                      cheap, a stretch, or out of reach. Plain affordability
+                      is the assumption, and says nothing. */}
                   {payable ? (
-                    <span className={`fm-chip fm-chip--${money.tone}`}>{money.text}</span>
+                    money.text !== 'You can afford this' && (
+                      <span className={`fm-chip fm-chip--${money.tone}`}>{money.text}</span>
+                    )
                   ) : (
                     <span className="fm-chip fm-chip--meh" title={`He earns ${formatMoney(projectedWage(p))} a week and you only have ${formatMoney(wageRoom)} a week spare`}>
                       Wages too high for us
@@ -466,16 +474,22 @@ export default function TransfersScreen({
                 </span>
               </span>
               <span className="fm-rowactions" onClick={(e) => e.stopPropagation()}>
+              {/* A star, not a third full-size button. Three buttons of
+                  equal weight per row made every row a decision about which
+                  button to read first; there is only one action here you
+                  take often. */}
               <button
-                className={`fm-btn fm-btn--small${shortlist.includes(p.id) ? ' fm-btn--secondary' : ' fm-btn--ghost'}`}
-                title="Keep an eye on him — your scouts will report back"
+                className={`fm-star${shortlist.includes(p.id) ? ' is-on' : ''}`}
+                title={shortlist.includes(p.id) ? 'On your list — your scouts are watching him' : 'Keep an eye on him — your scouts will report back'}
+                aria-pressed={shortlist.includes(p.id)}
+                aria-label={shortlist.includes(p.id) ? `${p.name} is on your list` : `Add ${p.name} to your list`}
                 onClick={(e) => { e.stopPropagation(); toggleScout(p.id); }}
               >
-                {shortlist.includes(p.id) ? '★ On my list' : '☆ Add to list'}
+                {shortlist.includes(p.id) ? '★' : '☆'}
               </button>
               {p.releaseClauseFee != null && p.releaseClauseFee <= state.budget && (
                 <button
-                  className="fm-btn fm-btn--small fm-btn--ghost"
+                  className="fm-btn fm-btn--small fm-btn--quiet"
                   title="His contract lets you buy him at this exact price — his club cannot say no"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -827,7 +841,7 @@ export default function TransfersScreen({
             text="A green dot means your scouts have finished watching him and you can trust his rating. A grey dot means they're still working on it."
           />
           <div className="fm-player-list">
-          {shortlisted.length === 0 && <p className="fm-hint">Your list is empty. Tap “☆ Add to list” on anyone in Find players.</p>}
+          {shortlisted.length === 0 && <p className="fm-hint">Your list is empty. Tap the ☆ next to anyone in Find players.</p>}
           {shortlisted.map((p) => {
             const assignment = sc.assignments.find((a) => a.kind === 'player-search' && a.foundPlayerIds?.includes(p.id));
             const known = assignment?.complete ?? false;

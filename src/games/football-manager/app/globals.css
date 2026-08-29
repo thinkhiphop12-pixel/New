@@ -2760,9 +2760,36 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   display: inline-flex; align-items: center; border-radius: 6px;
   padding: 2px 7px; font-size: 10px; font-weight: 800; white-space: nowrap;
 }
-.fm-chip--good { background: var(--green-dim); color: var(--green); }
-.fm-chip--ok { background: var(--panel-3); color: var(--muted); }
+/* `--good` used to be a green fill. On a transfer list where most rows are
+   good news, that painted the whole screen green and left the one row with
+   a real problem no louder than the rest. Good news is now stated quietly
+   in the accent ink on the same neutral chip every other verdict uses;
+   `--meh` keeps its tint, because a warning is the thing that should catch
+   the eye. */
+.fm-chip--good { background: rgba(255,255,255,0.05); color: var(--green); }
+.fm-chip--ok { background: rgba(255,255,255,0.05); color: var(--muted); }
 .fm-chip--meh { background: rgba(242,102,122,0.13); color: var(--red); }
+
+/* Shortlist toggle: a star that reads as a state, not a button competing
+   with the row's real action. */
+.fm-star {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid var(--border-soft);
+  color: var(--muted); font-size: 14px; line-height: 1; cursor: pointer;
+  font-family: inherit; transition: color 0.15s, border-color 0.15s;
+}
+.fm-star:hover { color: var(--text); border-color: var(--border-bright); }
+.fm-star.is-on { color: var(--gold); border-color: var(--gold); }
+
+/* A real action, but a rare one — present but not shouting alongside the
+   primary. */
+.fm-btn--quiet {
+  background: transparent; color: var(--muted);
+  border: 1px solid transparent; text-decoration: underline;
+  text-underline-offset: 3px; text-decoration-color: var(--border-bright);
+}
+.fm-btn--quiet:not(:disabled):hover { color: var(--text); }
 
 /* ── Negotiation: what step am I on, and who else is bidding ── */
 .fm-negotiation__stage {
