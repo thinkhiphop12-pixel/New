@@ -267,17 +267,11 @@ body {
   .fm-view-fade { animation: none; }
 }
 
-/* Lighter per-screen transition for switching tabs within a Hub group —
-   .fm-view-fade above covers whole-view swaps (menu → hub → match), this
-   covers Hub sub-tab swaps (Squad → Tactics) with a smaller, quicker move. */
-.fm-screen-slide { animation: fm-screen-slide 0.2s ease-out; }
-@keyframes fm-screen-slide {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .fm-screen-slide { animation: none; }
-}
+/* The Hub sub-tab swap (Squad → Tactics) that used to live here as
+   `.fm-screen-slide` is now the `screenSwap` variant in
+   components/motion/presets.ts, applied by HubScreen — one description of
+   the movement instead of a keyframe here and a duration there. Whole-view
+   swaps (menu → hub → match) are still the CSS `.fm-view-fade` above.  */
 
 /* Modal/sheet entrance pop, applied to the match-screen modal panel and the
    settings panel. */

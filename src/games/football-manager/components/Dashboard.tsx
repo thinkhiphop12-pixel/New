@@ -13,6 +13,9 @@ import { ReputationStars, tint } from './visuals';
 import { Crest } from './Crest';
 import PressConferenceModal from './PressConferenceModal';
 import { Icon, type IconName } from './Icon';
+import { motion } from 'motion/react';
+import { AnimatedGroup, Reveal } from './motion/AnimatedGroup';
+import { riseItem } from './motion/presets';
 import type { ScreenId } from './hubNav';
 import { getAssistant } from '@/engine/assistant';
 import { assistantTopics } from './assistant/tips';
@@ -113,10 +116,13 @@ export default function Dashboard({
         </div>
       </div>
 
-      <div className="fm-hub-grid">
+      {/* The four modules land one after another rather than all at once —
+          the AnimatedGroup pattern from motion-primitives. Each card carries
+          the variant itself, so the grid still lays out `.fm-mod` directly. */}
+      <AnimatedGroup className="fm-hub-grid">
         {/* Next match — the hero module, the reason most players open Home. */}
         {fixture && (
-          <div className="fm-mod fm-hub-grid__hero" style={{ background: tint(club.color, '0a'), borderColor: tint(club.color, '30') }}>
+          <Reveal className="fm-mod fm-hub-grid__hero" style={{ background: tint(club.color, '0a'), borderColor: tint(club.color, '30') }}>
             <div className="fm-mod__head">
               <h2 className="fm-mod__title">Next match</h2>
               <span className="fm-actiondock__spacer" />
@@ -198,11 +204,11 @@ export default function Dashboard({
                 </button>
               )}
             </div>
-          </div>
+          </Reveal>
         )}
 
         {/* Needs your attention — clickable, resolvable, never a dead end. */}
-        <div className="fm-mod">
+        <Reveal className="fm-mod">
           <div className="fm-mod__head">
             <h2 className="fm-mod__title">Needs your attention</h2>
             {attention.length > 0 && <span className="fm-badge fm-badge--alert">{attention.length}</span>}
@@ -214,9 +220,9 @@ export default function Dashboard({
                 : "Nothing urgent — you're all caught up."}
             </p>
           ) : (
-            <div className="fm-msg-list">
+            <AnimatedGroup className="fm-msg-list" stagger={0.035}>
               {attention.map((row, i) => (
-                <button key={i} type="button" className="fm-msg-row unread" onClick={row.onClick}>
+                <motion.button variants={riseItem} key={i} type="button" className="fm-msg-row unread" onClick={row.onClick}>
                   <span className="fm-icon-tile fm-icon-tile--sm" style={{ '--tile-tint': row.warn ? 'var(--red)' : 'var(--blue)' } as CSSProperties}>
                     <Icon name={row.icon} size={15} />
                   </span>
@@ -224,14 +230,14 @@ export default function Dashboard({
                     <span className="fm-msg-row__title">{row.text}</span>
                   </span>
                   <Icon name="chevron" size={14} />
-                </button>
+                </motion.button>
               ))}
-            </div>
+            </AnimatedGroup>
           )}
-        </div>
+        </Reveal>
 
         {/* Squad status: injuries, unhappiness, sharpness/fitness. */}
-        <div className="fm-mod">
+        <Reveal className="fm-mod">
           <div className="fm-mod__head"><h2 className="fm-mod__title">Squad status</h2></div>
           <div className="fm-stats-strip">
             <div className="fm-stat">
@@ -263,7 +269,7 @@ export default function Dashboard({
               <Icon name="chevron" size={14} />
             </button>
           )}
-        </div>
+        </Reveal>
 
         {/* Objectives, Transfers & Scouting, and League news all pulled from
             here — this screen is both the Hub landing and Matchday →
@@ -275,7 +281,7 @@ export default function Dashboard({
             now, and what's my next match. */}
 
         {/* Latest news + league table window. */}
-        <div className="fm-mod">
+        <Reveal className="fm-mod">
           <div className="fm-mod__head">
             <h2 className="fm-mod__title">{leagueName(leagueId)}</h2>
             <span className="fm-actiondock__spacer" />
@@ -314,8 +320,8 @@ export default function Dashboard({
               })}
             </tbody>
           </table>
-        </div>
-      </div>
+        </Reveal>
+      </AnimatedGroup>
 
       {showPress && opponent && (
         <PressConferenceModal

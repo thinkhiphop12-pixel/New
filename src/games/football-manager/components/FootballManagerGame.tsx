@@ -29,6 +29,7 @@ import SettingsPanel, { loadSettings } from './SettingsPanel';
 import MoreMenu from './MoreMenu';
 import CharacterCustomizerScreen from './CharacterCustomizerScreen';
 import ManagerPickScreen from './ManagerPickScreen';
+import { MotionConfig } from 'motion/react';
 import { brandTheme } from '@/lib/brandTheme';
 import { ToastHost, pushToast } from './ToastQueue';
 import { Icon, IconSprite } from './Icon';
@@ -627,6 +628,12 @@ export default function FootballManagerGame() {
     : undefined;
 
   return (
+    /* `reducedMotion="user"` makes every motion component in the tree drop
+       its transforms when the OS asks for less movement — the library-wide
+       equivalent of the `prefers-reduced-motion` blocks the CSS animations
+       already carry, so the two halves of the game's motion behave the
+       same way. */
+    <MotionConfig reducedMotion="user">
     <div className="fm-app" style={brandStyle}>
       <IconSprite />
       <ToastHost />
@@ -891,5 +898,6 @@ export default function FootballManagerGame() {
         />
       )}
     </div>
+    </MotionConfig>
   );
 }
