@@ -33,7 +33,7 @@ import {
 import { pushInbox } from './inbox';
 import { affordableWageBill, calibrateClubWages, calibrateWages, clubWageScale, tickFinances, weeklyMatchdayIncome } from './finances';
 import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
-import { tickFacilitiesWeek } from './facilities';
+import { hireCoach, newFacilities, tickFacilitiesWeek } from './facilities';
 import { applyScheduleDay, applyWeeklySchedule, getSchedule } from './schedule';
 import { tickScoutNetwork } from './scouting';
 import { applyDevPlans } from './development';
@@ -528,6 +528,21 @@ export function newGame(
   // Needs club reputation, so it runs after seedClubIdentities.
   calibrateWages(state);
   ensureSquadNumbers(state);
+  // Every club already has an assistant manager when a new gaffer walks in —
+  // nobody arrives to an empty backroom and has to ask the board for the man
+  // whose whole job is explaining the board to them. He is the one piece of
+  // staff a career starts with; the other seven jobs are still yours to fill
+  // through Club → Staff. Quality tracks the club's stature, so a big side's
+  // number two reads the game better than a struggling one's.
+  //
+  // Runs after calibrateWages so his wage is priced on the same scale as the
+  // squad's, and before the wage-bill figure below counts it.
+  {
+    const rep = userClub.reputation ?? 3;
+    const quality = Math.round(Math.min(78, 42 + rep * 7));
+    state.facilities = newFacilities(state);
+    Object.assign(state, hireCoach(state, 'assistant', quality));
+  }
   // Sanctioned wage bill: what the inherited squad costs, plus headroom.
   state.wageBudget = Math.round(weeklyWageBill(state) * WAGE_BUDGET_HEADROOM);
   state.playStyle = state.playStyle ?? state.clubs.find((c) => c.id === userClubId)?.playStyle ?? 'balanced';

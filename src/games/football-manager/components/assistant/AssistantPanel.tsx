@@ -58,6 +58,7 @@ export default function AssistantPanel({
   onChange,
   onShowTour,
   onOpenSettings,
+  firstMeeting = false,
 }: {
   state: GameState;
   route: ScreenId;
@@ -66,9 +67,13 @@ export default function AssistantPanel({
   onChange: (next: GameState) => void;
   onShowTour: () => void;
   onOpenSettings: () => void;
+  /** True when a brand-new career opened this panel on its own, rather than
+   *  the player summoning him. Changes his opening line, nothing else. */
+  firstMeeting?: boolean;
 }) {
   const assistant = getAssistant(state);
   const name = assistant?.name ?? 'Your assistant';
+  const club = state.clubs.find((c) => c.id === state.userClubId);
   const topics = assistantTopics(state, route);
 
   const [topicId, setTopicId] = useState<string>(topics[0]?.id ?? '');
@@ -78,11 +83,20 @@ export default function AssistantPanel({
   const [asked, setAsked] = useState<Set<string>>(new Set());
 
   const topic = topics.find((t) => t.id === topicId) ?? topics[0];
-  const line = topic?.line ?? `Nothing pressing, gaffer. Shout if you need me.`;
+  // A new career opens this panel automatically (FootballManagerGame), and
+  // walking in on your number two mid-squad-report — "nobody hot, nobody
+  // cold" — is a strange way to meet him. On the first opening of a save he
+  // says who he is and what he is for; every opening after that goes
+  // straight to the topic, as before. `intro` clears the moment you ask him
+  // anything, so it never sits in the way of a real answer.
+  const [intro, setIntro] = useState(firstMeeting);
+  const introLine = club
+    ? `${name}, gaffer — assistant manager here at ${club.name}. I watch the squad and the paperwork, so ask me anything, or hand me a job and consider it done.`
+    : `${name}, gaffer — your assistant. Ask me anything, or hand me a job and consider it done.`;
+  const line = intro ? introLine : (topic?.line ?? `Nothing pressing, gaffer. Shout if you need me.`);
   const mood: CoachMood = topic?.urgent ? 'concerned' : topic?.good ? 'happy' : 'neutral';
   const trust = assistantTrust(state);
 
-  const club = state.clubs.find((c) => c.id === state.userClubId);
   const squad = getSquad(state, state.userClubId);
 
   const pending: Record<TaskId, boolean> = {
@@ -91,6 +105,13 @@ export default function AssistantPanel({
     youth: getIntake(state).length > 0,
     bids: (state.negotiations ?? []).some((n) => n.type === 'incoming' && n.awaiting === 'user'),
   };
+
+  /* --- Escape closes him, like every other overlay in the game ----------- */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   /* --- The line types itself out ---------------------------------------- */
   const timerRef = useRef<number | null>(null);
@@ -114,6 +135,7 @@ export default function AssistantPanel({
   /* --- Asking him something --------------------------------------------- */
   const ask = (t: AssistantTopic) => {
     sfx.click();
+    setIntro(false);
     setTopicId(t.id);
     // Trust rises the first time you ask about a given thing, not every time
     // you click back and forth between two chips.

@@ -73,7 +73,7 @@ export function hasSeenOnboarding(slot: number): boolean {
   }
 }
 
-function markOnboardingSeen(slot: number): void {
+export function markOnboardingSeen(slot: number): void {
   try {
     localStorage.setItem(onboardingKey(slot), 'true');
   } catch {

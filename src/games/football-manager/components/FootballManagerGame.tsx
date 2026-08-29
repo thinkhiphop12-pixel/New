@@ -34,7 +34,7 @@ import { brandTheme } from '@/lib/brandTheme';
 import { ToastHost, pushToast } from './ToastQueue';
 import { Icon, IconSprite } from './Icon';
 import type { ScreenId } from './hubNav';
-import OnboardingOverlay, { hasSeenOnboarding } from './OnboardingOverlay';
+import OnboardingOverlay, { hasSeenOnboarding, markOnboardingSeen } from './OnboardingOverlay';
 import { setVolume, setMuted } from '@/lib/sound';
 import { setHaptics } from '@/lib/haptics';
 import { onPageHidden } from '@/lib/usePageVisible';
@@ -70,6 +70,9 @@ export default function FootballManagerGame() {
   const [showSettings, setShowSettings] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
+  // Set only by the automatic first-career opening below, so his greeting can
+  // be an introduction that once.
+  const [assistantIntro, setAssistantIntro] = useState(false);
   const [selectedDivisions, setSelectedDivisions] = useState<string[]>(['premier_league', 'championship', 'league_one', 'league_two']);
   const [managerProfile, setManagerProfile] = useState<ManagerProfile | null>(null);
   // True while the manager-pick/character screens are resolving the
@@ -346,12 +349,22 @@ export default function FootballManagerGame() {
   }, [settings]);
 
   // Gap 20 (Userbrain): first entry into a fresh career's Hub gets a one-time
-  // orientation checklist, gated per save slot via localStorage (mirrors
-  // RotatePrompt's sessionStorage-dismiss pattern) so it never reappears once
-  // seen for that career.
+  // orientation, gated per save slot via localStorage (mirrors RotatePrompt's
+  // sessionStorage-dismiss pattern) so it never reappears once seen for that
+  // career.
+  //
+  // That orientation is the assistant manager, not the seven-step tour it
+  // used to be. He is on the staff from the first minute now (newGame hires
+  // him), he is the character whose job is telling you what needs doing, and
+  // meeting him is a better first thirty seconds than a checklist about
+  // where the menus are. The tour is still one click away inside his panel
+  // ("Show me around") and under the header's ? button, so nothing is lost
+  // for a player who wants it.
   useEffect(() => {
     if (view === 'hub' && gs && !hasSeenOnboarding(slot)) {
-      setShowOnboarding(true);
+      setShowAssistant(true);
+      setAssistantIntro(true);
+      markOnboardingSeen(slot);
     }
   }, [view, gs, slot]);
 
@@ -848,7 +861,8 @@ export default function FootballManagerGame() {
             <AssistantPanel
               state={gs}
               route={hubRoute ?? 'overview'}
-              onClose={() => setShowAssistant(false)}
+              firstMeeting={assistantIntro}
+              onClose={() => { setShowAssistant(false); setAssistantIntro(false); }}
               onRoute={(r) => {
                 setHubRoute(r);
                 setView('hub');
