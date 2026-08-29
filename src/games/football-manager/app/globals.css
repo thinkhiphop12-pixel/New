@@ -2208,8 +2208,19 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   border-radius: var(--r-sm); padding: 8px 2px; font-size: 11px; font-weight: 800; cursor: pointer;
 }
 .fm-formation-tile.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
-.fm-custom-formation { display: flex; gap: 14px; margin-bottom: 8px; }
-.fm-custom-formation__stepper { display: flex; align-items: center; gap: 6px; }
+/* Three DEF/MID/FWD steppers, each a label + two buttons + a count, in a
+   nowrap row: on a 390px phone the row measured 544px, so the third
+   stepper's + button sat entirely off-screen — and `body { overflow-x:
+   hidden }` meant there was no way to scroll to it. The custom formation
+   was unbuildable on a phone. Wraps now, and the steppers share the width
+   they have. */
+.fm-custom-formation {
+  display: flex; flex-wrap: wrap; gap: 10px 14px; margin-bottom: 8px;
+}
+.fm-custom-formation__stepper {
+  display: flex; align-items: center; gap: 6px;
+  flex: 1 1 auto; min-width: 0;
+}
 .fm-custom-formation__label { font-size: 11px; font-weight: 800; color: var(--text-2); width: 30px; }
 .fm-custom-formation__count { min-width: 18px; text-align: center; font-weight: 800; }
 .fm-xg-preview { display: flex; align-items: baseline; gap: 8px; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -2916,6 +2927,16 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
    actions plus a rating, which overflowed the tracks and threw the rating
    chip onto its own line. Grouping the buttons keeps the row at four
    children whatever combination of actions a player qualifies for. ── */
+/* Measured at 437px on a 390px viewport, with the primary button's right
+   half past the edge and `body { overflow-x: hidden }` leaving no way to
+   scroll to it. The row is a grid, so the actions get a row of their own
+   underneath the player instead of an `auto` column that outgrows the
+   screen; the rating stays up on the first line with the name. */
+@media (max-width: 560px) {
+  .fm-player-row { grid-template-columns: 40px minmax(0, 1fr) auto; }
+  .fm-player-row__rating { grid-column: 3; grid-row: 1; }
+  .fm-rowactions { grid-column: 1 / -1; justify-content: flex-end; flex-wrap: wrap; }
+}
 .fm-rowactions {
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
   justify-content: flex-end;
