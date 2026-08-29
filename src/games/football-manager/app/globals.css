@@ -4411,3 +4411,43 @@ body.fm-in-game .fm-about-foot {
   .fm-screenhead__title { font-size: 22px; }
   .fm-screenhead__sub { margin-top: 4px; }
 }
+
+
+/* ── Pre-kickoff team sheet (PreMatchWarningsModal) ──
+   Shown when nothing is wrong with the XI: the shape, the mentality and the
+   eleven names, so kicking off is a decision rather than a transition. */
+.fm-teamsheet { display: flex; flex-direction: column; gap: 10px; margin: 4px 0 2px; }
+.fm-teamsheet__lead { margin: 0; font-size: 13px; color: var(--muted); }
+.fm-teamsheet__meta { display: flex; gap: 8px; }
+.fm-teamsheet__stat {
+  flex: 1; display: flex; flex-direction: column; gap: 2px;
+  background: var(--panel-2); border: 1px solid var(--border-soft);
+  border-radius: var(--r-md); padding: 8px 10px;
+}
+.fm-teamsheet__stat-label {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--muted-dim);
+}
+.fm-teamsheet__stat-value { font-size: 14px; font-weight: 800; color: var(--text); }
+.fm-teamsheet__xi {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px 12px;
+  max-height: 40vh; overflow-y: auto;
+}
+@media (max-width: 480px) { .fm-teamsheet__xi { grid-template-columns: 1fr; } }
+.fm-teamsheet__player {
+  display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center;
+  gap: 8px; padding: 5px 2px; border-bottom: 1px solid var(--border-soft);
+  font-size: 12.5px;
+}
+.fm-teamsheet__pos {
+  font-size: 9.5px; font-weight: 800; color: var(--muted-dim);
+  letter-spacing: 0.6px;
+}
+.fm-teamsheet__name {
+  font-weight: 700; color: var(--text-2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fm-teamsheet__rating {
+  font-variant-numeric: tabular-nums; font-weight: 800; color: var(--muted);
+}

@@ -3,12 +3,21 @@
 import { useState, type CSSProperties } from 'react';
 import type { PreMatchCheck, PreMatchWarning } from '@/engine/preMatch';
 import type { GameState } from '@/engine/types';
+import { getFormation } from '@/engine/gameRules';
 import { Icon, type IconName } from './Icon';
 
 const KIND_ICON: Record<PreMatchWarning['kind'], IconName> = {
   tactics: 'tactics',
   unavailable: 'injury',
   fitness: 'warning',
+};
+
+const MENTALITY_LABEL: Record<string, string> = {
+  'ultra-defensive': 'Ultra defensive',
+  defensive: 'Defensive',
+  balanced: 'Balanced',
+  attacking: 'Attacking',
+  'ultra-attacking': 'Ultra attacking',
 };
 
 /**
@@ -78,6 +87,43 @@ export default function PreMatchWarningsModal({
           </button>
         </div>
 
+        {/* Nothing wrong with the XI still deserves a beat. This gate used to
+            open only when something needed fixing, so a manager with a valid
+            side went from "proceed to match" straight into kickoff and was
+            never once asked about his tactics — the shape and the mentality
+            he is sending out were decided several screens ago and never put
+            in front of him. The team sheet is that question. */}
+        {check.warnings.length === 0 && (
+          <div className="fm-teamsheet">
+            <p className="fm-teamsheet__lead">This is the side you&rsquo;re sending out.</p>
+            <div className="fm-teamsheet__meta">
+              <span className="fm-teamsheet__stat">
+                <span className="fm-teamsheet__stat-label">Formation</span>
+                <span className="fm-teamsheet__stat-value">{getFormation(check.formationId).name}</span>
+              </span>
+              <span className="fm-teamsheet__stat">
+                <span className="fm-teamsheet__stat-label">Mentality</span>
+                <span className="fm-teamsheet__stat-value">
+                  {MENTALITY_LABEL[state.tactics?.mentality ?? 'balanced'] ?? 'Balanced'}
+                </span>
+              </span>
+            </div>
+            <ol className="fm-teamsheet__xi">
+              {lineup.map((id, i) => {
+                const p = id === null ? null : state.players[id];
+                const slot = getFormation(check.formationId).slots[i];
+                return (
+                  <li key={i} className="fm-teamsheet__player">
+                    <span className="fm-teamsheet__pos">{slot?.pos ?? ''}</span>
+                    <span className="fm-teamsheet__name">{p?.name ?? '—'}</span>
+                    <span className="fm-teamsheet__rating">{p?.rating ?? ''}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        )}
+
         <div className="fm-prematch-list">
           {[...tacticsWarnings, ...unavailableWarnings].map((w, i) => (
             <div key={`fixed-${i}`} className="fm-prematch-row">
@@ -120,7 +166,7 @@ export default function PreMatchWarningsModal({
 
         <div className="fm-actions" style={{ marginTop: 4 }}>
           <button type="button" className="fm-btn fm-btn--ghost" onClick={onOpenLineup}>
-            Edit lineup
+            <Icon name="tactics" size={14} /> Change tactics
           </button>
           <button
             type="button"

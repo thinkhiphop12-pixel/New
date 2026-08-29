@@ -527,12 +527,12 @@ export default function FootballManagerGame() {
    */
   const handleProceedToMatch = () => {
     if (!gs) return;
-    const check = runPreMatchChecks(gs);
-    if (hasPreMatchWarnings(check)) {
-      setPreMatchCheck(check);
-    } else {
-      kickOff(check.lineup, check.formationId, check.riskyIds);
-    }
+    // Always stop here, warnings or not. A clean XI used to skip the gate
+    // entirely and go straight to kickoff, so the game never once asked the
+    // manager about his tactics on the way into a match — the modal shows
+    // the team sheet in that case, with Change tactics right next to Kick
+    // off. `hasPreMatchWarnings` still decides what the modal *says*.
+    setPreMatchCheck(runPreMatchChecks(gs));
   };
 
   /** Apply whatever the check (or the manager, via the modal) settled on, and
