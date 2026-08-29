@@ -805,7 +805,15 @@ body {
 }
 .fm-daysummary__match-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .fm-daysummary__match-title { font-weight: 800; font-size: 15px; }
-.fm-daysummary__actions { display: flex; justify-content: center; padding: 6px 0 0; }
+/* Sticks to the bottom of the scroll area so "Continue" is reachable
+   whatever the day threw up. It used to sit after the stop list and the
+   digest, which on a busy day put the one control that moves the game
+   forward below everything else on the screen. */
+.fm-daysummary__actions {
+  position: sticky; bottom: 0; z-index: 3;
+  display: flex; justify-content: center; padding: 10px 0 12px;
+  background: linear-gradient(transparent, var(--bg) 38%);
+}
 /* The assistant sits in this screen's header rather than floating over the
    stop list, where it covered a row's chevron and stole its tap. */
 .fm-daysummary__head { position: relative; }

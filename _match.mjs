@@ -10,6 +10,12 @@ await p.waitForTimeout(1800); await p.keyboard.press('Escape'); await p.waitForT
 for (let i=0;i<30;i++){
   if (await p.$('.fm-teamsheet')) { console.log('gate reached at step', i); break; }
   // clear any overlay
+  if (await p.$('.fm-daysummary') && i>2) {
+    await p.screenshot({path:dir+'m-daysummary.png'});
+    console.log('digest rows:', (await p.$$('.fm-card__list-item')).length,
+      '| continue visible:', await p.evaluate(()=>{const b=document.querySelector('.fm-daysummary__actions'); if(!b) return null; const r=b.getBoundingClientRect(); return r.bottom<=window.innerHeight+1 && r.top>=0;}));
+    break;
+  }
   const md = await p.$('.fm-daysummary__match');
   if (md) { await md.click(); await p.waitForTimeout(1500); continue; }
   if (await p.$('.fm-daysummary')) {

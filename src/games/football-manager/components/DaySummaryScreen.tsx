@@ -1,10 +1,13 @@
 'use client';
 
-import type { CSSProperties, ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import type { GameState, InboxCategory } from '@/engine/types';
 import type { DayStop } from '@/engine/dailyTick';
 import { formatGameDateLong } from '@/engine/calendar';
 import { Icon, type IconName } from './Icon';
+
+/** How many digest lines show before the rest fold away. */
+const DIGEST_PREVIEW = 5;
 
 /** Mirrors InboxScreen's category chrome so a stop card looks like the
  *  message it came from, not a second visual language for the same idea. */
@@ -63,6 +66,7 @@ export default function DaySummaryScreen({
    *  header with room to spare. */
   assistantSlot?: ReactNode;
 }) {
+  const [showAllDigest, setShowAllDigest] = useState(false);
   const matchStop = stops.find((s) => s.category === 'matchday');
   const otherStops = stops.filter((s) => s.category !== 'matchday');
 
@@ -122,10 +126,24 @@ export default function DaySummaryScreen({
         <div className="fm-panel">
           <p className="fm-label" style={{ marginTop: 0 }}>Since your last look</p>
           <ul className="fm-card__list">
-            {digest.map((line, i) => (
+            {(showAllDigest ? digest : digest.slice(0, DIGEST_PREVIEW)).map((line, i) => (
               <li key={i} className="fm-card__list-item">{line}</li>
             ))}
           </ul>
+          {/* Every quiet day skipped past adds its own sharpness and fitness
+              line, so a run of six days arrives as a dozen near-identical
+              rows — and the Continue button ends up below all of them. */}
+          {digest.length > DIGEST_PREVIEW && (
+            <button
+              type="button"
+              className="fm-btn fm-btn--quiet fm-btn--small"
+              onClick={() => setShowAllDigest((v) => !v)}
+            >
+              {showAllDigest
+                ? 'Show less'
+                : `Show ${digest.length - DIGEST_PREVIEW} more`}
+            </button>
+          )}
         </div>
       )}
 
