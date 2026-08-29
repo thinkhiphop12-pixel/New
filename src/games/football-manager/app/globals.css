@@ -4,18 +4,22 @@
    GAFFER — FM26-style Dark Theme
    ===================================================================== */
 :root {
-  /* Core backgrounds — opaque neutral slate for predictable layering */
-  --bg: #050505;
-  --bg-grad: radial-gradient(1400px 800px at 50% -5%, rgba(0,214,143,0.10) 0%, #050505 55%);
-  --panel: #0a0b0d;
-  --panel-2: #0e0f12;
-  --panel-3: #171a20;
-  --glass: #171a20;
+  /* Core backgrounds — a dark navy/slate ramp, not black.
+     Pure #050505 with a lime glow gave every panel a hard, high-contrast
+     edge and made the accent the only colour in the room. Panels now sit a
+     few steps above a navy ground, so depth comes from the surfaces
+     themselves and the accent is free to mean something. */
+  --bg: #0b111a;
+  --bg-grad: radial-gradient(1400px 800px at 50% -5%, rgba(45, 74, 105, 0.28) 0%, #0b111a 58%);
+  --panel: #121b27;
+  --panel-2: #16202e;
+  --panel-3: #1d2839;
+  --glass: #1d2839;
 
-  /* Borders */
-  --border: rgba(255,255,255,0.10);
-  --border-soft: rgba(255,255,255,0.06);
-  --border-bright: rgba(255,255,255,0.18);
+  /* Borders — softer, because the surfaces below already separate. */
+  --border: rgba(255,255,255,0.08);
+  --border-soft: rgba(255,255,255,0.05);
+  --border-bright: rgba(255,255,255,0.16);
 
   /* Text */
   --text: #ffffff;
@@ -38,10 +42,10 @@
      still reads as the game's green without lighting up the room.
      `--green-strong` keeps the old value for the few places that are
      genuinely a highlight (a goal, a promotion) rather than a label. */
-  --green: #9ed45c;
-  --green-strong: #b8ff3c;
-  --green-600: #00d68f;
-  --green-dim: rgba(158, 212, 92, 0.10);
+  --green: #6cc48d;
+  --green-strong: #8fe0aa;
+  --green-600: #4faf7d;
+  --green-dim: rgba(108, 196, 141, 0.12);
   --gold: #c9a227;
   --gold-2: #e0bd4a;
   --gold-soft: rgba(201, 162, 39, 0.14);
@@ -84,7 +88,7 @@
   --diff-2: #4caf50;
 
   /* Gradients */
-  --cta-gradient: linear-gradient(135deg, #b8ff3c 0%, #00d68f 100%);
+  --cta-gradient: linear-gradient(135deg, #6cc48d 0%, #4faf7d 100%);
   --gold-gradient: linear-gradient(135deg, #c9a227 0%, #a3801a 100%);
   --card-gradient: linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 100%);
 
@@ -92,7 +96,7 @@
   --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.4);
   --shadow-lg: 0 8px 40px rgba(0,0,0,0.5);
-  --shadow-glow-green: 0 0 20px rgba(184, 255, 60, 0.25);
+  --shadow-glow-green: 0 0 20px rgba(108, 196, 141, 0.20);
   --shadow-glow-gold: 0 0 20px rgba(201, 162, 39, 0.25);
 
   /* Radii */
@@ -557,9 +561,11 @@ body {
   transition: all 0.15s;
 }
 .fm-rail__item:hover { color: var(--text); background: var(--glass); }
+/* A filled surface, not a ring. The 1.5px brand outline made the current
+   section the loudest object on the page — it only has to be legible. */
 .fm-rail__item.active {
-  color: var(--text); background: var(--brand-dim);
-  box-shadow: inset 0 0 0 1.5px var(--brand);
+  color: var(--text); background: var(--panel-3);
+  box-shadow: inset 2px 0 0 var(--brand);
 }
 .fm-rail__icon { width: 19px; height: 19px; }
 .fm-rail__label { font-size: 9px; line-height: 1.1; letter-spacing: 0.2px; }
@@ -639,15 +645,18 @@ body {
 }
 .fm-subnav__tabs::-webkit-scrollbar { display: none; }
 
+/* Inactive tabs are plain text; only the open one is a shape. A row of
+   five outlined pills read as five buttons of equal weight, so "where am
+   I" had to be worked out from a border colour. */
 .fm-subtab {
   display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
-  border: 1.5px solid var(--border-soft); background: var(--panel);
+  border: 1.5px solid transparent; background: transparent;
   color: var(--muted); font-family: inherit; font-weight: 700; font-size: 12.5px;
   border-radius: var(--r-full); padding: 7px 14px; cursor: pointer;
   transition: color var(--transition), background var(--transition), border-color var(--transition);
   min-height: var(--tap-min);
 }
-.fm-subtab:hover { color: var(--text); border-color: var(--border-bright); }
+.fm-subtab:hover { color: var(--text); background: var(--glass); }
 /* "Active tab pills" is one of the three uses --brand is permitted for by
    the token contract at :root — nothing semantic is expressed here. */
 .fm-subtab.active {
@@ -3672,12 +3681,15 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   font-size: 10px; font-weight: 800; font-style: normal;
   border-radius: 4px; padding: 2px 6px; font-variant-numeric: tabular-nums;
 }
-/* One chip shape, three ink colours — the tinted fills turned six drill
-   cards into a paint chart. The sign of the number is what matters, and
-   the ink carries that on its own. */
-.fm-fx--up { background: rgba(255,255,255,0.05); color: var(--green); }
-.fm-fx--down { background: rgba(255,255,255,0.05); color: var(--red); }
-.fm-fx--flat { background: rgba(255,255,255,0.05); color: var(--muted); }
+/* Six drill cards, each carrying five of these, is thirty chips on one
+   screen — enough that any colour at all becomes noise. They read as a
+   spec sheet: one grey shape, tabular figures, and the +/- sign doing the
+   talking. A drill that costs you fitness is not a warning, it is a
+   trade-off, and the number already says so. */
+.fm-fx--up, .fm-fx--down, .fm-fx--flat {
+  background: rgba(255,255,255,0.04); color: var(--muted);
+}
+.fm-fx--up { color: var(--text-2); }
 
 /* Week load: one meter for how hard the plan is, with a verdict. */
 .fm-loadverdict { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 800; }
@@ -4245,8 +4257,9 @@ body.fm-in-game .fm-about-foot {
 }
 .fm-runsession__badge {
   display: flex; align-items: center; justify-content: center; flex: none;
-  width: 44px; height: 44px; border-radius: 50%;
-  background: var(--green); color: var(--bg, #04140d);
+  width: 44px; height: 44px; border-radius: var(--r-md);
+  background: var(--panel-3); color: var(--green);
+  border: 1px solid var(--border);
 }
 .fm-runsession.is-done .fm-runsession__badge { background: var(--panel-3); color: var(--green); }
 .fm-runsession__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
@@ -4366,4 +4379,35 @@ body.fm-in-game .fm-about-foot {
   .fm-hub-grid { gap: 8px; }
   .fm-mod { padding: 10px 12px; }
   .fm-portal__actions { margin-top: 0; }
+}
+
+
+/* ── Screen title block (components/ScreenHead.tsx) ──
+   Opens a hub screen with its name and one sentence of orientation, above
+   the first module. Sized to be the largest text on the screen — the
+   modules below it carry 11px caps labels, and with nothing above them the
+   screen had no visible subject. */
+.fm-screenhead {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 2px 0 4px;
+}
+.fm-screenhead__text { flex: 1; min-width: 0; }
+.fm-screenhead__title {
+  margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.4px;
+  line-height: 1.1; color: var(--text);
+}
+.fm-screenhead__sub {
+  margin: 6px 0 0; font-size: 13px; line-height: 1.5; color: var(--muted);
+  max-width: 58ch;
+}
+.fm-screenhead__aside { flex: none; }
+@media (max-width: 700px) {
+  .fm-screenhead__title { font-size: 20px; }
+  .fm-screenhead__sub { font-size: 12px; }
+}
+@media (min-width: 900px) and (max-height: 900px) {
+  /* The frame is height-bound on desktop — keep the header from eating the
+     room the screen's own content needs. */
+  .fm-screenhead__title { font-size: 22px; }
+  .fm-screenhead__sub { margin-top: 4px; }
 }

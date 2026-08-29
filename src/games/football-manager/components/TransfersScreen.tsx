@@ -21,6 +21,7 @@ import { MIN_SQUAD_SIZE, transferWindow } from '@/engine/gameRules';
 import { weeklyWageBill } from '@/engine/seasonProgression';
 import { clamp, formatMoney } from '@/engine/utils';
 import { traitNames } from '@/engine/traits';
+import ScreenHead from './ScreenHead';
 import { Icon } from './Icon';
 import PlayerModal from './PlayerModal';
 import { PlayerCard } from './InboxScreen';
@@ -633,6 +634,10 @@ export default function TransfersScreen({
 
   return (
     <>
+      <ScreenHead
+        title="Transfer market"
+        sub="Find players, agree a fee with their club, then agree their wages. Loans cost far less if money is tight."
+      />
       <div className="fm-subnav__tabs" role="tablist" aria-label="Transfer market sections">
         {TABS.map((t) => {
           const count =
