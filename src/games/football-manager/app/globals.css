@@ -30,10 +30,18 @@
   --lime: #2cb94e;
   --emerald: #12b380;
 
-  /* Accents — lime/emerald replace the old FM green */
-  --green: #b8ff3c;
+  /* Accents — lime/emerald replace the old FM green.
+     `--green` was #b8ff3c, an acid lime at near-full luminance. On a black
+     UI that reads as glare, and it carried every module title, stat value,
+     chip and meter in the game at once — the "too bright / overwhelming"
+     complaint. Same hue family, luminance and chroma pulled back so it
+     still reads as the game's green without lighting up the room.
+     `--green-strong` keeps the old value for the few places that are
+     genuinely a highlight (a goal, a promotion) rather than a label. */
+  --green: #9ed45c;
+  --green-strong: #b8ff3c;
   --green-600: #00d68f;
-  --green-dim: rgba(184, 255, 60, 0.12);
+  --green-dim: rgba(158, 212, 92, 0.10);
   --gold: #c9a227;
   --gold-2: #e0bd4a;
   --gold-soft: rgba(201, 162, 39, 0.14);
@@ -816,9 +824,12 @@ body {
 .fm-hub-grid__hero { grid-column: 1 / -1; }
 .fm-mod { background: var(--panel); border: 1px solid var(--border-soft); border-radius: var(--r-lg); padding: 12px 14px; }
 .fm-mod__head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+/* Neutral, not accent. Every module on every screen carries one of these,
+   so colouring them all lime made the accent meaningless AND loud — a
+   heading is structure, not a highlight. */
 .fm-mod__title {
   font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
-  color: var(--green); margin: 0;
+  color: var(--muted); margin: 0;
 }
 .fm-mod--gold .fm-mod__title { color: var(--gold); }
 
@@ -2830,22 +2841,24 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-moneybar__value.is-out { color: var(--red); }
 
-/* ── How-it-works card: shown once, then dismissed for good ── */
-.fm-howto {
+/* ── Dismissible explainer card (Transfers): shown once, then gone ──
+   `.fm-explainer`, not `.fm-howto` — see the note on `.fm-steps` below for
+   why sharing that name across three screens broke this one. */
+.fm-explainer {
   position: relative; background: var(--panel); border: 1px solid var(--border-soft);
   border-left: 3px solid var(--gold); border-radius: var(--r-lg);
   padding: 12px 40px 12px 14px; margin-bottom: 12px;
 }
-.fm-howto__close {
+.fm-explainer__close {
   position: absolute; top: 8px; right: 8px; display: flex; padding: 6px;
   background: transparent; border: none; color: var(--muted); cursor: pointer;
 }
-.fm-howto__close:hover { color: var(--text); }
-.fm-howto__title { font-size: 13px; font-weight: 900; margin: 0 0 6px; }
-.fm-howto__steps { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
-.fm-howto__steps li { font-size: 11.5px; line-height: 1.45; color: var(--muted); }
-.fm-howto__steps strong { color: var(--text); }
-.fm-howto__foot { font-size: 11.5px; color: var(--muted); margin: 8px 0 0; }
+.fm-explainer__close:hover { color: var(--text); }
+.fm-explainer__title { font-size: 13px; font-weight: 900; margin: 0 0 6px; }
+.fm-explainer__steps { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.fm-explainer__steps li { font-size: 11.5px; line-height: 1.45; color: var(--muted); }
+.fm-explainer__steps strong { color: var(--text); }
+.fm-explainer__foot { font-size: 11.5px; color: var(--muted); margin: 8px 0 0; }
 
 /* ── Sort row above the market list ── */
 .fm-sortrow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -3632,9 +3645,12 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   font-size: 10px; font-weight: 800; font-style: normal;
   border-radius: 4px; padding: 2px 6px; font-variant-numeric: tabular-nums;
 }
-.fm-fx--up { background: rgba(184,255,60,0.13); color: var(--green); }
-.fm-fx--down { background: rgba(242,102,122,0.13); color: var(--red); }
-.fm-fx--flat { background: rgba(255,255,255,0.06); color: var(--muted); }
+/* One chip shape, three ink colours — the tinted fills turned six drill
+   cards into a paint chart. The sign of the number is what matters, and
+   the ink carries that on its own. */
+.fm-fx--up { background: rgba(255,255,255,0.05); color: var(--green); }
+.fm-fx--down { background: rgba(255,255,255,0.05); color: var(--red); }
+.fm-fx--flat { background: rgba(255,255,255,0.05); color: var(--muted); }
 
 /* Week load: one meter for how hard the plan is, with a verdict. */
 .fm-loadverdict { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 800; }
@@ -3654,7 +3670,10 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   background: var(--panel-2); border: 1px solid var(--border-soft);
   color: var(--muted); cursor: pointer; font-family: inherit;
 }
-.fm-day.is-training { border-color: var(--gold); color: var(--gold); }
+/* Five days of seven have training on them, so gold-on-gold said nothing
+   and shouted it. Matchday keeps its colour; a training day just stops
+   looking empty. */
+.fm-day.is-training { border-color: var(--border); color: var(--text-2); }
 .fm-day.is-match { border-color: var(--red); color: var(--red); cursor: default; }
 .fm-day__label { font-size: 10px; font-weight: 700; }
 
@@ -4187,7 +4206,8 @@ body.fm-in-game .fm-about-foot {
 .fm-runsession {
   display: flex; align-items: center; gap: 12px; width: 100%;
   margin: 12px 0; padding: 12px 14px;
-  background: var(--green-dim); border: 1px solid var(--green-600);
+  background: var(--panel-2); border: 1px solid var(--border);
+  border-left: 3px solid var(--green-600);
   border-radius: var(--r-md); color: var(--text);
   font-family: inherit; text-align: left; cursor: pointer;
   transition: border-color 0.12s, background 0.12s;
@@ -4206,21 +4226,28 @@ body.fm-in-game .fm-about-foot {
 .fm-runsession__title { font-size: 14.5px; font-weight: 800; }
 .fm-runsession__sub { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
 
-/* ---------------------------------------------------------- how-to strip */
-/* Two numbered steps above the cards they explain, replacing the paragraph
-   that used to sit underneath them. */
-.fm-howto {
+/* ------------------------------------------------------ numbered steps */
+/* Two numbered steps above the cards they explain (Staff), replacing the
+   paragraph that used to sit underneath them.
+   Named `.fm-steps`, not `.fm-howto`: three different screens had grown a
+   `.fm-howto` block of their own in this one stylesheet, and being last,
+   THIS one won everywhere. Its `.fm-howto__steps li { display: grid }`
+   landed on the Transfers explainer, whose steps are a plain <ol> with a
+   leading <strong> — the strong became the 22px grid column meant for a
+   number badge, so "Find someone." wrapped into a two-line stack and the
+   rest of the sentence sat in the second column. */
+.fm-steps {
   background: var(--panel); border: 1px solid var(--border-soft);
   border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 12px;
 }
-.fm-howto__lead { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--text); }
-.fm-howto__steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.fm-howto__steps li {
+.fm-steps__lead { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--text); }
+.fm-steps__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.fm-steps__list li {
   display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start;
   font-size: 12.5px; line-height: 1.45; color: var(--muted);
 }
-.fm-howto__steps b { color: var(--text); }
-.fm-howto__num {
+.fm-steps__list b { color: var(--text); }
+.fm-steps__num {
   display: flex; align-items: center; justify-content: center;
   width: 22px; height: 22px; border-radius: 50%;
   background: var(--green-dim); color: var(--green);

@@ -661,17 +661,17 @@ export default function TransfersScreen({
       </div>
 
       {showHow && tab === 'search' && (
-        <div className="fm-howto">
-          <button className="fm-howto__close" onClick={dismissHow} aria-label="Close">
+        <div className="fm-explainer">
+          <button className="fm-explainer__close" onClick={dismissHow} aria-label="Close">
             <Icon name="cross" size={14} />
           </button>
-          <p className="fm-howto__title">How signing a player works</p>
-          <ol className="fm-howto__steps">
+          <p className="fm-explainer__title">How signing a player works</p>
+          <ol className="fm-explainer__steps">
             <li><strong>Find someone.</strong> Use a shortcut below, then check the green tags — they say if he&apos;s better than what you have and if you can afford him.</li>
             <li><strong>Agree a price</strong> with his club. They usually say no the first time. Offer a bit more.</li>
             <li><strong>Agree his wages.</strong> Once the clubs agree, you talk to the player. Then he&apos;s yours.</li>
           </ol>
-          <p className="fm-howto__foot">Short of money? Borrowing a player on loan costs far less.</p>
+          <p className="fm-explainer__foot">Short of money? Borrowing a player on loan costs far less.</p>
         </div>
       )}
 

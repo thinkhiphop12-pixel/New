@@ -90,20 +90,20 @@ export default function StaffHubScreen({
           sanction in one long sentence, below eight cards nobody could use
           until they'd read it. It is two steps, so it is two numbered steps,
           and they go above the thing they explain. */}
-      <div className="fm-howto">
-        <p className="fm-howto__lead">
+      <div className="fm-steps">
+        <p className="fm-steps__lead">
           Coaches make your players better. You need two steps to get one:
         </p>
-        <ol className="fm-howto__steps">
+        <ol className="fm-steps__list">
           <li>
-            <span className="fm-howto__num">1</span>
+            <span className="fm-steps__num">1</span>
             <span>
               <b>Ask the board.</b>{' '}
               They say yes or no, and if it&rsquo;s yes they tell you how good a coach they&rsquo;ll pay for.
             </span>
           </li>
           <li>
-            <span className="fm-howto__num">2</span>
+            <span className="fm-steps__num">2</span>
             <span>
               <b>Hire your coach.</b>{' '}
               One coach per job. A happy board pays for a better one.
