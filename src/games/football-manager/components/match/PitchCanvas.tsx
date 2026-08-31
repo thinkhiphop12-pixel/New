@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import type { Club } from '@/engine/types';
 import type { MinuteSnapshot, TeamSide } from '@/engine/tickEngine/types';
 import { getFormation } from '@/engine/gameRules';
-import { matchKits } from '@/lib/clubColors';
+import { keeperKits, matchKits } from '@/lib/clubColors';
 
 /** Deterministic per-player-per-minute jitter so replays look identical. */
 function noise(seed: number): number {
@@ -22,6 +22,35 @@ function hexToRgb(hex: string): [number, number, number] {
 function luminance(hex: string): number {
   const [r, g, b] = hexToRgb(hex);
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
+/** A kit colour at a given opacity, for the possession halo's gradient stops
+ *  (canvas gradients take colour strings, not a separate alpha). */
+function withAlpha(hex: string, alpha: number): string {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+/** The keeper's token: a squircle, centred on (x, y), half-width `half` and
+ *  corner radius `radius`. Traced as a path only — the caller fills and
+ *  strokes it exactly as it does the outfielders' arc. */
+function roundedSquare(ctx: CanvasRenderingContext2D, x: number, y: number, half: number, radius: number) {
+  const l = x - half;
+  const t = y - half;
+  const size = half * 2;
+  if (typeof ctx.roundRect === 'function') {
+    ctx.roundRect(l, t, size, size, radius);
+    return;
+  }
+  // Safari < 16 has no roundRect; trace the same shape by hand rather than
+  // dropping to a square, which would read as a different marker entirely.
+  const rr = Math.min(radius, half);
+  ctx.moveTo(l + rr, t);
+  ctx.arcTo(l + size, t, l + size, t + size, rr);
+  ctx.arcTo(l + size, t + size, l, t + size, rr);
+  ctx.arcTo(l, t + size, l, t, rr);
+  ctx.arcTo(l, t, l + size, t, rr);
+  ctx.closePath();
 }
 
 
@@ -116,7 +145,11 @@ function computeTargets(snap: MinuteSnapshot, minute: number): Token[] {
 }
 
 /** Paint the static stadium: stands, ad boards, grass and markings. */
-function paintStadium(ctx: CanvasRenderingContext2D, w: number, h: number, px: number, py: number, pw: number, ph: number) {
+function paintStadium(
+  ctx: CanvasRenderingContext2D, w: number, h: number,
+  px: number, py: number, pw: number, ph: number,
+  kits: { home: string; away: string },
+) {
   // Concrete surround.
   ctx.fillStyle = '#b9bec5';
   ctx.fillRect(0, 0, w, h);
@@ -235,10 +268,34 @@ function paintStadium(ctx: CanvasRenderingContext2D, w: number, h: number, px: n
     ctx.beginPath();
     ctx.arc(spotX, py + ph / 2, ph * 0.13, left ? -0.9 : Math.PI - 0.9, left ? 0.9 : Math.PI + 0.9);
     ctx.stroke();
-    // Goal + net.
+    // Goal + net. The net behind each goal is washed with the colour of the
+    // side defending it — home always defends the left (see computeTargets's
+    // keeper anchor), away the right — so which way you are kicking is
+    // readable off the pitch itself instead of having to be remembered. It is
+    // a wash, not a fill: the goal still has to read as a goal.
     const gx = left ? px - 6 : px + pw;
-    ctx.fillStyle = 'rgba(240,240,240,0.85)';
-    ctx.fillRect(gx, py + (ph - goalH) / 2, 6, goalH);
+    const gy = py + (ph - goalH) / 2;
+    // Kit colour as the base, netting hatched over it — not a pale wash over
+    // white, which diluted a claret to dusty pink and left the cue too weak
+    // to read at a glance, which is the only thing it is for.
+    ctx.fillStyle = left ? kits.home : kits.away;
+    ctx.fillRect(gx, gy, 6, goalH);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 0.7;
+    ctx.beginPath();
+    for (let ny = gy + 1; ny <= gy + goalH; ny += 3) {
+      ctx.moveTo(gx, ny);
+      ctx.lineTo(gx + 6, ny);
+    }
+    ctx.moveTo(gx + 3, gy);
+    ctx.lineTo(gx + 3, gy + goalH);
+    ctx.stroke();
+    // Posts, so a dark kit still has a goal frame against the dark surround.
+    ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+    ctx.lineWidth = 1.4;
+    ctx.strokeRect(gx, gy, 6, goalH);
+    ctx.restore();
     ctx.fillStyle = 'rgba(255,255,255,0.9)';
     // Corner arcs.
     for (const top of [true, false]) {
@@ -318,7 +375,7 @@ export default function PitchCanvas({
         bgRef.current.height = Math.round(h * dpr);
         const bctx = bgRef.current.getContext('2d')!;
         bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        paintStadium(bctx, w, h, px, py, pw, ph);
+        paintStadium(bctx, w, h, px, py, pw, ph, kitColors(homeClub, awayClub));
         bgW = w;
         bgH = h;
       }
@@ -336,9 +393,15 @@ export default function PitchCanvas({
 
       const targets = computeTargets(cur, cur.minute);
       const kits = kitColors(homeClub, awayClub);
+      const gkKits = keeperKits(kits.home, kits.away);
       const r = Math.max(8, Math.min(13, pw * 0.016));
 
-      // Ease every token toward its target, then paint.
+      // Ease every token toward its target and resolve where it lands. The
+      // ball is held back and painted last: it is the one thing on the pitch
+      // that must never end up underneath a token, and the draw order was
+      // whatever order computeTargets happened to push in.
+      const laid: { t: Token; x: number; y: number }[] = [];
+      let ballAt: { x: number; y: number } | null = null;
       for (const t of targets) {
         let p = positions.current.get(t.key);
         if (!p) {
@@ -350,58 +413,115 @@ export default function PitchCanvas({
         p.across += (t.across - p.across) * k;
         const x = px + p.along * pw;
         const y = py + p.across * ph;
+        if (t.kind === 'ball') ballAt = { x, y };
+        else laid.push({ t, x, y });
+      }
 
-        if (t.kind === 'ball') {
-          ctx.beginPath();
-          ctx.arc(x, y - r * 0.9, r * 0.42, 0, Math.PI * 2);
-          ctx.fillStyle = '#ffffff';
-          ctx.shadowColor = 'rgba(0,0,0,0.55)';
-          ctx.shadowBlur = 3;
-          ctx.shadowOffsetY = 2;
-          ctx.fill();
-          ctx.shadowBlur = 0;
-          ctx.shadowOffsetY = 0;
-          ctx.beginPath();
-          ctx.arc(x - r * 0.12, y - r * 0.98, r * 0.13, 0, Math.PI * 2);
-          ctx.fillStyle = '#222';
-          ctx.fill();
-          continue;
-        }
+      // Every token's shadow goes down first, as one pass on the grass —
+      // drawn per-token they stack on the neighbour's shirt whenever two
+      // players are close, which is most of the match. This is also what
+      // replaced the canvas drop-shadow the tokens used to carry: that lit
+      // the marker like a sticker on a photo of a pitch, where an ellipse
+      // cast onto the turf puts the player *on* it.
+      ctx.save();
+      ctx.fillStyle = 'rgba(12,26,10,0.34)';
+      for (const { x, y } of laid) {
+        ctx.beginPath();
+        ctx.ellipse(x + r * 0.22, y + r * 0.5, r * 0.92, r * 0.42, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (ballAt) {
+        ctx.beginPath();
+        ctx.ellipse(ballAt.x + r * 0.1, ballAt.y + r * 0.34, r * 0.34, r * 0.16, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
 
+      // Possession, painted under the tokens so it never crowds the number.
+      // One flat yellow ring was the whole indicator before: it said *a*
+      // player has the ball, and left you to work out whose he was from the
+      // shirt underneath it. The halo is the carrying side's own kit colour,
+      // so possession is legible as a team at a glance, and the crisp ring
+      // stays on top of it to pick the individual out of a crowded box.
+      for (const { t, x, y } of laid) {
+        if (!t.onBall) continue;
+        const teamColor = t.side === 'home' ? kits.home : kits.away;
+        const grad = ctx.createRadialGradient(x, y, r, x, y, r * 2.5);
+        grad.addColorStop(0, withAlpha(teamColor, 0.55));
+        grad.addColorStop(1, withAlpha(teamColor, 0));
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(x, y, r * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (const { t, x, y } of laid) {
         const fill =
           t.kind === 'ref' || t.kind === 'assist'
             ? '#111111'
             : t.kind === 'gk'
-              ? '#1fa055'
+              ? t.side === 'home' ? gkKits.home : gkKits.away
               : t.side === 'home'
                 ? kits.home
                 : kits.away;
         const label = t.kind === 'ref' ? 'R' : t.kind === 'assist' ? 'A' : String(t.num ?? '');
+        const light = luminance(fill) > 0.6;
+        const ink = light ? '#20337a' : '#ffffff';
 
+        // Keepers are the one role you have to find instantly — for a
+        // through-ball, a corner, a keeper caught off his line — so they get
+        // a shape of their own rather than another circle in another colour.
+        // At token size a squircle among circles is separable in peripheral
+        // vision in a way that a hue is not, and it survives the colourblind
+        // case the kit colours alone do not.
         ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
+        if (t.kind === 'gk') roundedSquare(ctx, x, y, r * 1.02, r * 0.42);
+        else ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.fillStyle = fill;
-        ctx.shadowColor = 'rgba(0,0,0,0.45)';
-        ctx.shadowBlur = 4;
-        ctx.shadowOffsetY = 2;
         ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetY = 0;
-        ctx.lineWidth = 1.6;
-        ctx.strokeStyle = luminance(fill) > 0.6 ? 'rgba(30,40,80,0.55)' : 'rgba(255,255,255,0.9)';
+
+        // A shirt-coloured rim reads as the kit's trim; a flat white ring on
+        // every token read as UI. Kept high-contrast enough to hold the token
+        // apart from the grass and from the next player.
+        ctx.lineWidth = t.onBall ? 2 : 1.4;
+        ctx.strokeStyle = light ? 'rgba(28,38,74,0.75)' : 'rgba(255,255,255,0.82)';
         ctx.stroke();
+
         if (t.onBall) {
           ctx.beginPath();
-          ctx.arc(x, y, r + 2.5, 0, Math.PI * 2);
+          ctx.arc(x, y, r + 3, 0, Math.PI * 2);
           ctx.lineWidth = 2;
           ctx.strokeStyle = '#ffe23f';
           ctx.stroke();
         }
+
         ctx.font = `800 ${Math.round(r * 1.02)}px Oswald, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = t.kind === 'player' && luminance(fill) > 0.6 ? '#20337a' : '#ffffff';
+        ctx.fillStyle = t.kind === 'player' || t.kind === 'gk' ? ink : '#ffffff';
         ctx.fillText(label, x, y + 0.5);
+      }
+
+      // The ball last, and actually at the ball's position: it used to be
+      // drawn a whole radius above it, so on a crowded pitch it read as
+      // belonging to whoever happened to be standing behind it. A dark rim
+      // keeps it visible against a white kit and against the goal net, which
+      // a plain white dot was not.
+      if (ballAt) {
+        const br = r * 0.44;
+        ctx.beginPath();
+        ctx.arc(ballAt.x, ballAt.y, br, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.lineWidth = 1.1;
+        ctx.strokeStyle = 'rgba(20,24,20,0.85)';
+        ctx.stroke();
+        // The one panel of the ball, so it reads as a football at 6px rather
+        // than as a bullet point.
+        ctx.beginPath();
+        ctx.arc(ballAt.x - br * 0.18, ballAt.y - br * 0.18, br * 0.36, 0, Math.PI * 2);
+        ctx.fillStyle = '#1e2430';
+        ctx.fill();
       }
     };
 

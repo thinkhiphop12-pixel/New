@@ -388,6 +388,45 @@ export interface MatchKits {
  * nothing qualifies (it cannot, given the change list, but the fallback
  * keeps this total) it takes whichever candidate is furthest away.
  */
+/** Keeper strips, tried in order. Deliberately none of them green (the grass)
+ *  and none of them a common outfield colour — the same reason a real keeper
+ *  wears something nobody else on the pitch is wearing. */
+const KEEPER_KITS = ['#f2e14c', '#e0559f', '#f0851e', '#3fcede', '#8a5cf0', '#23262e'];
+
+export interface KeeperKits {
+  home: string;
+  away: string;
+}
+
+/**
+ * Pick a shirt for each keeper.
+ *
+ * Both keepers used to be painted one hardcoded green (#1fa055) — on green
+ * grass, and identically for both ends, so the two least-mobile tokens on the
+ * pitch were the two hardest to tell apart and the hardest to see. Each keeper
+ * now takes the strip furthest from everything he could be confused with: both
+ * outfield kits, the turf, and (for the away keeper) the home keeper.
+ */
+export function keeperKits(homeShirt: string, awayShirt: string): KeeperKits {
+  const pick = (avoid: string[]): string => {
+    let best = KEEPER_KITS[0];
+    let bestScore = -1;
+    for (const c of KEEPER_KITS) {
+      // The worst confusion is the one that matters, so score each candidate
+      // on its nearest neighbour rather than the average.
+      const score = Math.min(...avoid.map((a) => colorDistance(c, a)));
+      if (score > bestScore) {
+        bestScore = score;
+        best = c;
+      }
+    }
+    return best;
+  };
+  const home = pick([homeShirt, awayShirt, PITCH_GREEN]);
+  const away = pick([homeShirt, awayShirt, PITCH_GREEN, home]);
+  return { home, away };
+}
+
 export function matchKits(homeName: string | undefined, awayName: string | undefined): MatchKits {
   const homeKit = clubKit(homeName);
   const awayKit = clubKit(awayName);

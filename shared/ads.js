@@ -125,7 +125,16 @@ function injectBaseAdStyles() {
       border-radius:16px;position:relative;overflow:hidden;padding:8px;}
     .ad-slot-label{opacity:0.5;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#93a099;}
     .ad-slot.is-filled .ad-slot-label{display:none;}
-    .ad-slot iframe{display:block;width:100%;max-width:100%;border:0;background:transparent;}
+    /* color-scheme:dark is the part that matters here, not the background: the
+       element's own background sits BEHIND the embedded document's canvas, and a
+       vendor tag that document.write()s its creative wipes the srcdoc's
+       background:transparent along with the rest of that head — leaving the frame
+       painting the UA default, i.e. a white rectangle. Declaring the colour scheme
+       makes that default dark, so an unfilled or blocked unit is invisible on the
+       page instead of a slab. (No backticks in here: this block lives inside a
+       template literal.) */
+    .ad-slot iframe{display:block;width:100%;max-width:100%;border:0;background:transparent;
+      color-scheme:dark;}
     /* A fixed-size unit (468x60) shrink-to-fit on narrow screens: the frame keeps
        its native pixel box, the wrapper reserves only the scaled height, so the
        slot never overflows a phone and never leaves dead space around the ad. */
@@ -232,19 +241,9 @@ function trackNativeHeight(slot, wrap, frame, onFirstRender) {
   let rendered = false;
 
   function measure() {
-    let h = 0;
-    try {
-      const doc = frame.contentDocument;
-      if (doc && doc.body) {
-        // Not body.scrollHeight: that never reports less than the frame's own
-        // height, so an unfilled unit would look "tall" forever. Measure how
-        // far the actual ad content reaches instead.
-        for (const child of doc.body.children) {
-          const r = child.getBoundingClientRect();
-          if (r.height > 0) h = Math.max(h, r.bottom);
-        }
-      }
-    } catch (e) { /* cross-origin after a vendor redirect — keep last height */ }
+    // -1 is "locked out by a cross-origin vendor redirect" — keep the last
+    // height we managed to read rather than collapsing a unit that is fine.
+    const h = framedContentHeight(frame);
     if (h > 0) {
       const clamped = Math.min(Math.max(h, 1), CONFIG.NATIVE_MAX_H);
       if (clamped !== settled) {
@@ -266,6 +265,55 @@ function trackNativeHeight(slot, wrap, frame, onFirstRender) {
     // still gets shown.
     const age = Date.now() - started;
     if (age >= CONFIG.MEASURE_MS) slot.classList.toggle('is-blank', settled < 20);
+
+    if (age < CONFIG.MEASURE_MS) setTimeout(measure, 250);
+    else if (age < CONFIG.MEASURE_TAIL_MS) setTimeout(measure, 1000);
+  }
+  measure();
+}
+
+// How far the content inside a slot's frame actually reaches. Deliberately not
+// `body.scrollHeight`, which never reports less than the frame's own height —
+// an unfilled unit would measure "tall" forever. Same-origin by way of the
+// sandbox's allow-same-origin; a vendor redirect can still lock us out, which
+// the caller treats as "keep whatever we last saw".
+function framedContentHeight(frame) {
+  let h = 0;
+  try {
+    const doc = frame.contentDocument;
+    if (doc && doc.body) {
+      for (const child of doc.body.children) {
+        const r = child.getBoundingClientRect();
+        if (r.height > 0) h = Math.max(h, r.bottom);
+      }
+    }
+  } catch (e) { return -1; }
+  return h;
+}
+
+// The fixed (468x60) unit's equivalent of trackNativeHeight's collapse pass.
+// It has a declared size, so there is no height to follow — but it still needs
+// the same "did anything actually arrive?" check, which it never had: the
+// banner locked its 468x60 box the moment the frame was created and held it
+// whether or not the vendor ever filled it. A blocked or unsold unit was left
+// as a bare rectangle on the page — the blank slab reported on Home and Sim
+// Next Day, which is the hub's own bottom slot at exactly 468x60.
+function trackFixedFill(slot, frame, onFirstRender) {
+  const started = Date.now();
+  let rendered = false;
+
+  function measure() {
+    const h = framedContentHeight(frame);
+    // A script tag alone has no box, so an unloaded vendor tag measures 0 and
+    // the slot collapses; anything the vendor lays out clears the bar.
+    if (!rendered && h >= 20) {
+      rendered = true;
+      slot.classList.remove('is-blank');
+      if (onFirstRender) onFirstRender();
+    }
+
+    const age = Date.now() - started;
+    if (age >= CONFIG.MEASURE_MS && !rendered) slot.classList.add('is-blank');
 
     if (age < CONFIG.MEASURE_MS) setTimeout(measure, 250);
     else if (age < CONFIG.MEASURE_TAIL_MS) setTimeout(measure, 1000);
@@ -348,7 +396,12 @@ function fillSlotWithNetwork(slot) {
     window.addEventListener('resize', refit, { passive: true });
     window.addEventListener('orientationchange', refit);
     if ('ResizeObserver' in window) new ResizeObserver(refit).observe(slot);
-    recordAdEvent(slot.id || 'network', 'impression');
+    // Counted on first paint, not on frame creation — same rule the native
+    // unit already followed, and for the same reason: a collapsed slot is
+    // not an impression.
+    trackFixedFill(slot, frame, () => {
+      recordAdEvent(slot.id || 'network', 'impression');
+    });
   } else {
     frame.style.width = '100%';
     frame.style.height = CONFIG.NATIVE_MIN_H + 'px';
