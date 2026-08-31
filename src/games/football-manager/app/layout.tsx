@@ -3,6 +3,7 @@ import { Oswald } from 'next/font/google';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
 import Script from 'next/script';
+import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
 import './globals.css';
 
 // The shared consent/ads scripts live at /shared/*.js, resolved from the
@@ -42,7 +43,24 @@ export const metadata: Metadata = {
     title: 'Gaffa — BALLKNW',
     images: ['/assets/og-image.png'],
   },
-  icons: { icon: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/favicon.svg` },
+  icons: {
+    icon: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/favicon.svg`,
+    // iOS ignores the manifest's icons for "Add to Home Screen".
+    apple: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/apple-touch-icon.png`,
+  },
+  // Relative URLs inside the manifest resolve against the manifest itself, so
+  // one file serves both the /gaffa/ export and the dev server at the root.
+  manifest: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/manifest.webmanifest`,
+  // iOS only reads the manifest's `display` from 16.4 on, so keep the older
+  // meta tags too — without them "Add to Home Screen" launches into Safari
+  // chrome instead of standalone. The translucent bar puts the game under the
+  // status bar, which is fine because globals.css already pads every screen
+  // with env(safe-area-inset-*).
+  appleWebApp: {
+    capable: true,
+    title: 'Gaffa',
+    statusBarStyle: 'black-translucent',
+  },
 };
 
 export const viewport: Viewport = {
@@ -77,6 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={oswald.className}>
       <body>
         {children}
+        <ServiceWorkerRegistration />
         <SpeedInsights />
         <Analytics />
         {IS_STATIC_EXPORT && (

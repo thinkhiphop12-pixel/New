@@ -35,6 +35,20 @@ mv "$API_DIR" "$API_STASH"
 
 STATIC_EXPORT=1 NEXT_PUBLIC_BASE_PATH=/gaffa npx next build
 
+# The service worker precaches the build's own chunks so an install is playable
+# offline on a first visit. Their filenames are content-hashed, so the list can
+# only be built here, once next build has emitted them.
+ASSETS=$(cd out && find _next/static -type f \
+  \( -name '*.js' -o -name '*.css' -o -name '*.woff2' \) \
+  | sort | sed "s|^|  './|; s|$|',|")
+node -e '
+  const fs = require("fs");
+  const sw = "out/sw.js";
+  fs.writeFileSync(sw, fs.readFileSync(sw, "utf8")
+    .replace("/* __BUILD_ASSETS__ */", process.argv[1].trim()));
+' "$ASSETS"
+echo "Service worker precache list: $(printf '%s' "$ASSETS" | grep -c . ) build assets"
+
 rm -rf "$REPO_ROOT/gaffa"
 cp -r out "$REPO_ROOT/gaffa"
 echo "Static export written to $REPO_ROOT/gaffa"
