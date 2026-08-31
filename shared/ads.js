@@ -125,14 +125,14 @@ function injectBaseAdStyles() {
       border-radius:16px;position:relative;overflow:hidden;padding:8px;}
     .ad-slot-label{opacity:0.5;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#93a099;}
     .ad-slot.is-filled .ad-slot-label{display:none;}
-    /* color-scheme:dark is the part that matters here, not the background: the
-       element's own background sits BEHIND the embedded document's canvas, and a
-       vendor tag that document.write()s its creative wipes the srcdoc's
-       background:transparent along with the rest of that head — leaving the frame
-       painting the UA default, i.e. a white rectangle. Declaring the colour scheme
-       makes that default dark, so an unfilled or blocked unit is invisible on the
-       page instead of a slab. (No backticks in here: this block lives inside a
-       template literal.) */
+    /* Declared for this element's own painting context. It does NOT reach the
+       embedded document - measured, not assumed: with only this set, the frame
+       computes color-scheme:dark while the document inside still computes
+       normal, and a document whose canvas is transparent then resolves against
+       the light default and paints WHITE. That is the blank slab. The lever
+       that actually governs it lives inside the srcdoc, in nativeAdDoc() and
+       bannerAdDoc() below. Kept here so the element and its content agree.
+       (No backticks in here: this block lives inside a template literal.) */
     .ad-slot iframe{display:block;width:100%;max-width:100%;border:0;background:transparent;
       color-scheme:dark;}
     /* A fixed-size unit (468x60) shrink-to-fit on narrow screens: the frame keeps
@@ -165,13 +165,17 @@ function injectBaseAdStyles() {
 function nativeAdDoc() {
   return `<!doctype html><html><head><meta charset="utf-8">` +
     `<meta name="viewport" content="width=device-width,initial-scale=1">` +
-    `<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;}</style></head>` +
+    // color-scheme has to be declared in HERE, not on the iframe element: the
+    // element's value does not propagate in, and a transparent canvas with no
+    // scheme of its own resolves to the light default and paints white.
+    `<meta name="color-scheme" content="dark"><style>html{color-scheme:dark;}html,body{margin:0;padding:0;background:transparent;overflow:hidden;}</style></head>` +
     `<body><div id="${CONFIG.NATIVE_CONTAINER_ID}"></div>` +
     `<script async data-cfasync="false" src="${CONFIG.NATIVE_SRC}"><\/script></body></html>`;
 }
 function bannerAdDoc() {
   return `<!doctype html><html><head><meta charset="utf-8">` +
-    `<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;}</style></head>` +
+    // See nativeAdDoc: the colour scheme belongs to this document, not the frame.
+    `<meta name="color-scheme" content="dark"><style>html{color-scheme:dark;}html,body{margin:0;padding:0;background:transparent;overflow:hidden;}</style></head>` +
     `<body><script>atOptions={key:'${CONFIG.BANNER_KEY}',format:'iframe',height:${CONFIG.BANNER_H},width:${CONFIG.BANNER_W},params:{}};<\/script>` +
     `<script src="${CONFIG.BANNER_SRC}"><\/script></body></html>`;
 }
@@ -336,7 +340,8 @@ function fillSlotWithAdsterra(slot, adsterraScript, adType) {
 
   // Build a minimal HTML doc with the Adsterra script
   const html = `<!doctype html><html><head><meta charset="utf-8">` +
-    `<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;}</style></head>` +
+    // Same reason as the two network docs above.
+    `<meta name="color-scheme" content="dark"><style>html{color-scheme:dark;}html,body{margin:0;padding:0;background:transparent;overflow:hidden;}</style></head>` +
     `<body>${adsterraScript}</body></html>`;
   frame.srcdoc = html;
 

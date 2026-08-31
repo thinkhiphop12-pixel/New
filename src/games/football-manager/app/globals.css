@@ -203,6 +203,44 @@ body {
   --brand-dim: color-mix(in srgb, var(--brand) 16%, transparent);
 }
 
+/* ── The selected state ──
+   One definition of "this is the one you picked", for every control in the
+   game that expresses it: tabs, pills, sort chips, formation and mentality
+   tiles, drills, the segmented controls, the rail.
+
+   It used to be three. A control's selected state was green (pills, sort
+   chips, drills), gold (formation, mentality, identity and role tiles, the
+   player-modal tabs, club select) or --brand (sub-tabs, the rail, segmented
+   controls) depending on nothing but which screen it had been written on —
+   the review caught one instance of this in Settings, where Match speed's
+   --brand ring sat two sections above Difficulty's green outline, and read
+   correctly that they had been styled independently rather than from one
+   shared component. They all were.
+
+   --brand is the right axis for all of it: the token contract at :root
+   already reserves --green/--gold/--red for *meaning* (win/loss, finance
+   up/down, promotion/relegation zones, difficulty severity) and names
+   "active tab pills" among --brand's three permitted uses. Selection is not
+   meaning — it is chrome, and it should track the club you manage rather
+   than compete with the colours that do carry meaning.
+
+   The line takes --brand-on-dark, not --brand: lib/brandTheme.ts lightens
+   that one until it clears 4.5:1 against the panel, so the outline stays
+   visible for a club whose colour is nearly black, where raw --brand would
+   have drawn the selection ring into the background. The ink is --text
+   rather than the brand, so no club colour ever has to carry small text.
+
+   Declared here, on .fm-app, and not on :root — a custom property whose
+   value contains var() is substituted where it is declared, so these have to
+   sit on the same element the per-club overrides land on or they would
+   resolve against :root's defaults forever. (Same trap as --brand-dim
+   above.) */
+.fm-app {
+  --sel-line: var(--brand-on-dark);
+  --sel-fill: var(--brand-dim);
+  --sel-ink: var(--text);
+}
+
 /* ── Scrollbars inside the app ──
    Every scroll container in here is a card, a panel or a rail — a surface
    the design draws itself. Left to the platform they sprout the UA's own
@@ -509,7 +547,10 @@ body {
   border-radius: var(--r-full); cursor: pointer; font-family: inherit;
   transition: all 0.15s; white-space: nowrap; flex: 0 0 auto;
 }
-.fm-division-toggle button.active { background: var(--gold); color: #1a0f00; }
+.fm-division-toggle button.active {
+  background: var(--sel-fill); color: var(--sel-ink);
+  box-shadow: inset 0 0 0 1.5px var(--sel-line);
+}
 
 /* ── Club grid ── */
 .fm-club-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
@@ -520,7 +561,7 @@ body {
   transition: border-color 0.15s, transform 0.12s, box-shadow 0.2s;
 }
 .fm-club-card:hover { border-color: var(--border-bright); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-.fm-club-card.selected { border-color: var(--gold); background: var(--gold-dim); box-shadow: var(--shadow-glow-gold); }
+.fm-club-card.selected { border-color: var(--sel-line); background: var(--sel-fill); }
 .fm-club-card__badge {
   font-size: 10px; font-weight: 900; letter-spacing: 1px;
   padding: 3px 8px; border-radius: 6px; color: rgba(0,0,0,0.8);
@@ -594,8 +635,8 @@ body {
 /* A filled surface, not a ring. The 1.5px brand outline made the current
    section the loudest object on the page — it only has to be legible. */
 .fm-rail__item.active {
-  color: var(--text); background: var(--panel-3);
-  box-shadow: inset 2px 0 0 var(--brand);
+  color: var(--sel-ink); background: var(--panel-3);
+  box-shadow: inset 2px 0 0 var(--sel-line);
 }
 .fm-rail__icon { width: 19px; height: 19px; }
 .fm-rail__label { font-size: 9px; line-height: 1.1; letter-spacing: 0.2px; }
@@ -666,9 +707,9 @@ body {
 }
 @media (min-width: 900px) { .fm-subnav__group { display: inline-flex; } }
 
-/* Horizontally scrollable so Matchday's five entries never wrap on a phone;
-   the scrollbar is hidden for the same reason `.fm-portal__filters` hides
-   its own. */
+/* Horizontally scrollable so Matchday's five entries never wrap on a phone.
+   The scrollbar is hidden here rather than styled: this strip is one row of
+   pills, and a track under it reads as a second, broken row. */
 .fm-subnav__tabs {
   display: flex; gap: 6px; min-width: 0; overflow-x: auto; padding: 2px 0;
   -webkit-overflow-scrolling: touch; scrollbar-width: none;
@@ -687,10 +728,8 @@ body {
   min-height: var(--tap-min);
 }
 .fm-subtab:hover { color: var(--text); background: var(--glass); }
-/* "Active tab pills" is one of the three uses --brand is permitted for by
-   the token contract at :root — nothing semantic is expressed here. */
 .fm-subtab.active {
-  color: var(--text); background: var(--brand-dim); border-color: var(--brand);
+  color: var(--sel-ink); background: var(--sel-fill); border-color: var(--sel-line);
 }
 .fm-subtab__icon { flex-shrink: 0; }
 .fm-subtab__label { line-height: 1; }
@@ -941,6 +980,15 @@ body {
   background: var(--green-600); border-color: var(--green);
   color: #02100a; box-shadow: 0 0 12px rgba(184,255,60,0.3);
 }
+/* The two lineup-pitch "selected" states (this one and `.fm-mini-slot`) stay
+   gold rather than joining
+   the shared selected state, for two reasons. They sit on the green pitch,
+   not on a dark panel, so --brand-on-dark (derived against #0a0b0d) is not
+   the contrast guarantee they need — and a claret club's ring on claret-vs-
+   green tokens is exactly the confusion the away-kit logic exists to avoid.
+   And they are not a persisted choice: this is the transient "picked up,
+   waiting for somewhere to put him" half of a two-tap swap, which wants to
+   look unlike every settled selection on the screen, not like them. */
 .fm-slot.selected .fm-slot__chip {
   border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft), 0 0 16px rgba(201,162,39,0.3);
 }
@@ -962,8 +1010,7 @@ body {
   transition: all 0.12s;
 }
 .fm-pill:hover { border-color: var(--border-bright); color: var(--text); }
-.fm-pill.active { border-color: var(--green); background: var(--green-dim); color: var(--green); }
-.fm-pill.active-gold { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+.fm-pill.active { border-color: var(--sel-line); background: var(--sel-fill); color: var(--sel-ink); }
 
 /* ── Player rows ── */
 .fm-player-list { display: flex; flex-direction: column; gap: 5px; }
@@ -989,7 +1036,7 @@ body {
   font-family: inherit; cursor: pointer; transition: all 0.14s; min-height: 32px;
 }
 .fm-sortchip:hover { color: var(--text); border-color: var(--border-bright); }
-.fm-sortchip.active { color: var(--green); border-color: rgba(184,255,60,0.45); background: var(--green-dim); }
+.fm-sortchip.active { color: var(--sel-ink); border-color: var(--sel-line); background: var(--sel-fill); }
 /* Position headers only appear while the list is in position order. */
 .fm-grouphead {
   display: flex; align-items: center; gap: 9px; margin: 14px 0 2px;
@@ -1205,26 +1252,6 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   height: 100%; background: var(--cta-gradient);
   border-radius: 2px; transition: width 1s linear;
 }
-
-/* Match speed controls */
-.fm-match-controls {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-}
-.fm-speed-btn {
-  border: 1px solid var(--border); background: var(--panel);
-  color: var(--muted); border-radius: var(--r-sm);
-  padding: 5px 12px; font-size: 11px; font-weight: 700;
-  cursor: pointer; font-family: inherit; transition: all 0.12s;
-}
-.fm-speed-btn:hover { border-color: var(--border-bright); color: var(--text); }
-.fm-speed-btn.active { border-color: var(--green); color: var(--green); background: var(--green-dim); }
-.fm-skip-btn {
-  border: 1px solid var(--border); background: transparent;
-  color: var(--muted-dim); border-radius: var(--r-sm);
-  padding: 5px 12px; font-size: 11px; font-weight: 700;
-  cursor: pointer; font-family: inherit; transition: all 0.12s;
-}
-.fm-skip-btn:hover { color: var(--muted); }
 
 /* Live event ticker */
 .fm-event-ticker {
@@ -1721,20 +1748,6 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-stats-strip .fm-stat { flex-direction: column; }
 
-/* Filter buttons */
-.fm-portal__filters {
-  display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px;
-  -webkit-overflow-scrolling: touch; scrollbar-width: none;
-}
-.fm-portal__filters::-webkit-scrollbar { display: none; }
-.fm-filter-btn {
-  border: 1px solid var(--border-soft); background: var(--panel);
-  color: var(--muted); border-radius: var(--r-full); padding: 6px 13px;
-  font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
-  flex-shrink: 0; font-family: inherit; transition: all 0.12s; position: relative;
-}
-.fm-filter-btn:hover { border-color: var(--border); color: var(--text-2); }
-.fm-filter-btn.active { border-color: var(--green); background: var(--green-dim); color: var(--green); }
 .fm-badge {
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 9px; font-weight: 900; border-radius: 999px;
@@ -2193,7 +2206,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   color: var(--text-2); border-radius: var(--r-sm); padding: 8px 4px; font-size: 11px;
   font-weight: 800; cursor: pointer;
 }
-.fm-mentality-card.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+.fm-mentality-card.active { border-color: var(--sel-line); color: var(--sel-ink); background: var(--sel-fill); }
 
 /* --- Team identity cards (Tactics > Team Identity) ------------------------
    Each card carries three readings, because "this isn't working" has two very
@@ -2219,9 +2232,9 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   transition: border-color var(--transition, 0.16s ease), background var(--transition, 0.16s ease);
 }
 .fm-identity-card:hover { border-color: var(--border-bright); background: var(--panel-2); }
-.fm-identity-card.active { border-color: var(--gold); background: var(--gold-dim); }
+.fm-identity-card.active { border-color: var(--sel-line); background: var(--sel-fill); }
 .fm-identity-card__name { font-weight: 600; font-size: 13px; color: var(--text); }
-.fm-identity-card.active .fm-identity-card__name { color: var(--gold); }
+.fm-identity-card.active .fm-identity-card__name { color: var(--sel-ink); }
 .fm-identity-card__bar {
   display: block;
   height: 4px;
@@ -2230,7 +2243,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   overflow: hidden;
 }
 .fm-identity-card__fill { display: block; height: 100%; background: var(--green-600); }
-.fm-identity-card.active .fm-identity-card__fill { background: var(--gold-2); }
+.fm-identity-card.active .fm-identity-card__fill { background: var(--sel-line); }
 .fm-identity-card__meta {
   font-size: 11px;
   color: var(--muted);
@@ -2271,7 +2284,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   background: var(--panel-2); border: 1px solid var(--border); color: var(--text-2);
   border-radius: var(--r-sm); padding: 8px 2px; font-size: 11px; font-weight: 800; cursor: pointer;
 }
-.fm-formation-tile.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+.fm-formation-tile.active { border-color: var(--sel-line); color: var(--sel-ink); background: var(--sel-fill); }
 .fm-custom-formation { display: flex; gap: 14px; margin-bottom: 8px; }
 .fm-custom-formation__stepper { display: flex; align-items: center; gap: 6px; }
 .fm-custom-formation__label { font-size: 11px; font-weight: 800; color: var(--text-2); width: 30px; }
@@ -2295,6 +2308,8 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   background: var(--red); color: #fff; font-size: 9px; font-weight: 900;
   border: 2px solid rgba(255,255,255,0.35);
 }
+/* Gold, not the shared selected state — the pick-up half of a swap, on the
+   pitch rather than a panel. See the note on `.fm-slot.selected`. */
 .fm-mini-slot.selected .fm-mini-slot__token { border-color: var(--gold); box-shadow: var(--shadow-glow-gold); }
 .fm-mini-slot__name { font-size: 9px; color: var(--text-2); font-weight: 700; white-space: nowrap; }
 .fm-mini-slot__name em { font-style: normal; color: var(--gold-2); }
@@ -2459,7 +2474,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   padding: 7px 9px; cursor: pointer; color: var(--text-2);
 }
 .fm-role-tile:hover { border-color: var(--border-bright); }
-.fm-role-tile.active { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+.fm-role-tile.active { border-color: var(--sel-line); background: var(--sel-fill); color: var(--sel-ink); }
 .fm-role-tile__name { font-size: 11.5px; font-weight: 800; }
 .fm-role-tile__desc { font-size: 10px; color: var(--muted); line-height: 1.3; }
 .fm-role-tile.active .fm-role-tile__desc { color: inherit; opacity: 0.75; }
@@ -2581,7 +2596,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   flex: 1; background: var(--panel-2); border: 1px solid var(--border); color: var(--muted);
   border-radius: var(--r-sm); padding: 7px 0; font-weight: 800; font-size: 12px; cursor: pointer;
 }
-.pm-tab-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+.pm-tab-btn.active { border-color: var(--sel-line); color: var(--sel-ink); background: var(--sel-fill); }
 .pm-attr-bar-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
 .pm-attr-row { display: grid; grid-template-columns: 34px 1fr 22px 22px; align-items: center; gap: 6px; font-size: 11px; }
 .pm-attr-label { color: var(--muted); font-weight: 800; }
@@ -2653,7 +2668,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   width: 8px; height: 8px; border-radius: 50%; padding: 0; border: none; cursor: pointer;
   background: var(--border-bright);
 }
-.fm-onboard-dot.active { background: var(--green); width: 20px; border-radius: 4px; }
+.fm-onboard-dot.active { background: var(--sel-line); width: 20px; border-radius: 4px; }
 .fm-onboard-step { display: flex; gap: 12px; align-items: flex-start; min-height: 74px; margin-bottom: 16px; }
 
 /* ── Rating ring: conic-gradient circular badge ──
@@ -2704,7 +2719,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   font-family: inherit; font-weight: 700; font-size: 12px; padding: 7px 6px;
   border-radius: var(--r-full); cursor: pointer; transition: all 0.15s;
 }
-.fm-segmented__opt.active { background: var(--brand-dim); color: var(--text); box-shadow: inset 0 0 0 1.5px var(--brand); }
+.fm-segmented__opt.active { background: var(--sel-fill); color: var(--sel-ink); box-shadow: inset 0 0 0 1.5px var(--sel-line); }
 
 /* ── Bracket round column: Cups knockout tree ──
    Each round is a vertically-centered column of tie cards; columns sit in a
@@ -3733,7 +3748,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   color: var(--muted); cursor: pointer; font-family: inherit;
 }
 .fm-drill:hover { border-color: var(--border-bright); }
-.fm-drill.active { border-color: var(--green-600); background: var(--green-dim); color: var(--text); }
+.fm-drill.active { border-color: var(--sel-line); background: var(--sel-fill); color: var(--sel-ink); }
 .fm-drill__label { font-size: 10.5px; font-weight: 700; text-align: center; }
 
 /* Drill cards: what the session does, not just what it is called.
@@ -3751,8 +3766,8 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-drillcard:hover { transform: translateY(-2px); border-color: var(--border-bright); }
 .fm-drillcard.active {
-  border-color: var(--green-600);
-  background: linear-gradient(160deg, rgba(184,255,60,0.09), transparent);
+  border-color: var(--sel-line);
+  background: var(--sel-fill);
 }
 .fm-drillcard__head { display: flex; align-items: center; gap: 7px; color: var(--green); }
 .fm-drillcard__name { font-size: 13.5px; font-weight: 800; color: var(--text); }

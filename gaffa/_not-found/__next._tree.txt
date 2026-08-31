@@ -1,3 +1,3 @@
 :HL["/gaffa/_next/static/chunks/3o5_lo4v6gv8-.css","style"]
-:HL["/gaffa/_next/static/chunks/3kewk8_oo1lfw.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"MbrO_zxAiOKTtq_f-WmEU"}
+:HL["/gaffa/_next/static/chunks/337r6m8v_q0xv.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"qcf4FL0ml4l3n8nlo7z4X"}
