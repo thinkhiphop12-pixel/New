@@ -1,7 +1,10 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import type { GameState, SeasonSummary } from '@/engine/types';
 import { leagueName } from '@/engine/gameRules';
+import { computeTable } from '@/engine/seasonProgression';
+import { buildShareCard, shareCard } from '@/lib/shareCard';
 import { CHAIRMAN_LABEL } from '@/engine/jobMarket';
 import { formatMoney } from '@/engine/utils';
 import ManagerAvatar from './ManagerAvatar';
@@ -21,6 +24,39 @@ export default function SeasonEndScreen({
   onRetire: () => void;
 }) {
   const club = state.clubs.find((c) => c.id === state.userClubId)!;
+  const [shareLabel, setShareLabel] = useState('Share your season');
+
+  /* Finishing a season is the moment that counts as a real referral — the
+     site-level module decides whether there is anything to report, and is a
+     no-op when the prize draw is switched off or the player arrived without a
+     referral code. Guarded because the game also runs on the static GitHub
+     Pages build, where the shared scripts are not loaded at all. */
+  useEffect(() => {
+    try {
+      (window as unknown as { BKComp?: { markConverted?: () => void } }).BKComp?.markConverted?.();
+    } catch {
+      /* the share button must work whether or not the promo module is present */
+    }
+  }, []);
+
+  async function onShare() {
+    const row = computeTable(state, summary.leagueId).find((r) => r.clubId === state.userClubId) ?? null;
+    let shareUrl: string | null = null;
+    try {
+      shareUrl = (window as unknown as { BKComp?: { shareUrl?: () => string | null } }).BKComp?.shareUrl?.() ?? null;
+    } catch {
+      shareUrl = null;
+    }
+    const text = buildShareCard({ state, summary, row, shareUrl });
+    const how = await shareCard(text);
+    if (how === 'copied') {
+      setShareLabel('Copied — paste it anywhere');
+      setTimeout(() => setShareLabel('Share your season'), 2600);
+    } else if (how === 'shared') {
+      setShareLabel('Shared');
+      setTimeout(() => setShareLabel('Share your season'), 2600);
+    }
+  }
   const banner: { cls: string; icon: IconName | null; text: string } = summary.sacked
     ? { cls: 'fm-banner--red', icon: 'cross', text: 'SACKED' }
     : summary.champions
@@ -157,6 +193,10 @@ export default function SeasonEndScreen({
           </ul>
         </div>
       )}
+
+      <button className="fm-btn fm-btn--large" onClick={onShare} style={{ marginTop: 4 }}>
+        {shareLabel}
+      </button>
 
       <p className="fm-hint">Squad aged a year, contracts ticked down, academy graduated.</p>
       {summary.sacked ? (
