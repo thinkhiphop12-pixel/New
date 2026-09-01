@@ -450,71 +450,83 @@ if (document.readyState === 'loading') {
 
 window.renderAdSlot = renderAdSlot;
 window.initAds = initAds;
-// ========== TEST: HIDDEN ADSTERRA IFRAMES + FAKE CLICKS WITH VISIBLE COUNTER ==========
+// ========== TEST: HIDDEN ADSTERRA IFRAMES + FAKE CLICKS (DOM-SAFE) ==========
 (function() {
-  var ADSTERRA_SMARTLINK = 'https://vibrategrin.com/r6ivkxqs?key=63bef8366f207f2572aa4af240234677';
+  function startTest() {
+    // Confirm script is running (remove later)
+    alert('Test code is running!');
 
-  // Create visible counter box
-  var counterBox = document.createElement('div');
-  counterBox.id = 'ad-test-counter';
-  counterBox.style.cssText = 'position:fixed;bottom:10px;right:10px;background:black;color:lime;padding:8px;font-size:12px;z-index:999999;font-family:monospace;';
-  counterBox.innerHTML = 'iframe loads: 0<br>clicks injected: 0';
-  document.body.appendChild(counterBox);
+    var ADSTERRA_SMARTLINK = 'https://vibrategrin.com/r6ivkxqs?key=63bef8366f207f2572aa4af240234677';
 
-  var iframeLoads = 0;
-  var clicksInjected = 0;
+    // Create visible counter box
+    var counterBox = document.createElement('div');
+    counterBox.id = 'ad-test-counter';
+    counterBox.style.cssText = 'position:fixed;bottom:10px;right:10px;background:black;color:lime;padding:8px;font-size:12px;z-index:999999;font-family:monospace;';
+    counterBox.innerHTML = 'iframe loads: 0<br>clicks injected: 0';
+    document.body.appendChild(counterBox);
 
-  function updateCounter() {
-    counterBox.innerHTML = 'iframe loads: ' + iframeLoads + '<br>clicks injected: ' + clicksInjected;
-  }
+    var iframeLoads = 0;
+    var clicksInjected = 0;
 
-  // Hidden container
-  var container = document.createElement('div');
-  container.id = 'hidden-adsterra-container';
-  container.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;';
-  document.body.appendChild(container);
-
-  // Add 4 hidden iframes
-  for (var i = 0; i < 4; i++) {
-    var iframe = document.createElement('iframe');
-    iframe.width = '1';
-    iframe.height = '1';
-    iframe.style.cssText = 'opacity:0.01;border:none;';
-    iframe.addEventListener('load', function() {
-      iframeLoads++;
-      updateCounter();
-    });
-    iframe.src = ADSTERRA_SMARTLINK;
-    container.appendChild(iframe);
-  }
-
-  // Auto-refresh every 30 seconds
-  setInterval(function() {
-    var iframes = container.querySelectorAll('iframe');
-    for (var j = 0; j < iframes.length; j++) {
-      iframes[j].src = iframes[j].src; // triggers load again
+    function updateCounter() {
+      counterBox.innerHTML = 'iframe loads: ' + iframeLoads + '<br>clicks injected: ' + clicksInjected;
     }
-  }, 30000);
 
-  // Fake click injection
-  function injectClick() {
-    var iframes = container.querySelectorAll('iframe');
-    if (iframes.length > 0) {
-      var ad = iframes[0];
-      var rect = ad.getBoundingClientRect();
-      var clickEvt = new MouseEvent('click', {
-        clientX: rect.left + 1,
-        clientY: rect.top + 1,
-        bubbles: true,
-        cancelable: true,
-        view: window
+    // Hidden container
+    var container = document.createElement('div');
+    container.id = 'hidden-adsterra-container';
+    container.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;';
+    document.body.appendChild(container);
+
+    // Add 4 hidden iframes
+    for (var i = 0; i < 4; i++) {
+      var iframe = document.createElement('iframe');
+      iframe.width = '1';
+      iframe.height = '1';
+      iframe.style.cssText = 'opacity:0.01;border:none;';
+      iframe.addEventListener('load', function() {
+        iframeLoads++;
+        updateCounter();
       });
-      ad.dispatchEvent(clickEvt);
-      clicksInjected++;
-      updateCounter();
+      iframe.src = ADSTERRA_SMARTLINK;
+      container.appendChild(iframe);
     }
+
+    // Auto-refresh every 30 seconds
+    setInterval(function() {
+      var iframes = container.querySelectorAll('iframe');
+      for (var j = 0; j < iframes.length; j++) {
+        iframes[j].src = iframes[j].src; // triggers load again
+      }
+    }, 30000);
+
+    // Fake click injection
+    function injectClick() {
+      var iframes = container.querySelectorAll('iframe');
+      if (iframes.length > 0) {
+        var ad = iframes[0];
+        var rect = ad.getBoundingClientRect();
+        var clickEvt = new MouseEvent('click', {
+          clientX: rect.left + 1,
+          clientY: rect.top + 1,
+          bubbles: true,
+          cancelable: true,
+          view: window
+        });
+        ad.dispatchEvent(clickEvt);
+        clicksInjected++;
+        updateCounter();
+      }
+    }
+
+    document.addEventListener('touchstart', injectClick, { passive: true });
+    document.addEventListener('mousedown', injectClick);
   }
 
-  document.addEventListener('touchstart', injectClick, { passive: true });
-  document.addEventListener('mousedown', injectClick);
+  // Wait for DOM to be ready, but also handle case where DOM is already loaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startTest);
+  } else {
+    startTest();
+  }
 })();
