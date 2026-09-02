@@ -42,7 +42,27 @@ export const metadata: Metadata = {
     title: 'Gaffa — BALLKNW',
     images: ['/assets/og-image.png'],
   },
-  icons: { icon: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/favicon.svg` },
+  icons: {
+    icon: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/favicon.svg`,
+    apple: '/assets/apple-touch-icon.png',
+  },
+  /* The game is what people actually install, so it carries the manifest. The
+     manifest lives at the site root because its scope covers the whole origin —
+     an installed window that could not follow a link back to /leagues.html
+     would drop the user into a browser tab, which defeats the point. */
+  manifest: '/manifest.webmanifest',
+  /* Next emits the standard `mobile-web-app-capable` and drops the Apple-
+     prefixed one as deprecated. iOS honours the manifest's display mode now, so
+     standalone works either way — but the legacy tag is still what enables
+     launch/splash images, so it is set explicitly rather than lost. */
+  other: { 'apple-mobile-web-app-capable': 'yes' },
+  appleWebApp: {
+    capable: true,
+    title: 'Gaffa',
+    /* iOS ignores the manifest display mode entirely; this meta tag is what
+       actually gives a home-screen launch its own full-screen window. */
+    statusBarStyle: 'black-translucent',
+  },
 };
 
 export const viewport: Viewport = {
@@ -99,6 +119,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {/* auth.js exposes window.BKAuth for optional cloud saves. The
                 Supabase SDK is only fetched if someone actually signs in. */}
             <Script src="/shared/auth.js" strategy="afterInteractive" />
+            {/* Registers the service worker and offers the install prompt. */}
+            <Script src="/shared/pwa.js" strategy="afterInteractive" />
           </>
         )}
       </body>

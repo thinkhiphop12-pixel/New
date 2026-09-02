@@ -136,6 +136,14 @@
   ]
 }
   </script>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <!-- iOS ignores the manifest's display mode, so these are what actually give
+       an Add to Home Screen launch its own full-screen window. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gaffa">
+  <meta name="mobile-web-app-capable" content="yes">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -265,6 +273,7 @@
 </div>
 
 <script src="/shared/consent.min.js" defer></script>
+<script src="/shared/pwa.js" defer></script>
 <script src="/shared/ads.min.js" defer></script>
 </body>
 </html>

@@ -14,7 +14,6 @@
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/assets/favicon-192.png">
   <link rel="stylesheet" href="/theme.min.css">
   <link rel="stylesheet" href="/styles.min.css">
   <style>
@@ -36,6 +35,14 @@
     }
     .nf-links a:hover{color:var(--white);background:var(--glass)}
   </style>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <!-- iOS ignores the manifest's display mode, so these are what actually give
+       an Add to Home Screen launch its own full-screen window. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gaffa">
+  <meta name="mobile-web-app-capable" content="yes">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -87,5 +94,6 @@
   </div>
 </footer>
 
+<script src="/shared/pwa.js" defer></script>
 </body>
 </html>
