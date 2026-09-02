@@ -72,6 +72,31 @@ function leagueLabel(l) {
   return NAME_OVERRIDES[l.id] || l.name;
 }
 
+/**
+ * "a" or "an" for a league name. English picks on sound, not spelling, and this
+ * set contains both plain vowels (Eredivisie, Allsvenskan) and initialisms read
+ * letter by letter — EFL is "ee-eff-ell" and MLS is "em-ell-ess", so both take
+ * "an" despite starting with consonants. The first pass shipped a bare "a" and
+ * put "Manage a Austrian Bundesliga club" in nine <h1>s and <title>s.
+ */
+const LETTER_NAMES_TAKING_AN = 'AEFHILMNORSX';
+function articleFor(name) {
+  const first = String(name).trim().split(/[\s-]/)[0];
+  /* An all-caps first token is read out letter by letter, so what matters is
+     the sound of its first letter's name, not the letter itself. */
+  if (/^[A-Z0-9]{2,}$/.test(first)) {
+    return LETTER_NAMES_TAKING_AN.includes(first[0]) ? 'an' : 'a';
+  }
+  /* A single capital letter used as a word — the A in "A-League" — is the same
+     case: it is said "ay", so it takes "an". */
+  if (/^[A-Z]$/.test(first)) {
+    return LETTER_NAMES_TAKING_AN.includes(first) ? 'an' : 'a';
+  }
+  /* Otherwise the ordinary rule. "U" is deliberately excluded: a leading U in
+     these names is a "yoo" sound (UEFA, United), which takes "a". */
+  return /^[aeio]/i.test(first) ? 'an' : 'a';
+}
+
 /** Clubs in a league, strongest squad first — gives each page a real ordering
  *  rather than whatever order the dataset happens to hold. */
 function clubsOf(league) {
@@ -232,7 +257,7 @@ function page(league) {
     `All ${clubs.length} ${label} clubs are playable in Gaffa, with ${players.length.toLocaleString('en-GB')} real players drawn from ${nations} nations. No download, no account, no cost.`,
     `Take any of the ${clubs.length} clubs in ${label} through a full season — squads, transfers, contracts and cups, ${players.length.toLocaleString('en-GB')} players deep. Free in your browser, nothing to install.`,
     `${label} is one of ${data.leagues.length} divisions you can manage in free. ${clubs.length} clubs, ${players.length.toLocaleString('en-GB')} players, a full season of tactics and transfers, and no sign-up between you and the first match.`,
-    `Pick a ${label} club and run it for a season: ${clubs.length} sides, ${players.length.toLocaleString('en-GB')} players from ${nations} nations, all free and all in the browser.`,
+    `Pick ${articleFor(label)} ${label} club and run it for a season: ${clubs.length} sides, ${players.length.toLocaleString('en-GB')} players from ${nations} nations, all free and all in the browser.`,
   ]);
 
   const loopLine = pick('loop', [
@@ -262,7 +287,15 @@ function page(league) {
         ? `${homeShare.toFixed(0)}% of players here are from ${league.country}, with the rest drawn from ${nations - 1} other nations — a home core with a real import market on top.`
         : `Only ${homeShare.toFixed(0)}% of players are from ${league.country}. With ${nations} nationalities in the division this is one of the game's genuinely international leagues, and your scouting net can start anywhere.`;
 
-  const title = `Manage a ${label} Club — Free Football Manager Game`;
+  /* Lead with the league name: that is the term people search, and it is what
+     survives if Google truncates. Pick the longest variant that fits inside the
+     ~60 characters a result actually shows, so a long label like "League of
+     Ireland Premier Division" degrades instead of being cut mid-phrase. */
+  const title = [
+    `${label} Manager Game — Play Free Online`,
+    `Free ${label} Manager Game`,
+    `${label} Manager Game`,
+  ].find((t) => t.length <= 60) || `${label} Manager Game`;
   const desc =
     `Take charge of any of the ${clubs.length} ${label} clubs in Gaffa, free in your browser. ` +
     `${players.length.toLocaleString('en-GB')} real players, full season, no download and no sign up.`;
@@ -290,7 +323,7 @@ function page(league) {
 
   const faq = [
     {
-      q: `Can I manage a ${label} club for free?`,
+      q: `Can I manage ${articleFor(label)} ${label} club for free?`,
       a: `Yes. All ${clubs.length} ${label} clubs are playable in Gaffa at no cost — there is no download, no account and no paid tier. Pick a club, set your tactics, work the transfer market and simulate the season in your browser.`,
     },
     {
@@ -402,7 +435,7 @@ ${JSON.stringify(jsonld, null, 2)}
   </header>
 
   <main class="about guide-content">
-    <h1>Manage a ${esc(label)} club — free in your browser</h1>
+    <h1>Manage ${articleFor(label)} ${esc(label)} club — free in your browser</h1>
     <p class="standfirst">${esc(standfirst)}</p>
 
     <div class="answer-box">
@@ -503,14 +536,14 @@ ${faq
     <div class="ad-slot" id="leagueEndAd"><span class="ad-slot-label">Advertisement</span></div>
 
     <div class="end-cta">
-      <h3>Take a ${esc(label)} club to the top</h3>
+      <h3>Take ${articleFor(label)} ${esc(label)} club to the top</h3>
       <p>${esc(pick('cta', [
         `Free, in your browser, nothing to install. Pick your club and start the season.`,
         `No download, no account, no cost — choose a side and play the first fixture now.`,
         `Open it, pick a club, and the season starts. Nothing to install and nothing to join.`,
       ]))}</p>
       <p><a href="/gaffa/" class="btn btn-primary" style="display:inline-block;margin-top:14px">Play Gaffa free →</a></p>
-      <p style="margin-top:16px;font-size:13px"><a href="/leagues.html">All ${data.leagues.length} playable leagues →</a> · <a href="/football-guides.html">Football guides →</a></p>
+      <p style="margin-top:16px;font-size:13px"><a href="/leagues.html">All ${data.leagues.length} playable leagues →</a> · <a href="/football-manager-wonderkids.html">Best wonderkids →</a> · <a href="/football-guides.html">Football guides →</a></p>
     </div>
   </main>
 
