@@ -9,7 +9,10 @@
  * visitors entries are not open yet rather than pretending to enrol them.
  *
  * API CONTRACT the backend needs to implement:
- *   POST {api}/comp/enter   { email, ageConfirmed }  -> 200 { code, entries }
+ *   POST {api}/comp/enter   { ageConfirmed } + Bearer token  -> 200 { code, entries }
+ *                           (or { email, ageConfirmed } when the server runs
+ *                            with COMP_REQUIRE_ACCOUNT=0)
+ *                                                       401 { error:'sign_in_required' }
  *                                                       409 { error:'duplicate' }
  *   POST {api}/comp/refer   { ref, visit }           -> 200 { ok:true }
  *   GET  {api}/comp/status?code=CODE                 -> 200 { entries }
@@ -27,7 +30,14 @@
 var COMP = {
   enabled: false,
   api: '',                                   // e.g. '/api' or 'https://api.ballknw.com'
-  prize: 'two tickets to the UEFA Champions League Final',
+  prize: '£1,000',
+  /* Require a signed-in account to enter. This does NOT gate the game: playing
+     stays account-free and "no sign up to play" stays true. It gates entry to a
+     four-figure prize draw, where the alternative is trusting a typed email
+     address that nothing has confirmed. Sign-in borrows the identity provider's
+     already-verified mailbox for free, and must match COMP_REQUIRE_ACCOUNT on
+     the server, which is the side that actually enforces it. */
+  requireAccount: true,
   closesISO: '',                             // e.g. '2027-04-30T23:59:59Z' — shown to entrants
   termsUrl: '/competition-terms.html',
   minAge: 18,
@@ -105,10 +115,12 @@ function markConverted() {
     .catch(function () { /* server is authoritative; a lost beacon is not fatal */ });
 }
 
-function post(path, body) {
+function post(path, body, token) {
+  var headers = { 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = 'Bearer ' + token;
   return fetch(COMP.api.replace(/\/$/, '') + path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: headers,
     body: JSON.stringify(body)
   }).then(function (r) {
     return r.json().catch(function () { return {}; }).then(function (data) {
@@ -216,7 +228,68 @@ function closesLine() {
   return 'Entries close ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + '. ';
 }
 
+/** Account-gated entry. The address is taken from the verified session on the
+ *  server, so there is no email field here to get wrong or to spoof. */
+function renderAccountEntry(modal) {
+  var signedIn = false;
+  modal.innerHTML =
+    '<button class="bk-close" type="button" aria-label="Close">&times;</button>' +
+    '<h2 id="bkCompTitle">Win ' + escapeHtml(COMP.prize) + '</h2>' +
+    '<p>Share Gaffa with your mates. Every friend who plays a full season using your link is one entry into the draw.</p>' +
+    '<p style="font-size:.82rem">You need an account to enter, so we can tell entries apart and reach you if you win. ' +
+    'You do <strong>not</strong> need one to play — the game stays free with no sign-up.</p>' +
+    '<div class="bk-check">' +
+      '<input type="checkbox" id="bkCompAge">' +
+      '<label for="bkCompAge" style="font-weight:400;margin:0">I am ' + COMP.minAge + ' or over and accept the ' +
+      '<a href="' + COMP.termsUrl + '" target="_blank" rel="noopener" style="color:#2cb94e">terms</a>.</label>' +
+    '</div>' +
+    '<div class="bk-actions">' +
+      '<button type="button" class="bk-primary" id="bkCompSubmit">Sign in and enter</button>' +
+      '<button type="button" class="bk-ghost" id="bkCompLater">Not now</button>' +
+    '</div>' +
+    '<p class="bk-err" id="bkCompErr" hidden></p>' +
+    '<p class="bk-fine">' + closesLine() + 'We use your email only to contact you if you win, and delete it when the draw closes. ' +
+    'No marketing. See the <a href="' + COMP.termsUrl + '" target="_blank" rel="noopener">full terms</a>.</p>';
+
+  modal.querySelector('.bk-close').addEventListener('click', snoozeAndClose);
+  modal.querySelector('#bkCompLater').addEventListener('click', snoozeAndClose);
+  modal.querySelector('#bkCompSubmit').addEventListener('click', function () {
+    var errEl = document.getElementById('bkCompErr');
+    var ageEl = document.getElementById('bkCompAge');
+    errEl.hidden = true;
+    if (!ageEl.checked) {
+      errEl.textContent = 'Please confirm your age and accept the terms.';
+      errEl.hidden = false;
+      ageEl.focus();
+      return;
+    }
+    if (!window.BKAuth || !window.BKAuth.isEnabled()) {
+      errEl.textContent = 'Entries are not open yet — check back shortly.';
+      errEl.hidden = false;
+      return;
+    }
+    /* Already signed in? Go straight through. Otherwise hand off to the sign-in
+       modal and finish the entry when the session appears. */
+    window.BKAuth.getAccessToken().then(function (token) {
+      if (token) return submitEntry(token);
+      window.BKAuth.onAuthChange(function () {
+        if (signedIn) return;             // one entry per sign-in event
+        window.BKAuth.getAccessToken().then(function (t) {
+          if (!t) return;
+          signedIn = true;
+          openModal();                    // re-open ours over the closed sign-in
+          submitEntry(t);
+        });
+      });
+      window.BKAuth.open();
+    });
+  });
+
+  modal.querySelector('#bkCompAge').focus();
+}
+
 function renderEntryForm(modal) {
+  if (COMP.requireAccount) return renderAccountEntry(modal);
   modal.innerHTML =
     '<button class="bk-close" type="button" aria-label="Close">&times;</button>' +
     '<h2 id="bkCompTitle">Win ' + escapeHtml(COMP.prize) + '</h2>' +
@@ -242,25 +315,27 @@ function renderEntryForm(modal) {
   modal.querySelector('#bkCompEmail').focus();
 }
 
-function submitEntry() {
+function submitEntry(token) {
   var emailEl = document.getElementById('bkCompEmail');
   var ageEl = document.getElementById('bkCompAge');
   var errEl = document.getElementById('bkCompErr');
   var btn = document.getElementById('bkCompSubmit');
-  var email = (emailEl.value || '').trim();
+  var email = emailEl ? (emailEl.value || '').trim() : '';
 
   function fail(msg) { errEl.textContent = msg; errEl.hidden = false; }
   errEl.hidden = true;
 
-  /* Deliberately loose — the only real proof an address works is a confirmation
-     email, which the server sends. This just catches obvious typos. */
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { fail('That email address does not look right.'); emailEl.focus(); return; }
-  if (!ageEl.checked) { fail('Please confirm your age and accept the terms.'); ageEl.focus(); return; }
+  if (emailEl) {
+    /* Deliberately loose — the only real proof an address works is a
+       confirmation email. This just catches obvious typos. */
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { fail('That email address does not look right.'); emailEl.focus(); return; }
+  }
+  if (ageEl && !ageEl.checked) { fail('Please confirm your age and accept the terms.'); ageEl.focus(); return; }
   if (!COMP.api) { fail('Entries are not open yet — check back shortly.'); return; }
 
   btn.disabled = true;
   btn.textContent = 'Getting your link…';
-  post('/comp/enter', { email: email, ageConfirmed: true })
+  post('/comp/enter', emailEl ? { email: email, ageConfirmed: true } : { ageConfirmed: true }, token)
     .then(function (data) {
       if (!data.code) throw new Error('no code returned');
       lsSet(K_CODE, data.code);
@@ -270,7 +345,9 @@ function submitEntry() {
     .catch(function (err) {
       btn.disabled = false;
       btn.textContent = 'Get my link';
-      if (err && err.data && err.data.error === 'duplicate') fail('That email is already entered — check your inbox for your link.');
+      var code = err && err.data && err.data.error;
+      if (code === 'duplicate') fail('That account is already entered — reopen this panel for your link.');
+      else if (code === 'sign_in_required') fail('Please sign in to enter.');
       else fail('Could not enter you just now. Please try again in a moment.');
     });
 }

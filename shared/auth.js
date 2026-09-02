@@ -71,6 +71,25 @@ function getUser() {
     .catch(function () { return null; });
 }
 
+/** The current session's access token, for authenticating a call to our own
+ *  API. Null when signed out or unconfigured. */
+function getAccessToken() {
+  if (!ready()) return Promise.resolve(null);
+  return client()
+    .then(function (c) { return c.auth.getSession(); })
+    .then(function (r) { return (r && r.data && r.data.session && r.data.session.access_token) || null; })
+    .catch(function () { return null; });
+}
+
+/** Run a callback once the auth state changes, so a modal waiting on sign-in
+ *  can update itself when the user returns from an OAuth round trip. */
+function onAuthChange(fn) {
+  if (!ready()) return;
+  client()
+    .then(function (c) { c.auth.onAuthStateChange(function () { try { fn(); } catch (e) {} }); })
+    .catch(function () {});
+}
+
 function signInWithGoogle() {
   return client().then(function (c) {
     authTrack('auth_signin_started', { provider: 'google' });
@@ -318,6 +337,8 @@ function openSignIn() {
 
 window.BKAuth = {
   open: openSignIn,
+  getAccessToken: getAccessToken,
+  onAuthChange: onAuthChange,
   close: closeModal,
   isEnabled: ready,
   getUser: getUser,
