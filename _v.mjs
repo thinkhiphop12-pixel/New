@@ -1,0 +1,15 @@
+import { chromium } from 'playwright';
+const dir='/tmp/claude-0/-home-user-New/c47b453a-ac8c-5a8c-8086-dfced9a9bf53/scratchpad/';
+const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await b.newPage({ viewport:{width:1440,height:900} });
+await p.goto('http://localhost:3000',{waitUntil:'networkidle'});
+const click = async n => { await p.getByRole('button',{name:n,exact:false}).first().click({timeout:9000}); await p.waitForTimeout(900); };
+await click('Start new career'); await p.fill('input[placeholder="Enter a name"]','Tester');
+await click('Start Career'); await click('Play Normally'); await click('Netherlands'); await click('Ajax'); await click('Take the job');
+await p.waitForTimeout(1600); await p.keyboard.press('Escape'); await p.waitForTimeout(700);
+await p.screenshot({path:dir+'v-home.png'});
+await p.locator('.fm-rail__item',{hasText:/^Training/}).first().click(); await p.waitForTimeout(1000);
+await p.screenshot({path:dir+'v-train.png'});
+await p.locator('.fm-rail__item',{hasText:/^Market/}).first().click(); await p.waitForTimeout(1100);
+await p.screenshot({path:dir+'v-market.png'});
+await b.close();

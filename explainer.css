@@ -5,25 +5,74 @@
    components stay in that page's own <style> block. Anything already provided
    by styles.css — notably .faq-item — is deliberately not repeated. */
 
-/* ── PAGE SHELL ── */
-.guide-content{max-width:760px;margin:0 auto;padding:0 16px;line-height:1.75}
-.guide-content h1{
-  font-size:clamp(1.85rem,5.5vw,2.6rem);font-weight:900;
-  letter-spacing:-.03em;line-height:1.12;margin:36px 0 12px;text-align:center;
+/* ── PAGE SHELL ──
+   Wide screens get a two-column reading layout: the article in a measured
+   column, the contents list pinned in a rail beside it. Below 1100px it
+   collapses back to a single column and the contents list sits in flow. */
+.guide-content{
+  max-width:1080px;margin:0 auto;padding:0 22px;line-height:1.75;
+  display:grid;grid-template-columns:minmax(0,1fr);gap:0 56px;
 }
-.standfirst{text-align:center;color:var(--muted);font-size:1.05rem;max-width:58ch;margin:0 auto 8px}
-.byline{text-align:center;color:var(--muted);font-size:12px;letter-spacing:.04em;margin-bottom:26px;opacity:.75}
+.guide-content > *{grid-column:1;max-width:none}
+@media(min-width:1100px){
+  /* Pages with no contents list stay a single centred column rather than
+     sitting left of an empty rail. */
+  .guide-content:not(:has(> .toc)){max-width:820px}
+  .guide-content:has(> .toc){grid-template-columns:minmax(0,1fr) 232px}
+  .guide-content:has(> .toc) > *{max-width:720px}
+  .guide-content > .toc{
+    grid-column:2;grid-row:1 / span 200;
+    position:sticky;top:84px;align-self:start;max-width:none;margin:44px 0 0;
+  }
+}
 
-/* ── SECTIONS ── */
-.guide-section{margin:38px 0}
-.guide-section h2{font-size:1.6rem;font-weight:800;letter-spacing:-.02em;margin:0 0 12px;color:var(--lime)}
+/* Masthead. Left-aligned and set large, so the page opens with a piece of
+   typography rather than a centred block of small text. */
+.guide-content h1{
+  font-size:clamp(2.1rem,6vw,3.6rem);font-weight:600;
+  letter-spacing:-.04em;line-height:1.02;margin:48px 0 0;text-align:left;
+}
+.standfirst{
+  text-align:left;color:var(--white);opacity:.72;
+  font-size:clamp(1.05rem,2.2vw,1.3rem);line-height:1.5;font-weight:400;
+  max-width:44ch;margin:18px 0 0;
+}
+.byline{
+  text-align:left;color:var(--muted);font-size:11.5px;letter-spacing:.14em;
+  text-transform:uppercase;margin:26px 0 30px;opacity:.7;
+  padding-top:18px;border-top:1px solid var(--border);max-width:44ch;
+}
+
+/* The opening paragraph of the article carries more weight than the rest. */
+.guide-section:first-of-type > p:first-of-type{
+  font-size:1.12rem;line-height:1.7;color:rgba(255,255,255,.82);
+}
+
+/* ── SECTIONS ──
+   A hairline and a short accent rule above each heading give the page a
+   visible rhythm on scroll; previously every section opened the same way. */
+.guide-section{margin:56px 0;padding-top:32px;border-top:1px solid var(--border)}
+.guide-section:first-of-type{border-top:none;padding-top:0}
+.guide-section h2,.guide-content > h2{
+  position:relative;font-size:clamp(1.5rem,3.2vw,2rem);font-weight:600;
+  letter-spacing:-.03em;line-height:1.15;margin:0 0 16px;color:var(--white);
+}
+.guide-content > h2{margin-top:48px}
+.guide-section h2::before,.guide-content > h2::before{
+  content:"";display:block;width:34px;height:3px;border-radius:2px;
+  background:var(--cta);margin-bottom:14px;
+}
 .guide-section h3{font-size:1.18rem;font-weight:700;margin:24px 0 8px}
 .guide-section p{color:var(--muted);margin:12px 0}
 
 /* ── SHORT-ANSWER BOX ── */
 .answer-box{
-  background:linear-gradient(180deg,rgba(44,185,78,.10),rgba(44,185,78,.04));
-  border:1px solid rgba(44,185,78,.28);border-radius:14px;padding:22px 24px;margin:26px 0;
+  position:relative;overflow:hidden;
+  background:
+    radial-gradient(120% 140% at 0% 0%,rgba(44,185,78,.16),transparent 62%),
+    linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));
+  border:1px solid rgba(44,185,78,.24);border-left:3px solid var(--lime);
+  border-radius:4px 18px 18px 4px;padding:26px 28px;margin:8px 0 30px;
 }
 .answer-box .lbl{
   font-size:10.5px;font-weight:800;letter-spacing:.18em;
@@ -33,9 +82,17 @@
 .answer-box .term{font-weight:800;color:var(--lime)}
 
 /* ── TABLE OF CONTENTS ── */
-.toc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 22px;margin:24px 0}
-.toc h2{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--lime);margin:0 0 9px}
-.toc ol{margin:0;padding-left:20px;color:var(--muted);font-size:14.5px}
+.toc{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin:24px 0}
+.toc h2{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin:0 0 12px;font-weight:700}
+.toc ol{margin:0;padding-left:18px;color:var(--muted);font-size:13.5px;line-height:1.5}
+@media(min-width:1100px){
+  .toc{background:none;border:none;border-left:1px solid var(--border);border-radius:0;padding:2px 0 2px 20px}
+  .toc ol{padding-left:0;list-style:none;counter-reset:toc}
+  .toc li{counter-increment:toc;margin:0}
+  .toc a{display:block;padding:7px 0;border-bottom:none}
+  .toc a::before{content:counter(toc,decimal-leading-zero);margin-right:9px;opacity:.45;font-size:11px}
+  .toc a:hover{border-bottom:none;color:var(--lime)}
+}
 .toc li{margin:4px 0}
 .toc a{color:var(--muted);border-bottom:1px solid transparent}
 .toc a:hover{color:var(--white);border-bottom-color:var(--lime)}
@@ -52,7 +109,15 @@ table.data tbody th{font-weight:700;color:var(--white);font-size:14px}
 table.data.nowrap-first tbody th{white-space:nowrap}
 
 /* ── PULL QUOTES / ASIDES ── */
-blockquote{border-left:3px solid var(--lime);padding:2px 0 2px 16px;margin:18px 0;color:var(--muted);font-style:italic}
+blockquote{
+  border-left:none;margin:34px 0;padding:0 0 0 2px;
+  font-size:clamp(1.15rem,2.4vw,1.45rem);line-height:1.42;font-style:normal;
+  font-weight:500;color:var(--white);letter-spacing:-.02em;max-width:26ch;
+}
+blockquote::before{
+  content:"";display:block;width:34px;height:3px;border-radius:2px;
+  background:var(--cta);margin-bottom:18px;
+}
 .callout{border-left:3px solid var(--lime);padding:4px 0 4px 16px;margin:20px 0;color:var(--muted);font-size:14.5px}
 .note{
   font-size:13px;color:var(--muted);background:rgba(255,255,255,.03);
@@ -102,3 +167,32 @@ blockquote{border-left:3px solid var(--lime);padding:2px 0 2px 16px;margin:18px 
 }
 .end-cta h3{margin:0 0 10px}
 .end-cta a{color:var(--lime)}
+
+/* ── PROSE LINKS ──
+   In-body links were inheriting `color:inherit` from the reset, which left them
+   indistinguishable from surrounding copy. */
+.guide-section p a,.guide-section li a,.standfirst a,.note a,.callout a{
+  color:var(--white);
+  border-bottom:1px solid rgba(44,185,78,.5);
+  transition:color .15s,border-color .15s;
+}
+.guide-section p a:hover,.guide-section li a:hover,.standfirst a:hover,
+.note a:hover,.callout a:hover{color:var(--lime);border-bottom-color:var(--lime)}
+
+/* Comfortable measure for long-form copy — ~65 characters. */
+.guide-section p,.guide-section li{max-width:66ch}
+
+/* Depth on the answer box: a tinted shadow in the page's own hue rather than
+   flat black. */
+.answer-box{box-shadow:0 18px 40px -28px rgba(44,185,78,.55)}
+
+/* Platform switch chips get the same pressed feedback as buttons. */
+.platform-switch a{transition:color .15s,border-color .15s,transform .12s}
+.platform-switch a:hover{color:var(--white);border-color:var(--border-bright)}
+.platform-switch a:active{transform:translateY(1px)}
+
+/* Guide cards keep the same pressed feedback as the rest of the site. */
+.guide-card:active{transform:translateY(0)}
+
+/* Data tables read better with a zebra so the eye tracks across wide rows. */
+table.data tbody tr:nth-child(even){background:rgba(255,255,255,.018)}

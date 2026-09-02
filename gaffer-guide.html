@@ -24,7 +24,7 @@
 <script defer src="/_vercel/insights/script.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0a1f14">
-  <title>Gaffa Guide — Football Manager Strategy & Tips | BALLKNW</title>
+  <title>Gaffa Guide | Football Manager Strategy & Tips | BALLKNW</title>
   <meta name="description" content="Master BALLKNW Gaffa: Learn tactics, transfers, contracts, youth development, and long-term club management strategy for a full season in English football.">
   <meta name="keywords" content="Gaffa guide, football manager strategy, tactics guide, transfer tips, contract management, club management sim">
   <link rel="canonical" href="https://www.ballknw.com/gaffer-guide.html" />
@@ -50,7 +50,7 @@
           "@type": "HowToStep",
           "position": 1,
           "name": "Pick Your Club",
-          "text": "Choose a real English league club from three divisions — Premier League, Championship, or League One. Your squad, budget, and ambitions vary by tier."
+          "text": "Choose a real English league club from three divisions: Premier League, Championship, or League One. Your squad, budget, and ambitions vary by tier."
         },
         {
           "@type": "HowToStep",
@@ -77,13 +77,10 @@
   </script>
   <link rel="stylesheet" href="/theme.min.css">
   <link rel="stylesheet" href="/styles.min.css">
+  <link rel="stylesheet" href="/explainer.css">
   <style>
-    .guide-content { max-width: 800px; margin: 40px auto; line-height: 1.8; }
-    .guide-section { margin: 40px 0; }
-    .guide-section h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 16px; color: var(--lime); }
-    .guide-section h3 { font-size: 1.3rem; font-weight: 700; margin-top: 24px; margin-bottom: 12px; }
     .strategy-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin: 12px 0; display: flex; gap: 14px; align-items: flex-start; }
-    .card-num,.card-dot{flex-shrink:0;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'SFMono-Regular',Consolas,monospace;font-weight:800;font-size:12px;color:#052411;background:linear-gradient(135deg,#2ab248,#12b380);}
+    .card-num,.card-dot{flex-shrink:0;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'SFMono-Regular',Consolas,monospace;font-weight:800;font-size:12px;color:#052411;background:linear-gradient(135deg,var(--lime),var(--emerald));}
     .card-dot{width:10px;height:10px;border-radius:3px;margin:8px 8px 0 0;}
     .strategy-card h4 { color: var(--lime); font-weight: 700; margin-bottom: 4px; }
     .strategy-card p { margin: 0; }
@@ -96,6 +93,7 @@
   </style>
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
 <div id="app">
   <header class="topbar">
     <nav class="nav">
@@ -110,26 +108,26 @@
     </nav>
   </header>
 
-  <main class="about guide-content">
-    <h1 style="text-align:center;margin:30px 0 6px">Gaffa Strategy Guide</h1>
+  <main id="main" class="about guide-content">
+    <h1>Gaffa strategy guide</h1>
     <div class="guide-cta-top"><a href="/gaffa/" class="btn btn-primary">Play Gaffa →</a></div>
     <div class="ad-slot" id="gaffaGuideTopAd"><span class="ad-slot-label">Advertisement</span></div>
 
-    <div class="guide-section">
-      <h3>What is Gaffa?</h3>
-      <p>Manage a real English club for a full season — tactics, transfers, contracts, cups, youth academy. Saves in your browser.</p>
-      <p style="font-size:13.5px;opacity:.85">Looking for the football term rather than the game? See <a href="/what-is-a-gaffer-in-football.html">what "gaffer" means in football</a> — the slang for the manager, and where the word comes from.</p>
-    </div>
+    <section class="guide-section">
+      <h2>What is Gaffa?</h2>
+      <p>Manage a real English club for a full season: tactics, transfers, contracts, cups, youth academy. Saves in your browser.</p>
+      <p style="font-size:13.5px;opacity:.85">Looking for the football term rather than the game? See <a href="/what-is-a-gaffer-in-football.html">what "gaffer" means in football</a>: the slang for the manager, and where the word comes from.</p>
+    </section>
 
-    <div class="guide-section">
-      <h3>Getting Started</h3>
-      <div class="strategy-card"><span class="card-num">01</span><div><h4>Choose your club</h4><p>Premier League, Championship, or League One — reputation and budget scale with tier.</p></div></div>
-      <div class="strategy-card"><span class="card-num">02</span><div><h4>Review your squad</h4><p>Check positions, ratings, ages, contracts. Spot your stars and your prospects.</p></div></div>
-      <div class="strategy-card"><span class="card-num">03</span><div><h4>Set your formation</h4><p>Pick a shape that matches your players' strengths.</p></div></div>
-    </div>
+    <section class="guide-section">
+      <h2>Getting Started</h2>
+      <div class="strategy-card"><span class="card-num">01</span><div><h3>Choose your club</h3><p>Premier League, Championship, or League One, reputation and budget scale with tier.</p></div></div>
+      <div class="strategy-card"><span class="card-num">02</span><div><h3>Review your squad</h3><p>Check positions, ratings, ages, contracts. Spot your stars and your prospects.</p></div></div>
+      <div class="strategy-card"><span class="card-num">03</span><div><h3>Set your formation</h3><p>Pick a shape that matches your players' strengths.</p></div></div>
+    </section>
 
-    <div class="guide-section">
-      <h3>Tactical Management</h3>
+    <section class="guide-section">
+      <h2>Tactical Management</h2>
       <div class="formation-diagrams">
         <figure>
           <svg viewBox="0 0 100 130" width="140" height="182">
@@ -156,28 +154,28 @@
           <figcaption>4-3-3 · attacking</figcaption>
         </figure>
       </div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Formation & positioning</h4><p>Attacking shapes create more chances but leave you exposed; defensive shapes are safer but score less.</p></div></div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Match strategy</h4><p>Push forward when chasing, hold shape when ahead. Sub early if it's not working.</p></div></div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Fatigue & rotation</h4><p>Tired players get injured. Rotate your squad, especially in busy fixture spells.</p></div></div>
-    </div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Formation & positioning</h3><p>Attacking shapes create more chances but leave you exposed; defensive shapes are safer but score less.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Match strategy</h3><p>Push forward when chasing, hold shape when ahead. Sub early if it's not working.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Fatigue & rotation</h3><p>Tired players get injured. Rotate your squad, especially in busy fixture spells.</p></div></div>
+    </section>
 
-    <div class="guide-section">
-      <h3>Transfer & Contract Management</h3>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>The transfer window</h4><p>Fix your weakest position first. Use academy players as free depth.</p></div></div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Contract negotiations</h4><p>Renew your stars early. Let aging, expensive players walk.</p></div></div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Youth academy</h4><p>Young talent develops over seasons — invest early for cheap long-term quality.</p></div></div>
-    </div>
+    <section class="guide-section">
+      <h2>Transfer & Contract Management</h2>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>The transfer window</h3><p>Fix your weakest position first. Use academy players as free depth.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Contract negotiations</h3><p>Renew your stars early. Let aging, expensive players walk.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Youth academy</h3><p>Young talent develops over seasons, invest early for cheap long-term quality.</p></div></div>
+    </section>
 
-    <div class="guide-section">
-      <h3>Winning Strategy</h3>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Build a balanced squad</h4><p>11 strong starters, 4–5 backups. Don't overload one position.</p></div></div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Plan for the season</h4><p>Bank points early; your form matters most in the final rounds.</p></div></div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Manage your budget</h4><p>Don't spend it all on one player — spread it across the squad.</p></div></div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>Chase objectives</h4><p>Pick a target that fits your tier — top 4, the title, or a cup run.</p></div></div>
-    </div>
+    <section class="guide-section">
+      <h2>Winning Strategy</h2>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Build a balanced squad</h3><p>11 strong starters, 4-5 backups. Don't overload one position.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Plan for the season</h3><p>Bank points early; your form matters most in the final rounds.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Manage your budget</h3><p>Don't spend it all on one player, spread it across the squad.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>Chase objectives</h3><p>Pick a target that fits your tier: top 4, the title, or a cup run.</p></div></div>
+    </section>
 
-    <div class="guide-section">
-      <h3>Common Pitfalls</h3>
+    <section class="guide-section">
+      <h2>Common Pitfalls</h2>
       <ul style="padding-left:20px">
         <li style="margin-bottom:10px"><strong>Overconfidence:</strong> one big win doesn't make you invincible.</li>
         <li style="margin-bottom:10px"><strong>Poor rotation:</strong> a tired XI loses seasons.</li>
@@ -185,12 +183,12 @@
         <li style="margin-bottom:10px"><strong>Hoarding old players:</strong> their wages block your budget.</li>
         <li style="margin-bottom:10px"><strong>Ignoring injuries:</strong> rest knocks before they worsen.</li>
       </ul>
-    </div>
+    </section>
 
     <div class="ad-slot" id="gafferGuideEndAd"><span class="ad-slot-label">Advertisement</span></div>
 
     <div class="guide-end-cta">
-      <h3 style="margin-top:0">Ready to manage?</h3>
+      <h2 style="margin-top:0">Ready to manage?</h2>
       <p><a href="/gaffa/" class="btn btn-primary" style="display:inline-block;margin-top:14px">Play Gaffa Now →</a></p>
     </div>
     <p style="text-align:center;font-size:13px;margin:24px 0"><a href="/football-manager-26.html">Football Manager 26 explained →</a> · <a href="/football-manager-pa-ca-explained.html">PA &amp; CA in Football Manager →</a></p>
@@ -203,7 +201,7 @@
   </footer>
 
   <div class="consent-banner hidden" id="consentBanner">
-    <p class="consent-text">We use cookies for basic analytics and to show ads. Choose what you're OK with — you can change this anytime in Cookie settings.</p>
+    <p class="consent-text">We use cookies for basic analytics and to show ads. Choose what you're OK with. You can change this anytime in Cookie settings.</p>
     <div class="consent-actions">
       <button class="btn-ghost" id="consentEssentialBtn">Essential only</button>
       <button class="btn-primary" id="consentAcceptBtn">Accept all</button>

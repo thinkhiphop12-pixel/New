@@ -90,9 +90,17 @@ export function renewalDemand(state: GameState, playerId: number): RenewalOffer 
   const avg = squadAvgRating(state, state.userClubId);
   const role = projectedRole(p, squad, avg);
 
-  // Base: the leverage floor from the negotiation model, plus what his
-  // ability above replacement level is worth on top of his current deal.
-  const overallIncrease = clamp(p.rating - 60, 0, 30);
+  // Base: the leverage floor from the negotiation model, plus what he has
+  // *improved by* since signing — not how good he already is.
+  //
+  // This used to read `p.rating - 60` (his standing above replacement level)
+  // as a stand-in for improvement. It is not one. His current wage already
+  // prices his quality, so multiplying it by his quality again charged for the
+  // same thing twice: an 88-rated man on £350k/wk asked for £1,003,333/wk, a
+  // 2.87x rise, and got the same multiple again at the next renewal. Players
+  // reported it as "demanding a rise from £350k to £1M".
+  const signedAt = p.contractRating ?? p.rating;
+  const overallIncrease = clamp(p.rating - signedAt, 0, 30);
   const fromCurrent = p.wage * (1 + overallIncrease / 15);
   const leverageFloor = newSigningWageDemand(p, 1) * 1.2;
   let wage = Math.max(fromCurrent, leverageFloor);
@@ -275,6 +283,10 @@ export function submitRenewalOffer(
 
   if (response.verdict === 'accept') {
     sp.wage = offer.wage;
+    // Baseline for the *next* renewal: what he was rated when he signed this
+    // deal. Without stamping it here the delta is always zero and a player who
+    // genuinely improves never earns a rise.
+    sp.contractRating = sp.rating;
     sp.contractYears = offer.years;
     sp.contractEnd = contractEndFor(s.seasonYear, offer.years);
     sp.contractWarned = false;

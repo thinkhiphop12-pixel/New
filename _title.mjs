@@ -1,0 +1,18 @@
+import { chromium } from 'playwright';
+const dir='/tmp/claude-0/-home-user-New/c47b453a-ac8c-5a8c-8086-dfced9a9bf53/scratchpad/';
+const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await b.newPage({ viewport:{width:1440,height:900} });
+await p.goto('http://localhost:3000',{waitUntil:'networkidle'});
+await p.waitForTimeout(1200);
+await p.screenshot({path:dir+'t1-menu.png'});
+const click = async n => { await p.getByRole('button',{name:n,exact:false}).first().click({timeout:8000}); await p.waitForTimeout(900); };
+await click('Start new career');
+await p.screenshot({path:dir+'t2-character.png'});
+await p.fill('input[placeholder="Enter a name"]','Tester');
+await click('Start Career');
+await p.screenshot({path:dir+'t3-scenario.png'});
+await click('Play Normally');
+await p.screenshot({path:dir+'t4-nation.png'});
+await click('Netherlands');
+await p.screenshot({path:dir+'t5-club.png'});
+await b.close();

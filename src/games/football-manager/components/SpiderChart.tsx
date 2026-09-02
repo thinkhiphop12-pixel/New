@@ -80,7 +80,7 @@ export function SpiderChart({
         dominantBaseline="middle"
         fill="rgba(255,255,255,0.45)"
         fontSize={9}
-        fontFamily="Inter,sans-serif"
+        fontFamily="Oswald,sans-serif"
       >
         {name}
       </text>

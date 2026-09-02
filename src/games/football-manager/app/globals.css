@@ -4,18 +4,22 @@
    GAFFER — FM26-style Dark Theme
    ===================================================================== */
 :root {
-  /* Core backgrounds — opaque neutral slate for predictable layering */
-  --bg: #050505;
-  --bg-grad: radial-gradient(1400px 800px at 50% -5%, rgba(0,214,143,0.10) 0%, #050505 55%);
-  --panel: #0a0b0d;
-  --panel-2: #0e0f12;
-  --panel-3: #171a20;
-  --glass: #171a20;
+  /* Core backgrounds — a dark navy/slate ramp, not black.
+     Pure #050505 with a lime glow gave every panel a hard, high-contrast
+     edge and made the accent the only colour in the room. Panels now sit a
+     few steps above a navy ground, so depth comes from the surfaces
+     themselves and the accent is free to mean something. */
+  --bg: #0b111a;
+  --bg-grad: radial-gradient(1400px 800px at 50% -5%, rgba(45, 74, 105, 0.28) 0%, #0b111a 58%);
+  --panel: #121b27;
+  --panel-2: #16202e;
+  --panel-3: #1d2839;
+  --glass: #1d2839;
 
-  /* Borders */
-  --border: rgba(255,255,255,0.10);
-  --border-soft: rgba(255,255,255,0.06);
-  --border-bright: rgba(255,255,255,0.18);
+  /* Borders — softer, because the surfaces below already separate. */
+  --border: rgba(255,255,255,0.08);
+  --border-soft: rgba(255,255,255,0.05);
+  --border-bright: rgba(255,255,255,0.16);
 
   /* Text */
   --text: #ffffff;
@@ -30,10 +34,18 @@
   --lime: #2cb94e;
   --emerald: #12b380;
 
-  /* Accents — lime/emerald replace the old FM green */
-  --green: #b8ff3c;
-  --green-600: #00d68f;
-  --green-dim: rgba(184, 255, 60, 0.12);
+  /* Accents — lime/emerald replace the old FM green.
+     `--green` was #b8ff3c, an acid lime at near-full luminance. On a black
+     UI that reads as glare, and it carried every module title, stat value,
+     chip and meter in the game at once — the "too bright / overwhelming"
+     complaint. Same hue family, luminance and chroma pulled back so it
+     still reads as the game's green without lighting up the room.
+     `--green-strong` keeps the old value for the few places that are
+     genuinely a highlight (a goal, a promotion) rather than a label. */
+  --green: #6cc48d;
+  --green-strong: #8fe0aa;
+  --green-600: #4faf7d;
+  --green-dim: rgba(108, 196, 141, 0.12);
   --gold: #c9a227;
   --gold-2: #e0bd4a;
   --gold-soft: rgba(201, 162, 39, 0.14);
@@ -76,7 +88,7 @@
   --diff-2: #4caf50;
 
   /* Gradients */
-  --cta-gradient: linear-gradient(135deg, #b8ff3c 0%, #00d68f 100%);
+  --cta-gradient: linear-gradient(135deg, #6cc48d 0%, #4faf7d 100%);
   --gold-gradient: linear-gradient(135deg, #c9a227 0%, #a3801a 100%);
   --card-gradient: linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 100%);
 
@@ -84,7 +96,7 @@
   --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.4);
   --shadow-lg: 0 8px 40px rgba(0,0,0,0.5);
-  --shadow-glow-green: 0 0 20px rgba(184, 255, 60, 0.25);
+  --shadow-glow-green: 0 0 20px rgba(108, 196, 141, 0.20);
   --shadow-glow-gold: 0 0 20px rgba(201, 162, 39, 0.25);
 
   /* Radii */
@@ -173,7 +185,7 @@ body {
   background-image: var(--bg-grad);
   background-attachment: fixed;
   color: var(--text);
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: Oswald, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -200,6 +212,10 @@ body {
   position: sticky; top: 0; z-index: 40;
 }
 .fm-header__brand {
+  /* Locked to Inter regardless of the app-wide font — this is the same
+     BALLKNW logo as every other ballknw.com page (theme.css), not game UI,
+     so it can't drift when the game's own type changes. */
+  font-family: Inter, system-ui, -apple-system, sans-serif;
   font-weight: 800; letter-spacing: 0.5px; color: white;
   font-size: 14px; text-transform: uppercase;
   display: flex; align-items: center; gap: 8px;
@@ -263,17 +279,11 @@ body {
   .fm-view-fade { animation: none; }
 }
 
-/* Lighter per-screen transition for switching tabs within a Hub group —
-   .fm-view-fade above covers whole-view swaps (menu → hub → match), this
-   covers Hub sub-tab swaps (Squad → Tactics) with a smaller, quicker move. */
-.fm-screen-slide { animation: fm-screen-slide 0.2s ease-out; }
-@keyframes fm-screen-slide {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .fm-screen-slide { animation: none; }
-}
+/* The Hub sub-tab swap (Squad → Tactics) that used to live here as
+   `.fm-screen-slide` is now the `screenSwap` variant in
+   components/motion/presets.ts, applied by HubScreen — one description of
+   the movement instead of a keyframe here and a duration there. Whole-view
+   swaps (menu → hub → match) are still the CSS `.fm-view-fade` above.  */
 
 /* Modal/sheet entrance pop, applied to the match-screen modal panel and the
    settings panel. */
@@ -394,7 +404,7 @@ body {
 }
 
 /* ── Labels / Typography ── */
-/* All text now uses Inter for consistency across the site */
+/* All text now uses Oswald for consistency across the site */
 .fm-label {
   font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase;
   color: var(--muted-dim); font-weight: 800;
@@ -421,7 +431,11 @@ body {
 .fm-brand {
   display: inline-flex; align-items: center; gap: 0.467em;
   font-weight: 800; letter-spacing: -0.01em; line-height: 1;
-  color: #f3f7f4; font-family: inherit; white-space: nowrap;
+  color: #f3f7f4; white-space: nowrap;
+  /* Was `inherit` — fine while the app font was Inter, but once the rest of
+     the game moved to Oswald this wordmark has to stay pinned to Inter
+     itself, or it stops matching the ballknw.com logo it's a direct port of. */
+  font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 .fm-brand__mark {
   width: 1.867em; height: 1.867em; border-radius: 0.467em; flex-shrink: 0;
@@ -547,9 +561,11 @@ body {
   transition: all 0.15s;
 }
 .fm-rail__item:hover { color: var(--text); background: var(--glass); }
+/* A filled surface, not a ring. The 1.5px brand outline made the current
+   section the loudest object on the page — it only has to be legible. */
 .fm-rail__item.active {
-  color: var(--text); background: var(--brand-dim);
-  box-shadow: inset 0 0 0 1.5px var(--brand);
+  color: var(--text); background: var(--panel-3);
+  box-shadow: inset 2px 0 0 var(--brand);
 }
 .fm-rail__icon { width: 19px; height: 19px; }
 .fm-rail__label { font-size: 9px; line-height: 1.1; letter-spacing: 0.2px; }
@@ -629,15 +645,18 @@ body {
 }
 .fm-subnav__tabs::-webkit-scrollbar { display: none; }
 
+/* Inactive tabs are plain text; only the open one is a shape. A row of
+   five outlined pills read as five buttons of equal weight, so "where am
+   I" had to be worked out from a border colour. */
 .fm-subtab {
   display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
-  border: 1.5px solid var(--border-soft); background: var(--panel);
+  border: 1.5px solid transparent; background: transparent;
   color: var(--muted); font-family: inherit; font-weight: 700; font-size: 12.5px;
   border-radius: var(--r-full); padding: 7px 14px; cursor: pointer;
   transition: color var(--transition), background var(--transition), border-color var(--transition);
   min-height: var(--tap-min);
 }
-.fm-subtab:hover { color: var(--text); border-color: var(--border-bright); }
+.fm-subtab:hover { color: var(--text); background: var(--glass); }
 /* "Active tab pills" is one of the three uses --brand is permitted for by
    the token contract at :root — nothing semantic is expressed here. */
 .fm-subtab.active {
@@ -814,9 +833,12 @@ body {
 .fm-hub-grid__hero { grid-column: 1 / -1; }
 .fm-mod { background: var(--panel); border: 1px solid var(--border-soft); border-radius: var(--r-lg); padding: 12px 14px; }
 .fm-mod__head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+/* Neutral, not accent. Every module on every screen carries one of these,
+   so colouring them all lime made the accent meaningless AND loud — a
+   heading is structure, not a highlight. */
 .fm-mod__title {
   font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
-  color: var(--green); margin: 0;
+  color: var(--muted); margin: 0;
 }
 .fm-mod--gold .fm-mod__title { color: var(--gold); }
 
@@ -2747,9 +2769,36 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   display: inline-flex; align-items: center; border-radius: 6px;
   padding: 2px 7px; font-size: 10px; font-weight: 800; white-space: nowrap;
 }
-.fm-chip--good { background: var(--green-dim); color: var(--green); }
-.fm-chip--ok { background: var(--panel-3); color: var(--muted); }
+/* `--good` used to be a green fill. On a transfer list where most rows are
+   good news, that painted the whole screen green and left the one row with
+   a real problem no louder than the rest. Good news is now stated quietly
+   in the accent ink on the same neutral chip every other verdict uses;
+   `--meh` keeps its tint, because a warning is the thing that should catch
+   the eye. */
+.fm-chip--good { background: rgba(255,255,255,0.05); color: var(--green); }
+.fm-chip--ok { background: rgba(255,255,255,0.05); color: var(--muted); }
 .fm-chip--meh { background: rgba(242,102,122,0.13); color: var(--red); }
+
+/* Shortlist toggle: a star that reads as a state, not a button competing
+   with the row's real action. */
+.fm-star {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid var(--border-soft);
+  color: var(--muted); font-size: 14px; line-height: 1; cursor: pointer;
+  font-family: inherit; transition: color 0.15s, border-color 0.15s;
+}
+.fm-star:hover { color: var(--text); border-color: var(--border-bright); }
+.fm-star.is-on { color: var(--gold); border-color: var(--gold); }
+
+/* A real action, but a rare one — present but not shouting alongside the
+   primary. */
+.fm-btn--quiet {
+  background: transparent; color: var(--muted);
+  border: 1px solid transparent; text-decoration: underline;
+  text-underline-offset: 3px; text-decoration-color: var(--border-bright);
+}
+.fm-btn--quiet:not(:disabled):hover { color: var(--text); }
 
 /* ── Negotiation: what step am I on, and who else is bidding ── */
 .fm-negotiation__stage {
@@ -2828,22 +2877,24 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-moneybar__value.is-out { color: var(--red); }
 
-/* ── How-it-works card: shown once, then dismissed for good ── */
-.fm-howto {
+/* ── Dismissible explainer card (Transfers): shown once, then gone ──
+   `.fm-explainer`, not `.fm-howto` — see the note on `.fm-steps` below for
+   why sharing that name across three screens broke this one. */
+.fm-explainer {
   position: relative; background: var(--panel); border: 1px solid var(--border-soft);
   border-left: 3px solid var(--gold); border-radius: var(--r-lg);
   padding: 12px 40px 12px 14px; margin-bottom: 12px;
 }
-.fm-howto__close {
+.fm-explainer__close {
   position: absolute; top: 8px; right: 8px; display: flex; padding: 6px;
   background: transparent; border: none; color: var(--muted); cursor: pointer;
 }
-.fm-howto__close:hover { color: var(--text); }
-.fm-howto__title { font-size: 13px; font-weight: 900; margin: 0 0 6px; }
-.fm-howto__steps { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
-.fm-howto__steps li { font-size: 11.5px; line-height: 1.45; color: var(--muted); }
-.fm-howto__steps strong { color: var(--text); }
-.fm-howto__foot { font-size: 11.5px; color: var(--muted); margin: 8px 0 0; }
+.fm-explainer__close:hover { color: var(--text); }
+.fm-explainer__title { font-size: 13px; font-weight: 900; margin: 0 0 6px; }
+.fm-explainer__steps { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.fm-explainer__steps li { font-size: 11.5px; line-height: 1.45; color: var(--muted); }
+.fm-explainer__steps strong { color: var(--text); }
+.fm-explainer__foot { font-size: 11.5px; color: var(--muted); margin: 8px 0 0; }
 
 /* ── Sort row above the market list ── */
 .fm-sortrow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -3630,9 +3681,15 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   font-size: 10px; font-weight: 800; font-style: normal;
   border-radius: 4px; padding: 2px 6px; font-variant-numeric: tabular-nums;
 }
-.fm-fx--up { background: rgba(184,255,60,0.13); color: var(--green); }
-.fm-fx--down { background: rgba(242,102,122,0.13); color: var(--red); }
-.fm-fx--flat { background: rgba(255,255,255,0.06); color: var(--muted); }
+/* Six drill cards, each carrying five of these, is thirty chips on one
+   screen — enough that any colour at all becomes noise. They read as a
+   spec sheet: one grey shape, tabular figures, and the +/- sign doing the
+   talking. A drill that costs you fitness is not a warning, it is a
+   trade-off, and the number already says so. */
+.fm-fx--up, .fm-fx--down, .fm-fx--flat {
+  background: rgba(255,255,255,0.04); color: var(--muted);
+}
+.fm-fx--up { color: var(--text-2); }
 
 /* Week load: one meter for how hard the plan is, with a verdict. */
 .fm-loadverdict { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 800; }
@@ -3652,7 +3709,10 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   background: var(--panel-2); border: 1px solid var(--border-soft);
   color: var(--muted); cursor: pointer; font-family: inherit;
 }
-.fm-day.is-training { border-color: var(--gold); color: var(--gold); }
+/* Five days of seven have training on them, so gold-on-gold said nothing
+   and shouted it. Matchday keeps its colour; a training day just stops
+   looking empty. */
+.fm-day.is-training { border-color: var(--border); color: var(--text-2); }
 .fm-day.is-match { border-color: var(--red); color: var(--red); cursor: default; }
 .fm-day__label { font-size: 10px; font-weight: 700; }
 
@@ -3767,6 +3827,15 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
    bundle runs. Sits after `.fm-app` (min-height: 100dvh), so it is below the
    fold and never competes with the game for space. The bottom padding clears
    the `.fm-rail` thumb dock, which is position: fixed under 900px. */
+/* Hidden once a career is actually in progress (FootballManagerGame toggles
+   this on <body>) — the copy above still ships in the static HTML for
+   crawlers, it just stops sitting under the hub as dead scroll once there's
+   a real screen to look at. */
+body.fm-in-game .fm-about,
+body.fm-in-game .fm-about-foot {
+  display: none;
+}
+
 .fm-about,
 .fm-about-foot {
   max-width: 760px;
@@ -4176,7 +4245,8 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-runsession {
   display: flex; align-items: center; gap: 12px; width: 100%;
   margin: 12px 0; padding: 12px 14px;
-  background: var(--green-dim); border: 1px solid var(--green-600);
+  background: var(--panel-2); border: 1px solid var(--border);
+  border-left: 3px solid var(--green-600);
   border-radius: var(--r-md); color: var(--text);
   font-family: inherit; text-align: left; cursor: pointer;
   transition: border-color 0.12s, background 0.12s;
@@ -4187,29 +4257,37 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-runsession__badge {
   display: flex; align-items: center; justify-content: center; flex: none;
-  width: 44px; height: 44px; border-radius: 50%;
-  background: var(--green); color: var(--bg, #04140d);
+  width: 44px; height: 44px; border-radius: var(--r-md);
+  background: var(--panel-3); color: var(--green);
+  border: 1px solid var(--border);
 }
 .fm-runsession.is-done .fm-runsession__badge { background: var(--panel-3); color: var(--green); }
 .fm-runsession__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .fm-runsession__title { font-size: 14.5px; font-weight: 800; }
 .fm-runsession__sub { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
 
-/* ---------------------------------------------------------- how-to strip */
-/* Two numbered steps above the cards they explain, replacing the paragraph
-   that used to sit underneath them. */
-.fm-howto {
+/* ------------------------------------------------------ numbered steps */
+/* Two numbered steps above the cards they explain (Staff), replacing the
+   paragraph that used to sit underneath them.
+   Named `.fm-steps`, not `.fm-howto`: three different screens had grown a
+   `.fm-howto` block of their own in this one stylesheet, and being last,
+   THIS one won everywhere. Its `.fm-howto__steps li { display: grid }`
+   landed on the Transfers explainer, whose steps are a plain <ol> with a
+   leading <strong> — the strong became the 22px grid column meant for a
+   number badge, so "Find someone." wrapped into a two-line stack and the
+   rest of the sentence sat in the second column. */
+.fm-steps {
   background: var(--panel); border: 1px solid var(--border-soft);
   border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 12px;
 }
-.fm-howto__lead { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--text); }
-.fm-howto__steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.fm-howto__steps li {
+.fm-steps__lead { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: var(--text); }
+.fm-steps__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.fm-steps__list li {
   display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start;
   font-size: 12.5px; line-height: 1.45; color: var(--muted);
 }
-.fm-howto__steps b { color: var(--text); }
-.fm-howto__num {
+.fm-steps__list b { color: var(--text); }
+.fm-steps__num {
   display: flex; align-items: center; justify-content: center;
   width: 22px; height: 22px; border-radius: 50%;
   background: var(--green-dim); color: var(--green);
@@ -4233,4 +4311,103 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-staffcard__who {
   display: block; font-size: 9.5px; font-weight: 800; letter-spacing: 0.4px;
   text-transform: uppercase; color: var(--muted-dim); font-style: normal; margin-bottom: 2px;
+}
+
+/* ── Desktop app shell: one screen, nav pinned ──
+   At ≥900px the game stops being a scrolling page and becomes a fixed
+   application frame: the header, the section rail, the group sub-tabs and
+   the action dock all hold their position, and the only thing that ever
+   scrolls is the screen content between them. Below 900px nothing here
+   applies — the phone layout is a scrolling page with a fixed thumb dock
+   and stays exactly as it was. */
+@media (min-width: 900px) {
+  html, body { height: 100%; overflow: hidden; }
+  .fm-app { height: 100dvh; min-height: 0; overflow: hidden; }
+  .fm-header { flex: none; }
+
+  /* The one scroll container for views that lay out no scroller of their
+     own (menu, club select, day summary). The hub never reaches it: its
+     shell is exactly this box's height and scrolls inside .fm-hub-panel. */
+  .fm-main { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-bottom: 12px; }
+  .fm-view-fade { display: flex; flex-direction: column; min-height: 0; }
+  .fm-main > .fm-view-fade { flex: 1 1 auto; }
+
+  .fm-hub-shell { flex: 1 1 auto; min-height: 0; align-items: stretch; }
+  /* Full-height column instead of a sticky offset — with the shell itself
+     height-bounded there is nothing left to stick to. */
+  .fm-rail { position: static; top: auto; height: 100%; overflow-y: auto; }
+  .fm-hub-shell__main { min-height: 0; }
+  .fm-subnav { position: static; flex: none; background: none; }
+  .fm-hub-panel {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    padding-right: 4px; padding-bottom: 4px;
+  }
+  /* The dock is a sibling of <main>, so pinning the frame turns it into a
+     permanent footer bar — no fixed positioning needed. */
+  .fm-actiondock { flex: none; margin-bottom: 8px; }
+  .fm-bottom-ad { margin: 8px auto; }
+}
+
+/* Overview at desktop: the whole Home screen is sized to the frame, so it
+   never scrolls at all. The club header, the next-match hero and the abandon
+   row take their natural height; the three status modules share what is left
+   and scroll inside themselves if their own content is long (the league table
+   is the only one that ever does). Before this the modules were stretched to
+   match the tallest of the three by grid's default `stretch`, so the two
+   short ones rendered as columns of empty panel — the hollow look down the
+   middle of the screen — while the table's last rows fell off the bottom. */
+@media (min-width: 900px) {
+  .fm-hub-panel > .fm-portal { height: 100%; }
+  .fm-portal { min-height: 0; }
+  .fm-hub-grid {
+    flex: 1 1 auto; min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  /* Content height, capped at the row — so a short module stays short
+     instead of rendering as a column of empty panel, and a long one (the
+     league table) scrolls inside itself rather than off the frame. */
+  .fm-hub-grid > .fm-mod { align-self: start; min-height: 0; max-height: 100%; overflow-y: auto; }
+  .fm-hub-grid__hero { overflow: visible; }
+  .fm-portal__actions { flex: none; }
+}
+
+/* Short desktop windows (a laptop at 1280×800 and below): trim the Overview
+   chrome so the whole screen still lands inside the frame without scrolling. */
+@media (min-width: 900px) and (max-height: 900px) {
+  .fm-portal { gap: 8px; }
+  .fm-portal__header { padding: 10px 14px; }
+  .fm-hub-grid { gap: 8px; }
+  .fm-mod { padding: 10px 12px; }
+  .fm-portal__actions { margin-top: 0; }
+}
+
+
+/* ── Screen title block (components/ScreenHead.tsx) ──
+   Opens a hub screen with its name and one sentence of orientation, above
+   the first module. Sized to be the largest text on the screen — the
+   modules below it carry 11px caps labels, and with nothing above them the
+   screen had no visible subject. */
+.fm-screenhead {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 2px 0 4px;
+}
+.fm-screenhead__text { flex: 1; min-width: 0; }
+.fm-screenhead__title {
+  margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.4px;
+  line-height: 1.1; color: var(--text);
+}
+.fm-screenhead__sub {
+  margin: 6px 0 0; font-size: 13px; line-height: 1.5; color: var(--muted);
+  max-width: 58ch;
+}
+.fm-screenhead__aside { flex: none; }
+@media (max-width: 700px) {
+  .fm-screenhead__title { font-size: 20px; }
+  .fm-screenhead__sub { font-size: 12px; }
+}
+@media (min-width: 900px) and (max-height: 900px) {
+  /* The frame is height-bound on desktop — keep the header from eating the
+     room the screen's own content needs. */
+  .fm-screenhead__title { font-size: 22px; }
+  .fm-screenhead__sub { margin-top: 4px; }
 }

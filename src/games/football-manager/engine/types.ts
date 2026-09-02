@@ -175,6 +175,18 @@ export interface Player {
    *  source dataset. Only consulted once, by newGame(), to derive an accurate
    *  starting contractYears/contractEnd instead of a random pick. */
   contractUntil?: number;
+  /** His rating when the current deal was signed, so a renewal can price what
+   *  he has *become* since rather than what he already was.
+   *
+   *  Without it the renewal formula fell back to "how far above replacement
+   *  level is he" as a proxy for improvement, which is not a proxy for it at
+   *  all: a player who has not improved in three years still read as +28 and
+   *  got a 2.9x rise on every renewal, compounding each time.
+   *
+   *  Absent on saves written before this existed. Treat that as "no change
+   *  since signing", which prices a renewal off the leverage floor — the same
+   *  number a fresh signing of his quality would command. */
+  contractRating?: number;
   /** Fee that automatically buys the player out of his contract. 0 = none. */
   releaseClause: number;
   /** A loyal player resists moves and accepts smaller pay rises. */

@@ -21,6 +21,7 @@ import OneToOneScreen from './OneToOneScreen';
 import StaffHubScreen from './StaffHubScreen';
 import ScoutingScreen from './ScoutingScreen';
 import YouthAcademyScreen from './YouthAcademyScreen';
+import { motion } from 'motion/react';
 import { Icon } from './Icon';
 import {
   GROUPS,
@@ -32,6 +33,7 @@ import {
   type GroupId,
   type ScreenId,
 } from './hubNav';
+import { screenSwap } from './motion/presets';
 
 /**
  * The in-game shell: a four-entry rail beside the current screen, with the
@@ -92,8 +94,13 @@ export default function HubScreen({
   // Same in-place-swap scroll issue as the top-level view switch: reset to
   // the top of the (new, usually shorter) screen whenever the destination
   // changes, so the nav doesn't start out scrolled off-screen.
+  const panelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     window.scrollTo(0, 0);
+    // On desktop the page itself no longer scrolls — the panel below is the
+    // scroll container (globals.css, "Desktop app shell") — so resetting the
+    // window alone would leave the new screen opening mid-way down.
+    panelRef.current?.scrollTo(0, 0);
   }, [route]);
 
   // Entering a group moves focus onto its active sub-tab, so the arrow keys
@@ -221,16 +228,24 @@ export default function HubScreen({
           </div>
         </div>
 
-        <div
+        {/* The tab-swap transition, moved off the CSS keyframe
+            (`.fm-screen-slide`) and onto the shared `screenSwap` variant so
+            every animation in the game is described in one place
+            (components/motion/presets.ts). Same 6px lift as before. */}
+        <motion.div
           key={activeRoute}
-          className="fm-hub-panel fm-screen-slide"
+          ref={panelRef}
+          className="fm-hub-panel"
+          variants={screenSwap}
+          initial="hidden"
+          animate="visible"
           id="fm-screen-panel"
           role="tabpanel"
           aria-labelledby={`fm-subtab-${activeRoute}`}
           tabIndex={-1}
         >
           {screen()}
-        </div>
+        </motion.div>
       </div>
     </div>
   );

@@ -24,14 +24,14 @@
 <script defer src="/_vercel/insights/script.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b120d">
-  <title>PA &amp; CA in Football Manager Explained — Max Potential Ability | BALLKNW</title>
-  <meta name="description" content="What is maximum PA in Football Manager? How Potential Ability (PA), Current Ability (CA) and hidden attributes like INT work — and what -10 and -9.5 PA mean.">
+  <title>PA &amp; CA in Football Manager Explained | Max Potential Ability | BALLKNW</title>
+  <meta name="description" content="What is maximum PA in Football Manager? How Potential Ability (PA), Current Ability (CA) and hidden attributes like INT work, and what -10 and -9.5 PA mean.">
   <meta name="keywords" content="what is maximum pa in football manager, football manager pa, football manager ca, pa ca explained, what does int mean in football manager, -10 pa football manager">
   <link rel="canonical" href="https://www.ballknw.com/football-manager-pa-ca-explained.html" />
   <meta property="og:site_name" content="BALLKNW">
   <meta property="og:url" content="https://www.ballknw.com/football-manager-pa-ca-explained.html">
-  <meta property="og:title" content="PA &amp; CA in Football Manager Explained — Max Potential Ability">
-  <meta property="og:description" content="How Potential Ability, Current Ability and hidden attributes work in Football Manager — and what -10 PA means.">
+  <meta property="og:title" content="PA &amp; CA in Football Manager Explained, Max Potential Ability">
+  <meta property="og:description" content="How Potential Ability, Current Ability and hidden attributes work in Football Manager, and what -10 PA means.">
   <meta property="og:image" content="https://www.ballknw.com/assets/og-image.png">
   <meta property="og:type" content="article">
   <meta name="twitter:card" content="summary_large_image">
@@ -65,7 +65,7 @@
         {
           "@type": "Question",
           "name": "What is maximum PA in Football Manager?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Potential Ability in Football Manager runs on a 1–200 scale, so the maximum PA is 200. Only generational players are given PA close to 200 in the database — a PA of 180 or more already marks a potential world-class player." }
+          "acceptedAnswer": { "@type": "Answer", "text": "Potential Ability in Football Manager runs on a 1-200 scale, so the maximum PA is 200. Only generational players are given PA close to 200 in the database: a PA of 180 or more already marks a potential world-class player." }
         },
         {
           "@type": "Question",
@@ -75,12 +75,12 @@
         {
           "@type": "Question",
           "name": "What is the difference between CA and PA?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Current Ability (CA) is how good a player is right now on the 1–200 scale; Potential Ability (PA) is the ceiling they can develop toward. Training, playing time, professionalism and injuries decide how much of the gap between CA and PA a player actually closes." }
+          "acceptedAnswer": { "@type": "Answer", "text": "Current Ability (CA) is how good a player is right now on the 1-200 scale; Potential Ability (PA) is the ceiling they can develop toward. Training, playing time, professionalism and injuries decide how much of the gap between CA and PA a player actually closes." }
         },
         {
           "@type": "Question",
           "name": "What does INT mean in Football Manager?",
-          "acceptedAnswer": { "@type": "Answer", "text": "In squad screens, Int usually refers to international caps or international appearances, and in scouting contexts to a player's international reputation. It is not one of the 1–20 coached attributes." }
+          "acceptedAnswer": { "@type": "Answer", "text": "In squad screens, Int usually refers to international caps or international appearances, and in scouting contexts to a player's international reputation. It is not one of the 1-20 coached attributes." }
         }
       ]
     }
@@ -89,28 +89,21 @@
   </script>
   <link rel="stylesheet" href="/theme.min.css">
   <link rel="stylesheet" href="/styles.min.css">
+  <link rel="stylesheet" href="/explainer.css">
   <style>
-    .guide-content { max-width: 800px; margin: 40px auto; line-height: 1.8; }
-    .guide-section { margin: 40px 0; }
-    .guide-section h3 { font-size: 1.3rem; font-weight: 700; margin-top: 24px; margin-bottom: 12px; }
     .strategy-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin: 12px 0; display: flex; gap: 14px; align-items: flex-start; }
-    .card-dot{flex-shrink:0;width:10px;height:10px;border-radius:3px;margin:8px 8px 0 0;background:linear-gradient(135deg,#2ab248,#12b380);}
+    .card-dot{flex-shrink:0;width:10px;height:10px;border-radius:3px;margin:8px 8px 0 0;background:linear-gradient(135deg,var(--lime),var(--emerald));}
     .strategy-card h4 { color: var(--lime); font-weight: 700; margin-bottom: 4px; }
     .strategy-card p { margin: 0; }
     .guide-cta-top { text-align: center; margin: -10px 0 30px; }
     .guide-end-cta { text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 30px 20px; margin-top: 40px; }
-    .faq-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:10px 0}
-    .faq-item summary{cursor:pointer;padding:16px 18px;font-weight:700;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
-    .faq-item summary::-webkit-details-marker{display:none}
-    .faq-item summary::after{content:"+";color:var(--lime);font-size:18px;font-weight:800;flex-shrink:0}
-    .faq-item[open] summary::after{content:"–"}
-    .faq-item p{color:var(--muted);font-size:14px;padding:0 18px 16px;line-height:1.6;margin:0}
     .pa-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
     .pa-table th,.pa-table td{border:1px solid var(--border);padding:10px 14px;text-align:left}
     .pa-table th{color:var(--lime);font-weight:700;background:var(--surface)}
   </style>
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
 <div id="app">
   <header class="topbar">
     <nav class="nav">
@@ -125,61 +118,61 @@
     </nav>
   </header>
 
-  <main class="about guide-content">
-    <h1 style="text-align:center;margin:30px 0 6px">PA &amp; CA in Football Manager, Explained</h1>
+  <main id="main" class="about guide-content">
+    <h1>PA &amp; CA in Football Manager, explained</h1>
     <p style="text-align:center;color:var(--muted);margin-bottom:20px">Maximum PA, negative PA ranges, and how player potential actually works.</p>
     <div class="guide-cta-top"><a href="/gaffa/" class="btn btn-primary">Play a free browser football manager →</a></div>
 
-    <div class="guide-section">
-      <h3>The short answer</h3>
-      <p>Football Manager rates every player on two hidden 1–200 scales. <strong>Current Ability (CA)</strong> is how good they are today; <strong>Potential Ability (PA)</strong> is their ceiling. <strong>The maximum PA is 200</strong>, reserved for generational talents — in practice anything from 180 up is world-class potential, and a solid top-flight starter sits around 140–160. Neither number is shown in-game; scouts and coaches report star ratings that estimate them.</p>
-    </div>
+    <section class="guide-section">
+      <h2>The short answer</h2>
+      <p>Football Manager rates every player on two hidden 1-200 scales. <strong>Current Ability (CA)</strong> is how good they are today; <strong>Potential Ability (PA)</strong> is their ceiling. <strong>The maximum PA is 200</strong>, reserved for generational talents: in practice anything from 180 up is world-class potential, and a solid top-flight starter sits around 140-160. Neither number is shown in-game; scouts and coaches report star ratings that estimate them.</p>
+    </section>
 
-    <div class="guide-section">
-      <h3>The PA scale at a glance</h3>
+    <section class="guide-section">
+      <h2>The PA scale at a glance</h2>
       <table class="pa-table">
         <tr><th>PA range</th><th>What it means</th></tr>
-        <tr><td>190–200</td><td>Generational — Ballon d'Or ceiling</td></tr>
-        <tr><td>170–189</td><td>World-class potential</td></tr>
-        <tr><td>150–169</td><td>Top-division quality, possible international</td></tr>
-        <tr><td>130–149</td><td>Solid top-flight / strong second-tier player</td></tr>
-        <tr><td>100–129</td><td>Lower-league professional</td></tr>
+        <tr><td>190-200</td><td>Generational: Ballon d'Or ceiling</td></tr>
+        <tr><td>170-189</td><td>World-class potential</td></tr>
+        <tr><td>150-169</td><td>Top-division quality, possible international</td></tr>
+        <tr><td>130-149</td><td>Solid top-flight / strong second-tier player</td></tr>
+        <tr><td>100-129</td><td>Lower-league professional</td></tr>
         <tr><td>Below 100</td><td>Semi-pro and grassroots levels</td></tr>
       </table>
-    </div>
+    </section>
 
-    <div class="guide-section">
-      <h3>Negative PA: why -10 doesn't mean bad</h3>
+    <section class="guide-section">
+      <h2>Negative PA: why -10 doesn't mean bad</h2>
       <p>Young players in the database often have <em>negative</em> PA, which confuses everyone the first time. A negative value is a <strong>random range rolled fresh in every save</strong>:</p>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>-10 → rolls 170–200</h4><p>The elite wonderkid band. In one save he's a 172, in another a 198.</p></div></div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>-9.5 → rolls 160–190</h4><p>Very high potential, just below the top band.</p></div></div>
-      <div class="strategy-card"><span class="card-dot"></span><div><h4>-9 → rolls 150–180, and so on</h4><p>Each half-step drops the range by ten points. It's why wonderkid lists differ between saves — and why scouting in <em>your</em> save beats any online list.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>-10 → rolls 170-200</h3><p>The elite wonderkid band. In one save he's a 172, in another a 198.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>-9.5 → rolls 160-190</h3><p>Very high potential, just below the top band.</p></div></div>
+      <div class="strategy-card"><span class="card-dot"></span><div><h3>-9 → rolls 150-180, and so on</h3><p>Each half-step drops the range by ten points. It's why wonderkid lists differ between saves, and why scouting in <em>your</em> save beats any online list.</p></div></div>
       <p>Whether a player ever reaches his rolled PA depends on training, minutes, injuries and hidden personality attributes like professionalism and ambition. Plenty of 180-PA teenagers retire as 140-CA journeymen.</p>
-    </div>
+    </section>
 
-    <div class="guide-section">
-      <h3>Other abbreviations that trip people up</h3>
-      <p><strong>Int</strong> in squad views is international caps (or international reputation in scouting contexts) — not a coached attribute. The visible attributes are the 1–20 ratings like Passing, Vision and Work Rate. If football jargon itself is the problem, our <a href="/football-terms.html">football terms glossary</a> covers the real-world vocabulary, from the <a href="/what-is-a-gaffer-in-football.html">gaffer</a> to the <a href="/what-is-a-false-9.html">false 9</a>.</p>
-    </div>
+    <section class="guide-section">
+      <h2>Other abbreviations that trip people up</h2>
+      <p><strong>Int</strong> in squad views is international caps (or international reputation in scouting contexts), not a coached attribute. The visible attributes are the 1-20 ratings like Passing, Vision and Work Rate. If football jargon itself is the problem, our <a href="/football-terms.html">football terms glossary</a> covers the real-world vocabulary, from the <a href="/what-is-a-gaffer-in-football.html">gaffer</a> to the <a href="/what-is-a-false-9.html">false 9</a>.</p>
+    </section>
 
-    <div class="guide-section">
-      <h3>Quick answers</h3>
+    <section class="guide-section">
+      <h2>Quick answers</h2>
       <details class="faq-item">
         <summary>What is the maximum PA in Football Manager?</summary>
-        <p>200. The scale runs 1–200 and only generational players get close to the top — 180+ is already world-class potential.</p>
+        <p>200. The scale runs 1-200 and only generational players get close to the top. Anything above 180 is already world-class potential.</p>
       </details>
       <details class="faq-item">
         <summary>Can a player's PA change during a save?</summary>
-        <p>Ordinarily no — PA is fixed once the save rolls it. CA moves constantly within that ceiling based on development and decline.</p>
+        <p>Ordinarily no: PA is fixed once the save rolls it. CA moves constantly within that ceiling based on development and decline.</p>
       </details>
       <details class="faq-item">
         <summary>How do I see a player's PA in-game?</summary>
-        <p>You can't see the raw number without an editor — scouts and coaches give star-rating estimates instead, and their judging attributes decide how accurate those stars are.</p>
+        <p>You can't see the raw number without an editor: scouts and coaches give star-rating estimates instead, and their judging attributes decide how accurate those stars are.</p>
       </details>
-    </div>
+    </section>
 
     <div class="guide-end-cta">
-      <h3 style="margin-top:0">Prefer ratings you can actually see?</h3>
+      <h2 style="margin-top:0">Prefer ratings you can actually see?</h2>
       <p>Gaffa is a free browser football manager with transparent player ratings, real current-season squads, and full seasons you can finish in a sitting.</p>
       <p><a href="/gaffa/" class="btn btn-primary" style="display:inline-block;margin-top:14px">Play Gaffa Now →</a></p>
       <p style="margin-top:16px;font-size:13px"><a href="/football-manager-26.html">Football Manager 26 explained →</a> · <a href="/free-football-manager.html">Best free football manager games →</a></p>
@@ -193,7 +186,7 @@
   </footer>
 
   <div class="consent-banner hidden" id="consentBanner">
-    <p class="consent-text">We use cookies for basic analytics and to show ads. Choose what you're OK with — you can change this anytime in Cookie settings.</p>
+    <p class="consent-text">We use cookies for basic analytics and to show ads. Choose what you're OK with. You can change this anytime in Cookie settings.</p>
     <div class="consent-actions">
       <button class="btn-ghost" id="consentEssentialBtn">Essential only</button>
       <button class="btn-primary" id="consentAcceptBtn">Accept all</button>

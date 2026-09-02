@@ -14,6 +14,7 @@ import {
 import { assistantScheduleAdvice } from '@/engine/assistant';
 import { Icon, type IconName } from './Icon';
 import AssistantLine from './assistant/AssistantLine';
+import ScreenHead from './ScreenHead';
 import TrainingSessionModal from './TrainingSessionModal';
 import TrainingMiniGame from './TrainingMiniGame';
 
@@ -155,6 +156,10 @@ export default function TrainingScreen({
 
   return (
     <>
+      <ScreenHead
+        title="Team training"
+        sub="Set the week's two sessions. Sharper players start matches better; a hard week costs fitness and risks injuries."
+      />
       <AssistantLine state={state} route="training" />
 
       {/* --- The two sessions ------------------------------------------- */}

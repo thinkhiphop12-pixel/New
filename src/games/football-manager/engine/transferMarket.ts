@@ -74,6 +74,7 @@ export function buyPlayer(state: GameState, playerId: number): GameState {
   // of carrying over whatever he last earned (which could be stale by
   // years, or simply absent for a player who never had a wage on record).
   if (from == null) p.wage = newSigningWageDemand(p, 1);
+  p.contractRating = p.rating;
   p.contractYears = 3;
   p.contractEnd = contractEndFor(s.seasonYear, 3);
   delete p.onLoanUntil;
@@ -164,11 +165,15 @@ export function renewContract(
 
   // Wage Demand Formula (Renewal):
   // DemandedWage = CurrentWage * (1 + OverallIncrease/15) * (1 + TeamSuccessBonus)
-  // `OverallIncrease` isn't a tracked history (no per-contract baseline
-  // rating is kept), so it's read off how far above a replacement-level
-  // player (60 OVR) he already is — a decent proxy for "how much leverage
-  // his ability gives him" that grows the same way the real figure would.
-  const overallIncrease = clamp(p.rating - 60, 0, 30);
+  // `OverallIncrease` is now the real figure: his rating minus the rating he
+  // was on when this deal was signed (`contractRating`). It used to be read
+  // off how far above replacement level (60 OVR) he already was, on the
+  // grounds that no per-contract baseline was kept — but that is a measure of
+  // how good he is, not of how much he has improved, and his current wage
+  // already reflects how good he is. Charging for it twice made every renewal
+  // for a top player a ~2.9x rise that compounded on the next one.
+  const signedAt = p.contractRating ?? p.rating;
+  const overallIncrease = clamp(p.rating - signedAt, 0, 30);
   const teamSuccessBonus = wonTrophyThisSeason(state) ? 0.1 : 0;
   let demand = p.wage * (1 + overallIncrease / 15) * (1 + teamSuccessBonus);
   // Critical Rule: a renewal always costs 15-25% more than the same player
@@ -218,6 +223,7 @@ export function renewContract(
   const s: GameState = structuredClone(state);
   const sp = s.players[playerId];
   sp.wage = newWage;
+  sp.contractRating = sp.rating;
   sp.contractYears += 3;
   sp.contractEnd = contractEndFor(s.seasonYear, sp.contractYears);
   if (offeredStatus !== undefined) sp.promisedStatus = offeredStatus;
@@ -1624,6 +1630,7 @@ function activatePreContracts(s: GameState, headlines: string[]): void {
     mine.playerIds.push(p.id);
     p.clubId = s.userClubId;
     p.wage = pc.agreedWage;
+    p.contractRating = p.rating;
     p.contractYears = pc.agreedYears;
     p.contractEnd = contractEndFor(s.seasonYear, pc.agreedYears);
     p.chem = 30;

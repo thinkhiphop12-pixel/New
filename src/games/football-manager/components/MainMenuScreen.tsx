@@ -43,7 +43,7 @@ export default function MainMenuScreen({
       />
       <div className="fm-screen fm-start" style={{ position: 'relative', zIndex: 1 }}>
       <p className="fm-label">A BALLKNW GAME</p>
-      {/* Wordmark, not an image: the same boxed-initial + Inter-caps lockup
+      {/* Wordmark, not an image: the same boxed-initial + Oswald-caps lockup
           ballknw.com uses for BALLKNW, so the two logos are one mark. Text
           also stays crisp at any density and needs no asset request. */}
       <h2 className="fm-start__title" style={{ margin: '8px 0 0' }}>
@@ -53,8 +53,9 @@ export default function MainMenuScreen({
         </span>
       </h2>
       <p className="fm-start__tagline">
-        Take charge of a club across three divisions. Set your tactics, work the market, bring
-        through the kids — and survive the board. League, cup and continental glory await.
+        Take charge of a club in any of 28 leagues across 25 countries. Set your tactics, work the
+        market, bring through the kids — and survive the board. League, cup and continental glory
+        await.
       </p>
 
       <div className="fm-slots">
@@ -107,7 +108,7 @@ export default function MainMenuScreen({
           <span className="fm-howto__num">1</span>
           <div>
             <h3>Choose your club</h3>
-            <p>Real clubs and real FC 26 squads across ten leagues — the English pyramid plus La Liga, Serie A, Bundesliga, Ligue 1, Eredivisie and Primeira Liga.</p>
+            <p>Real clubs and current-season squads across 28 leagues in 25 countries — the English pyramid, Europe&apos;s big five, and everywhere from MLS and the Saudi Pro League to the K League and the League of Ireland.</p>
           </div>
         </li>
         <li className="fm-howto__step">
