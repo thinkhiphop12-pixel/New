@@ -429,6 +429,8 @@ ${clubRows}
       </div>
     </div>
 
+    <div class="ad-slot" id="leagueTopAd"><span class="ad-slot-label">Advertisement</span></div>
+
     <div class="guide-section">
       <h2>The best players in ${esc(label)}</h2>
       <p>${esc(pick('kids-intro', [
@@ -497,6 +499,8 @@ ${faq
   )
   .join('\n')}
     </div>
+
+    <div class="ad-slot" id="leagueEndAd"><span class="ad-slot-label">Advertisement</span></div>
 
     <div class="end-cta">
       <h3>Take a ${esc(label)} club to the top</h3>
@@ -610,6 +614,8 @@ ${rows}
         </table>
       </div>
     </div>
+
+    <div class="ad-slot" id="leaguesIndexAd"><span class="ad-slot-label">Advertisement</span></div>
 
     <div class="end-cta">
       <h3>Pick a league and start a season</h3>
