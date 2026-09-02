@@ -1,36 +1,51 @@
 'use client';
 
 import type { CSSProperties, ReactNode } from 'react';
-import type { GameState, InboxCategory } from '@/engine/types';
+import type { GameState, Player } from '@/engine/types';
 import type { DayStop } from '@/engine/dailyTick';
 import { formatGameDateLong } from '@/engine/calendar';
-import { Icon, type IconName } from './Icon';
+import { formatMoney } from '@/engine/utils';
+import { Icon } from './Icon';
+import { PlayerFace } from './PlayerFace';
+import { CATEGORY_ICON, CATEGORY_LABEL, CATEGORY_TINT, type ChromeCategory } from './inboxChrome';
 
-/** Mirrors InboxScreen's category chrome so a stop card looks like the
- *  message it came from, not a second visual language for the same idea. */
-const CATEGORY_ICON: Record<InboxCategory | 'matchday', IconName> = {
-  club: 'stadium',
-  transfer: 'transfers',
-  injury: 'injury',
-  contract: 'document',
-  youth: 'sprout',
-  board: 'target',
-  match: 'trophy',
-  press: 'mic',
-  matchday: 'stadium',
+/** Triage order for the day's list. A knock outranks a contract deadline
+ *  outranks a bid, and so on down to flavour — so the top of the list is the
+ *  thing that actually needs deciding first, rather than whatever order the
+ *  tick happened to push items in. Within a rank the rows sort by the
+ *  player's rating, which is what makes five contract expiries a ranked list
+ *  (your first-choice centre-half first) instead of five identical rows. */
+const STOP_RANK: Record<ChromeCategory, number> = {
+  matchday: 0,
+  injury: 1,
+  contract: 2,
+  transfer: 3,
+  board: 4,
+  club: 5,
+  youth: 6,
+  match: 7,
+  press: 8,
 };
 
-const CATEGORY_LABEL: Record<InboxCategory | 'matchday', string> = {
-  club: 'Squad',
-  transfer: 'Transfer',
-  injury: 'Injury',
-  contract: 'Contract',
-  youth: 'Youth',
-  board: 'Board',
-  match: 'Match',
-  press: 'Press',
-  matchday: 'Matchday',
-};
+/**
+ * The one line under a stop's title. For anything tied to a player this is
+ * built from his own record — position, age, value, wage — rather than the
+ * inbox body's first paragraph, which for the contract warning is a fixed
+ * sentence every player shares ("...offer fresh terms now, or risk losing him
+ * for nothing"). Printed five times under five different names it was the
+ * single biggest reason the list read as a templated loop; printed as
+ * "Contract · CB, 29 · £8.4M · £31K/wk" the rows differ on every field that
+ * matters to the decision.
+ */
+function stopMeta(stop: DayStop, player: Player | undefined): string {
+  const label = CATEGORY_LABEL[stop.category];
+  if (!player) return `${label} · ${stop.detail}`;
+  const facts = [`${player.role}, ${player.age}`, formatMoney(player.value), `${formatMoney(player.wage)}/wk`];
+  if (stop.category === 'injury' && player.injuryWeeks > 0) {
+    facts.push(`out ${player.injuryWeeks} week${player.injuryWeeks === 1 ? '' : 's'}`);
+  }
+  return `${label} · ${facts.join(' · ')}`;
+}
 
 /**
  * What "Sim Next Day" stops on. Shown instead of dumping the player straight
@@ -64,7 +79,17 @@ export default function DaySummaryScreen({
   assistantSlot?: ReactNode;
 }) {
   const matchStop = stops.find((s) => s.category === 'matchday');
-  const otherStops = stops.filter((s) => s.category !== 'matchday');
+  const playerOf = (stop: DayStop): Player | undefined =>
+    stop.playerId === undefined ? undefined : state.players[stop.playerId];
+  const otherStops = stops
+    .filter((s) => s.category !== 'matchday')
+    .map((stop, i) => ({ stop, player: playerOf(stop), i }))
+    // Stable: equal rank and equal rating keep the tick's own order.
+    .sort((a, b) =>
+      STOP_RANK[a.stop.category] - STOP_RANK[b.stop.category] ||
+      (b.player?.rating ?? 0) - (a.player?.rating ?? 0) ||
+      a.i - b.i
+    );
 
   const resolve = (stop: DayStop) => {
     if (stop.category === 'matchday') return onPrepareMatch();
@@ -87,8 +112,8 @@ export default function DaySummaryScreen({
 
       {matchStop && (
         <button type="button" className="fm-daysummary__match" onClick={() => resolve(matchStop)}>
-          <span className="fm-icon-tile" style={{ '--tile-tint': 'var(--gold)' } as CSSProperties}>
-            <Icon name="stadium" size={20} />
+          <span className="fm-icon-tile" style={{ '--tile-tint': CATEGORY_TINT.matchday } as CSSProperties}>
+            <Icon name={CATEGORY_ICON.matchday} size={20} />
           </span>
           <span className="fm-daysummary__match-body">
             <span className="fm-daysummary__match-title">{matchStop.title}</span>
@@ -102,15 +127,39 @@ export default function DaySummaryScreen({
         <div className="fm-panel">
           <p className="fm-label" style={{ marginTop: 0 }}>Needs your attention</p>
           <div className="fm-msg-list">
-            {otherStops.map((stop, i) => (
+            {otherStops.map(({ stop, player, i }) => (
               <button key={i} type="button" className="fm-msg-row unread" onClick={() => resolve(stop)}>
-                <span className="fm-icon-tile fm-icon-tile--sm" style={{ '--tile-tint': 'var(--red)' } as CSSProperties}>
-                  <Icon name={CATEGORY_ICON[stop.category]} size={15} />
-                </span>
+                {/* Every row used to wear the same red document tile whatever
+                    it was about, so a day that stopped on five contract
+                    expiries showed five identical icons. The tint and icon now
+                    come from the shared category chrome (components/
+                    inboxChrome.ts) the inbox already used, and a row that names
+                    a player leads with his face instead — the category riding
+                    along as a corner badge so the row still says at a glance
+                    what kind of decision it is. */}
+                {player ? (
+                  <span className="fm-stoprow__who">
+                    <PlayerFace playerId={player.id} size={34} />
+                    <span
+                      className="fm-stoprow__cat"
+                      style={{ '--tile-tint': CATEGORY_TINT[stop.category] } as CSSProperties}
+                    >
+                      <Icon name={CATEGORY_ICON[stop.category]} size={10} />
+                    </span>
+                  </span>
+                ) : (
+                  <span
+                    className="fm-icon-tile fm-icon-tile--sm"
+                    style={{ '--tile-tint': CATEGORY_TINT[stop.category] } as CSSProperties}
+                  >
+                    <Icon name={CATEGORY_ICON[stop.category]} size={15} />
+                  </span>
+                )}
                 <span className="fm-msg-row__main">
                   <span className="fm-msg-row__title">{stop.title}</span>
-                  <span className="fm-msg-row__meta">{CATEGORY_LABEL[stop.category]} · {stop.detail}</span>
+                  <span className="fm-msg-row__meta">{stopMeta(stop, player)}</span>
                 </span>
+                {player && <span className="ovr-badge">{player.rating}</span>}
                 <Icon name="chevron" size={14} />
               </button>
             ))}

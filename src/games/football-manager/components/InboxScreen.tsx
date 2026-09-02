@@ -6,48 +6,13 @@ import { markAllInboxRead, markInboxRead } from '@/engine/seasonProgression';
 import { respondToComplaint } from '@/engine/transferMarket';
 import { formatMoney } from '@/engine/utils';
 import { initials, ratingRingColor, readableTextOn, tint } from './visuals';
-import { Icon, type IconName } from './Icon';
+import { Icon } from './Icon';
 import Flag, { hasFlag } from './Flag';
 import { Crest } from './Crest';
 import PlayerModal from './PlayerModal';
 import ContractOfferPanel from './ContractOfferPanel';
 import type { ScreenId } from './hubNav';
-
-const CATEGORY_ICON: Record<InboxCategory, IconName> = {
-  club: 'stadium',
-  transfer: 'transfers',
-  injury: 'injury',
-  contract: 'document',
-  youth: 'sprout',
-  board: 'target',
-  match: 'trophy',
-  press: 'mic',
-};
-
-const CATEGORY_LABEL: Record<InboxCategory, string> = {
-  club: 'Club',
-  transfer: 'Transfer',
-  injury: 'Injury',
-  contract: 'Contract',
-  youth: 'Youth',
-  board: 'Board',
-  match: 'Match',
-  press: 'Press',
-};
-
-/** Icon-tile tint per category (mock: colour-coded message rows), drawn only
- *  from the existing token set — the spec's purple is not part of this
- *  game's palette, so board/press take gold and emerald instead. */
-const CATEGORY_TINT: Record<InboxCategory, string> = {
-  club: 'var(--green)',
-  transfer: 'var(--blue)',
-  injury: 'var(--red)',
-  contract: 'var(--gold)',
-  youth: 'var(--green-600)',
-  board: 'var(--gold-2)',
-  match: 'var(--lime)',
-  press: 'var(--emerald)',
-};
+import { CATEGORY_ICON, CATEGORY_LABEL, CATEGORY_TINT, type ChromeCategory } from './inboxChrome';
 
 /** List filter: everything, unread only, or a single category. Only
  *  categories that actually have messages become tabs — an empty "Youth"
@@ -156,9 +121,11 @@ export default function InboxScreen({
 
   // Categories present in the real inbox, in the order the label map
   // declares them so the strip doesn't reshuffle as news arrives.
-  const presentCategories = (Object.keys(CATEGORY_LABEL) as InboxCategory[]).filter((c) =>
-    items.some((i) => i.category === c)
-  );
+  // `matchday` is in the shared chrome for DaySummary's benefit only — it is
+  // never an inbox item, so it can never be a tab here.
+  const presentCategories = (Object.keys(CATEGORY_LABEL) as ChromeCategory[])
+    .filter((c): c is InboxCategory => c !== 'matchday')
+    .filter((c) => items.some((i) => i.category === c));
   const shown = items.filter((i) =>
     filter === 'all' ? true : filter === 'unread' ? !i.read : i.category === filter
   );

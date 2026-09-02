@@ -962,14 +962,47 @@ export function applyDailyPlayerSystems(state: GameState, tick: DailyTickMode): 
   // still a choice to make. Fires once per player per season (`contractWarned`,
   // reset every rollover in `endSeason`); the day it fires doesn't depend on
   // `days`/`scale` since it isn't a rate, just a threshold crossing.
+  // The warning used to be one sentence with the name swapped in. A squad
+  // rolls into its final contract year in clumps, so a single tick could push
+  // five of these at once — five rows reading "…offer fresh terms now, or
+  // risk losing him for nothing", which is a templated loop, not a list of
+  // five different decisions. Renewing a 33-year-old on the bench and tying
+  // down a 20-year-old with room to grow are not the same call, so the note
+  // now says which one it is.
+  const squadRatings = userClub.playerIds.map((pid) => s.players[pid]?.rating ?? 0);
+  const squadAvg = squadRatings.length
+    ? squadRatings.reduce((a, b) => a + b, 0) / squadRatings.length
+    : 0;
   for (const id of userClub.playerIds) {
     const p = s.players[id];
     if (!p || p.contractYears !== 1 || p.contractWarned) continue;
     p.contractWarned = true;
+    const starter = s.lineup.includes(id);
+    const key = starter || p.rating >= squadAvg + 4;
+    let title: string;
+    let body: string;
+    if (p.age >= 32) {
+      title = `${p.name} is out of contract — and turning ${p.age + 1}`;
+      body = `${p.name} is into the last year of his deal at ${p.age}. A short extension keeps the dressing room's experience; letting it run frees the wage. Either way it's a decision, not a formality.`;
+    } else if (p.age <= 23 && p.potential > p.rating + 4) {
+      title = `Tie ${p.name} down before someone else does`;
+      body = `${p.name} is ${p.age}, still improving, and in the final year of his deal. Sign him now and you keep the upside; leave it and you'll be bidding against clubs who've seen the same thing.`;
+    } else if (key) {
+      // The role goes in the headline, not just the body: a squad rolls into
+      // its final year in clumps, and three regulars under one shared
+      // sentence is the templated look again however true the sentence is.
+      // "your first-choice CAM" / "…CM" / "…CB" tells them apart on the line
+      // the eye actually reads.
+      title = `${p.name} — your first-choice ${p.role}, one year left`;
+      body = `${p.name} has entered the final year of his deal, and he's one you pick every week. Offer fresh terms now, or risk losing him for nothing in the summer.`;
+    } else {
+      title = `${p.name}'s deal is up — is he in your plans?`;
+      body = `${p.name} is into his last year and isn't a regular. Renew him as squad depth, or let the contract run down and put the wage somewhere else.`;
+    }
     pushInbox(s, {
       category: 'contract',
-      title: `${p.name}'s contract expires in the summer`,
-      body: `${p.name} has entered the final year of his deal. Offer fresh terms now, or risk losing him for nothing when it runs out.`,
+      title,
+      body,
       playerId: p.id,
       kind: 'contractExpiring',
     });

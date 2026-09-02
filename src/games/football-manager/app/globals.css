@@ -203,6 +203,74 @@ body {
   --brand-dim: color-mix(in srgb, var(--brand) 16%, transparent);
 }
 
+/* ── The selected state ──
+   One definition of "this is the one you picked", for every control in the
+   game that expresses it: tabs, pills, sort chips, formation and mentality
+   tiles, drills, the segmented controls, the rail.
+
+   It used to be three. A control's selected state was green (pills, sort
+   chips, drills), gold (formation, mentality, identity and role tiles, the
+   player-modal tabs, club select) or --brand (sub-tabs, the rail, segmented
+   controls) depending on nothing but which screen it had been written on —
+   the review caught one instance of this in Settings, where Match speed's
+   --brand ring sat two sections above Difficulty's green outline, and read
+   correctly that they had been styled independently rather than from one
+   shared component. They all were.
+
+   --brand is the right axis for all of it: the token contract at :root
+   already reserves --green/--gold/--red for *meaning* (win/loss, finance
+   up/down, promotion/relegation zones, difficulty severity) and names
+   "active tab pills" among --brand's three permitted uses. Selection is not
+   meaning — it is chrome, and it should track the club you manage rather
+   than compete with the colours that do carry meaning.
+
+   The line takes --brand-on-dark, not --brand: lib/brandTheme.ts lightens
+   that one until it clears 4.5:1 against the panel, so the outline stays
+   visible for a club whose colour is nearly black, where raw --brand would
+   have drawn the selection ring into the background. The ink is --text
+   rather than the brand, so no club colour ever has to carry small text.
+
+   Declared here, on .fm-app, and not on :root — a custom property whose
+   value contains var() is substituted where it is declared, so these have to
+   sit on the same element the per-club overrides land on or they would
+   resolve against :root's defaults forever. (Same trap as --brand-dim
+   above.) */
+.fm-app {
+  --sel-line: var(--brand-on-dark);
+  --sel-fill: var(--brand-dim);
+  --sel-ink: var(--text);
+}
+
+/* ── Scrollbars inside the app ──
+   Every scroll container in here is a card, a panel or a rail — a surface
+   the design draws itself. Left to the platform they sprout the UA's own
+   furniture instead: on Chromium/Linux that is a light track with stepper
+   ARROWS at each end, which is what the pair of up/down chevrons on the
+   Overview modules actually was. Nothing in this UI uses a chevron that way,
+   so they read as a stray control someone bolted onto the card.
+
+   `scrollbar-button { display: none }` is the load-bearing line — the arrows
+   are a separate part from the track and thumb, and styling only those two
+   leaves the steppers behind. Declared on the app root so no container has
+   to remember to opt in, and paired with the standard `scrollbar-width` /
+   `scrollbar-color` properties for Firefox, which has no ::-webkit parts. */
+.fm-app { scrollbar-width: thin; scrollbar-color: var(--border-bright) transparent; }
+.fm-app ::-webkit-scrollbar,
+.fm-app::-webkit-scrollbar { width: 8px; height: 8px; }
+.fm-app ::-webkit-scrollbar-track,
+.fm-app::-webkit-scrollbar-track { background: transparent; }
+.fm-app ::-webkit-scrollbar-thumb,
+.fm-app::-webkit-scrollbar-thumb {
+  background: var(--border-bright); border-radius: var(--r-full);
+  border: 2px solid transparent; background-clip: content-box;
+}
+.fm-app ::-webkit-scrollbar-thumb:hover,
+.fm-app::-webkit-scrollbar-thumb:hover { background: var(--muted-dim); background-clip: content-box; }
+.fm-app ::-webkit-scrollbar-corner,
+.fm-app::-webkit-scrollbar-corner { background: transparent; }
+.fm-app ::-webkit-scrollbar-button,
+.fm-app::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
 .fm-header {
   display: flex; align-items: center; gap: 10px;
   padding: env(safe-area-inset-top, 0px) 20px 0 20px; height: 52px;
@@ -479,7 +547,10 @@ body {
   border-radius: var(--r-full); cursor: pointer; font-family: inherit;
   transition: all 0.15s; white-space: nowrap; flex: 0 0 auto;
 }
-.fm-division-toggle button.active { background: var(--gold); color: #1a0f00; }
+.fm-division-toggle button.active {
+  background: var(--sel-fill); color: var(--sel-ink);
+  box-shadow: inset 0 0 0 1.5px var(--sel-line);
+}
 
 /* ── Club grid ── */
 .fm-club-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
@@ -490,7 +561,7 @@ body {
   transition: border-color 0.15s, transform 0.12s, box-shadow 0.2s;
 }
 .fm-club-card:hover { border-color: var(--border-bright); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-.fm-club-card.selected { border-color: var(--gold); background: var(--gold-dim); box-shadow: var(--shadow-glow-gold); }
+.fm-club-card.selected { border-color: var(--sel-line); background: var(--sel-fill); }
 .fm-club-card__badge {
   font-size: 10px; font-weight: 900; letter-spacing: 1px;
   padding: 3px 8px; border-radius: 6px; color: rgba(0,0,0,0.8);
@@ -564,8 +635,8 @@ body {
 /* A filled surface, not a ring. The 1.5px brand outline made the current
    section the loudest object on the page — it only has to be legible. */
 .fm-rail__item.active {
-  color: var(--text); background: var(--panel-3);
-  box-shadow: inset 2px 0 0 var(--brand);
+  color: var(--sel-ink); background: var(--panel-3);
+  box-shadow: inset 2px 0 0 var(--sel-line);
 }
 .fm-rail__icon { width: 19px; height: 19px; }
 .fm-rail__label { font-size: 9px; line-height: 1.1; letter-spacing: 0.2px; }
@@ -636,9 +707,9 @@ body {
 }
 @media (min-width: 900px) { .fm-subnav__group { display: inline-flex; } }
 
-/* Horizontally scrollable so Matchday's five entries never wrap on a phone;
-   the scrollbar is hidden for the same reason `.fm-portal__filters` hides
-   its own. */
+/* Horizontally scrollable so Matchday's five entries never wrap on a phone.
+   The scrollbar is hidden here rather than styled: this strip is one row of
+   pills, and a track under it reads as a second, broken row. */
 .fm-subnav__tabs {
   display: flex; gap: 6px; min-width: 0; overflow-x: auto; padding: 2px 0;
   -webkit-overflow-scrolling: touch; scrollbar-width: none;
@@ -657,10 +728,8 @@ body {
   min-height: var(--tap-min);
 }
 .fm-subtab:hover { color: var(--text); background: var(--glass); }
-/* "Active tab pills" is one of the three uses --brand is permitted for by
-   the token contract at :root — nothing semantic is expressed here. */
 .fm-subtab.active {
-  color: var(--text); background: var(--brand-dim); border-color: var(--brand);
+  color: var(--sel-ink); background: var(--sel-fill); border-color: var(--sel-line);
 }
 .fm-subtab__icon { flex-shrink: 0; }
 .fm-subtab__label { line-height: 1; }
@@ -811,6 +880,24 @@ body {
 .fm-daysummary__head { position: relative; }
 .fm-daysummary__assistant { position: absolute; top: 0; right: 0; }
 
+/* A stop that names a player leads with his face rather than a category tile.
+   The category still has to be legible — "injury" and "contract" are very
+   different decisions — so it rides along as a badge notched into the corner,
+   ringed in the row's own background so it reads as attached to the portrait
+   rather than floating over it. */
+.fm-stoprow__who { position: relative; flex: none; display: block; line-height: 0; }
+.fm-stoprow__cat {
+  position: absolute; right: -3px; bottom: -3px;
+  display: flex; align-items: center; justify-content: center;
+  width: 17px; height: 17px; border-radius: 50%;
+  background: color-mix(in srgb, var(--tile-tint, var(--green)) 32%, var(--panel));
+  color: var(--tile-tint, var(--green));
+  box-shadow: 0 0 0 2px var(--panel);
+}
+/* Hover repaints the row, so the badge's ring has to follow it or it shows a
+   halo of the old background. */
+.fm-msg-row:hover .fm-stoprow__cat { box-shadow: 0 0 0 2px var(--panel-2); }
+
 /* ── Pre-match warnings modal (FM21-style kickoff gate) ──
    Reuses `.fm-matchx-modal` for the overlay/panel shell — same chrome as
    Press Conference, just its own row list instead of a form. */
@@ -893,6 +980,15 @@ body {
   background: var(--green-600); border-color: var(--green);
   color: #02100a; box-shadow: 0 0 12px rgba(184,255,60,0.3);
 }
+/* The two lineup-pitch "selected" states (this one and `.fm-mini-slot`) stay
+   gold rather than joining
+   the shared selected state, for two reasons. They sit on the green pitch,
+   not on a dark panel, so --brand-on-dark (derived against #0a0b0d) is not
+   the contrast guarantee they need — and a claret club's ring on claret-vs-
+   green tokens is exactly the confusion the away-kit logic exists to avoid.
+   And they are not a persisted choice: this is the transient "picked up,
+   waiting for somewhere to put him" half of a two-tap swap, which wants to
+   look unlike every settled selection on the screen, not like them. */
 .fm-slot.selected .fm-slot__chip {
   border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft), 0 0 16px rgba(201,162,39,0.3);
 }
@@ -914,8 +1010,7 @@ body {
   transition: all 0.12s;
 }
 .fm-pill:hover { border-color: var(--border-bright); color: var(--text); }
-.fm-pill.active { border-color: var(--green); background: var(--green-dim); color: var(--green); }
-.fm-pill.active-gold { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+.fm-pill.active { border-color: var(--sel-line); background: var(--sel-fill); color: var(--sel-ink); }
 
 /* ── Player rows ── */
 .fm-player-list { display: flex; flex-direction: column; gap: 5px; }
@@ -941,7 +1036,7 @@ body {
   font-family: inherit; cursor: pointer; transition: all 0.14s; min-height: 32px;
 }
 .fm-sortchip:hover { color: var(--text); border-color: var(--border-bright); }
-.fm-sortchip.active { color: var(--green); border-color: rgba(184,255,60,0.45); background: var(--green-dim); }
+.fm-sortchip.active { color: var(--sel-ink); border-color: var(--sel-line); background: var(--sel-fill); }
 /* Position headers only appear while the list is in position order. */
 .fm-grouphead {
   display: flex; align-items: center; gap: 9px; margin: 14px 0 2px;
@@ -1157,26 +1252,6 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   height: 100%; background: var(--cta-gradient);
   border-radius: 2px; transition: width 1s linear;
 }
-
-/* Match speed controls */
-.fm-match-controls {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-}
-.fm-speed-btn {
-  border: 1px solid var(--border); background: var(--panel);
-  color: var(--muted); border-radius: var(--r-sm);
-  padding: 5px 12px; font-size: 11px; font-weight: 700;
-  cursor: pointer; font-family: inherit; transition: all 0.12s;
-}
-.fm-speed-btn:hover { border-color: var(--border-bright); color: var(--text); }
-.fm-speed-btn.active { border-color: var(--green); color: var(--green); background: var(--green-dim); }
-.fm-skip-btn {
-  border: 1px solid var(--border); background: transparent;
-  color: var(--muted-dim); border-radius: var(--r-sm);
-  padding: 5px 12px; font-size: 11px; font-weight: 700;
-  cursor: pointer; font-family: inherit; transition: all 0.12s;
-}
-.fm-skip-btn:hover { color: var(--muted); }
 
 /* Live event ticker */
 .fm-event-ticker {
@@ -1673,20 +1748,6 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-stats-strip .fm-stat { flex-direction: column; }
 
-/* Filter buttons */
-.fm-portal__filters {
-  display: flex; gap: 5px; overflow-x: auto; padding-bottom: 2px;
-  -webkit-overflow-scrolling: touch; scrollbar-width: none;
-}
-.fm-portal__filters::-webkit-scrollbar { display: none; }
-.fm-filter-btn {
-  border: 1px solid var(--border-soft); background: var(--panel);
-  color: var(--muted); border-radius: var(--r-full); padding: 6px 13px;
-  font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
-  flex-shrink: 0; font-family: inherit; transition: all 0.12s; position: relative;
-}
-.fm-filter-btn:hover { border-color: var(--border); color: var(--text-2); }
-.fm-filter-btn.active { border-color: var(--green); background: var(--green-dim); color: var(--green); }
 .fm-badge {
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 9px; font-weight: 900; border-radius: 999px;
@@ -1800,32 +1861,56 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-settings-label { font-size: 13px; font-weight: 700; color: var(--text-2); }
 .fm-settings-desc { font-size: 11px; color: var(--muted-dim); margin-top: 2px; }
 .fm-settings-control { flex-shrink: 0; margin-left: 12px; }
+/* Off used to be a full-strength white knob on a --border track: the track
+   barely separated from the panel behind it, so the only thing actually
+   visible was a small bright dot, and the only thing separating off from on
+   was which end of an invisible track that dot sat at. Scanning a column of
+   eight for the two that are on meant reading each one.
+
+   Off now carries a visible track (a lighter fill and a rim, so the control
+   reads as a control) and a muted knob, which puts three differences between
+   the states — knob position, knob brightness and track colour — instead of
+   one. */
 .fm-toggle {
   position: relative; width: 40px; height: 22px; cursor: pointer;
-  background: var(--border); border-radius: var(--r-full);
-  border: none; transition: background 0.2s; flex-shrink: 0;
+  background: var(--panel-3); border-radius: var(--r-full);
+  border: 1px solid var(--border-bright); padding: 0;
+  transition: background 0.2s, border-color 0.2s; flex-shrink: 0;
 }
-.fm-toggle.on { background: var(--green-600); }
+.fm-toggle:hover { border-color: var(--muted-dim); }
+.fm-toggle.on { background: var(--green-600); border-color: var(--green); }
+.fm-toggle.on:hover { border-color: var(--green-strong); }
+.fm-toggle:focus-visible { outline: 2px solid var(--green-600); outline-offset: 2px; }
 .fm-toggle::after {
-  content: ''; position: absolute; left: 3px; top: 3px;
+  content: ''; position: absolute; left: 2px; top: 2px;
   width: 16px; height: 16px; border-radius: 50%;
-  background: #fff; transition: transform 0.2s;
+  background: var(--muted); transition: transform 0.2s, background 0.2s;
 }
-.fm-toggle.on::after { transform: translateX(18px); }
+.fm-toggle.on::after { background: #fff; transform: translateX(18px); }
 
-/* Difficulty selector */
-.fm-difficulty-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
-.fm-diff-btn {
-  border: 1.5px solid var(--border); background: var(--panel);
-  color: var(--muted); border-radius: var(--r-sm);
-  padding: 7px 4px; font-size: 10.5px; font-weight: 800;
-  cursor: pointer; font-family: inherit; text-align: center;
-  transition: all 0.12s;
+/* ── Difficulty selector ──
+   Difficulty is now the same `.fm-segmented` control Match speed and Volume
+   use, and picks up its selected state from there. It used to be its own
+   four-button grid whose selected option was a coloured outline — green for
+   Easy/Normal, gold for Hard, red for Elite — while the segmented control two
+   sections up drew the identical meaning as a --brand ring. Two controls that
+   say "this one is chosen" in two different visual languages read as two
+   components that happened to land on the same screen, which is exactly what
+   they were.
+
+   The green→red ramp did carry real information, so it is kept — as a dot
+   that every option wears all of the time, on or off. That splits the two
+   jobs the colour was doing: the ramp says how hard each step is (content,
+   always visible, comparable across all four), and the shared selected state
+   says which one you're on (chrome, one at a time). Neither has to be read
+   through the other any more. */
+.fm-segmented__opt--ramp { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.fm-segmented__ramp-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ramp-color, var(--green));
+  opacity: 0.55; transition: opacity 0.15s;
 }
-.fm-diff-btn:hover { border-color: var(--border-bright); color: var(--text); }
-.fm-diff-btn.active { border-color: var(--green); color: var(--green); background: var(--green-dim); }
-.fm-diff-btn.active-gold { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
-.fm-diff-btn.active-red { border-color: var(--red); color: var(--red); background: var(--red-soft); }
+.fm-segmented__opt.active .fm-segmented__ramp-dot { opacity: 1; }
 
 /* Mobile responsive */
 @media (max-width: 560px) {
@@ -2121,7 +2206,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   color: var(--text-2); border-radius: var(--r-sm); padding: 8px 4px; font-size: 11px;
   font-weight: 800; cursor: pointer;
 }
-.fm-mentality-card.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+.fm-mentality-card.active { border-color: var(--sel-line); color: var(--sel-ink); background: var(--sel-fill); }
 
 /* --- Team identity cards (Tactics > Team Identity) ------------------------
    Each card carries three readings, because "this isn't working" has two very
@@ -2147,9 +2232,9 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   transition: border-color var(--transition, 0.16s ease), background var(--transition, 0.16s ease);
 }
 .fm-identity-card:hover { border-color: var(--border-bright); background: var(--panel-2); }
-.fm-identity-card.active { border-color: var(--gold); background: var(--gold-dim); }
+.fm-identity-card.active { border-color: var(--sel-line); background: var(--sel-fill); }
 .fm-identity-card__name { font-weight: 600; font-size: 13px; color: var(--text); }
-.fm-identity-card.active .fm-identity-card__name { color: var(--gold); }
+.fm-identity-card.active .fm-identity-card__name { color: var(--sel-ink); }
 .fm-identity-card__bar {
   display: block;
   height: 4px;
@@ -2158,7 +2243,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   overflow: hidden;
 }
 .fm-identity-card__fill { display: block; height: 100%; background: var(--green-600); }
-.fm-identity-card.active .fm-identity-card__fill { background: var(--gold-2); }
+.fm-identity-card.active .fm-identity-card__fill { background: var(--sel-line); }
 .fm-identity-card__meta {
   font-size: 11px;
   color: var(--muted);
@@ -2199,7 +2284,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   background: var(--panel-2); border: 1px solid var(--border); color: var(--text-2);
   border-radius: var(--r-sm); padding: 8px 2px; font-size: 11px; font-weight: 800; cursor: pointer;
 }
-.fm-formation-tile.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+.fm-formation-tile.active { border-color: var(--sel-line); color: var(--sel-ink); background: var(--sel-fill); }
 .fm-custom-formation { display: flex; gap: 14px; margin-bottom: 8px; }
 .fm-custom-formation__stepper { display: flex; align-items: center; gap: 6px; }
 .fm-custom-formation__label { font-size: 11px; font-weight: 800; color: var(--text-2); width: 30px; }
@@ -2223,6 +2308,8 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   background: var(--red); color: #fff; font-size: 9px; font-weight: 900;
   border: 2px solid rgba(255,255,255,0.35);
 }
+/* Gold, not the shared selected state — the pick-up half of a swap, on the
+   pitch rather than a panel. See the note on `.fm-slot.selected`. */
 .fm-mini-slot.selected .fm-mini-slot__token { border-color: var(--gold); box-shadow: var(--shadow-glow-gold); }
 .fm-mini-slot__name { font-size: 9px; color: var(--text-2); font-weight: 700; white-space: nowrap; }
 .fm-mini-slot__name em { font-style: normal; color: var(--gold-2); }
@@ -2387,7 +2474,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   padding: 7px 9px; cursor: pointer; color: var(--text-2);
 }
 .fm-role-tile:hover { border-color: var(--border-bright); }
-.fm-role-tile.active { border-color: var(--gold); background: var(--gold-dim); color: var(--gold); }
+.fm-role-tile.active { border-color: var(--sel-line); background: var(--sel-fill); color: var(--sel-ink); }
 .fm-role-tile__name { font-size: 11.5px; font-weight: 800; }
 .fm-role-tile__desc { font-size: 10px; color: var(--muted); line-height: 1.3; }
 .fm-role-tile.active .fm-role-tile__desc { color: inherit; opacity: 0.75; }
@@ -2509,7 +2596,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   flex: 1; background: var(--panel-2); border: 1px solid var(--border); color: var(--muted);
   border-radius: var(--r-sm); padding: 7px 0; font-weight: 800; font-size: 12px; cursor: pointer;
 }
-.pm-tab-btn.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+.pm-tab-btn.active { border-color: var(--sel-line); color: var(--sel-ink); background: var(--sel-fill); }
 .pm-attr-bar-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
 .pm-attr-row { display: grid; grid-template-columns: 34px 1fr 22px 22px; align-items: center; gap: 6px; font-size: 11px; }
 .pm-attr-label { color: var(--muted); font-weight: 800; }
@@ -2581,7 +2668,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   width: 8px; height: 8px; border-radius: 50%; padding: 0; border: none; cursor: pointer;
   background: var(--border-bright);
 }
-.fm-onboard-dot.active { background: var(--green); width: 20px; border-radius: 4px; }
+.fm-onboard-dot.active { background: var(--sel-line); width: 20px; border-radius: 4px; }
 .fm-onboard-step { display: flex; gap: 12px; align-items: flex-start; min-height: 74px; margin-bottom: 16px; }
 
 /* ── Rating ring: conic-gradient circular badge ──
@@ -2632,7 +2719,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   font-family: inherit; font-weight: 700; font-size: 12px; padding: 7px 6px;
   border-radius: var(--r-full); cursor: pointer; transition: all 0.15s;
 }
-.fm-segmented__opt.active { background: var(--brand-dim); color: var(--text); box-shadow: inset 0 0 0 1.5px var(--brand); }
+.fm-segmented__opt.active { background: var(--sel-fill); color: var(--sel-ink); box-shadow: inset 0 0 0 1.5px var(--sel-line); }
 
 /* ── Bracket round column: Cups knockout tree ──
    Each round is a vertically-centered column of tie cards; columns sit in a
@@ -3093,6 +3180,18 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 .fm-setgroup__title {
   font-size: 10px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase;
   color: var(--muted-dim); margin: 0 0 8px;
+}
+/* One line of orientation under a section heading, for the two sections that
+   need it (Continue Rules, Assistant Manager). Previously these were `.fm-hint`
+   paragraphs — body copy at the same size and colour as the rows' own
+   descriptions, sitting inside the list, so a scannable column of switches was
+   interrupted by two lines that looked like a row without a switch. Pinned to
+   the heading instead: smaller, tighter, above the rule that opens the list, so
+   the eye skips it on the second visit the way it skips the heading. */
+.fm-setgroup__lede {
+  font-size: 11px; line-height: 1.45; color: var(--muted-dim);
+  margin: -4px 0 10px; max-width: 60ch;
+  padding-bottom: 10px; border-bottom: 1px solid var(--border-soft);
 }
 /* Grouped rows own their horizontal padding from the panel, not the row. */
 .fm-setgroup .fm-settings-row { padding-left: 0; padding-right: 0; }
@@ -3649,7 +3748,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
   color: var(--muted); cursor: pointer; font-family: inherit;
 }
 .fm-drill:hover { border-color: var(--border-bright); }
-.fm-drill.active { border-color: var(--green-600); background: var(--green-dim); color: var(--text); }
+.fm-drill.active { border-color: var(--sel-line); background: var(--sel-fill); color: var(--sel-ink); }
 .fm-drill__label { font-size: 10.5px; font-weight: 700; text-align: center; }
 
 /* Drill cards: what the session does, not just what it is called.
@@ -3667,8 +3766,8 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-drillcard:hover { transform: translateY(-2px); border-color: var(--border-bright); }
 .fm-drillcard.active {
-  border-color: var(--green-600);
-  background: linear-gradient(160deg, rgba(184,255,60,0.09), transparent);
+  border-color: var(--sel-line);
+  background: var(--sel-fill);
 }
 .fm-drillcard__head { display: flex; align-items: center; gap: 7px; color: var(--green); }
 .fm-drillcard__name { font-size: 13.5px; font-weight: 800; color: var(--text); }
@@ -4319,8 +4418,23 @@ body.fm-in-game .fm-about-foot {
    the action dock all hold their position, and the only thing that ever
    scrolls is the screen content between them. Below 900px nothing here
    applies — the phone layout is a scrolling page with a fixed thumb dock
-   and stays exactly as it was. */
-@media (min-width: 900px) {
+   and stays exactly as it was.
+
+   The height guard is not decoration. This frame divides a FIXED budget —
+   `100dvh` minus header, dock and ad slot — between the screen's own
+   sections, and Overview's three status modules are last in that queue
+   (`minmax(0, 1fr)` below). Keyed on width alone, a wide-but-short window
+   (a 1329×623 browser, a half-height window, a laptop with the dock and
+   tab strip showing) handed that row almost nothing, and each module —
+   `max-height: 100%` of a collapsed row — rendered as a ~30px strip: a
+   title, its content sheared off mid-line, and a native scrollbar with
+   spinner arrows standing in for the card. Below this height there is no
+   budget to divide, so the frame stays off and the page simply scrolls,
+   exactly as it does on a phone. 760px is measured, not guessed: header
+   (52) + sub-tabs (34) + club header (64) + match hero (200) + actions
+   (46) + gaps (40) + dock (60) + ad (106) leaves the module row ~150px,
+   which is the floor set on `.fm-hub-grid > .fm-mod` below. */
+@media (min-width: 900px) and (min-height: 760px) {
   html, body { height: 100%; overflow: hidden; }
   .fm-app { height: 100dvh; min-height: 0; overflow: hidden; }
   .fm-header { flex: none; }
@@ -4345,7 +4459,7 @@ body.fm-in-game .fm-about-foot {
   /* The dock is a sibling of <main>, so pinning the frame turns it into a
      permanent footer bar — no fixed positioning needed. */
   .fm-actiondock { flex: none; margin-bottom: 8px; }
-  .fm-bottom-ad { margin: 8px auto; }
+  .fm-bottom-ad { flex: none; margin: 8px auto; }
 }
 
 /* Overview at desktop: the whole Home screen is sized to the frame, so it
@@ -4356,7 +4470,7 @@ body.fm-in-game .fm-about-foot {
    match the tallest of the three by grid's default `stretch`, so the two
    short ones rendered as columns of empty panel — the hollow look down the
    middle of the screen — while the table's last rows fell off the bottom. */
-@media (min-width: 900px) {
+@media (min-width: 900px) and (min-height: 760px) {
   .fm-hub-panel > .fm-portal { height: 100%; }
   .fm-portal { min-height: 0; }
   .fm-hub-grid {
@@ -4365,15 +4479,25 @@ body.fm-in-game .fm-about-foot {
   }
   /* Content height, capped at the row — so a short module stays short
      instead of rendering as a column of empty panel, and a long one (the
-     league table) scrolls inside itself rather than off the frame. */
-  .fm-hub-grid > .fm-mod { align-self: start; min-height: 0; max-height: 100%; overflow-y: auto; }
+     league table) scrolls inside itself rather than off the frame.
+     `min-height` is the floor that keeps "scrolls inside itself" meaning a
+     readable panel: a module is never squeezed below its heading plus two
+     rows, and `min-height` beating `max-height` is exactly the behaviour
+     wanted here — when the row really is that tight, the module keeps its
+     floor and `.fm-hub-panel` (overflow-y: auto) takes the overflow. A
+     panel that scrolls is fine; a panel sheared to a title strip is not. */
+  .fm-hub-grid > .fm-mod {
+    align-self: start; min-height: 148px; max-height: 100%; overflow-y: auto;
+  }
   .fm-hub-grid__hero { overflow: visible; }
   .fm-portal__actions { flex: none; }
 }
 
 /* Short desktop windows (a laptop at 1280×800 and below): trim the Overview
-   chrome so the whole screen still lands inside the frame without scrolling. */
-@media (min-width: 900px) and (max-height: 900px) {
+   chrome so the whole screen still lands inside the frame without scrolling.
+   Bounded below by the same 760px the frame is: under that the page scrolls
+   and there is no frame to fit anything into. */
+@media (min-width: 900px) and (min-height: 760px) and (max-height: 900px) {
   .fm-portal { gap: 8px; }
   .fm-portal__header { padding: 10px 14px; }
   .fm-hub-grid { gap: 8px; }

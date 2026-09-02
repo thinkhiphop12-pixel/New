@@ -4,6 +4,7 @@ import type { CSSProperties } from 'react';
 import type { GameSettings, InboxCategory, MatchSpeed } from '@/engine/types';
 import { defaultContinueStops, stopEnabled } from '@/engine/dailyTick';
 import { Icon, type IconName } from './Icon';
+import { CATEGORY_ICON, CATEGORY_TINT } from './inboxChrome';
 
 /** Continue Rules rows — which inbox categories halt "Sim Next Day" for a
  *  look. Matchday isn't listed: it's a hard stop (see engine/dailyTick.ts),
@@ -18,6 +19,15 @@ const STOP_ROWS: { id: InboxCategory; label: string; desc: string }[] = [
   { id: 'match', label: 'Match news', desc: 'Results and milestones elsewhere in the league' },
   { id: 'press', label: 'Press', desc: 'Media stories about you and your club' },
 ];
+
+/** Leading tile for the Assistant Manager rows. The Continue Rules rows take
+ *  theirs from the shared inbox chrome instead — a rule about contracts wears
+ *  the same gold document tile the contract message itself does. */
+const DELEGATION_TILE: Record<'complaints' | 'contracts' | 'schedule', { icon: IconName; tint: string }> = {
+  complaints: { icon: 'person', tint: 'var(--green)' },
+  contracts: { icon: CATEGORY_ICON.contract, tint: CATEGORY_TINT.contract },
+  schedule: { icon: 'calendar', tint: 'var(--blue)' },
+};
 
 /** Assistant Manager delegation rows — which of these the assistant handles
  *  automatically (the same default a human would reach for) instead of
@@ -35,13 +45,15 @@ const SPEEDS: { id: MatchSpeed; label: string }[] = [
   { id: 'instant', label: 'Instant' },
 ];
 
-/** The four difficulty steps, each with the modifier class that colours its
- *  active state — the same values/classes the old inline buttons used. */
-const DIFFICULTIES: { value: number; label: string; activeClass: string }[] = [
-  { value: 0.85, label: 'Easy', activeClass: 'active' },
-  { value: 1, label: 'Normal', activeClass: 'active' },
-  { value: 1.1, label: 'Hard', activeClass: 'active-gold' },
-  { value: 1.2, label: 'Elite', activeClass: 'active-red' },
+/** The four difficulty steps. `ramp` is the green→red severity colour each
+ *  step wears at all times — it is what the step *is*, not whether it is
+ *  chosen. Selection is drawn by `.fm-segmented__opt.active`, the same
+ *  state Match speed and Volume use. */
+const DIFFICULTIES: { value: number; label: string; ramp: string }[] = [
+  { value: 0.85, label: 'Easy', ramp: 'var(--green)' },
+  { value: 1, label: 'Normal', ramp: 'var(--lime)' },
+  { value: 1.1, label: 'Hard', ramp: 'var(--gold)' },
+  { value: 1.2, label: 'Elite', ramp: 'var(--red)' },
 ];
 
 /** Leading icon-tile for a settings row (Phase 0 `.fm-icon-tile`). */
@@ -276,15 +288,16 @@ export default function SettingsPanel({
 
           <div className="fm-setgroup">
             <p className="fm-setgroup__title">Continue Rules</p>
-            <p className="fm-hint" style={{ textAlign: 'left', margin: '0 0 10px' }}>
-              What halts "Sim Next Day" for a look, versus just logging to the day's summary and rolling on.
-              Matchday always stops — that one isn't a preference.
+            <p className="fm-setgroup__lede">
+              What halts "Sim Next Day" for a look, rather than logging to the day's summary and rolling
+              on. Matchday always stops.
             </p>
             {STOP_ROWS.map((row) => {
               const on = stopEnabled(settings, row.id);
               return (
                 <div key={row.id} className="fm-settings-row">
                   <div className="fm-settings-row__head">
+                    <SettingTile icon={CATEGORY_ICON[row.id]} tint={CATEGORY_TINT[row.id]} />
                     <div>
                       <div className="fm-settings-label">{row.label}</div>
                       <div className="fm-settings-desc">{row.desc}</div>
@@ -303,15 +316,17 @@ export default function SettingsPanel({
 
           <div className="fm-setgroup">
             <p className="fm-setgroup__title">Assistant Manager</p>
-            <p className="fm-hint" style={{ textAlign: 'left', margin: '0 0 10px' }}>
-              Hand these off — the assistant acts on your behalf instead of stopping the sim to ask.
-              Off by default; every category above still stops normally until you switch it on here.
+            <p className="fm-setgroup__lede">
+              Hand these off and the assistant acts for you instead of stopping the sim to ask. Off by
+              default.
             </p>
             {DELEGATION_ROWS.map((row) => {
               const on = settings.assistantDelegation?.[row.id] ?? false;
+              const tile = DELEGATION_TILE[row.id];
               return (
                 <div key={row.id} className="fm-settings-row">
                   <div className="fm-settings-row__head">
+                    <SettingTile icon={tile.icon} tint={tile.tint} />
                     <div>
                       <div className="fm-settings-label">{row.label}</div>
                       <div className="fm-settings-desc">{row.desc}</div>
@@ -340,15 +355,16 @@ export default function SettingsPanel({
                 </div>
               </div>
               <div className="fm-settings-control">
-                <div className="fm-difficulty-grid">
+                <div className="fm-segmented">
                   {DIFFICULTIES.map((d) => (
                     <button
                       key={d.value}
                       type="button"
-                      className={`fm-diff-btn${settings.difficulty === d.value ? ` ${d.activeClass}` : ''}`}
+                      className={`fm-segmented__opt fm-segmented__opt--ramp${settings.difficulty === d.value ? ' active' : ''}`}
                       aria-pressed={settings.difficulty === d.value}
                       onClick={() => update({ difficulty: d.value })}
                     >
+                      <span className="fm-segmented__ramp-dot" style={{ '--ramp-color': d.ramp } as CSSProperties} />
                       {d.label}
                     </button>
                   ))}
