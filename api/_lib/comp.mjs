@@ -35,7 +35,44 @@ export function cfg() {
     /* Entries from unverified addresses are stored but excluded from the draw.
        Flip on once confirmation emails are wired up. */
     requireVerification: process.env.COMP_REQUIRE_VERIFICATION === '1',
+    /* Require a signed-in account to enter. Strongly recommended for any prize
+       worth farming: it borrows the identity provider's already-verified
+       mailbox instead of trusting a typed address. Playing is unaffected. */
+    requireAccount: process.env.COMP_REQUIRE_ACCOUNT !== '0',
   };
+}
+
+/**
+ * Exchange a Supabase access token for the account behind it.
+ *
+ * Verified by asking Supabase's auth service, not by decoding the JWT here: a
+ * token is only trustworthy if something checked its signature and expiry
+ * against the issuing project, and reimplementing that check is how people ship
+ * auth bypasses. One extra request per entry is a fair price.
+ *
+ * Returns null for anything that does not resolve to a real, confirmed user.
+ */
+export async function userFromToken(token) {
+  if (!token) return null;
+  const c = cfg();
+  try {
+    const r = await fetch(`${c.url}/auth/v1/user`, {
+      headers: { apikey: c.serviceKey, Authorization: `Bearer ${token}` },
+    });
+    if (!r.ok) return null;
+    const u = await r.json();
+    if (!u || !u.id || !u.email) return null;
+    return { id: u.id, email: u.email };
+  } catch {
+    return null;
+  }
+}
+
+/** Pull the bearer token out of the Authorization header. */
+export function bearer(req) {
+  const h = req.headers?.authorization || req.headers?.Authorization || '';
+  const m = /^Bearer\s+(.+)$/i.exec(String(h));
+  return m ? m[1].trim() : null;
 }
 
 export function configured() {

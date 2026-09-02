@@ -13,8 +13,8 @@ the live privacy policy currently states the opposite of what these features do.
 
 1. New project at [supabase.com](https://supabase.com). Any region; pick one near
    most of your players.
-2. SQL Editor → paste `supabase/migrations/0001_comp_and_accounts.sql` → Run.
-   It is safe to re-run.
+2. SQL Editor → run `supabase/migrations/0001_comp_and_accounts.sql`, then
+   `0002_account_gated_entry.sql`, in that order. Both are safe to re-run.
 3. Settings → API. You need three values:
 
 | Value | Where it goes | Secret? |
@@ -37,8 +37,22 @@ SUPABASE_URL=https://<project>.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=<service_role key>
 COMP_HASH_SALT=<openssl rand -hex 32>
 COMP_ENABLED=1
+COMP_REQUIRE_ACCOUNT=1
 COMP_REQUIRE_VERIFICATION=0
 ```
+
+`COMP_REQUIRE_ACCOUNT=1` (the default) means entrants must sign in. **Leave it
+on.** It is what makes the draw defensible: the address comes from the verified
+session rather than from a text box, so entering a hundred times means creating
+a hundred real Google accounts rather than typing a hundred addresses. It also
+removes the need to build a separate confirmation flow, because the identity
+provider has already done that job.
+
+Setting it to `0` falls back to typed-email entry. Only reasonable for a prize
+too small to be worth farming, and even then entries stay unverified.
+
+Note that this gates **entry, not play**. Every game stays free with no account,
+so the "no sign up" claim in the homepage title remains true.
 
 `COMP_HASH_SALT` salts the hashes of visitor IP addresses. Without it the
 endpoints refuse to run, deliberately: the IPv4 space is small enough that an
@@ -55,8 +69,12 @@ In `shared/comp.js`:
 enabled: true,
 api: '/api',
 closesISO: '2027-04-30T23:59:59Z',   // your real closing date
-prize: '...',                        // the real prize, once decided
 ```
+
+`prize` is already set to `£1,000` and `requireAccount` to `true`; change them
+only if the promotion itself changes. `requireAccount` must match
+`COMP_REQUIRE_ACCOUNT` on the server — the server is the side that enforces it,
+so a mismatch shows the wrong form rather than opening a hole.
 
 ### Before you switch it on
 
@@ -64,18 +82,20 @@ prize: '...',                        // the real prize, once decided
   `noindex` tag.
 - Have the terms reviewed. The prize is valuable enough that an hour of a
   solicitor's time is cheap.
-- Confirm in writing that the prize can lawfully be transferred to a winner.
-  Match tickets are commonly personalised and non-transferable, and admission
-  can be refused where the name does not match.
+- A cash prize has no transferability problem, which is one fewer thing to
+  verify. Decide how it is paid (bank transfer is simplest) and how long the
+  winner has to supply details.
 
 ### Email confirmation
 
-Not wired up yet, at your request. Entrants are stored with `verified` set from
-`COMP_REQUIRE_VERIFICATION`, and `comp_entry_counts` already filters on it, so
-turning verification on later needs no change to how the draw is run.
+Not needed while `COMP_REQUIRE_ACCOUNT=1`. Account-backed entries are written
+with `verified = true` because the identity provider confirmed the mailbox
+before Supabase would issue a session — Google will not hand out a token for an
+address nobody controls, and a magic link proves control by definition.
 
-**Do not run a draw for a valuable prize without it.** An unverified address is
-one script away from unlimited entries. To add it: send a link to
+It only matters if you switch to typed-email entry. In that mode entries stay
+unverified, and `comp_entry_counts` excludes them, so the draw would have
+nothing to pick from until you build it: send a link to
 `?verify=<verify_token>` on entry, set `verified = true` when it is followed,
 then set `COMP_REQUIRE_VERIFICATION=1`.
 
@@ -96,6 +116,9 @@ Screen-record it. "Drawn at random" is a claim you may have to stand behind.
 ---
 
 ## 3. Accounts
+
+**Required before the prize draw can run**, since entry is account-gated. Do
+this section first if you are enabling both.
 
 ### Supabase dashboard
 
