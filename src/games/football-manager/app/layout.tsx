@@ -94,6 +94,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 report a referral conversion and read the player's share link.
                 Inert while the prize draw is switched off. */}
             <Script src="/shared/comp.js" strategy="afterInteractive" />
+            {/* auth.js exposes window.BKAuth for optional cloud saves. The
+                Supabase SDK is only fetched if someone actually signs in. */}
+            <Script src="/shared/auth.js" strategy="afterInteractive" />
           </>
         )}
       </body>

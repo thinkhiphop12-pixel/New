@@ -513,6 +513,7 @@ ${faq
 <script src="/shared/consent.min.js" defer></script>
 <script src="/shared/ads.min.js" defer></script>
 <script src="/shared/comp.js" defer></script>
+<script src="/shared/auth.js" defer></script>
 </body>
 </html>
 `;
@@ -613,6 +614,7 @@ ${rows}
 <script src="/shared/consent.min.js" defer></script>
 <script src="/shared/ads.min.js" defer></script>
 <script src="/shared/comp.js" defer></script>
+<script src="/shared/auth.js" defer></script>
 </body>
 </html>
 `;
