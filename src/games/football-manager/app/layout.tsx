@@ -92,6 +92,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 initAds() after "Accept all" — ads.js stays inert until then. */}
             <Script src="/shared/consent.min.js" strategy="afterInteractive" />
             <Script src="/shared/ads.min.js" strategy="afterInteractive" />
+            {/* comp.js exposes window.BKComp so the season-end screen can
+                report a referral conversion and read the player's share link.
+                Inert while the prize draw is switched off. */}
+            <Script src="/shared/comp.js" strategy="afterInteractive" />
+            {/* auth.js exposes window.BKAuth for optional cloud saves. The
+                Supabase SDK is only fetched if someone actually signs in. */}
+            <Script src="/shared/auth.js" strategy="afterInteractive" />
           </>
         )}
       </body>

@@ -19,8 +19,8 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-YK8TS0NPNG"></script>
 <script defer src="/_vercel/insights/script.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Free Football Manager Game Online | Play Gaffa - No Download</title>
-<meta name="description" content="Free football manager game online: manage a real club in your browser with no download or account. Play Gaffa now, completely free." />
+<title>Play Gaffa: Free Browser Football Manager (No Sign Up)</title>
+<meta name="description" content="Manage a real English football club instantly in your browser. Gaffa is 100% free with no account creation, no download, and instant local browser saves." />
 <meta name="keywords" content="free football manager, football manager game, free football manager online, play football manager free, football management game, browser football game, free football games" />
 <link rel="canonical" href="https://www.ballknw.com/" />
 <meta name="theme-color" content="#0b120d" />
@@ -387,7 +387,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       "@type": "Game",
       "name": "BALLKNW Gaffa",
       "url": "https://www.ballknw.com/gaffa/",
-      "description": "Manage a club across ten leagues with current-season squads: tactics, transfers, contracts, cups and a youth academy in a full career mode.",
+      "description": "Manage a club across 28 leagues in 25 countries with current-season squads: tactics, transfers, contracts, cups and a youth academy in a full career mode.",
       "genre": "Sports",
       "numberOfPlayers": { "@type": "QuantitativeValue", "value": 1 },
       "isAccessibleForFree": true,
@@ -395,6 +395,25 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       "dateModified": "2026-07-08",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "publisher": { "@id": "https://www.ballknw.com/#org" }
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://www.ballknw.com/#app",
+      "name": "Gaffa",
+      "url": "https://www.ballknw.com/gaffa/",
+      "operatingSystem": "Browser-Based",
+      "applicationCategory": "GameApplication",
+      "browserRequirements": "Requires HTML5 compatible browser.",
+      "genre": "Sports Simulation / Football Management",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "author": { "@id": "https://www.ballknw.com/#org" },
+      "publisher": { "@id": "https://www.ballknw.com/#org" },
+      "description": "A completely free browser-based football management simulation with no sign up, account logs, or downloads required."
     },
     {
       "@type": "FAQPage",
@@ -445,6 +464,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   <div class="wrap nav-inner">
     <div class="brand"><span class="mark">B</span><span>BALL<b>KNW</b></span></div>
     <nav class="nav-links">
+      <a href="/leagues.html">Leagues</a>
       <a href="/gaffa/" class="btn btn-primary">Play Gaffa</a>
     </nav>
   </div>
@@ -564,6 +584,23 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </section>
 
+<!-- LEAGUES — the game ships 28 of them; the site used to mention one. -->
+<section class="section" style="padding-top:10px">
+<div class="wrap">
+<div class="section-head" style="text-align:center">
+<div class="eyebrow">Leagues</div>
+<h2>Manage anywhere</h2>
+<p style="max-width:620px;margin:8px auto 0;color:var(--muted)">28 playable leagues across 25 countries — 494 clubs and 13,929 players, all free in the browser.</p>
+</div>
+<div class="faq-list">
+<p style="margin:0 0 10px"><a href="/premier-league-manager-game.html"><strong>Premier League</strong></a> · <a href="/la-liga-manager-game.html"><strong>La Liga</strong></a> · <a href="/serie-a-manager-game.html"><strong>Serie A</strong></a> · <a href="/bundesliga-manager-game.html"><strong>Bundesliga</strong></a> · <a href="/ligue-1-manager-game.html"><strong>Ligue 1</strong></a></p>
+<p style="margin:0 0 10px"><a href="/eredivisie-manager-game.html"><strong>Eredivisie</strong></a> · <a href="/primeira-liga-manager-game.html"><strong>Primeira Liga</strong></a> · <a href="/mls-manager-game.html"><strong>MLS</strong></a> · <a href="/saudi-pro-league-manager-game.html"><strong>Saudi Pro League</strong></a> · <a href="/scottish-premiership-manager-game.html"><strong>Scottish Premiership</strong></a></p>
+<p style="margin:0"><a href="/efl-championship-manager-game.html"><strong>EFL Championship</strong></a> · <a href="/efl-league-one-manager-game.html"><strong>EFL League One</strong></a> · <a href="/efl-league-two-manager-game.html"><strong>EFL League Two</strong></a></p>
+</div>
+<p class="foot-meta" style="margin-top:14px;text-align:center"><a href="/leagues.html" style="color:var(--lime);font-weight:700">All 28 playable leagues &rarr;</a></p>
+</div>
+</section>
+
 <!-- FAQ -->
 <section id="faq" class="section">
   <div class="wrap">
@@ -631,10 +668,13 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
       <div class="foot-brand"><span class="mark">B</span><span>BALL<b>KNW</b></span></div>
       <nav class="foot-links">
         <a href="/gaffa/">Gaffa</a>
-        <a href="/football-guides.html">Guides</a>
+        <a href="/leagues.html">Leagues</a>
+<a href="/football-guides.html">Guides</a>
         <a href="/privacy.html">Privacy</a>
         <a href="/terms.html">Terms</a>
-        <button type="button" class="btn-link cookie-settings-link" id="cookieSettingsBtn">Cookie settings</button>
+<button type="button" class="btn-link cookie-settings-link" id="cookieSettingsBtn">Cookie settings</button>
+<a href="#" id="compEntryLink" hidden style="display:none">Prize draw</a>
+<a href="#" id="authSignInLink" hidden style="display:none">Sign in</a>
         <a href="mailto:thinkhiphop12@gmail.com">Contact</a>
       </nav>
     </div>
@@ -726,6 +766,8 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 </script>
 
 <script src="/shared/consent.min.js" defer></script>
+<script src="/shared/comp.js" defer></script>
+<script src="/shared/auth.js" defer></script>
 <script src="/shared/ads.min.js" defer></script>
 </body>
 </html>
