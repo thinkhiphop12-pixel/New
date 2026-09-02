@@ -557,6 +557,16 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </section>
 
+<!-- Mid-page ad. The right rail only exists at >=1440px and the closer sits
+     near the foot of the page, so without this the homepage served no ad at all
+     to a phone user who did not scroll to the bottom. Placed after the game
+     embed and the how-it-works steps, never above them. -->
+<section class="section" style="padding-top:0;padding-bottom:0">
+<div class="wrap">
+<div class="ad-slot" id="homeMidAd" data-ad-format="banner"><span class="ad-slot-label">Advertisement</span></div>
+</div>
+</section>
+
 <!-- MOST-READ GUIDES -->
 <section class="section section-stacked">
   <div class="wrap">
