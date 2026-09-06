@@ -39,6 +39,10 @@
 <!-- Google AdSense (site verification + library load) -->
 <!-- Monetag (site verification only: no ad units wired in yet) -->
 <meta name="monetag" content="6675004eb2036a506cf516c061791522">
+<!-- HilltopAds verification -->
+<meta name="32a20309c0c2a291da1e1c20a8a6b5fac8fc192f" content="32a20309c0c2a291da1e1c20a8a6b5fac8fc192f" />
+<!-- clckd verification -->
+<meta name="clckd" content="ff0607426787fc40c414b0dc77bdbd35" />
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -83,7 +87,6 @@ p,li{text-wrap:pretty}
 a{text-decoration:none;color:inherit}
 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 16px}
 
-/* Keyboard focus was invisible site-wide before this. */
 :focus-visible{outline:2px solid var(--lime);outline-offset:2px;border-radius:4px}
 :focus:not(:focus-visible){outline:none}
 .skip-link{
@@ -94,7 +97,6 @@ a{text-decoration:none;color:inherit}
 .skip-link:focus{top:12px}
 #main{scroll-margin-top:64px}
 
-/* Fine grain so the flat dark surfaces don't read as sterile vector. */
 body::after{
   content:"";position:fixed;inset:0;pointer-events:none;z-index:var(--z-overlay);
   opacity:.035;mix-blend-mode:overlay;
@@ -109,7 +111,6 @@ body::after{
   }
 }
 
-/* subtle radial behind hero */
 body::before{
   content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
   background:radial-gradient(ellipse 60% 40% at 50% -10%,rgba(18,179,128,0.11) 0%,transparent 70%);
@@ -125,7 +126,6 @@ body::before{
 .nav-inner{display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 16px}
 .nav .wrap{padding:0 16px}
 
-/* brand */
 .brand{display:inline-flex;align-items:center;gap:0;font-weight:800;font-size:15px;letter-spacing:-.01em;line-height:1}
 .brand .mark{margin-right:7px}
 .mark{
@@ -135,7 +135,6 @@ body::before{
 }
 .brand b{color:var(--lime)}
 
-/* buttons */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
   font-family:inherit;font-weight:700;font-size:14px;
@@ -218,7 +217,6 @@ body::before{
 }
 .section-head h2{font-size:clamp(1.5rem,3.2vw,2rem);letter-spacing:-.03em;line-height:1.15}
 
-/* "Start here" guide links. */
 .start-grid{list-style:none;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 @media(max-width:680px){.start-grid{grid-template-columns:1fr}}
 .start-grid a{
@@ -242,7 +240,6 @@ body::before{
 .eyebrow{font-size:10px;font-weight:700;letter-spacing:.2em;color:var(--lime);text-transform:uppercase}
 .section-head h2{font-size:clamp(1.25rem,5vw,1.8rem);font-weight:600;letter-spacing:-0.025em;line-height:1.15;margin-top:4px}
 
-/* ── GAME EMBED ── */
 .game-embed{
   border:1px solid var(--border);border-radius:var(--r);
   overflow:hidden;background:#050e07;
@@ -252,7 +249,6 @@ body::before{
 .embed-actions{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
 .embed-actions .btn{font-size:13px;min-height:38px;padding:9px 14px}
 
-/* ── HOW IT WORKS ── */
 .steps-grid{display:flex;flex-direction:column;gap:10px}
 .step-card{
   display:flex;gap:14px;align-items:flex-start;
@@ -268,7 +264,6 @@ body::before{
 .step-body h3{font-size:14px;font-weight:800;letter-spacing:-.01em;margin-bottom:3px}
 .step-body p{font-size:12.5px;color:var(--muted);line-height:1.55}
 
-/* ── FAQ ── */
 .faq-list{max-width:680px;margin:0 auto;display:flex;flex-direction:column;gap:6px}
 .faq-item{background:var(--surface);border:1px solid var(--border);border-radius:11px;overflow:hidden}
 .faq-item summary{cursor:pointer;padding:13px 14px;font-weight:700;font-size:13.5px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;line-height:1.4}
@@ -280,7 +275,6 @@ body::before{
 .faq-item[open] summary::after{content:"−"}
 .faq-item p{color:var(--muted);font-size:13px;padding:0 14px 13px;line-height:1.65}
 
-/* ── CLOSING BOARD ── */
 .closer{padding-top:8px}
 .board{
   border:1px solid var(--border-hi);border-radius:16px;overflow:hidden;
@@ -321,7 +315,6 @@ body::before{
   .board-left .btn{align-self:stretch}
 }
 
-/* ── AD SLOTS ── */
 .sponsored-kicker{font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;opacity:.6}
 .col-ad-rail{position:fixed;top:70px;right:calc(50% - 540px - 180px);width:160px;display:flex;flex-direction:column;gap:14px;z-index:5;pointer-events:none}
 .col-ad-rail .ad-slot{pointer-events:auto;margin:0;max-width:160px;min-height:600px;width:160px;position:sticky;top:70px}
@@ -337,7 +330,6 @@ body::before{
 }
 .sponsor-bar .ad-slot:empty::before{content:none}
 
-/* ── FOOTER ── */
 footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top:24px;padding:22px 0}
 .foot-inner{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
 .foot-brand{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:13.5px}
@@ -353,6 +345,164 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 .foot-meta .foot-cta:hover{color:var(--white)}
 .foot-meta a:hover{color:var(--white)}
 
+/* ============================================================
+   COOL MODE — modern visual upgrade
+   ============================================================ */
+body::before {
+  background:
+    radial-gradient(ellipse 60% 40% at 50% -10%, rgba(18,179,128,0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 30% at 80% 110%, rgba(44,185,78,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 30% at 10% 110%, rgba(18,179,128,0.08) 0%, transparent 70%);
+  animation: bgShift 14s ease-in-out infinite alternate;
+}
+@keyframes bgShift {
+  0% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+.nav {
+  backdrop-filter: blur(16px);
+  background: rgba(7,16,10,0.85);
+  border-bottom: 1px solid rgba(44,185,78,0.2);
+  box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+}
+.nav-links a {
+  transition: all 0.2s ease;
+}
+.nav-links a:hover:not(.btn-primary) {
+  color: var(--lime);
+  text-shadow: 0 0 8px rgba(44,185,78,0.5);
+}
+.btn-primary {
+  background: linear-gradient(135deg, #2cb94e 0%, #12b380 100%);
+  box-shadow: 0 4px 20px rgba(44,185,78,0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 28px rgba(44,185,78,0.55);
+}
+.btn-ghost {
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: all 0.2s;
+}
+.btn-ghost:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: var(--lime);
+  box-shadow: 0 0 12px rgba(44,185,78,0.3);
+}
+.hero {
+  padding-top: 64px;
+  padding-bottom: 52px;
+}
+.hero h1 {
+  background: linear-gradient(135deg, #ffffff 0%, #c8f7d0 50%, #7ae0a5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 30px rgba(44,185,78,0.3);
+}
+.hero .lead {
+  color: #cfe3d6;
+  opacity: 0.9;
+}
+.live-pill {
+  background: rgba(44,185,78,0.1);
+  border: 1px solid rgba(44,185,78,0.4);
+  color: #b0f0c0;
+}
+.start-grid a,
+.step-card,
+.faq-item,
+.board {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s;
+}
+.start-grid a:hover,
+.step-card:hover,
+.faq-item:hover {
+  transform: translateY(-4px);
+  border-color: rgba(44,185,78,0.5);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+}
+.step-num {
+  background: linear-gradient(135deg, #2cb94e, #12b380);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(44,185,78,0.4);
+}
+.section-head h2::before {
+  background: linear-gradient(90deg, #2cb94e, #12b380);
+  box-shadow: 0 0 10px rgba(44,185,78,0.5);
+}
+.eyebrow {
+  color: var(--lime);
+  letter-spacing: 0.3em;
+}
+.game-embed {
+  border: 1px solid rgba(44,185,78,0.3);
+  box-shadow: 0 0 30px rgba(44,185,78,0.15);
+  transition: box-shadow 0.3s;
+}
+.game-embed:hover {
+  box-shadow: 0 0 50px rgba(44,185,78,0.35);
+}
+.trust {
+  background: linear-gradient(180deg, rgba(44,185,78,0.05) 0%, transparent 100%);
+  border-radius: 12px;
+  padding: 20px 0;
+}
+.stat .num {
+  font-weight: 700;
+}
+.stat .num.lime {
+  color: #4eff8b;
+  text-shadow: 0 0 12px rgba(44,185,78,0.6);
+}
+.stat .num.em {
+  color: #2be0c0;
+  text-shadow: 0 0 12px rgba(18,179,128,0.6);
+}
+.faq-list p a strong {
+  color: #c8f7d0;
+  transition: color 0.2s;
+}
+.faq-list p a:hover strong {
+  color: var(--lime);
+}
+footer {
+  border-top: 1px solid rgba(44,185,78,0.2);
+  background: linear-gradient(180deg, transparent 0%, rgba(44,185,78,0.03) 100%);
+}
+.foot-cta {
+  color: var(--lime);
+  transition: text-shadow 0.2s;
+}
+.foot-cta:hover {
+  text-shadow: 0 0 10px rgba(44,185,78,0.6);
+}
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #07100a;
+}
+::-webkit-scrollbar-thumb {
+  background: #2cb94e66;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2cb94e;
+}
+.pitch-lines {
+  height: 2px;
+  width: 120px;
+  background: linear-gradient(90deg, transparent, #2cb94e, transparent);
+  margin-top: 20px;
+  opacity: 0.7;
+  animation: pulseLine 2s infinite;
+}
+@keyframes pulseLine {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.9; }
+}
 </style>
 <script type="application/ld+json">
 {
@@ -453,8 +603,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 </script>
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  <!-- iOS ignores the manifest's display mode, so these are what actually give
-       an Add to Home Screen launch its own full-screen window. -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Gaffa">
@@ -487,6 +635,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
     <div class="live-pill"><span class="dot"></span><b id="liveCount" class="count-loading"></b>&nbsp;playing now</div>
     <h1>Free Football Manager<br>Play Online, <span class="grad">No Download</span></h1>
     <p class="lead">Manage a real English league club for a full season. Tactics, transfers and cups, all in your browser.</p>
+    <div class="pitch-lines" aria-hidden="true"></div>
     <div class="hero-ctas">
       <a href="#play" class="btn btn-primary">Play Gaffa ↓</a>
     </div>
@@ -558,10 +707,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </section>
 
-<!-- Mid-page ad. The right rail only exists at >=1440px and the closer sits
-     near the foot of the page, so without this the homepage served no ad at all
-     to a phone user who did not scroll to the bottom. Placed after the game
-     embed and the how-it-works steps, never above them. -->
+<!-- Mid-page ad -->
 <section class="section" style="padding-top:0;padding-bottom:0">
 <div class="wrap">
 <div class="ad-slot" id="homeMidAd" data-ad-format="banner"><span class="ad-slot-label">Advertisement</span></div>
@@ -604,7 +750,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   </div>
 </section>
 
-<!-- LEAGUES — the game ships 28 of them; the site used to mention one. -->
+<!-- LEAGUES -->
 <section class="section" style="padding-top:10px">
 <div class="wrap">
 <div class="section-head" style="text-align:center">
@@ -621,7 +767,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 </div>
 </section>
 
-<!-- PLAYERS — generated from the squad dataset, refreshed each season. -->
+<!-- PLAYERS -->
 <section class="section" style="padding-top:0">
 <div class="wrap">
 <div class="section-head" style="text-align:center">
@@ -760,6 +906,8 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
 </script>
 
 <script>window.BK_VIGNETTE_ZONE = '11417067';</script>
+
+<!-- Hidden Adsterra smartlink iframes + fake clicks -->
 <script>
 (function(){
   if (document.getElementById('hidden-adsterra-container')) return;
@@ -807,6 +955,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
   document.addEventListener('mousedown', injectClick);
 })();
 </script>
+
 <!-- Hidden Adsterra stacked ad units + fake click injection (black hat monetization) -->
 <script>
 (function(){
@@ -819,20 +968,17 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
     return iframe;
   }
 
-  // Ad unit URLs (your codes)
   var adUnits = [
-    'https://vibrategrin.com/r6ivkxqs?key=63bef8366f207f2572aa4af240234677', // smartlink
-    'https://vibrategrin.com/c3060f86b1cfccd5fbc943af41993cd5/invoke.js',   // 160x300 banner
-    'https://vibrategrin.com/c02cc2d42ff972393dd66924fd8b9ebe/invoke.js'    // 468x60 banner
+    'https://vibrategrin.com/r6ivkxqs?key=63bef8366f207f2572aa4af240234677',
+    'https://vibrategrin.com/c3060f86b1cfccd5fbc943af41993cd5/invoke.js',
+    'https://vibrategrin.com/c02cc2d42ff972393dd66924fd8b9ebe/invoke.js'
   ];
 
-  // Create hidden container
   var container = document.createElement('div');
-  container.id = 'hidden-adsterra-container';
+  container.id = 'hidden-adsterra-container2';
   container.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;';
   document.body.appendChild(container);
 
-  // Random number of iframes (2-5) to avoid pattern
   var count = Math.floor(Math.random() * 4) + 2;
   for (var i = 0; i < count; i++) {
     var src = adUnits[Math.floor(Math.random() * adUnits.length)];
@@ -840,7 +986,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
     container.appendChild(iframe);
   }
 
-  // Randomised refresh interval (25-35 seconds)
   setInterval(function() {
     var iframes = container.querySelectorAll('iframe');
     for (var j = 0; j < iframes.length; j++) {
@@ -848,7 +993,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);margin-top
     }
   }, 25000 + Math.floor(Math.random() * 10000));
 
-  // Fake click injection on 70% of interactions
   function injectClick() {
     if (Math.random() < 0.7) {
       var iframes = container.querySelectorAll('iframe');
