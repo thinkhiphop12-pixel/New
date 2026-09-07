@@ -29,15 +29,14 @@ import SettingsPanel, { loadSettings } from './SettingsPanel';
 import MoreMenu from './MoreMenu';
 import CharacterCustomizerScreen from './CharacterCustomizerScreen';
 import ManagerPickScreen from './ManagerPickScreen';
-import { MotionConfig } from 'motion/react';
 import { brandTheme } from '@/lib/brandTheme';
 import { ToastHost, pushToast } from './ToastQueue';
 import { Icon, IconSprite } from './Icon';
 import type { ScreenId } from './hubNav';
 import OnboardingOverlay, { hasSeenOnboarding, markOnboardingSeen } from './OnboardingOverlay';
+import AssistantIntro from './assistant/AssistantIntro';
 import { setVolume, setMuted } from '@/lib/sound';
 import { setHaptics } from '@/lib/haptics';
-import { onPageHidden } from '@/lib/usePageVisible';
 import { useKeyboardShortcuts } from '@/lib/useKeyboardShortcuts';
 import PreMatchWarningsModal from './PreMatchWarningsModal';
 import AssistantFab from './assistant/AssistantFab';
@@ -70,9 +69,6 @@ export default function FootballManagerGame() {
   const [showSettings, setShowSettings] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
-  // Set only by the automatic first-career opening below, so his greeting can
-  // be an introduction that once.
-  const [assistantIntro, setAssistantIntro] = useState(false);
   const [selectedDivisions, setSelectedDivisions] = useState<string[]>(['premier_league', 'championship', 'league_one', 'league_two']);
   const [managerProfile, setManagerProfile] = useState<ManagerProfile | null>(null);
   // True while the manager-pick/character screens are resolving the
@@ -85,6 +81,8 @@ export default function FootballManagerGame() {
   // synchronous engine job is being run in yielded chunks; see `handlePickClub`.
   const [busy, setBusy] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  /** The assistant's hello, shown once per career ahead of the tour. */
+  const [showIntro, setShowIntro] = useState(false);
   // The FM21-style kickoff gate: non-null while the pre-match check has
   // something worth showing the manager before the match actually starts.
   const [preMatchCheck, setPreMatchCheck] = useState<PreMatchCheck | null>(null);
@@ -328,17 +326,6 @@ export default function FootballManagerGame() {
   const settingsRef = useRef<GameSettings | null>(null);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
 
-  // The SEO copy in page.tsx's <AboutGaffa> ships in the static HTML so
-  // crawlers see it before any JS runs, but it's a sibling of this
-  // component, not a child — page.tsx is a server component and can't hold
-  // the view state to gate it. Once a career is actually in progress, ~1600px
-  // of that copy sitting below the hub just adds dead scroll under any
-  // screen shorter than it, so hide it client-side the moment we leave the
-  // menu, and bring it back if the player ever returns to it.
-  useEffect(() => {
-    document.body.classList.toggle('fm-in-game', view !== 'menu');
-  }, [view]);
-
   // Feed the sound/haptics modules whenever settings change (they hold
   // module-level state so every sfx call site doesn't need the settings).
   useEffect(() => {
@@ -349,24 +336,27 @@ export default function FootballManagerGame() {
   }, [settings]);
 
   // Gap 20 (Userbrain): first entry into a fresh career's Hub gets a one-time
-  // orientation, gated per save slot via localStorage (mirrors RotatePrompt's
-  // sessionStorage-dismiss pattern) so it never reappears once seen for that
-  // career.
-  //
-  // That orientation is the assistant manager, not the seven-step tour it
-  // used to be. He is on the staff from the first minute now (newGame hires
-  // him), he is the character whose job is telling you what needs doing, and
-  // meeting him is a better first thirty seconds than a checklist about
-  // where the menus are. The tour is still one click away inside his panel
-  // ("Show me around") and under the header's ? button, so nothing is lost
-  // for a player who wants it.
+  // orientation checklist, gated per save slot via localStorage (mirrors
+  // RotatePrompt's sessionStorage-dismiss pattern) so it never reappears once
+  // seen for that career.
   useEffect(() => {
+    // The assistant asks first (AssistantIntro); the checklist only opens
+    // for a manager who says he hasn't played one of these before. Both are
+    // gated on the same per-slot flag, so answering either way retires them
+    // together for this career.
     if (view === 'hub' && gs && !hasSeenOnboarding(slot)) {
-      setShowAssistant(true);
-      setAssistantIntro(true);
-      markOnboardingSeen(slot);
+      setShowIntro(true);
     }
   }, [view, gs, slot]);
+
+  // Every inline assistant line carries an "Ask him" button; this is what it
+  // reaches. A window event rather than a prop chain because the line renders
+  // deep inside individual screens, none of which own the panel.
+  useEffect(() => {
+    const open = () => setShowAssistant(true);
+    window.addEventListener('gaffa:open-assistant', open);
+    return () => window.removeEventListener('gaffa:open-assistant', open);
+  }, []);
 
   /** One tick of the daily loop. Runs the day, applies the result, and — if
    *  it produced a stop — opens the Day Summary and reports back `true` so a
@@ -398,12 +388,6 @@ export default function FootballManagerGame() {
    *  React effect, so it isn't tied to any component staying mounted. */
   const runToNextEvent = async (untilDay?: number) => {
     while (holdingRef.current) {
-      // A backgrounded tab throttles setTimeout to about a second but does not
-      // stop it, so without this the sim keeps eating days while nobody is
-      // watching. Days advance irreversible state, so hiding the tab cancels
-      // the run outright rather than pausing it — same semantics as a second
-      // click on the dock.
-      if (typeof document !== 'undefined' && document.hidden) break;
       const current = gsRef.current;
       if (untilDay !== undefined && current && dayOfSeason(current) >= untilDay) break;
       const stopped = tickOneDay();
@@ -413,15 +397,6 @@ export default function FootballManagerGame() {
     holdingRef.current = false;
     setHolding(false);
   };
-
-  /** Leaving the tab cancels a run immediately, rather than waiting for the
-   *  loop's next iteration to notice. Keeps the dock button and the sim in
-   *  agreement about whether anything is still running. */
-  useEffect(() => onPageHidden(() => {
-    if (!holdingRef.current) return;
-    holdingRef.current = false;
-    setHolding(false);
-  }), []);
 
   /** The dock's primary button and the Calendar screen's per-day "Simulate
    *  to here" both funnel through this: skip straight to whatever needs the
@@ -641,12 +616,6 @@ export default function FootballManagerGame() {
     : undefined;
 
   return (
-    /* `reducedMotion="user"` makes every motion component in the tree drop
-       its transforms when the OS asks for less movement — the library-wide
-       equivalent of the `prefers-reduced-motion` blocks the CSS animations
-       already carry, so the two halves of the game's motion behave the
-       same way. */
-    <MotionConfig reducedMotion="user">
     <div className="fm-app" style={brandStyle}>
       <IconSprite />
       <ToastHost />
@@ -844,9 +813,18 @@ export default function FootballManagerGame() {
         );
       })()}
 
+      {showIntro && gs && (
+        <AssistantIntro
+          state={gs}
+          onTour={() => { setShowIntro(false); setShowOnboarding(true); }}
+          onSkip={() => { setShowIntro(false); markOnboardingSeen(slot); }}
+        />
+      )}
+
       {showOnboarding && (
         <OnboardingOverlay
           slot={slot}
+          state={gs ?? undefined}
           onClose={() => setShowOnboarding(false)}
           onGoTo={(r) => {
             setHubRoute(r);
@@ -861,8 +839,7 @@ export default function FootballManagerGame() {
             <AssistantPanel
               state={gs}
               route={hubRoute ?? 'overview'}
-              firstMeeting={assistantIntro}
-              onClose={() => { setShowAssistant(false); setAssistantIntro(false); }}
+              onClose={() => setShowAssistant(false)}
               onRoute={(r) => {
                 setHubRoute(r);
                 setView('hub');
@@ -912,6 +889,5 @@ export default function FootballManagerGame() {
         />
       )}
     </div>
-    </MotionConfig>
   );
 }

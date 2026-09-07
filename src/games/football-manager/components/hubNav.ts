@@ -1,5 +1,5 @@
 import type { GameState } from '@/engine/types';
-import { isLineupValid } from '@/engine/teamManagement';
+import { isLineupValid, getSquad } from '@/engine/teamManagement';
 import { isClubAlive } from '@/engine/cups';
 import { isContinentalClubAlive } from '@/engine/europeanCup';
 import type { IconName } from './Icon';
@@ -29,7 +29,7 @@ import type { IconName } from './Icon';
 export type ScreenId =
   | 'overview' | 'calendar' | 'inbox'
   | 'squad' | 'tactics'
-  | 'training' | 'one-to-one' | 'academy'
+  | 'training' | 'fitness' | 'one-to-one' | 'academy'
   | 'transfers' | 'scouting' | 'jobs'
   | 'facilities' | 'staff' | 'finances' | 'board'
   | 'table' | 'fixtures' | 'cups' | 'european';
@@ -71,6 +71,11 @@ export const GROUPS: GroupDef[] = [
     icon: 'training',
     screens: [
       { id: 'training', label: 'Team', icon: 'training' },
+      // Fitness was the tail of Team training, which meant the plan and its
+      // consequence could never be read side by side, and only five players
+      // ever showed. Its own tab, with the whole squad and the treatment
+      // room on it.
+      { id: 'fitness', label: 'Fitness', icon: 'fitness' },
       { id: 'one-to-one', label: 'One-to-one', icon: 'person' },
       { id: 'academy', label: 'Academy', icon: 'sprout' },
     ],
@@ -167,6 +172,13 @@ export function screenBadge(state: GameState, id: ScreenId): number {
   // go. The intake expires with the season, so an unanswered class is a real
   // deadline rather than a list that will keep.
   if (id === 'academy') return (state.academyIntake ?? []).length;
+  // Players who are fit to play but shouldn't be picked. Under 50% is the
+  // band the Fitness screen calls "Knackered", and it's the only fitness
+  // number that changes what you do — anything above it is a note, not a
+  // decision, and badging the whole tired half would badge every week.
+  if (id === 'fitness') {
+    return getSquad(state, state.userClubId).filter((p) => p.injuryWeeks === 0 && p.fitness < 50).length;
+  }
   // Empty individual slots. Four unused sessions a week is free development
   // being thrown away, and nothing else in the UI would ever say so.
   if (id === 'one-to-one') {
