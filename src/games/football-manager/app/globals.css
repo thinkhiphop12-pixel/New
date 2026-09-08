@@ -4338,7 +4338,15 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
      background above the tabs or the tabs tucked under the header. */
   .fm-header { height: 40px; padding-left: 12px; padding-right: 12px; }
   .fm-subnav { top: 40px; padding: 5px 0 4px; margin-top: -5px; }
-  .fm-rail { top: 48px; padding: 6px 4px; gap: 1px; }
+  /* `top` stays `auto` here. Under 900px the rail is the fixed bottom dock
+     (`bottom: 0; top: auto`), and setting a `top` as well makes a fixed
+     element stretch between the two edges: it became 342px tall on a 390px
+     landscape viewport, with `align-items: stretch` blowing the active item
+     up to 329px. Chrome measured 429px against a 390px screen — taller than
+     the phone — which is what made landscape look broken. The 48px was
+     copied from the sticky offsets above it, where a `top` is the right
+     tool; on the dock it is not. */
+  .fm-rail { padding: 6px 4px; gap: 1px; }
   .fm-rail__item { padding: 5px 2px; gap: 1px; }
   .fm-rail__icon { width: 16px; height: 16px; }
   .fm-rail__label { font-size: 8.5px; }
