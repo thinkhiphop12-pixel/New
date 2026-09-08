@@ -75,6 +75,7 @@ export function IconSprite() {
       <symbol id="fmi-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><circle cx="8" cy="14.2" r="1.1" fill="currentColor" stroke="none" /><circle cx="12" cy="14.2" r="1.1" fill="currentColor" stroke="none" /><circle cx="16" cy="14.2" r="1.1" fill="currentColor" stroke="none" /></symbol>
       <symbol id="fmi-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></symbol>
       <symbol id="fmi-swap" viewBox="0 0 24 24"><path d="M4 8.5h13.5M14 5l3.5 3.5L14 12M20 15.5H6.5M10 12l-3.5 3.5L10 19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></symbol>
+      <symbol id="fmi-phone" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5" fill="none" stroke="currentColor" strokeWidth="2" /><path d="M10.5 5.5h3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /><circle cx="12" cy="18" r="1.1" fill="currentColor" stroke="none" /></symbol>
     </svg>
   );
 }
@@ -89,7 +90,8 @@ export type IconName =
   | 'stadium' | 'document' | 'sprout' | 'person' | 'star' | 'boot' | 'medal'
   | 'chance' | 'info' | 'sub' | 'corner'
   | 'settings' | 'flag' | 'dice' | 'download' | 'palette' | 'flame'
-  | 'movie' | 'money-out' | 'money-in' | 'block' | 'calendar' | 'lock' | 'swap';
+  | 'movie' | 'money-out' | 'money-in' | 'block' | 'calendar' | 'lock' | 'swap'
+  | 'phone';
 
 export function Icon({
   name,

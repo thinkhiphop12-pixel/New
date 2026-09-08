@@ -75,17 +75,23 @@ export default function AssistantLine({
   const assistant = getAssistant(state);
   if (!assistant) return null;
 
-  // What he leads with here. Anything urgent still wins — a broken lineup
-  // is more use than a description of the screen you're looking at — but on
-  // a quiet screen he explains the screen, which is the whole point of him
-  // being on it. `tips.ts` pushes the explainer last, since the panel reads
-  // that list as a menu; inline, it is the answer to "where am I".
+  // What he leads with here: something urgent, or his read on the situation
+  // in front of you. Never the `screen` topic.
+  //
+  // That topic is `screenExplainer` — a description of the screen you are
+  // looking at — and the screens carrying it mostly open with the same
+  // explanation in their own words. On Training his line read "your squad
+  // trains twice a week and you pick what they work on", directly above a
+  // paragraph reading "your squad trains twice a week and you decide what
+  // each session works on": the same sentence twice, 136px apart. The
+  // screen's own copy is the better of the two — it sits with the controls it
+  // describes and can point at Fitness next door.
+  //
+  // So inline he speaks only when he has something the screen does not.
+  // "What is this screen?" is still a menu item in his panel, one tap from
+  // the button he has on every screen, for the manager who wants it.
   const topics = assistantTopics(state, route);
-  const topic =
-    topics.find((t) => t.urgent)
-    ?? topics.find((t) => t.id === 'here')
-    ?? topics.find((t) => t.id === 'screen')
-    ?? topics[0];
+  const topic = topics.find((t) => t.urgent) ?? topics.find((t) => t.id === 'here');
   if (!topic) return null;
   // An urgent line is news and always shows. Everything else is explanation,
   // and explanation you have closed on this screen stays closed.

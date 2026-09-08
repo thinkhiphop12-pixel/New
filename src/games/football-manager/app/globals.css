@@ -166,7 +166,19 @@
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100dvh; overflow-x: hidden; }
+/* `clip`, not `hidden`.
+ *
+ * Setting `overflow-x: hidden` makes the computed `overflow-y` become `auto`
+ * (CSS Overflow 3: a visible value paired with a non-visible one computes to
+ * auto), which turns body into a scroll container — and a scroll container
+ * silently disables `position: sticky` for everything inside it. So the
+ * header and the sub-nav, both declared sticky below, have never actually
+ * pinned: they scrolled away with the page while the CSS said otherwise.
+ *
+ * `overflow-x: clip` stops the sideways scroll the same way without creating
+ * that container, so sticky works as written. `overflow-y: visible` is
+ * explicit because it is what makes the pair legal. */
+html, body { margin: 0; min-height: 100dvh; overflow-x: clip; overflow-y: visible; }
 
 body {
   background: var(--bg);
@@ -199,6 +211,24 @@ body {
   backdrop-filter: saturate(160%) blur(14px);
   position: sticky; top: 0; z-index: 40;
 }
+
+/* Inside a career the header stops being pinned.
+ *
+ * It and `.fm-subnav` are both sticky, so 114px of a 896px phone was held at
+ * the top on every screen for the whole save, and the fixed bottom rail takes
+ * another 58px: 172px, 19% of the viewport, permanently spent. The header is
+ * the half that earns nothing once you are managing — it carries the BALLKNW
+ * wordmark, the word "Gaffa" and two buttons you press rarely, and you know
+ * which game you are in by then. The sub-nav is the half you steer with.
+ *
+ * So the header scrolls away with the page and the sub-nav takes the pinned
+ * slot. Everything is still there when you arrive at a screen, and the moment
+ * you scroll the game gets those 52px back and keeps them. Outside a career —
+ * the menu, club selection, the manager editor — it stays pinned, because
+ * those screens are where the brand and the More menu are doing their job.
+ */
+.fm-app--career .fm-header { position: static; }
+.fm-app--career .fm-subnav { top: 0; }
 .fm-header__brand {
   font-weight: 800; letter-spacing: 0.5px; color: white;
   font-size: 14px; text-transform: uppercase;
@@ -2743,7 +2773,11 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-preset:hover { border-color: var(--border-bright); transform: translateY(-1px); }
 .fm-preset--on { border-color: var(--green); background: var(--green-dim); }
-.fm-preset__label { display: block; font-size: 13px; font-weight: 900; color: var(--text); }
+.fm-preset__label { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 900; color: var(--text); }
+/* The preset's icon carries the brand accent so the three shortcuts still
+   read as a set at a glance, the way the emoji did — without depending on a
+   font the platform may or may not have, at a size it decides for itself. */
+.fm-preset__icon { flex-shrink: 0; color: var(--brand); }
 .fm-preset__hint { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
 
 .fm-searchbar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import type { GameData, ScenarioId } from '@/engine/types';
 import { SIMULATED_LEAGUE_IDS, clubStartingBudget, formatLeagueBlurb, leagueIdForDivision, leagueName } from '@/engine/gameRules';
 import { formatMoney } from '@/engine/utils';
+import { Icon } from './Icon';
 import { Crest } from './Crest';
 
 /** Scenario club restrictions, applied here on the raw pre-newGame dataset —
@@ -134,7 +135,7 @@ export default function ClubSelectScreen({
       </div>
 
       <div className="fm-club-filter">
-        <span className="fm-club-filter__icon" aria-hidden>🔍</span>
+        <span className="fm-club-filter__icon" aria-hidden><Icon name="binoculars" size={14} /></span>
         <input
           className="fm-club-filter__input"
           placeholder="Filter clubs by name…"

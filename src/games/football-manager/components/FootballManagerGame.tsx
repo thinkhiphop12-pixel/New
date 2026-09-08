@@ -622,7 +622,7 @@ export default function FootballManagerGame() {
     : undefined;
 
   return (
-    <div className="fm-app" style={brandStyle}>
+    <div className={`fm-app${view === 'hub' ? ' fm-app--career' : ''}`} style={brandStyle}>
       <IconSprite />
       <ToastHost />
       <header className="fm-header">

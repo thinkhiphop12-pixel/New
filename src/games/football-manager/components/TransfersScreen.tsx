@@ -21,7 +21,7 @@ import { MIN_SQUAD_SIZE, transferWindow } from '@/engine/gameRules';
 import { weeklyWageBill } from '@/engine/seasonProgression';
 import { clamp, formatMoney } from '@/engine/utils';
 import { traitNames } from '@/engine/traits';
-import { Icon } from './Icon';
+import { Icon, type IconName } from './Icon';
 import PlayerModal from './PlayerModal';
 import { PlayerCard } from './InboxScreen';
 
@@ -105,16 +105,16 @@ function affordability(cost: number, budget: number): Afford {
  * two fields the row already had — whose move it is and how the club replied
  * — instead of leaving the state buried in a tab inside the offer sheet.
  */
-function dealTemperature(n: Negotiation): { text: string; tone: 'good' | 'ok' | 'meh' } {
-  if (n.stage === 'outbid') return { text: '💔 You lost this one', tone: 'meh' };
-  if (n.awaiting === 'club') return { text: '⏳ They’re thinking about it…', tone: 'ok' };
+function dealTemperature(n: Negotiation): { text: string; tone: 'good' | 'ok' | 'meh'; icon: IconName } {
+  if (n.stage === 'outbid') return { text: 'You lost this one', tone: 'meh', icon: 'block' };
+  if (n.awaiting === 'club') return { text: 'They’re thinking about it…', tone: 'ok', icon: 'pause' };
   // The club has replied and it is the user's move — the tone of that reply is
   // the honest read on how close the deal is.
   const reply = n.log.find((m) => m.tone === 'good' || m.tone === 'bad');
-  if (n.stage === 'terms' || n.stage === 'loan_terms') return { text: '🔥 Nearly done — your move', tone: 'good' };
-  if (reply?.tone === 'good') return { text: '🔥 They’re interested — your move', tone: 'good' };
-  if (reply?.tone === 'bad') return { text: '🧊 They didn’t like that — try more', tone: 'meh' };
-  return { text: '👉 Your move', tone: 'ok' };
+  if (n.stage === 'terms' || n.stage === 'loan_terms') return { text: 'Nearly done — your move', tone: 'good', icon: 'flame' };
+  if (reply?.tone === 'good') return { text: 'They’re interested — your move', tone: 'good', icon: 'flame' };
+  if (reply?.tone === 'bad') return { text: 'They didn’t like that — try more', tone: 'meh', icon: 'dash' };
+  return { text: 'Your move', tone: 'ok', icon: 'chevron' };
 }
 
 /**
@@ -123,19 +123,19 @@ function dealTemperature(n: Negotiation): { text: string; tone: 'good' | 'ok' | 
  * wall as the opening move — the dropdowns stay behind "More filters".
  */
 const PRESETS: {
-  id: string; label: string; hint: string;
+  id: string; label: string; hint: string; icon: IconName;
   set: { pos?: Position | 'ALL'; avail?: string; maxAge?: number; minRating?: number; affordable?: boolean };
 }[] = [
   {
-    id: 'bargain', label: '💸 Cheap and good', hint: 'Decent players your club can actually pay for',
+    id: 'bargain', label: 'Cheap and good', icon: 'money-out', hint: 'Decent players your club can actually pay for',
     set: { minRating: 65, avail: 'all', maxAge: 40, affordable: true },
   },
   {
-    id: 'young', label: '🌱 Young talent', hint: 'Under 21, room to grow into a star',
+    id: 'young', label: 'Young talent', icon: 'sprout', hint: 'Under 21, room to grow into a star',
     set: { minRating: 0, avail: 'all', maxAge: 21, affordable: false },
   },
   {
-    id: 'ready', label: '⚡ Ready right now', hint: 'Good enough to walk into your team today',
+    id: 'ready', label: 'Ready right now', icon: 'boot', hint: 'Good enough to walk into your team today',
     set: { minRating: 70, avail: 'available', maxAge: 40, affordable: false },
   },
 ];
@@ -654,7 +654,9 @@ export default function TransfersScreen({
                 aria-pressed={preset === p.id}
                 onClick={() => applyPreset(p.id)}
               >
-                <span className="fm-preset__label">{p.label}</span>
+                <span className="fm-preset__label">
+                  <Icon name={p.icon} size={15} className="fm-preset__icon" /> {p.label}
+                </span>
                 <span className="fm-preset__hint">{p.hint}</span>
               </button>
             ))}
@@ -891,7 +893,9 @@ export default function TransfersScreen({
                             : 'another club beat you to him'}
                         </span>
                         <span className="fm-chiprow">
-                          <span className={`fm-chip fm-chip--${temp.tone}`}>{temp.text}</span>
+                          <span className={`fm-chip fm-chip--${temp.tone}`}>
+                            <Icon name={temp.icon} size={11} /> {temp.text}
+                          </span>
                           {n.rival && (
                             <span className="fm-chip fm-chip--meh">
                               ⚠️ {n.rival.clubName} are bidding too — {formatMoney(n.rival.offer)}
