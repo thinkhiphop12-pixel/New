@@ -4162,14 +4162,24 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 
 /* ---------------------------------------------------- inline assistant line */
 .fm-assistline {
+  position: relative;
   display: flex; align-items: center; gap: 12px;
   background: var(--panel); border: 1px solid var(--border-soft);
   border-left: 3px solid var(--muted-dim);
   border-radius: var(--r-md); padding: 10px 12px; margin-bottom: 12px;
 }
+/* Close the explainer for this screen. Sits in the corner rather than beside
+   the buttons: it is not one of his actions, it is a way to stop him having
+   this one. Kept to a tap target via padding while staying visually small. */
+.fm-assistline__close {
+  position: absolute; top: 2px; right: 2px; display: flex; padding: 7px;
+  background: transparent; border: none; color: var(--muted-dim); cursor: pointer;
+  border-radius: var(--r-sm); line-height: 0;
+}
+.fm-assistline__close:hover { color: var(--text); background: var(--panel-2, transparent); }
 .fm-assistline.is-urgent { border-left-color: var(--red); }
 .fm-assistline.is-good { border-left-color: var(--green); }
-.fm-assistline__body { min-width: 0; flex: 1; }
+.fm-assistline__body { min-width: 0; flex: 1; padding-right: 18px; }
 /* Jump + "Ask him", stacked on a phone and side by side once there's room.
    `flex-shrink: 0` so the buttons keep their labels while the sentence
    beside them wraps. */
