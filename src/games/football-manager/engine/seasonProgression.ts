@@ -430,7 +430,15 @@ export function newGame(
       // The shipped dataset is authored on the base economy (build-gamedata.mjs
       // deliberately stays there), so its baked money is lifted here. Wages are
       // not: calibrateWages recomputes them from these values further down.
-      value: Math.round(p.value * MONEY_SCALE),
+      //
+      // 103 players in the dataset carry no value at all — mostly veterans the
+      // upstream source stopped pricing, but a dozen of them are rated 78+ and
+      // one is an 85. Lifting a zero leaves a zero, and `askingPrice` is a
+      // multiple of value, so those players sat in the market to be signed for
+      // nothing: an 85-rated forward for £0 is not a bargain, it is the
+      // transfer economy switched off. Price them the way the game prices
+      // anyone whose rating moves during a save.
+      value: p.value > 0 ? Math.round(p.value * MONEY_SCALE) : marketValue(p.rating, p.age),
       releaseClause: p.releaseClause == null ? p.releaseClause : Math.round(p.releaseClause * MONEY_SCALE),
       wage: p.wage ?? weeklyWage(p.value, p.rating),
       form: 1,
