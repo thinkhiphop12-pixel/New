@@ -594,10 +594,22 @@ body {
   position: absolute; top: 2px; right: 2px;
 }
 
-/* Pocket: below 900px the same rail becomes the fixed thumb dock. There is
-   no second nav element and no overflow sheet — five items fit across a
-   phone, which is the whole point of grouping the fourteen screens. */
-@media (max-width: 899px) {
+/* Pocket: the same rail becomes the fixed thumb dock. There is no second nav
+   element and no overflow sheet — five items fit across a phone, which is the
+   whole point of grouping the fourteen screens.
+ *
+ * Narrow OR short, not narrow alone. This used to be `max-width: 899px`, and
+ * a large phone lying down is wider than that: an iPhone 15/16 Pro Max in
+ * landscape is 956x440 CSS px, a 15 Pro is 932x430. Both cleared the 900px
+ * desktop threshold on width and were handed the desktop layout — the 72px
+ * vertical icon rail floating beside the horizontal sub-nav, two navigations
+ * at once, on a 430px-tall screen. A 13 mini at 844px got the correct dock,
+ * so the bug only showed on the bigger phones.
+ *
+ * 560px of height is the test for "this is a phone lying down": every phone
+ * in landscape is under it, no tablet or laptop is. The same number already
+ * gates the landscape type-scale block further down this file. */
+@media (max-width: 899px), (max-height: 560px) {
   /* `align-items: flex-start` above is a desktop-row concern (stops the
      sticky rail stretching to the content's height); flipping to a column
      here swaps the cross axis to horizontal, so without resetting it the
@@ -793,7 +805,9 @@ body {
    played. A fixed semantic colour (--gold), not the club --brand, since
    this is status, not chrome. */
 .fm-actiondock__cta--warn { background: var(--gold-gradient); color: #1a0f00; }
-@media (max-width: 899px) {
+/* Matches the dock's own query above — the action bar sits on top of the
+   dock, so the two must switch to the phone layout together. */
+@media (max-width: 899px), (max-height: 560px) {
   /* Gap 3 (Userbrain): bottom: 58px alone doesn't grow with the thumb dock's
      own safe-area padding (.fm-rail, above), so on devices with a tall home
      indicator the dock and the action bar collided and the CTA read as
@@ -872,7 +886,33 @@ body {
    the fixed action dock (~60px) stacked above it, so the ad is never
    rendered unreachable behind them. */
 .fm-bottom-ad { max-width: var(--w-screen); margin: 16px auto 24px; }
-@media (max-width: 899px) { .fm-bottom-ad { margin-bottom: 132px; } }
+
+/* A filled slot gets a frame.
+ *
+ * The ad itself is a third-party iframe and most of them are painted white,
+ * so on this dark UI an unframed slot rendered as a bare white slab in the
+ * middle of the screen — it read as something broken rather than as an ad.
+ * `ads.js` adds `is-filled` once a network has actually painted, so the frame
+ * appears only when there is something to frame: an empty slot stays
+ * invisible rather than leaving a labelled empty box on the page.
+ *
+ * `width: fit-content` keeps the frame tight to the unit (a 486px banner does
+ * not get a 900px border around it), and the label says what it is. */
+.fm-bottom-ad.is-filled {
+  width: fit-content; padding: 8px 10px 10px;
+  background: var(--panel); border: 1px solid var(--border-soft);
+  border-radius: var(--r-lg);
+}
+.fm-bottom-ad.is-filled::before {
+  content: 'Advertisement';
+  display: block; margin-bottom: 6px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+  color: var(--muted-dim); text-align: left;
+}
+.fm-bottom-ad.is-filled iframe, .fm-bottom-ad.is-filled img {
+  display: block; border-radius: var(--r-sm); max-width: 100%;
+}
+@media (max-width: 899px), (max-height: 560px) { .fm-bottom-ad { margin-bottom: 132px; } }
 
 /* ── News ── */
 .fm-news { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
@@ -3863,7 +3903,7 @@ button.fm-player-row:not(:disabled):hover { border-color: var(--border-bright); 
 }
 .fm-about-foot p { margin: 0; }
 
-@media (max-width: 899px) {
+@media (max-width: 899px), (max-height: 560px) {
   .fm-about-foot { padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)); }
 }
 

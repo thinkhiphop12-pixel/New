@@ -116,9 +116,51 @@ function hideBar(snooze) {
   if (snooze) lsSet(K_SNOOZE, String(Date.now() + PWA.snoozeDays * 864e5));
 }
 
+/* iOS has no beforeinstallprompt and never will — Safari installs only
+ * through the Share sheet, by hand. So on iPhone and iPad the bar cannot
+ * offer a button that installs; it can only say where the control is. Which
+ * is worth doing: without it an iPhone user gets no prompt and no
+ * instructions at all, which is most of the traffic on a football site.
+ *
+ * Chrome and Firefox on iOS are Safari underneath and cannot install to the
+ * home screen at all, so they are excluded rather than sent to a Share menu
+ * whose Add to Home Screen entry is not there. */
+function isIosSafari() {
+  try {
+    var ua = navigator.userAgent;
+    var iOS = /iPad|iPhone|iPod/.test(ua)
+      /* iPadOS 13+ reports as a Mac; the touch points give it away. */
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (!iOS) return false;
+    return !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  } catch (e) {
+    return false;
+  }
+}
+
 function showBar() {
   ensureStyles();
   var bar = document.getElementById('bkPwaBar');
+  if (!bar && isIosSafari()) {
+    bar = document.createElement('div');
+    bar.id = 'bkPwaBar';
+    bar.setAttribute('role', 'dialog');
+    bar.setAttribute('aria-label', 'Add Gaffa to your home screen');
+    bar.innerHTML =
+      '<img src="/assets/icon-192.png" alt="" width="38" height="38">' +
+      '<div class="bk-pwa-text"><strong>Add Gaffa to your home screen</strong>' +
+      '<span>Tap the Share button, then <b>Add to Home Screen</b>. ' +
+      'Opens like an app and plays offline.</span></div>' +
+      '<button type="button" class="bk-pwa-no" id="bkPwaNo" aria-label="Dismiss">Got it</button>';
+    document.body.appendChild(bar);
+    bar.querySelector('#bkPwaNo').addEventListener('click', function () {
+      pwaTrack('pwa_ios_hint_dismissed');
+      hideBar(true);
+    });
+    bar.hidden = false;
+    pwaTrack('pwa_ios_hint_offered');
+    return;
+  }
   if (!bar) {
     bar = document.createElement('div');
     bar.id = 'bkPwaBar';
@@ -159,9 +201,41 @@ function showBar() {
   pwaTrack('pwa_install_offered');
 }
 
+/* The gates the Chromium path applies before showing anything: snoozed,
+ * too early in the visit, or another overlay already on screen. Shared so the
+ * iOS hint obeys exactly the same rules rather than inventing its own. */
+function okToOffer() {
+  var snooze = parseInt(lsGet(K_SNOOZE) || '0', 10);
+  if (snooze && Date.now() < snooze) return false;
+
+  var views = parseInt(lsGet(K_VIEWS) || '0', 10) + 1;
+  lsSet(K_VIEWS, String(views));
+  if (views < PWA.minPageviews) return false;
+
+  /* Never stack on the cookie banner or the prize-draw modal. */
+  var banner = document.getElementById('consentBanner');
+  if (banner && !banner.classList.contains('hidden')) return false;
+  var comp = document.getElementById('bkCompOverlay');
+  if (comp && !comp.hidden) return false;
+
+  return true;
+}
+
 function initInstallPrompt() {
   if (!PWA.installButton) return;
   if (alreadyInstalled()) return;
+
+  /* No event is coming on iOS, so the hint is scheduled rather than awaited.
+     The delay lets the cookie banner resolve first — `okToOffer` checks for
+     it, and on a first visit it is still being rendered at this point. */
+  if (isIosSafari()) {
+    setTimeout(function () {
+      if (alreadyInstalled()) return;
+      if (!okToOffer()) return;
+      showBar();
+    }, 4000);
+    return;
+  }
 
   window.addEventListener('beforeinstallprompt', function (e) {
     /* Take control of when this is shown. Left alone, Chromium picks its own
@@ -169,18 +243,7 @@ function initInstallPrompt() {
     e.preventDefault();
     deferredPrompt = e;
 
-    var snooze = parseInt(lsGet(K_SNOOZE) || '0', 10);
-    if (snooze && Date.now() < snooze) return;
-
-    var views = parseInt(lsGet(K_VIEWS) || '0', 10) + 1;
-    lsSet(K_VIEWS, String(views));
-    if (views < PWA.minPageviews) return;
-
-    /* Never stack on the cookie banner or the prize-draw modal. */
-    var banner = document.getElementById('consentBanner');
-    if (banner && !banner.classList.contains('hidden')) return;
-    var comp = document.getElementById('bkCompOverlay');
-    if (comp && !comp.hidden) return;
+    if (!okToOffer()) return;
 
     showBar();
   });
