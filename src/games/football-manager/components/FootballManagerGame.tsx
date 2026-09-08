@@ -58,6 +58,16 @@ export default function FootballManagerGame() {
   const [gs, setGs] = useState<GameState | null>(null);
   const [slot, setSlot] = useState(0);
   const [view, setView] = useState<View>('menu');
+  // Embedded in the homepage's <iframe>, the game's own header repeats what
+  // the page directly above it already says: the BALLKNW wordmark and the
+  // word "Gaffa" appear twice, about 30px apart, which is most of what makes
+  // the embed read as cluttered. The brand half is dropped when we are not
+  // the top window; the buttons stay, because More and the tutorial are still
+  // the only way to reach those things from inside the frame.
+  const [embedded, setEmbedded] = useState(false);
+  useEffect(() => {
+    try { setEmbedded(window.self !== window.top); } catch { setEmbedded(true); }
+  }, []);
   // Which hub screen is open, or `null` for the Hub landing. Owned here
   // rather than inside HubScreen because the `key={view}` fade wrapper
   // remounts HubScreen on every view change — local state would reset the
@@ -625,8 +635,8 @@ export default function FootballManagerGame() {
     <div className={`fm-app${view === 'hub' ? ' fm-app--career' : ''}`} style={brandStyle}>
       <IconSprite />
       <ToastHost />
-      <header className="fm-header">
-        <div className="fm-header__brand">
+      <header className={`fm-header${embedded ? ' fm-header--embedded' : ''}`}>
+        {!embedded && <div className="fm-header__brand">
           <svg width="18" height="18" viewBox="0 0 512 512" style={{ flexShrink: 0 }}>
             <defs>
               <linearGradient id="fmBrandMark" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -638,8 +648,8 @@ export default function FootballManagerGame() {
             <text x="150" y="345" fontFamily="Inter, system-ui, sans-serif" fontWeight="900" fontSize="286" fill="#052411">B</text>
           </svg>
           <span>{"BALL"}<b>{"KNW"}</b></span>
-        </div>
-        <h1 className="fm-header__title">Gaffa</h1>
+        </div>}
+        {!embedded && <h1 className="fm-header__title">Gaffa</h1>}
         <span className="fm-header__spacer" />
         {/* Interactive tutorial, reopenable any time — not just the one-shot
             first-run checklist. Only shown once a career exists, since the

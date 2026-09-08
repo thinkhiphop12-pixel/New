@@ -228,6 +228,11 @@ body {
  * those screens are where the brand and the More menu are doing their job.
  */
 .fm-app--career .fm-header { position: static; }
+
+/* Inside the homepage embed the header keeps only its buttons, so they sit at
+   the right-hand end of a short bar instead of under a second copy of the
+   brand that is already 30px above them, outside the frame. */
+.fm-header--embedded { height: 40px; justify-content: flex-end; }
 .fm-app--career .fm-subnav { top: 0; }
 .fm-header__brand {
   font-weight: 800; letter-spacing: 0.5px; color: white;
