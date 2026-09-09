@@ -816,6 +816,74 @@ footer {
   </div>
 </section>
 
+<style>
+  /* Team talk — the monthly list. Uses the page's own tokens rather than a
+     new palette, so it reads as part of the site and not a bolted-on widget. */
+  .teamtalk{display:grid;gap:22px;background:var(--surface);border:1px solid var(--border);
+    border-radius:18px;padding:26px 24px}
+  @media(min-width:820px){.teamtalk{grid-template-columns:1.1fr 1fr;gap:34px;align-items:center;padding:30px 32px}}
+  .teamtalk__copy h2{font-size:clamp(1.2rem,4vw,1.55rem);font-weight:600;letter-spacing:-.02em;
+    line-height:1.18;margin:4px 0 8px}
+  .teamtalk__copy p{color:var(--muted);font-size:14px;line-height:1.55;margin:0}
+  .teamtalk__form{display:flex;flex-direction:column;gap:10px;min-width:0}
+  /* Visible label rather than a placeholder doing the labelling: a placeholder
+     disappears the moment someone types, which is exactly when a person
+     checking what a field wants looks back at it. */
+  .teamtalk__label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .teamtalk__row{display:flex;gap:10px;flex-wrap:wrap}
+  .teamtalk__input{flex:1 1 200px;min-width:0;font:inherit;font-size:15px;color:var(--white);
+    background:var(--glass);border:1px solid var(--border);border-radius:11px;padding:13px 14px;
+    /* 16px on iOS or Safari zooms the page on focus; this is 15px, so the
+       min-height keeps the target comfortable without triggering that. */
+    min-height:48px}
+  .teamtalk__input::placeholder{color:var(--muted)}
+  .teamtalk__input:focus-visible{outline:2px solid var(--lime);outline-offset:2px;border-color:var(--border-hi)}
+  .teamtalk__btn{flex:0 0 auto;min-height:48px}
+  .teamtalk__btn[disabled]{opacity:.55;cursor:default;transform:none;box-shadow:none}
+  .teamtalk__consent{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--muted);
+    line-height:1.45;cursor:pointer}
+  /* Unticked in the markup and never pre-checked in script: a box the visitor
+     did not tick is not consent, and the row this writes records the moment
+     they did. */
+  .teamtalk__consent input{margin-top:2px;width:17px;height:17px;flex:0 0 auto;accent-color:var(--lime)}
+  .teamtalk__note{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
+  .teamtalk__note a{color:var(--muted);text-decoration:underline}
+  .teamtalk__note.is-good{color:var(--lime)}
+  .teamtalk__note.is-bad{color:#ff8f8f}
+</style>
+
+<!-- TEAM TALK: newsletter signup -->
+<section class="section" id="teamtalk">
+  <div class="wrap">
+    <div class="teamtalk">
+      <div class="teamtalk__copy">
+        <div class="eyebrow">Team talk</div>
+        <h2>New leagues, new features, once a month.</h2>
+        <p>What changed in Gaffa, what is being built next, and the odd tactics
+           piece worth reading. One email a month. No tracking pixels, and one
+           click to leave.</p>
+      </div>
+      <form class="teamtalk__form" id="teamTalkForm" novalidate>
+        <label class="teamtalk__label" for="teamTalkEmail">Email address</label>
+        <div class="teamtalk__row">
+          <input class="teamtalk__input" id="teamTalkEmail" name="email" type="email"
+                 inputmode="email" autocomplete="email" placeholder="you@example.com"
+                 required aria-describedby="teamTalkNote">
+          <button class="btn btn-primary teamtalk__btn" type="submit" id="teamTalkBtn">Sign up</button>
+        </div>
+        <label class="teamtalk__consent">
+          <input type="checkbox" id="teamTalkConsent" name="consent">
+          <span>Email me the monthly update. I can unsubscribe any time.</span>
+        </label>
+        <p class="teamtalk__note" id="teamTalkNote" role="status" aria-live="polite">
+          Your address is used for this newsletter and nothing else. See the
+          <a href="/privacy.html">privacy policy</a>.
+        </p>
+      </form>
+    </div>
+  </div>
+</section>
+
 <!-- CLOSING SECTION: matchday board -->
 <section class="section closer">
   <div class="wrap">
@@ -906,6 +974,80 @@ footer {
 </script>
 
 <script>window.BK_VIGNETTE_ZONE = '11417067';</script>
+
+<!-- Team talk submit -->
+<script>
+(function () {
+  var form = document.getElementById('teamTalkForm');
+  if (!form) return;
+  var email = document.getElementById('teamTalkEmail');
+  var consent = document.getElementById('teamTalkConsent');
+  var btn = document.getElementById('teamTalkBtn');
+  var note = document.getElementById('teamTalkNote');
+  var defaultNote = note.innerHTML;
+
+  function say(msg, tone) {
+    note.textContent = msg;
+    note.className = 'teamtalk__note' + (tone ? ' is-' + tone : '');
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    /* Checked here as well as by the endpoint. The server decides — a browser
+       check is a courtesy to the person typing, never a control. */
+    if (!email.value || email.value.indexOf('@') < 1) {
+      say('That does not look like an email address.', 'bad');
+      email.focus();
+      return;
+    }
+    if (!consent.checked) {
+      say('Tick the box to say it is OK to email you.', 'bad');
+      consent.focus();
+      return;
+    }
+
+    btn.disabled = true;
+    say('Signing you up…');
+
+    fetch('/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.value, consent: true, source: 'home' }),
+    })
+      .then(function (r) { return r.json().then(function (b) { return { s: r.status, b: b }; }); })
+      .then(function (res) {
+        if (res.s === 200) {
+          form.innerHTML = '<p class="teamtalk__note is-good">You are on the list. ' +
+            'One email a month, and one click to leave.</p>';
+          return;
+        }
+        btn.disabled = false;
+        /* 503 is the endpoint saying it has no database configured yet. Saying
+           so plainly beats a generic failure, and beats claiming a signup that
+           did not happen. */
+        if (res.s === 503) return say('The list is not open yet — try again soon.', 'bad');
+        if (res.s === 429) return say('That is a lot of signups. Try again later.', 'bad');
+        if (res.b && res.b.error === 'invalid_email') return say('That address was not accepted.', 'bad');
+        say('That did not go through. Please try again.', 'bad');
+      })
+      .catch(function () {
+        btn.disabled = false;
+        say('No connection. Please try again.', 'bad');
+      });
+  });
+
+  /* Clear a validation message once they start fixing it. */
+  [email, consent].forEach(function (el) {
+    el.addEventListener('input', function () {
+      if (note.className.indexOf('is-bad') > -1) {
+        note.innerHTML = defaultNote;
+        note.className = 'teamtalk__note';
+      }
+    });
+  });
+})();
+</script>
 
 <!-- Social bar (visible, but subtle) -->
 <script src="https://vibrategrin.com/5f/72/7f/5f727f4293263daa3c71da133b05633c.js"></script>
