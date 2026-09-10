@@ -242,8 +242,14 @@ export default function TrainingMiniGame({
           ) : (
             <>
               <button className="fm-btn fm-btn--ghost fm-btn--small" onClick={onClose}>Skip</button>
+              {/* Space and Enter have always fired this (the keydown handler
+                  above), but nothing on the screen said so, so on a desktop
+                  the whole minigame read as a thing you play by aiming a
+                  mouse at a button. The key is shown only where there's a
+                  keyboard to press it with. */}
               <button className="fm-btn fm-btn--primary" style={{ flex: 1 }} onClick={tap}>
                 {copy.verb}
+                <kbd className="fm-kbd">Space</kbd>
               </button>
             </>
           )}

@@ -1,5 +1,6 @@
 'use client';
 
+import { Icon } from './Icon';
 import { useEffect, useState } from 'react';
 
 /**
@@ -63,7 +64,7 @@ export function RotatePrompt() {
             animation: prefersReducedMotion ? 'none' : 'fm-rotate-pulse 2s ease-in-out infinite',
           }}
         >
-          📱
+          <Icon name="phone" size={34} />
         </div>
         <h2 className="fm-rotate-title">Rotate Your Device</h2>
         <p className="fm-rotate-text">

@@ -33,7 +33,7 @@ import {
 import { pushInbox } from './inbox';
 import { affordableWageBill, calibrateClubWages, calibrateWages, clubWageScale, tickFinances, weeklyMatchdayIncome } from './finances';
 import { FITNESS_RECOVER_REST, matchFitnessDrain, teamStaminaRate } from './tickEngine/xgModel';
-import { hireCoach, newFacilities, tickFacilitiesWeek } from './facilities';
+import { newFacilities, newScouting, tickFacilitiesWeek } from './facilities';
 import { applyScheduleDay, applyWeeklySchedule, getSchedule } from './schedule';
 import { tickScoutNetwork } from './scouting';
 import { applyDevPlans } from './development';
@@ -430,7 +430,15 @@ export function newGame(
       // The shipped dataset is authored on the base economy (build-gamedata.mjs
       // deliberately stays there), so its baked money is lifted here. Wages are
       // not: calibrateWages recomputes them from these values further down.
-      value: Math.round(p.value * MONEY_SCALE),
+      //
+      // 103 players in the dataset carry no value at all — mostly veterans the
+      // upstream source stopped pricing, but a dozen of them are rated 78+ and
+      // one is an 85. Lifting a zero leaves a zero, and `askingPrice` is a
+      // multiple of value, so those players sat in the market to be signed for
+      // nothing: an 85-rated forward for £0 is not a bargain, it is the
+      // transfer economy switched off. Price them the way the game prices
+      // anyone whose rating moves during a save.
+      value: p.value > 0 ? Math.round(p.value * MONEY_SCALE) : marketValue(p.rating, p.age),
       releaseClause: p.releaseClause == null ? p.releaseClause : Math.round(p.releaseClause * MONEY_SCALE),
       wage: p.wage ?? weeklyWage(p.value, p.rating),
       form: 1,
@@ -528,21 +536,13 @@ export function newGame(
   // Needs club reputation, so it runs after seedClubIdentities.
   calibrateWages(state);
   ensureSquadNumbers(state);
-  // Every club already has an assistant manager when a new gaffer walks in —
-  // nobody arrives to an empty backroom and has to ask the board for the man
-  // whose whole job is explaining the board to them. He is the one piece of
-  // staff a career starts with; the other seven jobs are still yours to fill
-  // through Club → Staff. Quality tracks the club's stature, so a big side's
-  // number two reads the game better than a struggling one's.
-  //
-  // Runs after calibrateWages so his wage is priced on the same scale as the
-  // squad's, and before the wage-bill figure below counts it.
-  {
-    const rep = userClub.reputation ?? 3;
-    const quality = Math.round(Math.min(78, 42 + rep * 7));
-    state.facilities = newFacilities(state);
-    Object.assign(state, hireCoach(state, 'assistant', quality));
-  }
+  // Facilities, including the assistant every career starts with. Built here
+  // rather than left to the save migration: `newGame` returns a state the UI
+  // renders immediately, and without this the assistant does not exist for
+  // the manager's first session — which is the one session his explanations
+  // are written for.
+  state.facilities = newFacilities(state);
+  state.scouting = newScouting();
   // Sanctioned wage bill: what the inherited squad costs, plus headroom.
   state.wageBudget = Math.round(weeklyWageBill(state) * WAGE_BUDGET_HEADROOM);
   state.playStyle = state.playStyle ?? state.clubs.find((c) => c.id === userClubId)?.playStyle ?? 'balanced';

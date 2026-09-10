@@ -360,10 +360,25 @@ export function askingGuide(p: Player, sellerRating: number, st: MarketStatus): 
 /* ----------------------------------------------------- the state machine */
 
 /**
- * Open a set of negotiating positions. Selling clubs ask 18-28% over their own
- * valuation and won't go below their minimum at all — only a player who has
- * downed tools or is running his contract down gets sold under value, and
- * that's the availability discount, not a willingness to be haggled down.
+ * Open a set of negotiating positions, anchored on the price the market
+ * listing advertises.
+ *
+ * That anchor used to be missing, and it made every club look greedy. The
+ * listing shows `askingGuide` — `value * askingMultiplier`, where the
+ * multiplier is already the seller's premium over their own valuation (1.35x
+ * for an ordinary player, up to 1.9x for one much better than the side he is
+ * in). Negotiation then opened at a *further* 18-28% over that, and set a
+ * hard floor above it too. Measured across ~3,000 listed players, the
+ * advertised price was below the seller's minimum 100% of the time: median
+ * floor 1.06x the shown price, median opening demand 1.23x it. Bidding the
+ * number on the screen was refused every time, for every player in the game.
+ *
+ * That is the same double-charge the renewal formula had — a premium applied
+ * once in the multiplier and again on top of it. The multiplier is the
+ * premium, so the opening ask is the advertised price, and the floor sits
+ * under it. Paying the sticker price now buys the player; haggling below it
+ * is what the rounds are for, and the availability discounts (unsettled,
+ * listed, running down a contract) still do their work inside the multiplier.
  */
 export function startNegotiation(
   player: Player,
@@ -378,9 +393,13 @@ export function startNegotiation(
   const potBoost = (player.potential ?? player.rating) - player.rating >= 8 ? 0.04 : 0;
   const repBoost = sellerRating >= 78 && player.rating >= 80 ? 0.04 : 0;
   const avail = askingMultiplier(player, sellerRating, st);
-  const asking = roundFee(player.value * avail * (1.18 + rand(0, 10, rng) / 100));
-  const minMult = avail * Math.max(0.98, 1.03 + youngBoost + potBoost + repBoost + rand(0, 6, rng) / 100);
-  const minFee = Math.max(10_000, roundFee(player.value * minMult));
+  // The advertised price, exactly as `askingGuide` renders it on the listing.
+  const asking = Math.max(10_000, roundFee(player.value * avail));
+  // How far under the sticker price this seller will actually go. A club with
+  // a young player, one with room to grow, or a prize asset holds nearer the
+  // asking price; an ordinary sale has more give in it.
+  const give = Math.max(0, 0.10 - youngBoost - potBoost - repBoost - rand(0, 4, rng) / 100);
+  const minFee = Math.max(10_000, roundFee(player.value * avail * (1 - give)));
   // Player wants 20-40% more than his current wage — one desperate to leave asks less.
   const wageMult = (1.25 + rand(3, 20, rng) / 100) * (st.unsettled ? 0.92 : 1);
   // Never less than what he'd want as a fresh signing elsewhere (spec module

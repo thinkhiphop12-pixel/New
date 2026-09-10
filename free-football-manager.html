@@ -53,9 +53,16 @@
       "description": "A ranked, honest comparison of the free football management games available in 2026 across browser, Android and iOS.",
       "datePublished": "2026-08-07",
       "dateModified": "2026-08-07",
-      "author": { "@type": "Organization", "name": "BALLKNW" },
-      "publisher": { "@id": "https://www.ballknw.com/#org" },
-      "isPartOf": { "@id": "https://www.ballknw.com/#website" }
+      "author": {
+        "@type": "Organization",
+        "name": "BALLKNW"
+      },
+      "publisher": {
+        "@id": "https://www.ballknw.com/#org"
+      },
+      "isPartOf": {
+        "@id": "https://www.ballknw.com/#website"
+      }
     },
     {
       "@type": "FAQPage",
@@ -63,32 +70,58 @@
         {
           "@type": "Question",
           "name": "What is the best free football manager game?",
-          "acceptedAnswer": { "@type": "Answer", "text": "It depends what you want. For competitive multiplayer against real managers, Top Eleven has the largest player base. For a single-player season you can finish in one sitting with nothing to install, Gaffa runs in the browser. For the deepest simulation, Football Manager is the benchmark but it is a paid game, not a free one." }
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "It depends what you want. For competitive multiplayer against real managers, Top Eleven has the largest player base. For a single-player season you can finish in one sitting with nothing to install, Gaffa runs in the browser. For the deepest simulation, Football Manager is the benchmark but it is a paid game, not a free one."
+          }
         },
         {
           "@type": "Question",
           "name": "Are there free football manager games with no download?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Browser-based management games run without any install. Gaffa is one: you open it in Chrome or Safari, pick a club and manage a season, and the save is written to your browser's local storage. Top Eleven also offers browser play alongside its mobile apps." }
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Browser-based management games run without any install. Gaffa is one: you open it in Chrome or Safari, pick a club and manage a season, and the save is written to your browser's local storage. Top Eleven also offers browser play alongside its mobile apps."
+          }
         },
         {
           "@type": "Question",
           "name": "Can you play a football manager game offline?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Single-player management games generally work offline once loaded, because the simulation runs on your device. Games built around live competitive leagues (Top Eleven and OFM) need a connection, because your matches are played against other managers in real time." }
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Single-player management games generally work offline once loaded, because the simulation runs on your device. Games built around live competitive leagues (Top Eleven and OFM) need a connection, because your matches are played against other managers in real time."
+          }
         },
         {
           "@type": "Question",
           "name": "Do free football manager games have paywalls?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Most free-to-play management games monetise through premium currency or energy timers that slow progress until you pay. That is the main trade-off with Top Eleven and OFM. Games with no progression economy at all, like Gaffa, have nothing to sell you mid-season." }
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Most free-to-play management games monetise through premium currency or energy timers that slow progress until you pay. That is the main trade-off with Top Eleven and OFM. Games with no progression economy at all, like Gaffa, have nothing to sell you mid-season."
+          }
         },
         {
           "@type": "Question",
           "name": "What games are like Football Manager but free?",
-          "acceptedAnswer": { "@type": "Answer", "text": "The closest free alternatives are Top Eleven, OFM (Online Football Manager), Soccer Manager, and browser games such as Gaffa. None match the depth of the full Football Manager release, which simulates dozens of leagues in detail: they trade breadth for being free and quicker to play." }
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The closest free alternatives are Top Eleven, OFM (Online Football Manager), Soccer Manager, and browser games such as Gaffa. None match the depth of the full Football Manager release, which simulates dozens of leagues in detail: they trade breadth for being free and quicker to play."
+          }
         },
         {
           "@type": "Question",
           "name": "How long does a season take in a free football manager game?",
-          "acceptedAnswer": { "@type": "Answer", "text": "It varies enormously by design. Live multiplayer games like Top Eleven and OFM run seasons on a fixed real-world calendar, typically several weeks. Single-player games let you simulate at your own pace, so a season can be finished in one sitting." }
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "It varies enormously by design. Live multiplayer games like Top Eleven and OFM run seasons on a fixed real-world calendar, typically several weeks. Single-player games let you simulate at your own pace, so a season can be finished in one sitting."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is there a free version of Football Manager?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Sports Interactive's Football Manager is a paid game on every platform it ships on, and free trials are occasional rather than permanent. The free games listed here are separate titles, not cut-down versions of it."
+          }
         }
       ]
     }
@@ -96,7 +129,11 @@
 }
   </script>
   <style>
-    .guide-content{max-width:820px}
+    /* No max-width override here. explainer.css lays a guide with a <nav
+       class="toc"> out as two columns — content plus a 232px sidebar — and
+       capping the grid at 820px left the content column ~487px, narrow enough
+       that the six-column comparison table lost its last column off the edge.
+       The stylesheet's own `:has(> .toc)` rule sizes it correctly. */
     .pick{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px 24px;margin:18px 0}
     .pick h3{margin-top:0;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
     .rank{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#052411;background:linear-gradient(135deg,#2ab248,#12b380);padding:4px 9px;border-radius:6px}
@@ -107,6 +144,47 @@
     .platform-switch a{font-size:13px;font-weight:700;color:var(--muted);background:var(--glass);border:1px solid var(--border);padding:9px 15px;border-radius:10px}
     .platform-switch a:hover{color:var(--white);border-color:var(--border-hi)}
     .disclosure{font-size:12.5px;color:var(--muted);background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin:20px 0}
+
+    /* Lede CTA — the recommendation, actionable where it is made. */
+    .lede-cta{display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+      background:linear-gradient(135deg,rgba(44,185,78,.13),rgba(18,179,128,.07));
+      border:1px solid rgba(44,185,78,.34);border-radius:16px;padding:18px 20px;margin:22px 0 16px;
+      box-shadow:var(--shadow-md)}
+    .lede-cta__text{flex:1 1 260px;min-width:0}
+    .lede-cta__kicker{margin:0 0 4px;font-size:11px;font-weight:800;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--lime)}
+    .lede-cta__line{margin:0;font-size:15px;font-weight:600;color:var(--white);line-height:1.45}
+    .lede-cta__btn{flex:0 0 auto;font-size:15px;padding:13px 22px}
+    @media(max-width:560px){.lede-cta{padding:16px}.lede-cta__btn{width:100%;text-align:center}}
+
+    /* At a glance, so the claim above is furnished rather than asserted. */
+    .quickstats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+      list-style:none;margin:0 0 22px;padding:0}
+    .quickstats li{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+      padding:12px 8px;text-align:center}
+    .quickstats b{display:block;font-family:var(--font-display,inherit);font-size:22px;
+      font-weight:800;color:var(--white);line-height:1.1}
+    .quickstats span{display:block;margin-top:3px;font-size:10.5px;font-weight:700;
+      letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+    @media(max-width:460px){.quickstats{grid-template-columns:repeat(2,1fr)}}
+
+    /* The #1 pick reads as the pick. */
+    .pick--top{border-color:rgba(44,185,78,.32);background:linear-gradient(180deg,rgba(44,185,78,.06),transparent 60%)}
+    .pick-cta{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:16px 0 0}
+    .pick-cta__note{font-size:12.5px;color:var(--muted)}
+    @media(max-width:560px){.pick-cta .btn{width:100%;text-align:center}}
+
+    /* Sticky bar. `position:sticky` inside the page flow rather than fixed, so
+       it never covers the footer or the closing CTA on a short screen. */
+    .sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:var(--z-rail,5);
+      display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;
+      padding:11px 16px;background:rgba(7,16,10,.93);backdrop-filter:blur(10px);
+      border-top:1px solid rgba(44,185,78,.3)}
+    .sticky-cta__text{font-size:13.5px;color:var(--muted)}
+    .sticky-cta__text b{color:var(--white)}
+    .sticky-cta__btn{padding:10px 18px;font-size:14px}
+    @media(max-width:420px){.sticky-cta__text{display:none}.sticky-cta__btn{width:100%;text-align:center}}
+    @media(prefers-reduced-motion:no-preference){.sticky-cta{transition:opacity .18s ease}}
   </style>
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
@@ -138,6 +216,26 @@
     <p class="standfirst">Six management games you can play without paying, ranked on the three things that actually decide whether you finish a season: what it costs, what it installs, and how long it takes.</p>
     <p class="byline">Updated 7 August 2026 · BALLKNW</p>
 
+    <!-- The page's job is to rank these games honestly, and the honest answer
+         at #1 is one you can start playing on the spot. Before this, the only
+         way to act on that was a link at the very bottom, past 300 lines of
+         comparison: the reader had to finish the article to reach the thing
+         the article recommends. -->
+    <div class="lede-cta">
+      <div class="lede-cta__text">
+        <p class="lede-cta__kicker">Ranked #1 · No install</p>
+        <p class="lede-cta__line">Gaffa runs in this browser. Pick a club, set a formation, play a season.</p>
+      </div>
+      <a href="/gaffa/" class="btn btn-primary lede-cta__btn">Play free →</a>
+    </div>
+
+    <ul class="quickstats" aria-label="Gaffa at a glance">
+      <li><b>28</b><span>Leagues</span></li>
+      <li><b>490</b><span>Real clubs</span></li>
+      <li><b>0</b><span>To install</span></li>
+      <li><b>None</b><span>Sign-up</span></li>
+    </ul>
+
     <div class="disclosure"><strong>Disclosure:</strong> Gaffa is made by us. We have put it where we think it belongs and said plainly what it does not do. It is single-player only, English leagues only, and will not out-simulate Football Manager. Judge the rest on the specifics below.</div>
 
     <nav class="toc">
@@ -159,12 +257,13 @@
       <h2>The ranked list</h2>
       <p>Ranked by how likely you are to actually enjoy a full season without hitting a wall: a paywall, a download limit, or a three-week wait for the league to finish.</p>
 
-      <div class="pick">
+      <div class="pick pick--top">
         <h3><span class="rank">1 · No install</span> Gaffa</h3>
         <p>A single-player club-management game that runs entirely in the browser. You take an English league club, set a formation and instructions, work a transfer budget, run a youth academy, and simulate the season. The save is written to your browser's local storage, so there is no account and nothing to sign up for.</p>
         <p>The reason it ranks first here is friction: it is the only game on this list where the gap between "curious" and "managing a club" is a single page load. The reason it is not a Football Manager replacement is scope: English leagues only, single-player only, and a simulation that is deliberately lighter than SI's.</p>
         <p class="verdict"><strong>Best for:</strong> finishing a season in one sitting, or managing on a phone without giving up storage.</p>
         <div class="meta-row"><span><b>Cost</b> Free</span><span><b>Install</b> None</span><span><b>Account</b> No</span><span><b>Mode</b> Single-player</span></div>
+        <p class="pick-cta"><a href="/gaffa/" class="btn btn-primary">Play Gaffa now →</a> <span class="pick-cta__note">Opens straight into the game — no account, no download.</span></p>
       </div>
 
       <div class="pick">
@@ -296,6 +395,14 @@
     </div>
   </main>
 
+  <!-- Reachable from any scroll position without hunting for a link. Hidden
+       until the lede CTA has scrolled away so the two never stack, and
+       hidden again over the closing CTA for the same reason. -->
+  <div class="sticky-cta" id="stickyCta" hidden>
+    <span class="sticky-cta__text"><b>Gaffa</b> — free, in your browser</span>
+    <a href="/gaffa/" class="btn btn-primary sticky-cta__btn">Play free →</a>
+  </div>
+
   <footer class="site-footer">
     <a href="/">Home</a> · <a href="/gaffa/">Play Gaffa</a> · <a href="/football-guides.html">All guides</a> · <a href="/best-football-manager-games-pc.html">PC</a> · <a href="/best-football-manager-games-mac.html">Mac</a> · <a href="/best-football-manager-games-android.html">Android</a> · <a href="/best-football-manager-games-iphone.html">iPhone</a> · <a href="/best-football-manager-games-steam-deck.html">Steam Deck</a> · <a href="/best-football-manager-games-switch.html">Switch</a> · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="mailto:thinkhiphop12@gmail.com">Contact</a>
     <p class="footer-disclaimer">BALLKNW is an unofficial fan-made project, not affiliated with Sports Interactive, SEGA, Nordeus, Gameforge, or any club or federation. Game names are used for honest comparison only.</p>
@@ -304,6 +411,30 @@
 
 </div>
 
+<script>
+  /* Show the sticky CTA only while neither of the page's own CTAs is on
+     screen, so the reader is never offered the same button twice at once.
+     IntersectionObserver rather than a scroll handler: no work on the main
+     thread between crossings. Guarded so a browser without it simply keeps
+     the bar hidden and the in-page CTAs still do the job. */
+  (function () {
+    var bar = document.getElementById('stickyCta');
+    if (!bar || !('IntersectionObserver' in window)) return;
+    var anchors = ['.lede-cta', '.pick-cta', '.end-cta']
+      .map(function (sel) { return document.querySelector(sel); })
+      .filter(Boolean);
+    if (!anchors.length) return;
+    var onScreen = [];
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        var i = anchors.indexOf(e.target);
+        if (i >= 0) onScreen[i] = e.isIntersecting;
+      });
+      bar.hidden = onScreen.some(Boolean);
+    }, { rootMargin: '0px 0px -40px 0px' });
+    anchors.forEach(function (el) { io.observe(el); });
+  })();
+</script>
 <script src="/shared/consent.min.js" defer></script>
 <script src="/shared/pwa.js" defer></script>
 <script src="/shared/ads.min.js" defer></script>

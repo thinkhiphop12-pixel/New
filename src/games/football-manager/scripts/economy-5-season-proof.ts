@@ -22,6 +22,7 @@ import { simulateMatch } from '../engine/matchSimulation';
 import { SEASON_ROUNDS, leagueName } from '../engine/gameRules';
 import { clubWageBill, wageCeiling, getSquad } from '../engine/teamManagement';
 import { renewalDemand } from '../engine/contractTalks';
+import { newSigningWageDemand } from '../engine/negotiation';
 import { ffpStatus, scrStatus, financesView } from '../engine/finances';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -133,12 +134,29 @@ const finalSquad = getSquad(state, state.userClubId)
   .slice(0, 10);
 
 let worst = { name: '', mult: 0 };
+let skipped = 0;
 for (const p of finalSquad) {
   if (p.wage <= 0) continue;
+  // Only players already paid something like their market rate. An academy
+  // graduate who came through on a youth wage and is now a senior
+  // international genuinely does multiply his wage at his first real
+  // contract, and that is a correction rather than a runaway — including him
+  // would make this assertion fail on correct behaviour.
+  //
+  // Note the two figures are on different scales: `calibrateWages` prices the
+  // existing squad against real Premier League wages, while
+  // `newSigningWageDemand` prices an arriving player off his rating. The
+  // comparison is only used to *classify* a player as market-priced or
+  // youth-priced, never as the assertion itself.
+  if (p.wage < newSigningWageDemand(p, 1) * 0.8) { skipped++; continue; }
   const mult = renewalDemand(state, p.id).wage / p.wage;
   if (mult > worst.mult) worst = { name: p.name, mult };
 }
-console.log(`\nSteepest renewal demand in the senior squad: ${worst.name} at ${worst.mult.toFixed(2)}x his current wage.`);
+console.log(
+  `\nSteepest renewal demand in the senior squad: ${worst.name} at ${worst.mult.toFixed(2)}x his current wage` +
+    (skipped ? ` (${skipped} youth-priced player${skipped > 1 ? 's' : ''} excluded).` : '.'),
+);
+assert(worst.name !== '', 'no market-priced senior player to check renewal demands against');
 assert(
   worst.mult <= 1.6,
   `renewal demands have run away: ${worst.name} wants ${worst.mult.toFixed(2)}x his current wage. ` +

@@ -13,7 +13,6 @@ import { Icon, type IconName } from './Icon';
 import StaffProfileModal from './StaffProfileModal';
 import { Pulse, toneFor } from './SectionHub';
 import { QualityRating, qualityGrade } from './visuals';
-import AssistantLine from './assistant/AssistantLine';
 import CoachPortrait from './assistant/CoachPortrait';
 
 /**
@@ -111,8 +110,6 @@ export default function StaffHubScreen({
           </li>
         </ol>
       </div>
-
-      <AssistantLine state={state} route="staff" />
 
       <div className="fm-staffgrid">
         {ROLES.map((role) => {

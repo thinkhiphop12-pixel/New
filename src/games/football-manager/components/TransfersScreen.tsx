@@ -21,8 +21,7 @@ import { MIN_SQUAD_SIZE, transferWindow } from '@/engine/gameRules';
 import { weeklyWageBill } from '@/engine/seasonProgression';
 import { clamp, formatMoney } from '@/engine/utils';
 import { traitNames } from '@/engine/traits';
-import ScreenHead from './ScreenHead';
-import { Icon } from './Icon';
+import { Icon, type IconName } from './Icon';
 import PlayerModal from './PlayerModal';
 import { PlayerCard } from './InboxScreen';
 
@@ -106,16 +105,16 @@ function affordability(cost: number, budget: number): Afford {
  * two fields the row already had — whose move it is and how the club replied
  * — instead of leaving the state buried in a tab inside the offer sheet.
  */
-function dealTemperature(n: Negotiation): { text: string; tone: 'good' | 'ok' | 'meh' } {
-  if (n.stage === 'outbid') return { text: '💔 You lost this one', tone: 'meh' };
-  if (n.awaiting === 'club') return { text: '⏳ They’re thinking about it…', tone: 'ok' };
+function dealTemperature(n: Negotiation): { text: string; tone: 'good' | 'ok' | 'meh'; icon: IconName } {
+  if (n.stage === 'outbid') return { text: 'You lost this one', tone: 'meh', icon: 'block' };
+  if (n.awaiting === 'club') return { text: 'They’re thinking about it…', tone: 'ok', icon: 'pause' };
   // The club has replied and it is the user's move — the tone of that reply is
   // the honest read on how close the deal is.
   const reply = n.log.find((m) => m.tone === 'good' || m.tone === 'bad');
-  if (n.stage === 'terms' || n.stage === 'loan_terms') return { text: '🔥 Nearly done — your move', tone: 'good' };
-  if (reply?.tone === 'good') return { text: '🔥 They’re interested — your move', tone: 'good' };
-  if (reply?.tone === 'bad') return { text: '🧊 They didn’t like that — try more', tone: 'meh' };
-  return { text: '👉 Your move', tone: 'ok' };
+  if (n.stage === 'terms' || n.stage === 'loan_terms') return { text: 'Nearly done — your move', tone: 'good', icon: 'flame' };
+  if (reply?.tone === 'good') return { text: 'They’re interested — your move', tone: 'good', icon: 'flame' };
+  if (reply?.tone === 'bad') return { text: 'They didn’t like that — try more', tone: 'meh', icon: 'dash' };
+  return { text: 'Your move', tone: 'ok', icon: 'chevron' };
 }
 
 /**
@@ -124,19 +123,19 @@ function dealTemperature(n: Negotiation): { text: string; tone: 'good' | 'ok' | 
  * wall as the opening move — the dropdowns stay behind "More filters".
  */
 const PRESETS: {
-  id: string; label: string; hint: string;
+  id: string; label: string; hint: string; icon: IconName;
   set: { pos?: Position | 'ALL'; avail?: string; maxAge?: number; minRating?: number; affordable?: boolean };
 }[] = [
   {
-    id: 'bargain', label: '💸 Cheap and good', hint: 'Decent players your club can actually pay for',
+    id: 'bargain', label: 'Cheap and good', icon: 'money-out', hint: 'Decent players your club can actually pay for',
     set: { minRating: 65, avail: 'all', maxAge: 40, affordable: true },
   },
   {
-    id: 'young', label: '🌱 Young talent', hint: 'Under 21, room to grow into a star',
+    id: 'young', label: 'Young talent', icon: 'sprout', hint: 'Under 21, room to grow into a star',
     set: { minRating: 0, avail: 'all', maxAge: 21, affordable: false },
   },
   {
-    id: 'ready', label: '⚡ Ready right now', hint: 'Good enough to walk into your team today',
+    id: 'ready', label: 'Ready right now', icon: 'boot', hint: 'Good enough to walk into your team today',
     set: { minRating: 70, avail: 'available', maxAge: 40, affordable: false },
   },
 ];
@@ -175,9 +174,6 @@ export default function TransfersScreen({
   const [confirm, setConfirm] = useState<{
     kicker: string; name: string; body: string; go: string; keep: string; run: () => void;
   } | null>(null);
-  // The two-step shape of a deal is explained once, up front, rather than
-  // only from inside a negotiation you have already opened.
-  const [showHow, setShowHow] = useState(false);
 
   const sc = state.scouting ?? newScouting();
   const shortlist = sc.shortlist;
@@ -189,15 +185,6 @@ export default function TransfersScreen({
     if (!state.scouting) { onChange({ ...state, scouting: sc }); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Shown until it is dismissed once, then never again on this device.
-  useEffect(() => {
-    try { setShowHow(localStorage.getItem('gaffa.transfers.how') !== 'seen'); } catch { /* private mode */ }
-  }, []);
-  const dismissHow = () => {
-    setShowHow(false);
-    try { localStorage.setItem('gaffa.transfers.how', 'seen'); } catch { /* private mode */ }
-  };
 
   const detail = detailId !== null ? state.players[detailId] : null;
   const negotiations = state.negotiations ?? [];
@@ -391,16 +378,6 @@ export default function TransfersScreen({
 
   // Your assistant, in a voice rather than a table. He reads the same numbers
   // the screen already has and says the one thing worth doing next.
-  const tip = (() => {
-    if (!win.open) return 'Market’s shut, boss. Free agents are still fair game — everyone else has to wait.';
-    if (incoming.some((n) => n.awaiting === 'user')) return 'Someone’s bidding for one of our players. Have a look at “Bids for my players”.';
-    if (outgoing.some((n) => n.awaiting === 'user')) return 'One of our deals needs your answer — check “My offers”.';
-    if (state.budget <= 0) return 'No money left, boss. Loans cost far less, or sell someone first.';
-    if (loansFirstBudget) return 'We can’t match the big clubs on fees. A loan gets us a good player for almost nothing.';
-    if (win.weeksLeft <= 1) return 'Last week of the window — if we want someone, it has to be now.';
-    return `We’ve got ${formatMoney(state.budget)} to spend. Try one of the shortcuts below to see who fits.`;
-  })();
-
   const buySection = (
     <>
       <SectionIntro
@@ -452,16 +429,8 @@ export default function TransfersScreen({
                   {/* One money verdict per row. "Cheap for you" next to
                       "wages too high" reads as a contradiction, and the wage
                       is the one that stops the deal. */}
-                  {/* "You can afford this" was true of nearly every row on
-                      the default sort, so it told you nothing and did it in
-                      green, eight times down the screen. The money chip now
-                      shows only when the money is actually news — free,
-                      cheap, a stretch, or out of reach. Plain affordability
-                      is the assumption, and says nothing. */}
                   {payable ? (
-                    money.text !== 'You can afford this' && (
-                      <span className={`fm-chip fm-chip--${money.tone}`}>{money.text}</span>
-                    )
+                    <span className={`fm-chip fm-chip--${money.tone}`}>{money.text}</span>
                   ) : (
                     <span className="fm-chip fm-chip--meh" title={`He earns ${formatMoney(projectedWage(p))} a week and you only have ${formatMoney(wageRoom)} a week spare`}>
                       Wages too high for us
@@ -475,22 +444,16 @@ export default function TransfersScreen({
                 </span>
               </span>
               <span className="fm-rowactions" onClick={(e) => e.stopPropagation()}>
-              {/* A star, not a third full-size button. Three buttons of
-                  equal weight per row made every row a decision about which
-                  button to read first; there is only one action here you
-                  take often. */}
               <button
-                className={`fm-star${shortlist.includes(p.id) ? ' is-on' : ''}`}
-                title={shortlist.includes(p.id) ? 'On your list — your scouts are watching him' : 'Keep an eye on him — your scouts will report back'}
-                aria-pressed={shortlist.includes(p.id)}
-                aria-label={shortlist.includes(p.id) ? `${p.name} is on your list` : `Add ${p.name} to your list`}
+                className={`fm-btn fm-btn--small${shortlist.includes(p.id) ? ' fm-btn--secondary' : ' fm-btn--ghost'}`}
+                title="Keep an eye on him — your scouts will report back"
                 onClick={(e) => { e.stopPropagation(); toggleScout(p.id); }}
               >
-                {shortlist.includes(p.id) ? '★' : '☆'}
+                {shortlist.includes(p.id) ? '★ On my list' : '☆ Add to list'}
               </button>
               {p.releaseClauseFee != null && p.releaseClauseFee <= state.budget && (
                 <button
-                  className="fm-btn fm-btn--small fm-btn--quiet"
+                  className="fm-btn fm-btn--small fm-btn--ghost"
                   title="His contract lets you buy him at this exact price — his club cannot say no"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -634,10 +597,6 @@ export default function TransfersScreen({
 
   return (
     <>
-      <ScreenHead
-        title="Transfer market"
-        sub="Find players, agree a fee with their club, then agree their wages. Loans cost far less if money is tight."
-      />
       <div className="fm-subnav__tabs" role="tablist" aria-label="Transfer market sections">
         {TABS.map((t) => {
           const count =
@@ -679,28 +638,12 @@ export default function TransfersScreen({
         </div>
       </div>
 
-      {showHow && tab === 'search' && (
-        <div className="fm-explainer">
-          <button className="fm-explainer__close" onClick={dismissHow} aria-label="Close">
-            <Icon name="cross" size={14} />
-          </button>
-          <p className="fm-explainer__title">How signing a player works</p>
-          <ol className="fm-explainer__steps">
-            <li><strong>Find someone.</strong> Use a shortcut below, then check the green tags — they say if he&apos;s better than what you have and if you can afford him.</li>
-            <li><strong>Agree a price</strong> with his club. They usually say no the first time. Offer a bit more.</li>
-            <li><strong>Agree his wages.</strong> Once the clubs agree, you talk to the player. Then he&apos;s yours.</li>
-          </ol>
-          <p className="fm-explainer__foot">Short of money? Borrowing a player on loan costs far less.</p>
-        </div>
-      )}
-
       {error && <p className="fm-error-text">{error}</p>}
       {notice && !error && <p className="fm-hint" style={{ color: 'var(--green-600)' }}>{notice}</p>}
 
       {tab === 'search' && (
         <div role="tabpanel">
           <WindowNotice win={win} />
-          <AssistantTip text={tip} />
 
           <div className="fm-presets">
             {PRESETS.map((p) => (
@@ -711,7 +654,9 @@ export default function TransfersScreen({
                 aria-pressed={preset === p.id}
                 onClick={() => applyPreset(p.id)}
               >
-                <span className="fm-preset__label">{p.label}</span>
+                <span className="fm-preset__label">
+                  <Icon name={p.icon} size={15} className="fm-preset__icon" /> {p.label}
+                </span>
                 <span className="fm-preset__hint">{p.hint}</span>
               </button>
             ))}
@@ -846,7 +791,7 @@ export default function TransfersScreen({
             text="A green dot means your scouts have finished watching him and you can trust his rating. A grey dot means they're still working on it."
           />
           <div className="fm-player-list">
-          {shortlisted.length === 0 && <p className="fm-hint">Your list is empty. Tap the ☆ next to anyone in Find players.</p>}
+          {shortlisted.length === 0 && <p className="fm-hint">Your list is empty. Tap “☆ Add to list” on anyone in Find players.</p>}
           {shortlisted.map((p) => {
             const assignment = sc.assignments.find((a) => a.kind === 'player-search' && a.foundPlayerIds?.includes(p.id));
             const known = assignment?.complete ?? false;
@@ -948,7 +893,9 @@ export default function TransfersScreen({
                             : 'another club beat you to him'}
                         </span>
                         <span className="fm-chiprow">
-                          <span className={`fm-chip fm-chip--${temp.tone}`}>{temp.text}</span>
+                          <span className={`fm-chip fm-chip--${temp.tone}`}>
+                            <Icon name={temp.icon} size={11} /> {temp.text}
+                          </span>
                           {n.rival && (
                             <span className="fm-chip fm-chip--meh">
                               ⚠️ {n.rival.clubName} are bidding too — {formatMoney(n.rival.offer)}
@@ -1062,20 +1009,6 @@ function SectionIntro({ title, text }: { title: string; text: string }) {
     <div className="fm-sectionintro">
       <p className="fm-sectionintro__title">{title}</p>
       <p className="fm-sectionintro__text">{text}</p>
-    </div>
-  );
-}
-
-/** The assistant manager, with a voice. He says one thing, and it is the thing
- *  worth doing next. */
-function AssistantTip({ text }: { text: string }) {
-  return (
-    <div className="fm-assistant-tip">
-      <span className="fm-assistant-tip__face" aria-hidden><Icon name="staff" size={18} /></span>
-      <span>
-        <span className="fm-assistant-tip__who">Your assistant</span>
-        <span className="fm-assistant-tip__what">{text}</span>
-      </span>
     </div>
   );
 }

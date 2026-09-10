@@ -1,5 +1,8 @@
 import type { GameState } from '@/engine/types';
-import { getSquad, autoPickLineup, contextualizeTactics } from '@/engine/teamManagement';
+import {
+  getSquad, autoPickLineup, contextualizeTactics, clubWageBill, wageCeiling,
+} from '@/engine/teamManagement';
+import { renewalDemand } from '@/engine/contractTalks';
 import { contractMonthsLeft } from '@/engine/negotiation';
 import { renewContract, saleValue, acceptIncomingOffer, rejectIncomingOffer } from '@/engine/transferMarket';
 import { getIntake, signTrialist, releaseTrialist } from '@/engine/youthAcademy';
@@ -17,7 +20,54 @@ export interface DelegateResult {
  *  language report of what it did — the caller is responsible for
  *  presenting the report and logging it to the inbox. */
 
+/**
+ * The most he'll commit to a single renewal, in wages per week.
+ *
+ * Handing the whole job over used to mean handing over the chequebook with
+ * it: he worked down the list paying whatever each man asked, and the first
+ * you heard of it was the wage bill. So he sets himself a ceiling first,
+ * says it out loud (`renewalBrief`), and anyone who wants more than it gets
+ * left on the desk for the manager to decide personally.
+ *
+ * The number is the room the board has actually left — the wage ceiling
+ * minus what is already committed — shared across the men who are out of
+ * contract, never below what the cheapest of them already earns.
+ */
+export function renewalCap(state: GameState): number {
+  const squad = getSquad(state, state.userClubId);
+  const due = squad.filter((p) => contractMonthsLeft(p, state) <= 12);
+  if (due.length === 0) return 0;
+  const room = Math.max(0, wageCeiling(state) - clubWageBill(state, state.userClubId));
+  const share = room / due.length;
+  const floor = Math.min(...due.map((p) => p.wage));
+  // Renewals always cost more than the deal they replace, so a cap below the
+  // current wage would reject everybody and read as a broken feature.
+  return Math.max(Math.round(share + floor), Math.round(floor * 1.25));
+}
+
+/** What he says before he starts — the sentence the manager approves. */
+export function renewalBrief(state: GameState): { cap: number; due: number; line: string } {
+  const squad = getSquad(state, state.userClubId);
+  const due = squad.filter((p) => contractMonthsLeft(p, state) <= 12).length;
+  const cap = renewalCap(state);
+  if (due === 0) return { cap, due, line: 'Nothing due, boss. Nobody inside their last year.' };
+  const over = squad
+    .filter((p) => contractMonthsLeft(p, state) <= 12)
+    .filter((p) => renewalDemand(state, p.id).wage > cap).length;
+  return {
+    cap,
+    due,
+    line:
+      `${due} deal${due === 1 ? '' : 's'} to sort. Most I'd go to is ${formatMoney(cap)} a week each — ` +
+      (over > 0
+        ? `${over} of them want more than that, so I'll leave those to you.`
+        : "the whole lot fits inside that, so I'll get them signed.") +
+      ' Say the word and I\'ll get on with it.',
+  };
+}
+
 export function renewExpiringContracts(state: GameState): DelegateResult {
+  const cap = renewalCap(state);
   const candidateIds = getSquad(state, state.userClubId)
     .filter((p) => contractMonthsLeft(p, state) <= 12)
     .map((p) => p.id);
@@ -31,6 +81,13 @@ export function renewExpiringContracts(state: GameState): DelegateResult {
   for (const id of candidateIds) {
     const p = s.players[id];
     if (!p) continue;
+    // The ceiling he stated in the brief. Anyone above it is reported as
+    // left alone rather than quietly signed at whatever he was asked for.
+    const want = renewalDemand(s, id).wage;
+    if (want > cap) {
+      report.push(`${p.name} wants ${formatMoney(want)}/wk — over what I'd sanction. Left him to you.`);
+      continue;
+    }
     if (p.wage * 10 > s.budget) {
       report.push(`Can't afford to offer ${p.name} new terms right now.`);
       continue;
