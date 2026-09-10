@@ -62,6 +62,57 @@ function registerSW() {
   else window.addEventListener('load', go);
 }
 
+/* Tell the worker what this page actually loaded, so it can cache it.
+ *
+ * On a first visit the worker takes control only after the page's own requests
+ * have already gone out, so none of them pass through its fetch handler and
+ * none are cached: the measured cache after one visit was 5 entries with no
+ * game data, against 25 after a second. Offline therefore worked on a first
+ * visit only by grace of the browser's HTTP cache, which is evictable — fine
+ * until the day it is not, which is the day someone is on a train.
+ *
+ * The Performance API already holds the exact list of what this build fetched,
+ * so it is read rather than guessed. No build manifest to keep in step: the
+ * list is right by construction, for whatever the current bundle happens to be.
+ */
+function warmCache() {
+  if (!('serviceWorker' in navigator)) return;
+
+  navigator.serviceWorker.ready
+    .then(function () {
+      var sw = navigator.serviceWorker.controller;
+      /* No controller means this page loaded before the worker claimed it. The
+         next navigation has one, and warms then. */
+      if (!sw) return;
+
+      var urls = [location.href];
+      try {
+        performance.getEntriesByType('resource').forEach(function (e) {
+          /* Beacons are analytics pings with nothing to serve back offline. The
+             worker drops cross-origin and /api/ itself, so the rest can go as
+             it is rather than being filtered twice with two chances to disagree. */
+          if (e.initiatorType !== 'beacon') urls.push(e.name);
+        });
+      } catch (err) {
+        /* No Performance API — the document alone is still worth having. */
+      }
+
+      sw.postMessage({ type: 'WARM', urls: urls });
+    })
+    .catch(function () {});
+}
+
+/* After load, and out of the way of anything the page still wants to do —
+   a warm is dozens of requests, and none of them are urgent. */
+function scheduleWarm() {
+  var run = function () {
+    if ('requestIdleCallback' in window) window.requestIdleCallback(warmCache, { timeout: 5000 });
+    else setTimeout(warmCache, 2500);
+  };
+  if (document.readyState === 'complete') run();
+  else window.addEventListener('load', run);
+}
+
 /** Tear the worker down and clear its caches. Exposed for a bad release. */
 function unregister() {
   if (!('serviceWorker' in navigator)) return Promise.resolve(false);
@@ -261,6 +312,7 @@ window.BKPwa = {
 };
 
 registerSW();
+scheduleWarm();
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initInstallPrompt);
 } else {

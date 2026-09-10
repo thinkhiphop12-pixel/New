@@ -146,10 +146,59 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+/* Warm the cache with what the page has just loaded.
+ *
+ * The worker takes control on its very first visit (clients.claim, above), but
+ * everything that visit had already fetched went over the network before it was
+ * controlling anything — so none of it passed through the fetch handler and
+ * none of it was cached. Measured: after one visit the cache held 5 entries and
+ * no gamedata.json; after a second it held 25. Which means a first-time visitor
+ * who installed the app and went offline was relying on the browser's own HTTP
+ * cache, and that is evictable — it works until one day it does not, on a train,
+ * with no way to recover.
+ *
+ * So the page sends the list of what it actually loaded (see shared/pwa.js) and
+ * the worker fetches those into its cache. Self-maintaining: it captures exactly
+ * the chunks and data this build needs, without a build manifest to ship and
+ * keep in step, which is what made precaching look not worth the maintenance.
+ *
+ * Anything already cached is skipped, and individual failures are ignored — a
+ * warm is best-effort, and one 404 must not abort the rest.
+ */
+async function warm(urls) {
+  if (!Array.isArray(urls) || !urls.length) return;
+  const cache = await caches.open(CACHE);
+  await Promise.all(
+    urls.slice(0, 120).map(async (raw) => {
+      let url;
+      try {
+        url = new URL(raw, self.location.origin);
+      } catch {
+        return;
+      }
+      /* Same-origin only, and never the API — the same two rules the fetch
+         handler applies, restated here because this path does not go through it. */
+      if (url.origin !== self.location.origin) return;
+      if (url.pathname.startsWith('/api/')) return;
+      if (await cache.match(url.href)) return;
+      try {
+        const res = await fetch(url.href, { credentials: 'same-origin' });
+        if (res.ok && res.type === 'basic') await cache.put(url.href, res);
+      } catch {
+        /* Offline, or the asset is gone. Either way the next visit tries again. */
+      }
+    }),
+  );
+}
+
 /* Escape hatch. Posting {type:'UNREGISTER'} from a page tears the worker down
    and empties its caches, so a bad release can be undone from the client
    without waiting for anyone to clear site data by hand. */
 self.addEventListener('message', (event) => {
+  if (event.data?.type === 'WARM') {
+    event.waitUntil(warm(event.data.urls));
+    return;
+  }
   if (event.data?.type === 'UNREGISTER') {
     event.waitUntil(
       caches
