@@ -67,26 +67,38 @@ for (const file of files) {
   const faq = nodes.find((n) => n && n['@type'] === 'FAQPage');
   if (!faq) continue;
 
-  // Only rewrite a page whose schema claims a question it does not show.
-  // That is the defect — markup Google will reject as not mirroring visible
-  // content. Where every declared question is on the page, the hand-written
-  // answer summaries are left exactly as they are: they are often a better,
-  // tighter answer than the full prose of the <details> body, and rewriting
-  // them site-wide would be a content change dressed up as a schema fix.
-  const visible = qa.map((x) => norm(x.question));
-  const claimed = (Array.isArray(faq.mainEntity) ? faq.mainEntity : [])
-    .map((q) => (typeof q?.name === 'string' ? q.name : ''));
-  const missing = claimed.filter((name) => !visible.includes(norm(name)));
-  if (!missing.length) continue;
+  // The rule, in one direction and the other: the schema's questions are
+  // exactly the questions the page shows, in the order it shows them.
+  //
+  // Drift ran both ways. Some pages declared questions that appear nowhere in
+  // the rendered HTML, which is what makes markup ineligible for the rich
+  // result it exists for. Others showed a question the schema never mentioned,
+  // which is not an error but is a section of the page Google is not being
+  // told about.
+  //
+  // Existing answers are reused wherever the question still matches, so the
+  // hand-written summaries survive — they are often tighter and better than
+  // the full prose of the <details> body, and replacing them site-wide would
+  // be a content change dressed up as a schema fix. Only genuinely new
+  // questions get an answer generated from the page.
+  const byQuestion = new Map(
+    (Array.isArray(faq.mainEntity) ? faq.mainEntity : [])
+      .filter((q) => q && typeof q.name === 'string')
+      .map((q) => [norm(q.name), q]),
+  );
 
-  drifted.push(file);
-  if (check) continue;
-
-  faq.mainEntity = qa.map(({ question, answer }) => ({
+  const next = qa.map(({ question, answer }) => byQuestion.get(norm(question)) ?? ({
     '@type': 'Question',
     name: question,
     acceptedAnswer: { '@type': 'Answer', text: answer },
   }));
+
+  if (JSON.stringify(next) === JSON.stringify(faq.mainEntity)) continue;
+
+  drifted.push(file);
+  if (check) continue;
+
+  faq.mainEntity = next;
 
   // Match the file's existing layout so the diff shows the questions that
   // changed rather than a reindent of every line around them.
